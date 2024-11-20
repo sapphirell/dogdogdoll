@@ -1,0 +1,77 @@
+<script>
+	export default {
+		onLaunch: function() {
+			console.log('App Launch')
+		},
+		onShow: function() {
+			console.log('App Show')
+		},
+		onHide: function() {
+			console.log('App Hide')
+		}
+	}
+</script>
+
+<style>
+	/*每个页面公共css */
+	
+
+.backbody {
+		background-color: #C0EDE9;
+		height: 100vh;
+}
+
+.avatar {
+	border-radius: 50%;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.uni-page-head, .uni-tabbar{
+	padding-top: 15px;
+	/* background-color: rgb(168 168 168)!important; */
+	/* background: linear-gradient(90deg, rgb(189 199 252 / 59%) 0%, rgba(192, 237, 233, 0.5) 100%); */
+}
+.uni-tabbar__icon {
+	position: relative;
+	bottom: 5px;
+}
+
+.font-alimamashuhei {
+	font-family: "alimamamshuhei"!important;
+}
+
+.icon_image {
+	width: 20px;
+	height: 20px;
+	padding: 2px;
+}
+
+.icon_inline_text {
+	display: flex; /* 使用 Flexbox */
+	align-items: flex-end; /* 底部对齐 */
+}
+
+.uni-tabbar-border {
+	display: none;
+	/*去除导航条border*/
+}
+
+uni-page-head {
+	height: 60px;
+}
+.uni-page-head {
+	background-color: rgb(255 255 255);
+	color: rgb(0, 0, 0);
+	padding-bottom: 15px;
+	height: 60px;
+	box-shadow: 0 0 15px #00000024;
+}
+
+text {
+	color: #373737;
+}
+/* 头像裁剪框css */
+.bt-container {
+	margin: 10px auto;
+}
+</style>

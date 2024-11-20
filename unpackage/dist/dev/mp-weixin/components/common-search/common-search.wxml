@@ -1,0 +1,1 @@
+<view class="search_tab"><image class="icon_image" src="{{a}}"></image><input class="common_search_input" placeholder="… 请输入搜索词 …"/></view>

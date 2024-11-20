@@ -1,0 +1,54 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/homepage/homepage",
+    "pages/stock/stock",
+    "pages/mine/mine",
+    "pages/watch_demo/watch_demo",
+    "pages/goods/goods",
+    "pages/brand/brand",
+    "pages/news/news",
+    "pages/pop_croper/pop_croper",
+    "pages/setting/setting",
+    "pages/setting/password/password",
+    "pages/setting/tel_phone/tel_phone"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "selectedColor": "#7cc1d2",
+    "backgroundColor": "#fefefe",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/new-icon/home-w.png",
+        "selectedIconPath": "static/new-icon/home-b.png"
+      },
+      {
+        "pagePath": "pages/news/news",
+        "text": "上新",
+        "iconPath": "static/new-icon/date-w.png",
+        "selectedIconPath": "static/new-icon/date-b.png"
+      },
+      {
+        "pagePath": "pages/stock/stock",
+        "text": "娃柜",
+        "iconPath": "static/new-icon/stock-w.png",
+        "selectedIconPath": "static/new-icon/stock-b.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "static/new-icon/mine-w.png",
+        "selectedIconPath": "static/new-icon/mine-b.png"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

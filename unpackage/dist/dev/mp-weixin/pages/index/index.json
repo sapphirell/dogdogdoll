@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "首页",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "common-search": "../../components/common-search/common-search",
+    "index-brand": "../../components/index-brand/index-brand",
+    "sdp": "../../components/swiper-dynamic-bullets/swiper-dynamic-bullets"
+  }
+}

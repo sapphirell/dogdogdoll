@@ -1,0 +1,17 @@
+.search_tab {
+  padding: 3px 10px;
+  box-sizing: border-box;
+}
+.search_tab image {
+  position: relative;
+  margin-left: 5px;
+  top: 3px;
+}
+.search_tab .common_search_input {
+  display: inline-block;
+  margin-left: 30px;
+  width: calc(100% - 85px);
+  text-align: center;
+  top: 3px;
+  position: relative;
+}

@@ -1,0 +1,20 @@
+.container.data-v-24bc9d41 {
+  background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
+}
+.scroll-view_H.data-v-24bc9d41 {
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+  padding-top: 10px;
+}
+.scroll-view-item_H.data-v-24bc9d41 {
+  display: inline-block;
+  text-align: center;
+  font-size: 36rpx;
+  width: calc(100vw/7);
+  padding-bottom: 15px;
+}
+.line-height.data-v-24bc9d41 {
+  margin: 9px 0px 9px 0px;
+  display: block;
+}
