@@ -23,7 +23,7 @@
 			<text class="tab_text">手机号</text>
 			<view class="button_body">
 				<button v-if="global.userInfo.tel_phone" @click="jump2telphone">
-					<text class="binded">{{global.userInfo.tel_phone}}</text>
+					<text class="binded">已绑定</text>
 					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
 					</image>
 				</button>
@@ -110,6 +110,7 @@
 	}
 
 	button {
+		background: #fff;
 		&::after {
 			border: none;
 		}
@@ -153,11 +154,11 @@
 				box-sizing: border-box;
 
 				.binded {
-					color: #4cbbd0;
+					color: #4cbbd0!important;
 				}
 
 				.notBind {
-					color: #a2a2a2;
+					color: #a2a2a2!important;
 				}
 			}
 

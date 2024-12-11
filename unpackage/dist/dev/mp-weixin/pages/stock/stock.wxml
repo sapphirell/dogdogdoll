@@ -1,1 +1,1 @@
-<view> 我的娃柜 </view>
+<view class="container" style="{{'padding-top:' + g}}"><view class="switch_tab"><button bindtap="{{a}}"><text>账本</text></button><button bindtap="{{b}}"><text>展示柜</text></button><button bindtap="{{c}}"><text>尾款日历</text></button></view><view class="data_body"><view class="{{['tab_body_1st', d && 'none']}}"></view><view class="{{['tab_body_sec', e && 'none']}}">2</view><view class="{{['tab_body_3th', f && 'none']}}">3</view></view></view>

@@ -1,5 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_assets = require("../../common/assets.js");
+const common_config = require("../../common/config.js");
 const _sfc_main = {
   __name: "goods",
   props: ["goods_id"],
@@ -8,6 +10,8 @@ const _sfc_main = {
     let goods = common_vendor.ref({});
     let comments = common_vendor.ref({});
     let commentsPage = common_vendor.ref(1);
+    let swiperIndex = common_vendor.ref(1);
+    let myComment = common_vendor.ref("");
     common_vendor.index.showLoading({
       title: "加载中"
     });
@@ -16,9 +20,13 @@ const _sfc_main = {
         url: "/pages/brand/brand?brand_id=" + id
       });
     }
+    function onChange(e) {
+      console.log(e.detail.current);
+      swiperIndex.value = e.detail.current + 1;
+    }
     function getGoods() {
       common_vendor.index.request({
-        url: "http://localhost:8080/goods?id=" + props.goods_id,
+        url: common_config.websiteUrl + "/goods?id=" + props.goods_id,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
@@ -44,24 +52,24 @@ const _sfc_main = {
       const day = date.getDate().toString().padStart(2, "0");
       const hours = date.getHours().toString().padStart(2, "0");
       const minutes = date.getMinutes().toString().padStart(2, "0");
-      const seconds = date.getSeconds().toString().padStart(2, "0");
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      date.getSeconds().toString().padStart(2, "0");
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
     function getBrandComments() {
       common_vendor.index.request({
-        url: "http://localhost:8080/goods-comment?goods_id=" + props.goods_id + "&page=" + commentsPage.value,
+        url: common_config.websiteUrl + "/goods-comment?goods_id=" + props.goods_id + "&page=" + commentsPage.value,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
           console.log(res.data.data);
           comments.value.page_index = res.data.data.page_index;
           comments.value.total = res.data.data.total;
-          comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comments) : res.data.data.comment_list;
-          if (res.data.data.comments != null) {
-            if (res.data.data.comments.length > 0) {
+          comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comment_list) : res.data.data.comment_list;
+          if (res.data.data.comment_list != null) {
+            if (res.data.data.comment_list.length > 0) {
               commentsPage.value += 1;
             }
-            if (res.data.data.comments.length == 0 && commentsPage.value > 1) {
+            if (res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
               common_vendor.index.showToast({
                 title: "没有更多数据了",
                 icon: "none"
@@ -79,33 +87,93 @@ const _sfc_main = {
       });
     }
     function addComments() {
+      let token = common_vendor.index.getStorageSync("token");
+      if (!common_config.global.isLogin) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
+      if (myComment.value == "") {
+        common_vendor.index.showToast({
+          title: "请输入评论内容",
+          icon: "none"
+        });
+        return;
+      }
+      let requestData = {
+        content: myComment.value,
+        target_id: parseInt(props.goods_id),
+        type: 2
+      };
+      console.log(requestData);
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/with-state/add-comment",
+        method: "POST",
+        header: {
+          "Authorization": token
+        },
+        data: requestData,
+        success: (res) => {
+          console.log(res.data);
+          if (res.data.status == "success") {
+            common_vendor.index.showToast({
+              title: "评论成功",
+              icon: "success"
+            });
+            myComment.value = "";
+            commentsPage.value = 1;
+            comments.value = {};
+            getBrandComments();
+            return;
+          } else {
+            common_vendor.index.showToast({
+              title: res.data.msg,
+              icon: "none"
+            });
+            return;
+          }
+        },
+        fail: (err) => {
+          console.log(err);
+          common_vendor.index.showToast({
+            title: "网络请求失败",
+            icon: "none"
+          });
+        }
+      });
     }
     getGoods();
     getBrandComments();
+    common_config.getUserInfo();
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.unref(goods).name
       }, common_vendor.unref(goods).name ? common_vendor.e({
-        b: common_vendor.f(common_vendor.unref(goods).goods_images, (item, key, i0) => {
+        b: common_assets._imports_0$3,
+        c: common_vendor.f(common_vendor.unref(goods).goods_images, (item, key, i0) => {
           return {
             a: item,
             b: key
           };
         }),
-        c: common_vendor.o((...args) => _ctx.onChange && _ctx.onChange(...args)),
-        d: common_vendor.t(common_vendor.unref(goods).name),
-        e: common_vendor.t(common_vendor.unref(goods).type),
-        f: common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0
+        d: common_vendor.o(onChange),
+        e: common_vendor.t(common_vendor.unref(swiperIndex)),
+        f: common_vendor.t(common_vendor.unref(goods).goods_images.length),
+        g: common_vendor.t(common_vendor.unref(goods).name),
+        h: common_vendor.t(common_vendor.unref(goods).type),
+        i: common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0
       }, common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0 ? {
-        g: common_vendor.t(common_vendor.unref(goods).goods_sales[0].sub_amount + common_vendor.unref(goods).goods_sales[0].fin_amount),
-        h: common_vendor.t(common_vendor.unref(goods).goods_sales[0].currency)
+        j: common_vendor.t(common_vendor.unref(goods).goods_sales[0].sub_amount + common_vendor.unref(goods).goods_sales[0].fin_amount),
+        k: common_vendor.t(common_vendor.unref(goods).goods_sales[0].currency)
       } : {}, {
-        i: common_vendor.t(common_vendor.unref(goods).size),
-        j: common_vendor.t(common_vendor.unref(goods).size_detail),
-        k: common_vendor.t(common_vendor.unref(goods).skin),
-        l: common_vendor.unref(goods).goods_sales == null
+        l: common_vendor.t(common_vendor.unref(goods).size),
+        m: common_vendor.t(common_vendor.unref(goods).size_detail),
+        n: common_vendor.t(common_vendor.unref(goods).skin),
+        o: common_vendor.unref(goods).goods_sales == null
       }, common_vendor.unref(goods).goods_sales == null ? {} : {}, {
-        m: common_vendor.f(common_vendor.unref(goods).goods_sales, (sale, k0, i0) => {
+        p: common_vendor.f(common_vendor.unref(goods).goods_sales, (sale, k0, i0) => {
           return {
             a: common_vendor.t(formatTimestamp(sale.sub_time)),
             b: common_vendor.t(sale.sale_type),
@@ -114,21 +182,29 @@ const _sfc_main = {
             e: sale.id
           };
         }),
-        n: common_vendor.t(common_vendor.unref(goods).brand_name),
-        o: common_vendor.o(($event) => jumpBrand(common_vendor.unref(goods).brand_id)),
-        p: common_vendor.t(common_vendor.unref(comments).total),
-        q: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
+        q: common_vendor.t(common_vendor.unref(goods).brand_name),
+        r: common_vendor.o(($event) => jumpBrand(common_vendor.unref(goods).brand_id)),
+        s: common_vendor.t(common_vendor.unref(comments).total),
+        t: common_vendor.unref(comments).comment_list
+      }, common_vendor.unref(comments).comment_list ? {
+        v: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
           return {
             a: item.avatar,
             b: common_vendor.t(item.username),
-            c: common_vendor.t(item.floor),
-            d: common_vendor.t(item.comment),
-            e: item.id
+            c: common_vendor.t(item.comment),
+            d: common_vendor.t(formatTimestamp(item.created_at)),
+            e: common_vendor.t(item.floor),
+            f: item.id
           };
         }),
-        r: common_vendor.o(addComments)
+        w: common_vendor.o(getBrandComments)
+      } : {}, {
+        x: common_vendor.unref(myComment),
+        y: common_vendor.o(($event) => common_vendor.isRef(myComment) ? myComment.value = $event.detail.value : myComment = $event.detail.value),
+        z: common_vendor.o(addComments)
       }) : {});
     };
   }
 };
-wx.createPage(_sfc_main);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-7e2880f6"]]);
+wx.createPage(MiniProgramPage);

@@ -3,18 +3,20 @@
 		<image :src="brand.logo_image" mode="aspectFit" class="brand_logo"></image>
 		<view class="body">
 			<view>
-				<text style="float: left;font-size: 20px;">{{brand.brand_name}}</text>
-				<text style="float: right;">{{brand.country_name}} / 	{{brand.type}}</text>
+				<text style="float: left;font-size: 20px;" selectable="true" user-select="true">{{brand.brand_name}}</text>
+				<text style="float: right;margin: 5px 0px;">{{brand.country_name}} / {{brand.type}}</text>
 				<view style="clear: both;"></view>
 			</view>
 			
 		
-			<view>
-				<uni-rate style="margin-top: 5px;float: left;" v-model="rateValue" @change="onChange" :value="4.2" allow-half="true" />
-				<text style="float: left;margin-left: 20px;position: relative;top: 5px;">4.2（1348次评分）</text>
+			<view  @click="openRate(1)">
+				<uni-rate style="margin-top: 5px;float: left;" :value="brand.score" allow-half="true" disabled-color="rgb(255 157 219)"/>
+				<text style="float: left;margin-left: 20px;position: relative;top: 5px;">{{brand.score}}（{{brand.vote_number}}次评分）</text>
 				<view style="clear: both;"></view>
 			</view>
-			
+			<view style="margin-top: 15px;">
+				<text>别名：{{brand.nickname_list}}</text>
+			</view>
 			<view style="margin-top: 10px;">
 				<text>简介：{{brand.description}}</text>
 			</view>
@@ -32,28 +34,48 @@
 			<button class="load_more" @click="getBrandGoods">加载更多</button>
 			<view>
 				<text style="color: rgb(100, 198, 220);display: block;margin: 20px 0px;">讨论 ({{comments.total}})</text>
-				<view>
-					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id" style="margin-bottom: 10px;">
+				<view v-if="comments.comment_list">
+					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id" style="margin-bottom: 20px;">
 						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;">
 							<image style="width: 50px;height: 50px;border-radius: 100%;display: block;margin: 10px;" :src="item.avatar" mode="aspectFill"></image>
 							<text style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; ">{{item.username}}</text>
 						</view>
 			
-						<view style="float: left;padding: 10px;background: rgb(245 245 245);width: calc(100vw - 170px);min-height: 60px;border-radius: 15px;position: relative;">
-							<text class="floor" style="position: absolute;top: -12px;right: 10px;color: #888;font-size: 20px;">#{{item.floor}}</text>
+						<view style="float: left;padding: 15px 15px 30px 15px;background: rgb(245 245 245);width: calc(100vw - 170px);min-height: 60px;border-radius: 15px;position: relative;top:2px;">
+							<!-- <text class="floor" style="position: absolute;top: -12px;right: 10px;color: #888;font-size: 20px;">#{{item.floor}}</text> -->
 							<text style="width: 100%; white-space: normal;word-break: break-all;">{{item.comment}}</text>
+						
+							<!-- 格式化时间戳created_at为日期 -->
+							<text style="color: #888;font-size: 12px;position: absolute;bottom: 3px;left: 15px;">{{formatTimestamp(item.created_at)}} floor#{{item.floor}}</text>
 						</view>
 						<view style="clear: both;"></view>
 					</view>
+					<button class="load_more" @click="getBrandComments">加载更多</button>
 				</view>
 			</view>
 			
 		</view>
 		<!-- 一个不可见透明元素，撑起80px高度 -->
 		<view style="height: 80px;"></view>
+		<!-- 评分悬浮窗 -->
+		<view class="modal_shadow" :class="{ none: !activeModal }" @tap="openRate(2)">
+			<view class="modal_box">
+				<view>
+					<text style="font-size: 25px;color:#7b6d6d;width: 100%;text-align: center;margin-bottom: 13px;display: block;">您的评分 {{rateValue}}</text>
+					<uni-rate v-model="rateValue"  allow-half="true"  style="margin-top: 5px;float: left;" size="45"/>
+					<!-- <text style="float: left;margin-left: 20px;position: relative;top: 5px;">触摸评分</text> -->
+				</view>
+				
+				<view style="clear: both;"></view>
+				<button style="display: block; width: 100px; position: absolute;bottom: 0px;right: 20px;" class="light_button"  @click="voteScoreProxy">
+					<text style="color: #fff;">提交</text>
+				</button>
+			</view>
+			
+		</view>
 
 		<view class="bottom_tab" style="">
-			<textarea class="comment_input"></textarea>
+			<textarea class="comment_input" v-model="comment"></textarea>
 			<button style="" @click="addComments">写评论</button>
 		</view>
 	</view>
@@ -61,16 +83,54 @@
 
 <script setup>
 	import { ref } from 'vue';
+	import {
+		websiteUrl,
+		wechatSignLogin,
+		getUserInfo, 
+		global, 
+		voteScore,
+	} from "../../common/config.js";
+
+	import {
+		onShow
+	} from "@dcloudio/uni-app";
+
+	
 	const props = defineProps(["brand_id"])
 	console.log(props)
-	uni.showLoading({
-		
-	})
 	
+	uni.showLoading({	})
+	
+	let comment = ref('')
+	let rateValue = ref(0)
+	
+	//是否打开弹窗
+	let activeModal = ref(false)
+	
+	function voteScoreProxy() {
+		if (rateValue.value == 0) {
+			uni.showToast({
+				title: '请先评分',
+				icon: 'none'
+			})
+			return
+		}
+		if (rateValue.value > 5) {
+			uni.showToast({
+				title: '评分不能大于5',
+				icon: 'none'
+			})
+			return
+		}
+		
+		console.log(rateValue.value, props.brand_id)
+		voteScore(1, rateValue.value, props.brand_id)
+	
+	}
 
 	function getBrandsInfo() {
 		uni.request({
-			url: 'http://localhost:8080/brand-info?id=' + props.brand_id ,
+			url: websiteUrl + '/brand-info?id=' + props.brand_id ,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
@@ -94,7 +154,21 @@
 			}
 		})
 	}
-	
+
+	//格式化时间戳
+	function formatTimestamp(timestamp) {
+	      const date = new Date(timestamp * 1000);
+	      const year = date.getFullYear();
+	      const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月份从0开始，需要+1
+	      const day = date.getDate().toString().padStart(2, '0');
+	      const hours = date.getHours().toString().padStart(2, '0');
+	      const minutes = date.getMinutes().toString().padStart(2, '0');
+	      const seconds = date.getSeconds().toString().padStart(2, '0');
+	      
+	      // 返回格式化后的日期时间
+	      // return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+	      return `${year}-${month}-${day} ${hours}:${minutes}`;
+	}
 	function getBrandGoods() {
 		uni.request({
 			url: 'http://localhost:8080/brand-goods?brand_id=' + props.brand_id + "&page=" + page.value,
@@ -130,21 +204,21 @@
 	
 	function getBrandComments() {
 		uni.request({
-			url: 'http://localhost:8080/brand-comment?brand_id=' + props.brand_id + "&page=" + commentsPage.value,
+			url: websiteUrl + '/brand-comment?brand_id=' + props.brand_id + "&page=" + commentsPage.value,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
 				console.log(res.data.data);
 				comments.value.page_index = res.data.data.page_index;
 				comments.value.total = res.data.data.total;
-				comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comments) : res.data.data.comment_list;
+				comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comment_list) : res.data.data.comment_list;
 				//如果返回的列表size大于0，页码增加
-				if(res.data.data.comments != null) {
-					if(res.data.data.comments.length > 0) {
+				if(res.data.data.comment_list != null) {
+					if(res.data.data.comment_list.length > 0) {
 						commentsPage.value += 1
 					}
 					//如果返回的列表size等于0，且page>1提示无更多数据
-					if(res.data.data.comments.length == 0 && commentsPage.value > 1) {
+					if(res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
 						uni.showToast({
 							title: '没有更多数据了',
 							icon: 'none'
@@ -163,9 +237,115 @@
 		})
 	}
 	
+	//打开弹窗
+	function openRate(i) {
+		activeModal.value = !activeModal.value
+		
+
+	}
+	
 	//提交评论
 	function addComments() {
-		
+		let token = uni.getStorageSync('token')
+		if (!token) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+		if (comment.value == "") {
+			uni.showToast({
+				title: '请输入评论内容',
+				icon: 'none'
+			})
+			return
+		}
+		uni.request({
+			url: websiteUrl + '/with-state/add-comment',
+			method: 'POST',
+			header: {
+				'Authorization': token,
+			},
+			data: {
+				//props.brand_id转为int
+				target_id: parseInt(props.brand_id),
+				content: comment.value,
+				type: 1,
+			},
+			success: (res) => {
+				console.log(res.data);
+				if (res.data.status == "success") {
+					uni.showToast({
+						title: '评论成功',
+						icon: 'success'
+					})
+					//清空评论
+					comment.value = ""
+					//重新获取评论
+					commentsPage.value = 1;
+					comments.value = {}
+					getBrandComments();
+					return;
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+					return
+				}
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			},
+		});
+	}
+	
+	function getMyScore(type, targetId) {
+		let token = uni.getStorageSync('token')
+		if (!token) {
+			return 0;
+		}
+		if(!global.isLogin) {
+			return 0;
+		}
+		uni.request({
+			url: websiteUrl + '/with-state/my-vote-record',
+			method: 'GET',
+			header: {
+				'Authorization': token,
+				'Content-Type': 'application/json',
+			},
+			data: {
+				target_id: parseInt(targetId),
+				type: type
+			},
+			success: (res) => {
+				console.log(res.data.data);
+				if (res.data.status == "success") {
+					rateValue.value = res.data.data.score;
+					return res.data.data.score;
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+					return 0
+				}
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+				return 0
+			},
+		});
 	}
 	
 	//跳转到商品页
@@ -188,7 +368,9 @@
 	getBrandGoods()
 	//获取品牌评论
 	getBrandComments()
-	
+
+	//获取我的评分
+	getMyScore(1, props.brand_id)
 </script>
 
 <style lang="less" scoped>
@@ -249,7 +431,7 @@
 	opacity: 1;
 	border-radius: 25px;
 	background: white;
-	box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.15);
+	box-shadow: 0px -10px 12px rgba(0, 0, 0, 0.05);
 	overflow: hidden;
 	padding: 20px;
 	box-sizing: border-box;
@@ -260,6 +442,10 @@
 	color: #d6d6d6;
 	font-size: 13px;
 	margin-top: 15px;
+
+}
+.load_more::after {
+	border: none;
 }
 // 底部tab
 .bottom_tab {
@@ -270,7 +456,7 @@
     padding: 10px;
     width: 100vw;
     box-sizing: border-box;
-    border-top: 1px solid rgb(221, 221, 221);
+    border-top: 1px solid rgba(221, 221, 221, 0);
     height: 60px;
 	button {
 		background: rgb(100, 198, 220);
@@ -293,4 +479,49 @@
 			height: 20px;
 	}
 }
+//评分弹框
+.modal_shadow {
+    position: fixed;
+    z-index: 15;
+    background: rgba(0, 0, 0, 0.2);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter:blur(10px);
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+	pointer-events: all;
+	.modal_box {
+		position: fixed;
+		background: rgb(255, 255, 255);
+		top: 15%;
+		width: 60vw;
+		height: 20vh;
+		margin: 0px auto;
+		left: 50%;
+		transform: translate(-50%, 0%);
+		padding: 20px;
+		box-shadow: 0 0 5px #00000045;
+		border-radius: 20px;
+	}
+}
+//按钮
+	.light_button {
+		color: #fff;
+		background: #65C3D6;
+		box-shadow:0 0 3px #1ed1e1;
+		border: 0px;
+		margin: 20px 0px;
+		border-radius: 15px;
+		
+	}
+	.light_button:active {
+		background: #4e98a9;
+	}
+	
+	.none {
+		display: none;
+	}
+	
+
 </style>

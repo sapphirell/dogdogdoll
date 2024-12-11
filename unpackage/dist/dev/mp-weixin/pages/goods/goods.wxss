@@ -23,13 +23,38 @@
 /* 垂直间距 */
 /* 透明度 */
 /* 文章场景相关 */
-.banner_swiper {
+.banner_swiper.data-v-7e2880f6 {
+  height: 45vh;
+  position: relative;
+}
+.heart.data-v-7e2880f6 {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+}
+.heart image.data-v-7e2880f6 {
+  width: 100%;
+  height: 100%;
+}
+.swiper-item.data-v-7e2880f6 {
   height: 45vh;
 }
-.swiper-item {
-  height: 45vh;
+.swiper-index-box.data-v-7e2880f6 {
+  position: absolute;
+  bottom: 30px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.64);
+  padding: 6px 15px;
+  border-radius: 20px;
 }
-.bottom_tab {
+.swiper-index-box text.data-v-7e2880f6 {
+  font-size: 14px;
+  color: #fff;
+}
+.bottom_tab.data-v-7e2880f6 {
   position: fixed;
   bottom: 0px;
   z-index: 10;
@@ -40,7 +65,7 @@
   border-top: 1px solid #dddddd;
   height: 60px;
 }
-.bottom_tab button {
+.bottom_tab button.data-v-7e2880f6 {
   background: #64c6dc;
   border-radius: 10px;
   width: 90px;
@@ -49,7 +74,7 @@
   right: 20px;
   font-size: 14px;
 }
-.bottom_tab .comment_input {
+.bottom_tab .comment_input.data-v-7e2880f6 {
   display: inline;
   border: 1px solid #dbdbdb;
   width: calc(100vw - 140px);
@@ -58,4 +83,43 @@
   padding: 5px;
   border-radius: 5px;
   height: 20px;
+}
+.uni-page-head.data-v-7e2880f6 {
+  background: #ffffff00 !important;
+}
+.msg_body.data-v-7e2880f6 {
+  border-radius: 30px;
+  overflow: hidden;
+  position: relative;
+  top: -20px;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 0px 10px #ffffff30;
+}
+.msg_body .msg_block.data-v-7e2880f6 {
+  font-size: 17px;
+  color: #4cbbd0;
+  margin: 20px 0px;
+  display: flex;
+  align-items: flex-start;
+}
+.msg_body .msg_block .lable_text.data-v-7e2880f6 {
+  width: 30%;
+  display: inline-block;
+  color: #4cbbd0;
+  font-weight: bold;
+}
+.msg_body .msg_block .msg_text.data-v-7e2880f6 {
+  width: 70%;
+  display: inline-block;
+}
+.load_more.data-v-7e2880f6 {
+  border: none;
+  background: #fff;
+  color: #d6d6d6;
+  font-size: 13px;
+  margin-top: 15px;
+}
+.load_more.data-v-7e2880f6::after {
+  border: none;
 }

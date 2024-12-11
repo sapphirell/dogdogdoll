@@ -1,7 +1,7 @@
 <template>
 	<view class="brand">
 		<view class="brand_info_tab">
-			<navigator @click="jumpBrand">
+			<view @tap="jumpBrand">
 				<image class="index_brand_logo" :src="brand.logo_image" mode="aspectFit"></image>
 				<view class="brand_info">
 					<text class="font-alimamashuhei">{{brand.brand_name}} （{{brand.country_name}} {{brand.type}}）</text>
@@ -9,15 +9,15 @@
 					<text class="font-alimamashuhei tab_text doll_record" >收录娃娃 ({{brand.total_goods}})</text>
 				</view>
 				<div style="clear: both;"></div>
-			</navigator>
+			</view>
 		</view>
 	
 		<view class="dolls">
 			<view class="doll_item" v-for="(doll, index) in brand.goods" :key="doll.id">
-				<navigator @click="jumpGoods(doll.id)" >
+				<view @tap="jumpGoods(doll.id)" >
 					<image class="doll_images" :src="doll.goods_images[0]" mode="aspectFill"></image>
 					<text class=" doll_name">{{doll.name}}</text>
-				</navigator>
+				</view>
 			</view>
 		</view>
 	</view>

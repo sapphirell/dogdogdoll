@@ -74,4 +74,16 @@ text {
 .bt-container {
 	margin: 10px auto;
 }
+/* 文本只显示一行 超出变成省略号 */
+.one_line_text {
+	  white-space: nowrap;       /* 禁止换行 */
+	  overflow: hidden;          /* 隐藏超出内容 */
+	  text-overflow: ellipsis;   /* 显示省略号 */
+}
+/* 高度设置为和宽度一样 */
+.square {
+
+	height: auto;
+	aspect-ratio: 1;
+}
 </style>

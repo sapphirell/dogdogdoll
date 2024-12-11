@@ -24,12 +24,12 @@
 /* 透明度 */
 /* 文章场景相关 */
 .container.data-v-7c2ebfa5 {
-  background: linear-gradient(180deg, #daeeff 0%, white 100%);
+  background: linear-gradient(180deg, #9cb2c4 0%, white 100%);
 }
 .avatar_container .mine_page_avatar.data-v-7c2ebfa5 {
   width: 100%;
   height: auto;
-  box-shadow: 0 0 3px #ddd;
+  box-shadow: 0 0 8px #baebff;
   aspect-ratio: 1;
   margin: 10px auto;
   display: block;
@@ -40,6 +40,7 @@
   background: #fff;
   box-shadow: 0 0 3px #ddd;
   margin: 10px 0px;
+  border-radius: 10px;
 }
 .button_container text.data-v-7c2ebfa5 {
   margin: 20px 0px;
@@ -51,15 +52,24 @@
   margin: 10px 0px;
   position: relative;
   padding-bottom: 10px;
+  text-align: left;
+}
+.button_container .mine_button text.data-v-7c2ebfa5 {
+  margin-left: 55px;
 }
 .button_container .mine_button.data-v-7c2ebfa5::after {
   border: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
-.button_container .mine_button image.data-v-7c2ebfa5 {
+.button_container .mine_button .icon.data-v-7c2ebfa5 {
   position: absolute;
   left: 20px;
   top: 15px;
+}
+.button_container .mine_button .right_bar.data-v-7c2ebfa5 {
+  position: relative;
+  top: 13px;
+  float: right;
 }
 .button_container .button_item.data-v-7c2ebfa5 {
   margin: 20px 0px !important;
@@ -107,4 +117,7 @@
 uni-button.data-v-7c2ebfa5:after {
   border: 0px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.last_button.data-v-7c2ebfa5:after {
+  border-bottom: 0px !important;
 }

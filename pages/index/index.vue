@@ -2,7 +2,7 @@
 	<view class="body">
 		<view class="index_header"  :style="{ paddingTop: statusBarHeight + 'px' }" >
 			<view>
-				<text class="font-alimamashuhei logo">娃圈狗狗助手</text>
+				<text class="font-alimamashuhei logo" style="color: #4cbbd0;">娃圈狗狗助手</text>
 				<common-search class="index_search_box"></common-search>
 				<div style="clear: both;"></div>
 			</view>

@@ -150,7 +150,7 @@
 
 <style lang="less" scoped>
 .container {
-    background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
+    // background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
 }
 
 .scroll-view_H {

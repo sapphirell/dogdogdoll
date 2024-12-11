@@ -1,15 +1,25 @@
 <template>
 	<view style="padding: 15px;">
 		<view v-if="global.userInfo.tel_phone">
-			<text>暂时不支持修改，请联系管理员操作。</text>
+			<input type="text" class="inputer" :value="global.userInfo.tel_phone" disabled=""/>
+			<text style="padding: 10px;font-size: 20px;color: rgb(190 190 190);">已绑定，如需修改请联系管理员操作。</text>
 		</view>
 		<view v-else>
 			<input class="inputer" type="text" placeholder="请输入手机号" v-model="telPhone" />
-			<input class="inputer" type="text" placeholder="请输入验证码" v-model="code" />
+			<view style="position: relative;" >
+				<input class="inputer" type="text" placeholder="请输入验证码" v-model="code" />
+				<button style="position: absolute;right: 0px;width: 110px;font-size: 16px;bottom: 10px;"  @click="sendCode">
+					<text>{{buttonMsg}}</text>
+				</button>
+			</view>
+	
 
 		</view>
-		<button class="light_button" @click="updatePassword">提交</button>
+		<button class="light_button" @click="updateTelPhone" v-if="!global.userInfo.tel_phone">提交</button>
+
 	</view>
+	
+
 </template>
 
 <script setup>
@@ -30,33 +40,18 @@
 	// 关联表单
 	let telPhone = ref("")
 	let code = ref("")
+	let buttonMsg = ref("发送验证码")
 
-	// 修改密码
-	function updatePassword() {
-		if (newPassword.value != newPassword2.value) {
-			uni.showToast({
-				title: '两次密码输入不一致',
-				icon: 'none'
-			})
-			return
-		}
-		if (!global.userInfo.password && !oldPassword.value) {
-			uni.showToast({
-				title: '请输入原密码',
-				icon: 'none'
-			})
-			return
-		}
-		// /with-state/setting-password
+	function updateTelPhone() {
 		uni.request({
-			url: websiteUrl + '/with-state/setting-password',
+			url: websiteUrl + '/with-state/update-profile',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token'),
 			},
 			data: {
-				old_password: oldPassword.value,
-				new_password: newPassword.value
+				tel_phone: telPhone.value,
+				code: code.value
 			},
 			success: (res) => {
 				console.log(res.data)
@@ -65,6 +60,7 @@
 						title: '修改成功',
 						icon: 'success'
 					})
+					getUserInfo();
 				} else {
 					uni.showToast({
 						title: res.data.msg,
@@ -73,7 +69,60 @@
 				}
 			}
 		})
-
+	}
+	
+	// 发送验证码
+	function sendCode() {
+		if (buttonMsg.value != "发送验证码") {
+			uni.showToast({
+				title: '请点击发送验证码',
+				icon: 'none'
+			})
+			return
+		}
+		//检测是否已经填写手机号
+		if (telPhone.value == "" || telPhone.value == "") {
+			uni.showToast({
+				title: '请输入手机号和密码',
+				icon: 'none',
+			});
+			return
+		}
+		//检查手机号规则是否合法
+		if (!(/^1[3456789]\d{9}$/.test(telPhone.value))) {
+			uni.showToast({
+				title: '手机号格式错误',
+				icon: 'none',
+			});
+			return
+		}
+		buttonMsg.value = "发送中"
+		uni.request({
+			url: websiteUrl + '/send-sms-code',
+			method: "POST",
+			header: {
+				'Authorization': uni.getStorageSync('token'),
+			},
+			data: {
+				tel_phone: telPhone.value,
+			},
+			success: (res) => {
+				console.log(res.data)
+				if (res.data.status == "success") {
+					buttonMsg.value = "已发送";
+					uni.showToast({
+						title: '发送成功',
+						icon: 'success'
+					})
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+					buttonMsg.value = "发送验证码"
+				}
+			}
+		})
 	}
 
 

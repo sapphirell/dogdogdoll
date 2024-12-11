@@ -41,20 +41,19 @@ const _sfc_main = {
       }, {
         f: common_vendor.unref(common_config.global).userInfo.tel_phone
       }, common_vendor.unref(common_config.global).userInfo.tel_phone ? {
-        g: common_vendor.t(common_vendor.unref(common_config.global).userInfo.tel_phone),
-        h: common_assets._imports_0$2,
-        i: common_vendor.o(jump2telphone)
+        g: common_assets._imports_0$2,
+        h: common_vendor.o(jump2telphone)
       } : {
-        j: common_assets._imports_0$2,
-        k: common_vendor.o(jump2telphone)
+        i: common_assets._imports_0$2,
+        j: common_vendor.o(jump2telphone)
       }, {
-        l: common_vendor.unref(common_config.global).userInfo.wechat_open_id
+        k: common_vendor.unref(common_config.global).userInfo.wechat_open_id
       }, common_vendor.unref(common_config.global).userInfo.wechat_open_id ? {
-        m: common_assets._imports_0$2,
-        n: common_vendor.o(jump2wechat)
+        l: common_assets._imports_0$2,
+        m: common_vendor.o(jump2wechat)
       } : {
-        o: common_assets._imports_0$2,
-        p: common_vendor.o(jump2wechat)
+        n: common_assets._imports_0$2,
+        o: common_vendor.o(jump2wechat)
       });
     };
   }

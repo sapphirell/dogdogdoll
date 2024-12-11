@@ -9,30 +9,17 @@ const _sfc_main = {
     });
     let telPhone = common_vendor.ref("");
     let code = common_vendor.ref("");
-    function updatePassword() {
-      if (newPassword.value != newPassword2.value) {
-        common_vendor.index.showToast({
-          title: "两次密码输入不一致",
-          icon: "none"
-        });
-        return;
-      }
-      if (!common_config.global.userInfo.password && !oldPassword.value) {
-        common_vendor.index.showToast({
-          title: "请输入原密码",
-          icon: "none"
-        });
-        return;
-      }
+    let buttonMsg = common_vendor.ref("发送验证码");
+    function updateTelPhone() {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/setting-password",
+        url: common_config.websiteUrl + "/with-state/update-profile",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")
         },
         data: {
-          old_password: oldPassword.value,
-          new_password: newPassword.value
+          tel_phone: telPhone.value,
+          code: code.value
         },
         success: (res) => {
           console.log(res.data);
@@ -41,6 +28,7 @@ const _sfc_main = {
               title: "修改成功",
               icon: "success"
             });
+            common_config.getUserInfo();
           } else {
             common_vendor.index.showToast({
               title: res.data.msg,
@@ -50,18 +38,74 @@ const _sfc_main = {
         }
       });
     }
+    function sendCode() {
+      if (buttonMsg.value != "发送验证码") {
+        common_vendor.index.showToast({
+          title: "请点击发送验证码",
+          icon: "none"
+        });
+        return;
+      }
+      if (telPhone.value == "" || telPhone.value == "") {
+        common_vendor.index.showToast({
+          title: "请输入手机号和密码",
+          icon: "none"
+        });
+        return;
+      }
+      if (!/^1[3456789]\d{9}$/.test(telPhone.value)) {
+        common_vendor.index.showToast({
+          title: "手机号格式错误",
+          icon: "none"
+        });
+        return;
+      }
+      buttonMsg.value = "发送中";
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/send-sms-code",
+        method: "POST",
+        header: {
+          "Authorization": common_vendor.index.getStorageSync("token")
+        },
+        data: {
+          tel_phone: telPhone.value
+        },
+        success: (res) => {
+          console.log(res.data);
+          if (res.data.status == "success") {
+            buttonMsg.value = "已发送";
+            common_vendor.index.showToast({
+              title: "发送成功",
+              icon: "success"
+            });
+          } else {
+            common_vendor.index.showToast({
+              title: res.data.msg,
+              icon: "none"
+            });
+            buttonMsg.value = "发送验证码";
+          }
+        }
+      });
+    }
     common_config.getUserInfo();
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.unref(common_config.global).userInfo.tel_phone
-      }, common_vendor.unref(common_config.global).userInfo.tel_phone ? {} : {
-        b: common_vendor.unref(telPhone),
-        c: common_vendor.o(($event) => common_vendor.isRef(telPhone) ? telPhone.value = $event.detail.value : telPhone = $event.detail.value),
-        d: common_vendor.unref(code),
-        e: common_vendor.o(($event) => common_vendor.isRef(code) ? code.value = $event.detail.value : code = $event.detail.value)
+      }, common_vendor.unref(common_config.global).userInfo.tel_phone ? {
+        b: common_vendor.unref(common_config.global).userInfo.tel_phone
+      } : {
+        c: common_vendor.unref(telPhone),
+        d: common_vendor.o(($event) => common_vendor.isRef(telPhone) ? telPhone.value = $event.detail.value : telPhone = $event.detail.value),
+        e: common_vendor.unref(code),
+        f: common_vendor.o(($event) => common_vendor.isRef(code) ? code.value = $event.detail.value : code = $event.detail.value),
+        g: common_vendor.t(common_vendor.unref(buttonMsg)),
+        h: common_vendor.o(sendCode)
       }, {
-        f: common_vendor.o(updatePassword)
-      });
+        i: !common_vendor.unref(common_config.global).userInfo.tel_phone
+      }, !common_vendor.unref(common_config.global).userInfo.tel_phone ? {
+        j: common_vendor.o(updateTelPhone)
+      } : {});
     };
   }
 };

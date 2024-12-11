@@ -197,19 +197,22 @@ const _sfc_main = {
         d: common_vendor.t(common_vendor.unref(common_config.global).userInfo.username),
         e: common_vendor.t(common_vendor.unref(common_config.global).userInfo.id),
         f: common_assets._imports_0$1,
-        g: common_assets._imports_1$1,
-        h: common_vendor.o(jumpSetting),
-        i: common_assets._imports_2,
-        j: common_vendor.o(logout)
+        g: common_assets._imports_0$2,
+        h: common_assets._imports_2,
+        i: common_assets._imports_0$2,
+        j: common_vendor.o(jumpSetting),
+        k: common_assets._imports_3,
+        l: common_assets._imports_0$2,
+        m: common_vendor.o(logout)
       } : {
-        k: common_vendor.unref(inputPhone),
-        l: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
-        m: common_vendor.unref(inputPassword),
-        n: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
-        o: common_vendor.o(login),
-        p: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
+        n: common_vendor.unref(inputPhone),
+        o: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
+        p: common_vendor.unref(inputPassword),
+        q: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
+        r: common_vendor.o(login),
+        s: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
       }, {
-        q: statusBarHeight.value + "px"
+        t: statusBarHeight.value + "px"
       });
     };
   }

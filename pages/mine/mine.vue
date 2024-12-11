@@ -11,9 +11,9 @@
 						</image>
 					</view>
 					<view style="display: inline-block;float: left;width: calc(70vw - 40px);padding: 10px;">
-						<text style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;margin:15px 0px;">{{global.userInfo.username}}</text>
+						<text class="font-alimamashuhei" style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;margin:10px 0px 20px 0px;font-weight: bold;color: #fff;font-size: 22px;">{{global.userInfo.username}}</text>
 						<text style="display: block;">
-							<text class="font-alimamashuhei">ID</text> : {{global.userInfo.id}}
+							<text class="font-alimamashuhei" style="font-size: 18px;">ID</text> : {{global.userInfo.id}}
 						</text>
 					</view>
 					<view style="clear: both;"></view>
@@ -37,18 +37,23 @@
 			</view>
 
 			<view class="button_container">
-				<text>常用工具</text>
+				<!-- <text>常用工具</text> -->
 				<button class="mine_button">
-					<image src="../../static/mypost.png" style="width: 18px; height: 18px;"></image>
+					<image class="icon" src="../../static/mypost.png" style="width: 18px; height: 18px;"></image>
 					<text>我的帖子</text>
+					<image class="right_bar" src="../../static/right.png" style="width: 18px; height: 18px;"></image>
 				</button>
 				<button class="mine_button" @click="jumpSetting">
-					<image src="../../static/setting.png" style="width: 18px; height: 18px;"></image>
+					<image class="icon"  src="../../static/setting.png" style="width: 18px; height: 18px;"></image>
 					<text>账号设置</text>
+					<image class="right_bar" src="../../static/right.png" style="width: 18px; height: 18px;"></image>
+					
 				</button>
-				<button class="mine_button" @click="logout">
-					<image src="../../static/logout.png" style="width: 18px; height: 18px;"></image>
+				<button class="mine_button last_button" @click="logout">
+					<image class="icon"  src="../../static/logout.png" style="width: 18px; height: 18px;"></image>
 					<text>退出账号</text>
+					<image class="right_bar" src="../../static/right.png" style="width: 18px; height: 18px;"></image>
+					
 				</button>
 				
 			</view>
@@ -104,15 +109,6 @@
 	
 	console.log(global.isLogin)
 	console.log(global.userInfo)
-	// //获取登录信息
-	// let userInfo = ref({})
-	// console.log(userInfo)
-	// console.log(config.websiteUrl)
-	// //判断是否登录
-	// let isLogin = ref(false)
-	// if (userInfo) {
-	// 	isLogin.value = true
-	// }
 
 	//状态栏高度
 	const systemInfo = uni.getSystemInfoSync();
@@ -122,28 +118,7 @@
 	let inputPhone = ref("")
 	let inputPassword = ref("")
 
-	//跳转微信登录
-	function wechatLogin() {
-		var weixinOauth = null;
-		plus.oauth.getServices(function(services) {
-			for (var i in services) {
-				var service = services[i];
-				// 获取微信登录对象
-				if (service.id == 'weixin') {
-					weixinOauth = service;
-					break;
-				}
-			}
-			weixinOauth.login(function(oauth) {
-				// 授权成功，weixinOauth.authResult 中保存授权信息
-			}, function(err) {
-				// 登录授权失败
-				// err.code是错误码
-			})
-		}, function(err) {
-			// 获取 services 失败
-		})
-	}
+
 	//选择图片
 	function chooseImage() {
 		return new Promise(resolve => {
@@ -360,7 +335,8 @@
 
 <style lang="scss" scoped>
 	.container {
-		background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
+		// background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
+		background: linear-gradient(180deg, #9cb2c4 0%, white 100%);
 	}
 	.avatar_container {
 		// align-items: center;
@@ -372,7 +348,7 @@
 			// 头像
 			width: 100%;
 			height: auto;
-			box-shadow: 0 0 3px #ddd;
+			box-shadow: 0 0 8px #baebff;
 			aspect-ratio: 1;
 			margin: 10px auto;
 			display: block;
@@ -385,7 +361,7 @@
 		background: #fff;
 		box-shadow: 0 0 3px #ddd;
 		margin: 10px 0px;
-		
+		border-radius: 10px;
 		text {
 			margin: 20px 0px;
 			font-weight: 900;
@@ -396,16 +372,25 @@
 			margin: 10px 0px;
 			position: relative;
 			padding-bottom: 10px;
+			text-align: left;
+			text {
+				margin-left: 55px;
+			}
 			
 			&::after{
 				border: none;
 				border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 			}
 			
-			image {
+			.icon {
 				position: absolute;
 				left: 20px;
 				top: 15px;
+			}
+			.right_bar {
+				position: relative;
+				top: 13px;
+				float: right;
 			}
 		}
 		.button_item {
@@ -465,6 +450,9 @@
 	uni-button:after {
 		border:0px;
 		border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+	}
+	.last_button:after {
+		border-bottom: 0px!important;
 	}
 
 </style>

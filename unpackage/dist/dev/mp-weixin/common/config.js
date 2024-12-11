@@ -24,8 +24,8 @@ function wechatSignLogin() {
         data: { js_token: code },
         success: (res) => {
           const data = res.data.data;
-          console.log(data.data.status);
-          if (data.data.status != "success") {
+          console.log(data);
+          if (res.data.status != "success") {
             common_vendor.index.showToast({ title: data.msg, icon: "none" });
             return;
           }
