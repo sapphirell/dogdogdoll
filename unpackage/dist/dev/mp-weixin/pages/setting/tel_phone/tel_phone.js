@@ -22,7 +22,7 @@ const _sfc_main = {
           code: code.value
         },
         success: (res) => {
-          console.log(res.data);
+          common_vendor.index.__f__("log", "at pages/setting/tel_phone/tel_phone.vue:57", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "修改成功",
@@ -71,7 +71,7 @@ const _sfc_main = {
           tel_phone: telPhone.value
         },
         success: (res) => {
-          console.log(res.data);
+          common_vendor.index.__f__("log", "at pages/setting/tel_phone/tel_phone.vue:110", res.data);
           if (res.data.status == "success") {
             buttonMsg.value = "已发送";
             common_vendor.index.showToast({
@@ -111,3 +111,4 @@ const _sfc_main = {
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-25dd367f"]]);
 wx.createPage(MiniProgramPage);
+//# sourceMappingURL=../../../../.sourcemap/mp-weixin/pages/setting/tel_phone/tel_phone.js.map

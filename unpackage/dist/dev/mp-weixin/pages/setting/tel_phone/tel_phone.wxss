@@ -1,3 +1,6 @@
+text.data-v-25dd367f {
+  font-size: 26rpx;
+}
 .light_button.data-v-25dd367f {
   color: #fff;
   background: #65C3D6;
@@ -10,7 +13,7 @@
   background: #4e98a9;
 }
 .inputer.data-v-25dd367f {
-  font-size: 20px;
+  font-size: 28rpx;
   border-bottom: 1px #ddd solid;
   padding: 10px;
   margin: 40px 0px;

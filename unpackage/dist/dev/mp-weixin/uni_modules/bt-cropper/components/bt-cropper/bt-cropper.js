@@ -479,7 +479,7 @@ const _sfc_main = {
             resolve(tempFilePath);
           },
           fail(err) {
-            console.log("保存失败，错误信息：", err);
+            common_vendor.index.__f__("log", "at uni_modules/bt-cropper/components/bt-cropper/bt-cropper.vue:593", "保存失败，错误信息：", err);
             reject(err);
           }
         }, this);
@@ -520,3 +520,4 @@ if (typeof block0 === "function")
   block0(_sfc_main);
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-51ff46c2"]]);
 wx.createComponent(Component);
+//# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/bt-cropper/components/bt-cropper/bt-cropper.js.map

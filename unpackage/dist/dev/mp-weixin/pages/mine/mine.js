@@ -2,13 +2,19 @@
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
+  _easycom_common_page2();
+}
+const _easycom_common_page = () => "../../components/common-page/common-page.js";
+if (!Math) {
+  _easycom_common_page();
+}
 const _sfc_main = {
   __name: "mine",
   setup(__props) {
-    console.log(common_config.global.isLogin);
-    console.log(common_config.global.userInfo);
-    const systemInfo = common_vendor.index.getSystemInfoSync();
-    const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:93", common_config.global.isLogin);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:94", common_config.global.userInfo);
     let inputPhone = common_vendor.ref("");
     let inputPassword = common_vendor.ref("");
     function chooseImage() {
@@ -26,6 +32,8 @@ const _sfc_main = {
       common_vendor.index.removeStorageSync("userInfo");
       common_config.global.isLogin = false;
     }
+    function jump2register() {
+    }
     function jumpToCroper() {
       chooseImage().then((src) => {
         common_vendor.index.navigateTo({
@@ -34,7 +42,7 @@ const _sfc_main = {
       });
     }
     function selectAvatar(croperPath) {
-      console.log("croperPath:" + croperPath);
+      common_vendor.index.__f__("log", "at pages/mine/mine.vue:136", "croperPath:" + croperPath);
       let token = common_vendor.index.getStorageSync("token");
       let qnToken = "";
       common_vendor.index.request(
@@ -53,11 +61,11 @@ const _sfc_main = {
               return;
             }
             qnToken = res.data.data.token;
-            console.log("获取到的七牛token：" + res.data.data.token);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:156", "获取到的七牛token：" + res.data.data.token);
             let userInfo = common_vendor.index.getStorageSync("userInfo");
-            console.log(userInfo);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:158", userInfo);
             let fileName = res.data.data.path;
-            console.log("fileName:" + fileName);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:161", "fileName:" + fileName);
             common_vendor.index.uploadFile({
               url: "https://up-cn-east-2.qiniup.com",
               name: "file",
@@ -72,10 +80,11 @@ const _sfc_main = {
                 scope: "hobby-box:" + fileName
               },
               success: (res2) => {
-                console.log("上传成功");
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:176", "上传成功");
                 updateUserInfo("avatar", "https://images1.fantuanpu.com/" + fileName);
               },
               fail: (res2) => {
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:183", res2);
                 common_vendor.index.showToast({
                   title: "上传失败",
                   icon: "none"
@@ -106,7 +115,7 @@ const _sfc_main = {
           "avatar": value
         },
         success: (res) => {
-          console.log("更新成功");
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:216", "更新成功");
           common_config.getUserInfo();
         },
         fail: (res) => {
@@ -149,7 +158,7 @@ const _sfc_main = {
           password
         },
         success: (res) => {
-          console.log(res);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:268", res);
           let data = res.data.data;
           let status = res.data.status;
           if (status != "success") {
@@ -162,7 +171,7 @@ const _sfc_main = {
           common_vendor.index.setStorageSync("token", data.jwt_token);
           common_vendor.index.setStorageSync("openid", data.open_id);
           common_vendor.index.setStorageSync("session_key", data.session_key);
-          console.log("jwt:" + data.jwt_token);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:283", "jwt:" + data.jwt_token);
           if (data.jwt_token != null && data.jwt_token != "") {
             common_config.getUserInfo();
           }
@@ -180,8 +189,8 @@ const _sfc_main = {
         url: "/pages/setting/setting"
       });
     }
-    common_config.getUserInfo();
     common_vendor.onShow(() => {
+      common_config.getUserInfo();
       const pages = getCurrentPages();
       const currentPage = pages[pages.length - 1];
       if (currentPage.returnParam) {
@@ -196,26 +205,31 @@ const _sfc_main = {
         c: common_vendor.o(jumpToCroper),
         d: common_vendor.t(common_vendor.unref(common_config.global).userInfo.username),
         e: common_vendor.t(common_vendor.unref(common_config.global).userInfo.id),
-        f: common_assets._imports_0$1,
-        g: common_assets._imports_0$2,
-        h: common_assets._imports_2,
-        i: common_assets._imports_0$2,
+        f: common_assets._imports_0$2,
+        g: common_assets._imports_0$3,
+        h: common_assets._imports_2$1,
+        i: common_assets._imports_0$3,
         j: common_vendor.o(jumpSetting),
-        k: common_assets._imports_3,
-        l: common_assets._imports_0$2,
+        k: common_assets._imports_3$1,
+        l: common_assets._imports_0$3,
         m: common_vendor.o(logout)
       } : {
         n: common_vendor.unref(inputPhone),
         o: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
         p: common_vendor.unref(inputPassword),
         q: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
-        r: common_vendor.o(login),
-        s: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
+        r: common_vendor.o(jump2register),
+        s: common_vendor.o((...args) => _ctx.jump2forgetPassword && _ctx.jump2forgetPassword(...args)),
+        t: common_vendor.o(login),
+        v: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
       }, {
-        t: statusBarHeight.value + "px"
+        w: common_vendor.p({
+          head_color: "#e0f3ff"
+        })
       });
     };
   }
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-7c2ebfa5"]]);
 wx.createPage(MiniProgramPage);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/mine/mine.js.map

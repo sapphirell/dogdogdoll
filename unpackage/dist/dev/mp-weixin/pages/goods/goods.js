@@ -7,11 +7,36 @@ const _sfc_main = {
   props: ["goods_id"],
   setup(__props) {
     const props = __props;
+    const systemInfo = common_vendor.index.getSystemInfoSync();
+    const keyboardHeight = common_vendor.ref(0);
+    common_vendor.onShow(() => {
+      {
+        return;
+      }
+    });
+    common_vendor.onHide(() => {
+      {
+        return;
+      }
+    });
+    const footerBottomHeight = common_vendor.computed(() => {
+      var _a;
+      let safeBottom = ((_a = systemInfo.safeAreaInsets) == null ? void 0 : _a.bottom) || 10;
+      if (keyboardHeight.value > 0) {
+        safeBottom += keyboardHeight.value;
+      }
+      let bottom = `${safeBottom}px`;
+      common_vendor.index.__f__("log", "at pages/goods/goods.vue:237", "footer:" + bottom);
+      return bottom;
+    });
     let goods = common_vendor.ref({});
     let comments = common_vendor.ref({});
     let commentsPage = common_vendor.ref(1);
     let swiperIndex = common_vendor.ref(1);
     let myComment = common_vendor.ref("");
+    let hasLike = common_vendor.ref(false);
+    let collocationList = common_vendor.ref(false);
+    let replyForItem = common_vendor.ref({});
     common_vendor.index.showLoading({
       title: "加载中"
     });
@@ -21,7 +46,7 @@ const _sfc_main = {
       });
     }
     function onChange(e) {
-      console.log(e.detail.current);
+      common_vendor.index.__f__("log", "at pages/goods/goods.vue:267", e.detail.current);
       swiperIndex.value = e.detail.current + 1;
     }
     function getGoods() {
@@ -30,11 +55,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          console.log(res.data.data);
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:277", res.data.data);
           goods.value = res.data.data;
         },
         fail: (err) => {
-          console.log(err);
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:281", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -44,6 +69,14 @@ const _sfc_main = {
           common_vendor.index.hideLoading();
         }
       });
+    }
+    function formatNumber(num) {
+      if (num < 1e3) {
+        return num.toString();
+      } else {
+        const kValue = Math.floor(num / 1e3);
+        return `${kValue}k+`;
+      }
     }
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp * 1e3);
@@ -55,16 +88,25 @@ const _sfc_main = {
       date.getSeconds().toString().padStart(2, "0");
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
+    function replyFor(item) {
+      if (replyForItem.value.id == item.id) {
+        replyForItem.value = {};
+        return;
+      }
+      replyForItem.value = item;
+    }
     function getBrandComments() {
       common_vendor.index.request({
         url: common_config.websiteUrl + "/goods-comment?goods_id=" + props.goods_id + "&page=" + commentsPage.value,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          console.log(res.data.data);
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:331", res.data.data);
           comments.value.page_index = res.data.data.page_index;
           comments.value.total = res.data.data.total;
-          comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comment_list) : res.data.data.comment_list;
+          comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(
+            res.data.data.comment_list
+          ) : res.data.data.comment_list;
           if (res.data.data.comment_list != null) {
             if (res.data.data.comment_list.length > 0) {
               commentsPage.value += 1;
@@ -78,7 +120,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          console.log(err);
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:352", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -107,7 +149,12 @@ const _sfc_main = {
         target_id: parseInt(props.goods_id),
         type: 2
       };
-      console.log(requestData);
+      if (replyForItem.value.id) {
+        requestData.reply_id = replyForItem.value.id;
+        requestData.reply_for = replyForItem.value.comment;
+        requestData.reply_user_id = replyForItem.value.user_id;
+      }
+      common_vendor.index.__f__("log", "at pages/goods/goods.vue:389", requestData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -116,7 +163,7 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          console.log(res.data);
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:398", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "评论成功",
@@ -136,7 +183,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          console.log(err);
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:420", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -144,36 +191,186 @@ const _sfc_main = {
         }
       });
     }
+    function likeFn() {
+      let token = common_vendor.index.getStorageSync("token");
+      if (!common_config.global.isLogin) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
+      let requestData = {
+        id: parseInt(props.goods_id),
+        type: 1
+      };
+      let url = hasLike.value ? "/with-state/unlike" : "/with-state/add-like";
+      common_vendor.index.request({
+        url: common_config.websiteUrl + url,
+        method: "POST",
+        header: {
+          "Authorization": token
+        },
+        data: requestData,
+        success: (res) => {
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:452", res.data);
+          if (res.data.status == "success") {
+            common_vendor.index.showToast({
+              title: "操作成功",
+              icon: "success"
+            });
+            hasLike.value = !hasLike.value;
+            getHasLike();
+            getGoods();
+            return;
+          } else {
+            common_vendor.index.showToast({
+              title: res.data.msg,
+              icon: "none"
+            });
+            return;
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:471", err);
+          common_vendor.index.showToast({
+            title: "网络请求失败",
+            icon: "none"
+          });
+        }
+      });
+    }
+    function getHasLike() {
+      let token = common_vendor.index.getStorageSync("token");
+      if (token == "") {
+        return;
+      }
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/with-state/hasLike?id=" + props.goods_id + "&type=1",
+        method: "POST",
+        header: {
+          "Authorization": token
+        },
+        success: (res) => {
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:493", res.data);
+          if (res.data.status == "success") {
+            if (res.data.data.id > 0) {
+              hasLike.value = true;
+            } else {
+              hasLike.value = false;
+            }
+          } else {
+            common_vendor.index.showToast({
+              title: res.data.msg,
+              icon: "none"
+            });
+            return;
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:511", err);
+          common_vendor.index.showToast({
+            title: "网络请求失败",
+            icon: "none"
+          });
+        }
+      });
+    }
+    function jump2collocation() {
+      common_vendor.index.navigateTo({
+        url: "/pages/collocation/collocation?goods_id=" + props.goods_id + "&brand_id=" + goods.value.brand_id + "&goods_name=" + goods.value.name + "&brand_name=" + goods.value.brand_name + "&type=" + goods.value.type
+      });
+    }
+    function jump2collectionDetail(collocation_id) {
+      common_vendor.index.navigateTo({
+        url: "/pages/collocation_share/collocation_share?collocation_id=" + collocation_id
+      });
+    }
+    function getCollocation() {
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/goods-collocation?goods_id=" + props.goods_id,
+        method: "GET",
+        timeout: 5e3,
+        success: (res) => {
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:542", res.data.data);
+          collocationList.value = res.data.data;
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("log", "at pages/goods/goods.vue:546", err);
+          common_vendor.index.showToast({
+            title: "网络请求失败",
+            icon: "none"
+          });
+        }
+      });
+    }
+    function getImageForList(urlList) {
+      if (!urlList) {
+        return "";
+      }
+      let urls = urlList.split(",");
+      return urls[0].trim();
+    }
+    function viewFullImage(index) {
+      common_vendor.index.previewImage({
+        current: goods.value.goods_images["index"],
+        urls: goods.value.goods_images
+      });
+    }
+    function jump2user(uid) {
+      common_vendor.index.navigateTo({
+        url: "/pages/user_page/user_page?uid=" + uid
+      });
+    }
     getGoods();
     getBrandComments();
-    common_config.getUserInfo();
+    getCollocation();
+    common_config.asyncGetUserInfo().then((userInfo) => {
+      common_vendor.index.__f__("log", "at pages/goods/goods.vue:586", userInfo);
+      getHasLike();
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.unref(goods).name
       }, common_vendor.unref(goods).name ? common_vendor.e({
-        b: common_assets._imports_0$3,
-        c: common_vendor.f(common_vendor.unref(goods).goods_images, (item, key, i0) => {
+        b: !common_vendor.unref(hasLike)
+      }, !common_vendor.unref(hasLike) ? {
+        c: common_assets._imports_0$4
+      } : {
+        d: common_assets._imports_1$2
+      }, {
+        e: common_vendor.t(formatNumber(common_vendor.unref(goods).goods_like_count)),
+        f: common_vendor.o(($event) => likeFn()),
+        g: common_vendor.f(common_vendor.unref(goods).goods_images, (item, key, i0) => {
           return {
             a: item,
-            b: key
+            b: common_vendor.o(($event) => viewFullImage(), key),
+            c: key
           };
         }),
-        d: common_vendor.o(onChange),
-        e: common_vendor.t(common_vendor.unref(swiperIndex)),
-        f: common_vendor.t(common_vendor.unref(goods).goods_images.length),
-        g: common_vendor.t(common_vendor.unref(goods).name),
-        h: common_vendor.t(common_vendor.unref(goods).type),
-        i: common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0
-      }, common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0 ? {
-        j: common_vendor.t(common_vendor.unref(goods).goods_sales[0].sub_amount + common_vendor.unref(goods).goods_sales[0].fin_amount),
-        k: common_vendor.t(common_vendor.unref(goods).goods_sales[0].currency)
+        h: common_vendor.o(onChange),
+        i: common_vendor.t(common_vendor.unref(swiperIndex)),
+        j: common_vendor.t(common_vendor.unref(goods).goods_images.length),
+        k: common_vendor.t(common_vendor.unref(goods).name),
+        l: common_vendor.t(common_vendor.unref(goods).type),
+        m: common_vendor.unref(goods).total_amount
+      }, common_vendor.unref(goods).total_amount ? {
+        n: common_vendor.t(common_vendor.unref(goods).total_amount + " " + common_vendor.unref(goods).currency)
+      } : common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0 ? {
+        p: common_vendor.t(common_vendor.unref(goods).goods_sales[0].sub_amount + common_vendor.unref(goods).goods_sales[0].fin_amount),
+        q: common_vendor.t(common_vendor.unref(goods).goods_sales[0].currency)
       } : {}, {
-        l: common_vendor.t(common_vendor.unref(goods).size),
-        m: common_vendor.t(common_vendor.unref(goods).size_detail),
-        n: common_vendor.t(common_vendor.unref(goods).skin),
-        o: common_vendor.unref(goods).goods_sales == null
+        o: common_vendor.unref(goods).goods_sales && common_vendor.unref(goods).goods_sales.length > 0,
+        r: common_vendor.t(common_vendor.unref(goods).size),
+        s: common_vendor.t(common_vendor.unref(goods).size_detail),
+        t: common_vendor.unref(goods).type === "单体" || common_vendor.unref(goods).type === "整体"
+      }, common_vendor.unref(goods).type === "单体" || common_vendor.unref(goods).type === "整体" ? {
+        v: common_vendor.t(common_vendor.unref(goods).body_size)
+      } : {}, {
+        w: common_vendor.t(common_vendor.unref(goods).skin),
+        x: common_vendor.unref(goods).goods_sales == null
       }, common_vendor.unref(goods).goods_sales == null ? {} : {}, {
-        p: common_vendor.f(common_vendor.unref(goods).goods_sales, (sale, k0, i0) => {
+        y: common_vendor.f(common_vendor.unref(goods).goods_sales, (sale, k0, i0) => {
           return {
             a: common_vendor.t(formatTimestamp(sale.sub_time)),
             b: common_vendor.t(sale.sale_type),
@@ -182,29 +379,62 @@ const _sfc_main = {
             e: sale.id
           };
         }),
-        q: common_vendor.t(common_vendor.unref(goods).brand_name),
-        r: common_vendor.o(($event) => jumpBrand(common_vendor.unref(goods).brand_id)),
-        s: common_vendor.t(common_vendor.unref(comments).total),
-        t: common_vendor.unref(comments).comment_list
+        z: common_vendor.t(common_vendor.unref(goods).brand_name),
+        A: common_vendor.o(($event) => jumpBrand(common_vendor.unref(goods).brand_id)),
+        B: common_assets._imports_2$2,
+        C: common_vendor.unref(collocationList) && common_vendor.unref(collocationList).collocation_relation_list.length > 0
+      }, common_vendor.unref(collocationList) && common_vendor.unref(collocationList).collocation_relation_list.length > 0 ? {
+        D: common_vendor.f(common_vendor.unref(collocationList).collocation_relation_list, (collocation, k0, i0) => {
+          return {
+            a: getImageForList(collocation.image_urls),
+            b: collocation.collocation_id,
+            c: common_vendor.o(($event) => jump2collectionDetail(collocation.collocation_id), collocation.collocation_id)
+          };
+        })
+      } : {}, {
+        E: common_assets._imports_3$2,
+        F: common_vendor.o(jump2collocation),
+        G: common_vendor.t(common_vendor.unref(comments).total || 0),
+        H: common_vendor.unref(comments).comment_list
       }, common_vendor.unref(comments).comment_list ? {
-        v: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
+        I: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
           return {
             a: item.avatar,
             b: common_vendor.t(item.username),
-            c: common_vendor.t(item.comment),
-            d: common_vendor.t(formatTimestamp(item.created_at)),
-            e: common_vendor.t(item.floor),
-            f: item.id
+            c: common_vendor.o(($event) => jump2user(item.uid), item.id),
+            d: common_vendor.t(item.comment),
+            e: common_vendor.t(formatTimestamp(item.created_at)),
+            f: common_vendor.t(item.floor),
+            g: common_vendor.s(common_vendor.unref(replyForItem).id === item.id ? {
+              color: "#fd6669"
+            } : {
+              color: "#888"
+            }),
+            h: common_vendor.o(($event) => replyFor(item), item.id),
+            i: item.id
           };
         }),
-        w: common_vendor.o(getBrandComments)
+        J: common_vendor.s({
+          fontSize: "12px",
+          position: "absolute",
+          bottom: "3px",
+          right: "15px",
+          fontWeight: "1000"
+        }),
+        K: common_vendor.o(getBrandComments)
       } : {}, {
-        x: common_vendor.unref(myComment),
-        y: common_vendor.o(($event) => common_vendor.isRef(myComment) ? myComment.value = $event.detail.value : myComment = $event.detail.value),
-        z: common_vendor.o(addComments)
+        L: common_vendor.unref(replyForItem).id
+      }, common_vendor.unref(replyForItem).id ? {
+        M: common_vendor.t("@" + common_vendor.unref(replyForItem).username)
+      } : {}, {
+        N: common_vendor.unref(myComment),
+        O: common_vendor.o(($event) => common_vendor.isRef(myComment) ? myComment.value = $event.detail.value : myComment = $event.detail.value),
+        P: common_vendor.o(addComments),
+        Q: footerBottomHeight.value
       }) : {});
     };
   }
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-7e2880f6"]]);
 wx.createPage(MiniProgramPage);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/goods/goods.js.map

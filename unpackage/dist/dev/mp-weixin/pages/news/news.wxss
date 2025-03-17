@@ -1,5 +1,44 @@
-.container.data-v-24bc9d41 {
-  background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
+.goods_renew_header_content.data-v-24bc9d41 {
+  background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
+  overflow: hidden;
+}
+.goods_renew_header_content .choose_tab.data-v-24bc9d41 {
+  display: block;
+  white-space: nowrap;
+  height: 150rpx;
+}
+.goods_renew_header_content .choose_tab text.data-v-24bc9d41 {
+  transition: all 0.3s ease;
+  font-size: 32rpx;
+  display: inline-block;
+  margin: 10rpx 20rpx;
+  padding: 10rpx 0rpx;
+  font-weight: 1000;
+  width: 100rpx;
+  height: 85rpx;
+  text-align: center;
+  line-height: 85rpx;
+  /* 垂直居中 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.goods_renew_header_content .choose_tab text.active.data-v-24bc9d41 {
+  font-size: 40rpx !important;
+  font-weight: bold;
+  color: #7dc3d3;
+  position: relative;
+}
+.goods_renew_header_content .choose_tab text.active.data-v-24bc9d41::after {
+  content: '';
+  position: absolute;
+  bottom: 10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 6rpx;
+  background: #7dc3d3;
+  border-radius: 3rpx;
 }
 .scroll-view_H.data-v-24bc9d41 {
   white-space: nowrap;
@@ -17,4 +56,13 @@
 .line-height.data-v-24bc9d41 {
   margin: 9px 0px 9px 0px;
   display: block;
+}
+.content-box.data-v-24bc9d41 {
+  border-radius: 30px;
+  overflow: hidden;
+  position: relative;
+  top: -20px;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 0px 10px #ffffff30;
 }

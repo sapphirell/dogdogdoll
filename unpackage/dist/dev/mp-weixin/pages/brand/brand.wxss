@@ -22,11 +22,12 @@
   /* 设置元素之间的间距 */
 }
 .brand_goods .brand_goods_item.data-v-1a297a1d {
-  flex: 1 1 calc(33.33% - 16px);
+  flex: 1 1 calc(33.33% - 12px);
   /* 固定每个元素宽度为 33.33% */
-  max-width: calc(33.33% - 16px);
+  width: calc(33.33% - 12px);
   /* 设置最大宽度 */
-  height: 110px;
+  max-width: calc(33.33% - 12px);
+  height: 140px;
   /* 示例高度，可根据需求调整 */
   aspect-ratio: 1;
   color: white;
@@ -58,34 +59,51 @@
   border: none;
 }
 .bottom_tab.data-v-1a297a1d {
+  /* 垂直居中 */
+  gap: 8px;
+  /* 元素间距 */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 10px;
   position: fixed;
   bottom: 0px;
-  z-index: 10;
-  background: #ffffffeb;
-  padding: 10px;
+  z-index: 100;
   width: 100vw;
-  box-sizing: border-box;
-  border-top: 1px solid rgba(221, 221, 221, 0);
-  height: 60px;
+  background: #fff;
+  left: 0px;
+}
+.bottom_tab .replyInfo.data-v-1a297a1d {
+  /* 禁止缩小 */
+  /* 最大宽度限制 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 50px;
+  margin-right: 8px;
+}
+.bottom_tab .comment_input.data-v-1a297a1d {
+  /* 占据剩余空间 */
+  min-width: 0;
+  /* 允许缩小 */
+  flex: 1;
+  margin-right: 8px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  min-height: 30px;
+  padding: 8px;
 }
 .bottom_tab button.data-v-1a297a1d {
+  flex-shrink: 0;
+  /* 固定宽度 */
+  /* 按钮固定宽度 */
   background: #64c6dc;
   border-radius: 10px;
   width: 90px;
   color: #ffffff;
-  position: absolute;
-  right: 20px;
   font-size: 14px;
-}
-.bottom_tab .comment_input.data-v-1a297a1d {
-  display: inline;
-  border: 1px solid rgb(219 219 219);
-  width: calc(100vw - 140px);
-  position: absolute;
-  bottom: 14px;
-  padding: 5px;
-  border-radius: 5px;
-  height: 20px;
 }
 .modal_shadow.data-v-1a297a1d {
   position: fixed;
@@ -97,6 +115,7 @@
   height: 100vh;
   top: 0;
   left: 0;
+  pointer-events: all;
 }
 .modal_shadow .modal_box.data-v-1a297a1d {
   position: fixed;
@@ -121,4 +140,7 @@
 }
 .light_button.data-v-1a297a1d:active {
   background: #4e98a9;
+}
+.none.data-v-1a297a1d {
+  display: none;
 }

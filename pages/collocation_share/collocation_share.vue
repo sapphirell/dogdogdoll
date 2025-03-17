@@ -1,0 +1,853 @@
+<template>
+	<common-page>
+		<!-- 图片轮播区域 -->
+		<view style="position: relative;">
+			<view class="heart" @click="likeFn()">
+				<image src="../../static/heart-w.png" v-if="!hasLike"></image>
+				<image src="../../static/heart2.png" v-else></image>
+				<text>{{ formatNumber(detailData.like_count) }}</text>
+			</view>
+			<swiper class="swiper-box" :indicator-dots="true" :autoplay="false">
+				<swiper-item v-for="(img, index) in detailData.image_url_list" :key="index">
+					<image :src="img" mode="aspectFill" class="swiper-image" @tap="viewFullImage(index)" />
+				</swiper-item>
+			</swiper>
+
+		</view>
+		<!-- 新增作者信息区域 -->
+		<view class="author-info" @click="navigateToUser(detailData.uid)">
+			<image class="avatar" :src="authorInfo.avatar" mode="aspectFill" />
+			<text class="username">{{ authorInfo.user_name || '未知用户' }}</text>
+		</view>
+
+		<!-- 图文信息区域 -->
+		<view class="content-box">
+			<text class="title">{{ detailData.title }}</text>
+			<text class="content">{{ detailData.content }}</text>
+		</view>
+
+		<!-- 关联商品列表 -->
+		<view class="goods-list">
+			<view v-for="item in detailData.collocation_relation_list" :key="item.id" class="goods-item"
+				@click="item.relation_goods_id > 0 ? navigateToGoods(item.relation_goods_id) : null">
+				<!-- 商品图片 -->
+				<view class="image-container">
+					<template v-if="item.relation_goods_id === 0">
+						<view class="placeholder-box">
+							<text style="color: #fff;font-size: 45px;">?</text>
+						</view>
+					</template>
+					<template v-else>
+						<image v-if="item.imageLoaded"
+							:src="item.goodsInfo?.goods_images?.[0] || '/static/goods-default.png'" mode="aspectFill"
+							class="goods-image" />
+						<view v-else-if="item.imageError" class="error-box">
+							<text>图片加载失败</text>
+						</view>
+						<view v-else class="loading-box">
+							<text>加载中...</text>
+						</view>
+					</template>
+				</view>
+
+				<view class="goods-info">
+					<text class="brand">{{ item.relation_brand_name }}</text>
+					<text class="category">{{ item.type }}</text>
+					<text class="name">{{ item.relation_goods_name }}</text>
+				</view>
+			</view>
+		</view>
+
+		<!-- 讨论 -->
+		<view style="padding: 10px;">
+			<text
+				style="color: rgb(100, 198, 220);font-weight: bold; isplay: block;margin: 30px 5px;display: block;">评论区
+				({{comments.total || 0}})</text>
+			<view>
+				<view v-if="comments.comment_list">
+					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id"
+						style="margin-bottom: 20px;">
+						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;">
+							<image style="width: 50px;height: 50px;border-radius: 100%;display: block;margin: 10px;"
+								:src="item.avatar" mode="aspectFill"></image>
+							<text
+								style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; ">{{item.username}}</text>
+						</view>
+
+						<view
+							style="float: left;padding: 15px 15px 30px 15px;background: rgb(245 245 245);width: calc(100vw - 170px);min-height: 60px;border-radius: 15px;position: relative;top:2px;">
+							<!-- <text class="floor" style="position: absolute;top: -12px;right: 10px;color: #888;font-size: 20px;">#{{item.floor}}</text> -->
+							<text
+								style="width: 100%; white-space: normal;word-break: break-all;">{{item.comment}}</text>
+
+							<!-- 格式化时间戳created_at为日期 -->
+							<text
+								style="color: #888;font-size: 12px;position: absolute;bottom: 3px;left: 15px;">{{formatTimestamp(item.created_at)}}
+								floor#{{item.floor}}</text>
+							<!-- 引用此回复 -->
+							<text :style="[
+								{ fontSize: '12px', position: 'absolute', bottom: '3px', right: '15px' ,fontWeight: '1000'},
+								replyForItem.id === item.id ? { color: '#fd6669' } : { color: '#888' }
+							  ]" @tap="replyFor(item)">
+								引用此回复
+							</text>
+						</view>
+						<view style="clear: both;"></view>
+					</view>
+					<button class="load_more" @click="getCollocationComments">加载更多</button>
+				</view>
+			</view>
+		</view>
+
+		<!-- 评论框 -->
+		<view class="bottom_tab" :adjust-position="false" :style="{ paddingBottom : footerBottomHeight }">
+			<!-- 回复信息 -->
+			<text v-if="replyForItem.id" class="replyInfo" style="">
+				{{'@' + replyForItem.username}}
+			</text>
+
+			<!-- 输入框 -->
+			<textarea class="comment_input" v-model="myComment" style=""></textarea>
+
+			<!-- 按钮 -->
+			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
+		</view>
+
+		<!-- 加载状态 -->
+		<view v-if="loading" class="loading">加载中...</view>
+		<view v-if="error" class="error">{{ errorMsg }}</view>
+	</common-page>
+</template>
+
+<script setup>
+	import {
+		ref,
+		onMounted,
+		computed,
+	} from 'vue'
+	import {
+		onLoad,
+		onShow,
+		onHide,
+	} from "@dcloudio/uni-app";
+	import {
+		websiteUrl,
+		image1Url,
+		wechatSignLogin,
+		getUserInfo,
+		global,
+		asyncGetUserInfo,
+	} from "../../common/config.js";
+
+	import {
+		chooseImage,
+		jumpToCroper,
+		getQiniuToken,
+		uploadImageToQiniu
+	} from "../../common/image.js";
+
+	const detailData = ref({
+		title: '',
+		content: '',
+		image_url_list: [],
+		collocation_relation_list: []
+	})
+
+	// 新增作者信息响应式数据
+	const authorInfo = ref({
+		userName: '',
+		avatar: ''
+	})
+
+	// 获取系统信息
+	const systemInfo = uni.getSystemInfoSync()
+	const keyboardHeight = ref(0)
+
+	// 处理键盘高度变化
+	const keyboardHeightChangeHandler = (res) => {
+		console.log(res)
+		keyboardHeight.value = res.height
+	}
+
+	// 生命周期
+	onShow(() => {
+		if (process.env.VUE_APP_PLATFORM) {
+			//h5不会弹出软键盘
+			return
+		}
+		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
+	})
+
+	onHide(() => {
+		if (process.env.VUE_APP_PLATFORM) {
+			//h5不会弹出软键盘
+			return
+		}
+		uni.offKeyboardHeightChange?.(keyboardHeightChangeHandler) // 更精准的卸载
+	})
+	// 底部安全区域高度
+	const footerBottomHeight = computed(() => {
+		// 通过系统信息获取安全区域值
+		let safeBottom = systemInfo.safeAreaInsets?.bottom || 10
+		if (keyboardHeight.value > 0) {
+			safeBottom += keyboardHeight.value
+		}
+		let bottom = `${safeBottom}px` // 直接返回计算后的像素值
+		console.log("footer-brand:" + bottom)
+		return bottom
+	})
+
+
+
+
+	const loading = ref(true)
+	const error = ref(false)
+	const errorMsg = ref('')
+	//页面id 
+	const pageId = ref(0)
+	//是否点赞过
+	let hasLike = ref(false)
+	//讨论区
+	let comments = ref({})
+	let commentsPage = ref(1)
+	let myComment = ref("")
+	//引用回复
+	let replyForItem = ref({})
+
+	// 设置页面标题
+	uni.setNavigationBarTitle({
+		title: '搭配详情'
+	})
+
+
+
+	// 获取商品详情
+	const getGoodsInfo = (id) => {
+		return new Promise((resolve, reject) => {
+			if (!id || id === 0) {
+				reject('无效的商品ID')
+				return
+			}
+
+			uni.request({
+				url: `${websiteUrl}/goods?id=${id}`,
+				method: 'GET',
+				timeout: 5000,
+				success: (res) => {
+					if (res.data.status === 'success') {
+						resolve(res.data.data)
+					} else {
+						reject(res.data.msg || '获取商品信息失败')
+					}
+				},
+				fail: (err) => {
+					console.error(err)
+					uni.showToast({
+						title: '网络请求失败',
+						icon: 'none'
+					})
+					reject(err)
+				}
+			})
+		})
+	}
+
+	//viewFullImage
+	function viewFullImage(index) {
+		console.log(detailData)
+		uni.previewImage({
+			current: detailData.value.image_url_list[index],
+			urls: detailData.value.image_url_list
+		})
+	}
+
+	// 修改后的数据获取逻辑
+	const fetchData = async (id) => {
+		try {
+			const res = await uni.request({
+				url: websiteUrl + `/view-collocation?collocation_id=${id}`,
+			})
+
+			if (res.data.status !== 'success') {
+				handleError(res.data.msg || '数据加载失败')
+				return
+			}
+
+			// 处理商品数据
+			const processedData = {
+				...res.data.data,
+				image_url_list: Array.isArray(res.data.data.image_url_list) ?
+					res.data.data.image_url_list : [res.data.data.image_urls],
+				collocation_relation_list: await Promise.all(
+					res.data.data.collocation_relation_list.map(async (item) => {
+						try {
+							// 仅当relation_goods_id有效时获取商品信息
+							const goodsInfo = item.relation_goods_id > 0 ?
+								await getGoodsInfo(item.relation_goods_id) :
+								null
+
+							return {
+								...item,
+								goodsInfo,
+								imageLoaded: !!goodsInfo,
+								imageError: !goodsInfo
+							}
+						} catch (error) {
+							console.error('商品信息获取失败:', error)
+							return {
+								...item,
+								goodsInfo: null,
+								imageLoaded: false,
+								imageError: true
+							}
+						}
+					})
+				)
+			}
+
+			detailData.value = processedData
+
+			// 获取作者信息
+			if (res.data.data?.uid) {
+				await getAuthorInfo(res.data.data.uid)
+			}
+
+		} catch (error) {
+			handleError('数据加载失败')
+		} finally {
+			loading.value = false
+		}
+	}
+	// 商品点击跳转
+	const navigateToGoods = (goodsId) => {
+		//如果goodsId是0，提示商品暂时没有录入
+		if (goodsId == 0) {
+			uni.showToast({
+				title: '商品暂时没有录入',
+				icon: 'none'
+			})
+			return
+		}
+		uni.navigateTo({
+			url: `/pages/goods/goods?goods_id=${goodsId}`
+		})
+	}
+
+	// 新增获取用户信息方法
+	const getAuthorInfo = async (uid) => {
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl}/user-info?uid=${uid}`,
+				method: 'GET'
+			})
+
+			if (res.data.status === 'success') {
+				authorInfo.value = res.data.data
+			} else {
+				console.error('获取用户信息失败:', res.data.msg)
+			}
+		} catch (error) {
+			console.error('用户信息请求失败:', error)
+			uni.showToast({
+				title: '作者信息加载失败',
+				icon: 'none'
+			})
+		}
+	}
+
+	// 新增跳转用户主页
+	const navigateToUser = (uid) => {
+		if (uid) {
+			uni.navigateTo({
+				url: `/pages/user/profile?uid=${uid}`
+			})
+		}
+	}
+
+	// 错误处理
+	const handleError = (msg) => {
+		error.value = true
+		errorMsg.value = msg
+		uni.showToast({
+			title: msg,
+			icon: 'none'
+		})
+	}
+
+	//喜欢
+	function likeFn() {
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+		let requestData = {
+			id: parseInt(detailData.value.id),
+			type: 3,
+		}
+		// 判断是请求点赞接口还是取消点赞接口 add-like unlike
+		let url = hasLike.value ? '/with-state/unlike' : '/with-state/add-like';
+		uni.request({
+			url: websiteUrl + url,
+			method: 'POST',
+			header: {
+				'Authorization': token,
+			},
+			data: requestData,
+			success: (res) => {
+				console.log(res.data);
+				if (res.data.status == "success") {
+					uni.showToast({
+						title: '操作成功',
+						icon: 'success'
+					})
+					hasLike.value = !hasLike.value
+					getHasLike(detailData.value.id)
+					fetchData(detailData.value.id)
+					return
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+					return
+				}
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			},
+		});
+	}
+	//获取是否点赞
+	function getHasLike(id) {
+		let token = uni.getStorageSync('token');
+		if (token == "") {
+			return
+		}
+
+		uni.request({
+			url: websiteUrl + '/with-state/hasLike?id=' + id + '&type=3',
+			method: 'POST',
+			header: {
+				'Authorization': token,
+			},
+			success: (res) => {
+				if (res.data.status == "success") {
+					// goods.value = res.data.data;
+					if (res.data.data.id > 0) {
+						hasLike.value = true
+					} else {
+						hasLike.value = false
+					}
+
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+					return
+				}
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			},
+		});
+	}
+	//格式化数字
+	function formatNumber(num) {
+		if (num < 1000) {
+			return num.toString();
+		} else {
+			const kValue = Math.floor(num / 1000);
+			return `${kValue}k+`;
+		}
+	}
+	// 获取搭配评论
+	function getCollocationComments() {
+		uni.request({
+			url: websiteUrl + '/collocation-comment?collocation_id=' + pageId.value + "&page=" + commentsPage
+				.value,
+			method: 'GET',
+			timeout: 5000,
+			success: (res) => {
+				console.log(res.data.data);
+				comments.value.page_index = res.data.data.page_index;
+				comments.value.total = res.data.data.total;
+				comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(
+					res.data.data.comment_list) : res.data.data.comment_list;
+				//如果返回的列表size大于0，页码增加
+				if (res.data.data.comment_list != null) {
+					if (res.data.data.comment_list.length > 0) {
+						commentsPage.value += 1
+					}
+					//如果返回的列表size等于0，且page>1提示无更多数据
+					if (res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
+						uni.showToast({
+							title: '没有更多数据了',
+							icon: 'none'
+						})
+					}
+				}
+
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			}
+		})
+	}
+
+	//提交评论
+	function addComments() {
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+		if (myComment.value == "") {
+			uni.showToast({
+				title: '请输入评论内容',
+				icon: 'none'
+			})
+			return
+		}
+		let requestData = {
+			content: myComment.value,
+			target_id: parseInt(pageId.value),
+			type: 3, // 搭配分享
+		}
+		//是否有引用内容，如果有引用内容，需要同步
+		if (replyForItem.value.id) {
+			requestData.reply_id = replyForItem.value.id
+			requestData.reply_for = replyForItem.value.comment
+			requestData.reply_user_id = replyForItem.value.user_id
+		}
+		console.log(requestData)
+		uni.request({
+			url: websiteUrl + '/with-state/add-comment',
+			method: 'POST',
+			header: {
+				'Authorization': token,
+			},
+			data: requestData,
+			success: (res) => {
+				console.log(res.data);
+				if (res.data.status == "success") {
+					uni.showToast({
+						title: '评论成功',
+						icon: 'success'
+					})
+					//清空评论
+					myComment.value = ""
+					//重新获取评论
+					commentsPage.value = 1;
+					comments.value = {}
+					getCollocationComments();
+					return;
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+					return
+				}
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			},
+		});
+	}
+	//replyFor 引用回复
+	function replyFor(item) {
+		//如果重复点击，清空
+		if (replyForItem.value.id == item.id) {
+			replyForItem.value = {}
+			return
+		}
+
+		replyForItem.value = item;
+	}
+	//格式化时间戳
+	function formatTimestamp(timestamp) {
+		const date = new Date(timestamp * 1000);
+		const year = date.getFullYear();
+		const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月份从0开始，需要+1
+		const day = date.getDate().toString().padStart(2, '0');
+		const hours = date.getHours().toString().padStart(2, '0');
+		const minutes = date.getMinutes().toString().padStart(2, '0');
+		const seconds = date.getSeconds().toString().padStart(2, '0');
+
+		// 返回格式化后的日期时间
+		return `${year}-${month}-${day} ${hours}:${minutes}`;
+	}
+
+	// 获取路由参数
+	onLoad((options) => {
+		if (!options.collocation_id) {
+			error.value = true
+			errorMsg.value = '缺少必要参数'
+			return
+		}
+		pageId.value = options.collocation_id
+		fetchData(options.collocation_id)
+		//获取登录
+		asyncGetUserInfo().then((userInfo) => {
+			console.log(userInfo)
+			getHasLike(options.collocation_id)
+
+		})
+		//获取评论
+		getCollocationComments()
+	})
+</script>
+
+<style lang="less" scoped>
+	// .container {
+	// 	padding: 20rpx;
+	// }
+
+	.swiper-box {
+		height: 750rpx;
+	}
+
+	.swiper-image {
+		width: 100%;
+		height: 100%;
+	}
+
+	/* 小红心 */
+	.heart {
+		position: absolute;
+		top: 10px;
+		right: 20px;
+		z-index: 10;
+		width: 50px;
+		height: 30px;
+
+		image {
+			width: 30px;
+			height: 30px;
+		}
+
+		text {
+			color: #fff;
+			font-size: 14px;
+			position: absolute;
+			top: 5px;
+			left: 35px;
+			font-weight: 1000;
+
+		}
+	}
+
+	/* 页面主体 */
+
+	.content-box {
+		padding: 30rpx 0;
+	}
+
+	.title {
+		font-size: 36rpx;
+		font-weight: bold;
+		display: block;
+		margin-bottom: 20rpx;
+		padding: 30rpx 30rpx 0rpx 30rpx;
+	}
+
+	.content {
+		font-size: 28rpx;
+		color: #666;
+		line-height: 1.6;
+		padding: 30rpx 30rpx 0rpx 30rpx;
+	}
+
+	.goods-list {
+		margin-top: 40rpx;
+		border-top: 1px solid #eee;
+		padding-top: 30rpx;
+	}
+
+	.goods-item {
+		display: flex;
+		padding: 20rpx;
+		margin-bottom: 30rpx;
+		background: #fff;
+		border-radius: 12rpx;
+		// box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+	}
+
+	.goods-image {
+		width: 150rpx;
+		height: 150rpx;
+		border-radius: 8rpx;
+		margin-right: 30rpx;
+	}
+
+	.goods-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.brand {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #333;
+	}
+
+	.category {
+		font-size: 26rpx;
+		color: #666;
+	}
+
+	.name {
+		font-size: 28rpx;
+		color: #444;
+	}
+
+	.loading,
+	.error {
+		text-align: center;
+		padding: 40rpx;
+		font-size: 28rpx;
+		color: #999;
+	}
+
+	/* 新增样式 */
+	.image-container {
+		width: 150rpx;
+		height: 150rpx;
+		margin-right: 30rpx;
+		position: relative;
+	}
+
+	.placeholder-box,
+	.error-box,
+	.loading-box {
+		width: 100%;
+		height: 100%;
+		background: #f5f5f5;
+		border-radius: 8rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.error-box text,
+	.loading-box text {
+		font-size: 24rpx;
+		color: #999;
+	}
+
+	.placeholder-box {
+		background: #e0e0e0;
+	}
+
+	/* 新增作者信息样式 */
+	.author-info {
+		display: flex;
+		align-items: center;
+		padding: 30rpx 30rpx 0rpx 30rpx;
+		margin: 20rpx 0;
+		border-radius: 16rpx;
+		box-sizing: border-box;
+		width: calc(100vw - 20px);
+		overflow: hidden;
+	}
+
+	.avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: 100%;
+		margin-right: 20rpx;
+		box-shadow: none;
+	}
+
+	.username {
+		font-size: 15px;
+		font-weight: 900;
+		color: #333;
+		width: calc(100vw - 40px);
+		overflow: hidden;
+		/* 只显示一行 */
+		white-space: nowrap;
+	}
+
+	// 底部tab
+	.bottom_tab {
+		display: flex;
+		align-items: center;
+		/* 垂直居中 */
+		gap: 8px;
+		/* 元素间距 */
+		padding: 10px;
+		box-sizing: border-box;
+		left: 0px;
+		position: fixed;
+		bottom: 0px;
+		z-index: 100;
+		width: 100vw;
+		background: #fff;
+
+		.replyInfo {
+			flex-shrink: 0;
+			/* 禁止缩小 */
+			max-width: 50px;
+			/* 最大宽度限制 */
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			flex-shrink: 0;
+			max-width: 50px;
+			margin-right: 8px;
+		}
+
+		.comment_input {
+			flex: 1;
+			/* 占据剩余空间 */
+			min-width: 0;
+			/* 允许缩小 */
+			flex: 1;
+			margin-right: 8px;
+			height: 30px;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			min-height: 30px;
+			padding: 8px;
+		}
+
+		button {
+			flex-shrink: 0;
+			/* 固定宽度 */
+			width: 90px;
+			/* 按钮固定宽度 */
+			background: rgb(100, 198, 220);
+			border-radius: 10px;
+			width: 90px;
+			color: rgb(255, 255, 255);
+			font-size: 14px;
+		}
+	}
+</style>

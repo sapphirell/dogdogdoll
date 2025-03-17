@@ -164,6 +164,7 @@
 	}
 	//新增
 	function addAccountBook() {
+		
 		let postData = {
 			name: name.value,
 			price: parseInt(price.value, 10),

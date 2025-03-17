@@ -1,96 +1,79 @@
 <template>
-	<view class="container" :style="{ paddingTop: statusBarHeight + 'px' }" >
-	
-		<!-- 个人设置页面 -->
-		<!-- 区分是否登录 -->
-		<view v-if="global.isLogin" style="padding: 10px;">
-			<view class="mine">
-				<view style="width: 100vw;">
-					<view class="avatar_container" style="display: inline-block;width: calc(30vw - 20px); padding: 0px 10px;float: left;">
-						<image mode="aspectFill" class="mine_page_avatar" :src="global.userInfo.avatar" @click="jumpToCroper">
-						</image>
+	<common-page head_color="#e0f3ff">
+		<view class="container" >
+			<!-- 个人设置页面 -->
+			<!-- 区分是否登录 -->
+			<view v-if="global.isLogin">
+				<view class="mine">
+					<view class="full-width">
+						<view class="avatar-container">
+							<image mode="aspectFill" class="mine-page-avatar" :src="global.userInfo.avatar" @click="jumpToCroper" />
+						</view>
+						<view class="user-info-container">
+							<text class="username-text font-alimamashuhei">{{global.userInfo.username}}</text>
+							<text class="user-id-text">
+								<text class="font-alimamashuhei" style="color: #fff;">ID</text> : {{global.userInfo.id}}
+							</text>
+						</view>
+						<view class="clearfix"></view>
 					</view>
-					<view style="display: inline-block;float: left;width: calc(70vw - 40px);padding: 10px;">
-						<text class="font-alimamashuhei" style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;margin:10px 0px 20px 0px;font-weight: bold;color: #fff;font-size: 22px;">{{global.userInfo.username}}</text>
-						<text style="display: block;">
-							<text class="font-alimamashuhei" style="font-size: 18px;">ID</text> : {{global.userInfo.id}}
-						</text>
+		
+					<view class="pageinfo-infobox">
+						<view class="info-item">
+							<text class="info-tap font-alimamashuhei">好友</text>
+							<text class="mine-info-number">10</text>
+						</view>
+						<view class="info-item">
+							<text class="info-tap font-alimamashuhei">消息</text>
+							<text class="mine-info-number">10</text>
+						</view>
+						<view class="info-item">
+							<text class="info-tap font-alimamashuhei">关注</text>
+							<text class="mine-info-number">0</text>
+						</view>
 					</view>
-					<view style="clear: both;"></view>
 				</view>
-	
-				<view class="pageinfo_infobox">
-					<view class="info_item">
-						<text class="info_tap font-alimamashuhei">好友</text>
-						<text class="mine_info_number">10</text>
+				<view class="main-padding">
+					<view class="button-container">
+						<button class="mine-button">
+							<image class="icon-small" src="../../static/mypost.png" />
+							<text>我的帖子</text>
+							<image class="right-bar" src="../../static/right.png" />
+						</button>
+						<button class="mine-button" @click="jumpSetting">
+							<image class="icon-small" src="../../static/setting.png" />
+							<text>账号设置</text>
+							<image class="right-bar" src="../../static/right.png" />
+						</button>
+						<button class="mine-button last-button" @click="logout">
+							<image class="icon-small" src="../../static/logout.png" />
+							<text>退出账号</text>
+							<image class="right-bar" src="../../static/right.png" />
+						</button>
 					</view>
-					<view class="info_item">
-						<text class="info_tap font-alimamashuhei">消息</text>
-						<text class="mine_info_number">10</text>
-					</view>
-					<view class="info_item">
-						<text class="info_tap font-alimamashuhei">关注</text>
-						<text class="mine_info_number">0</text>
-					</view>
-					
-				</view>
-			</view>
-
-			<view class="button_container">
-				<!-- <text>常用工具</text> -->
-				<button class="mine_button">
-					<image class="icon" src="../../static/mypost.png" style="width: 18px; height: 18px;"></image>
-					<text>我的帖子</text>
-					<image class="right_bar" src="../../static/right.png" style="width: 18px; height: 18px;"></image>
-				</button>
-				<button class="mine_button" @click="jumpSetting">
-					<image class="icon"  src="../../static/setting.png" style="width: 18px; height: 18px;"></image>
-					<text>账号设置</text>
-					<image class="right_bar" src="../../static/right.png" style="width: 18px; height: 18px;"></image>
-					
-				</button>
-				<button class="mine_button last_button" @click="logout">
-					<image class="icon"  src="../../static/logout.png" style="width: 18px; height: 18px;"></image>
-					<text>退出账号</text>
-					<image class="right_bar" src="../../static/right.png" style="width: 18px; height: 18px;"></image>
-					
-				</button>
-				
-			</view>
-		</view>
-			
-		<view v-else style="padding: 10px 20px 0px 20px;">
-			<view style="width: 100vw;height: 10vh;"></view>
-			<text style="width: 100%;text-align: left;font-size: 30px;font-weight: bold;display: block;margin: 20px 0px 60px 0px;">欢迎使用娃圈狗狗助手</text>
-			<view style="margin: 15px 0px;">
-				<input type="text" placeholder="请输入手机号" class="inputer" v-model="inputPhone" />
-				<input type="password" placeholder="请输入密码" class="inputer" v-model="inputPassword" />
-			</view>
-			<view>
-				<view style="margin: 10px 10px 50px 10px;">
-					<navigator style="float: left;">
-						<text>注册</text>
-					</navigator>
-					
-					<navigator style="float: right;">
-						<text>忘记密码</text>
-					</navigator>
-					<view style="clear: both;"></view>
 				</view>
 				
-			
-				<button class="light_button" @click="login">登录</button>
-				<button class="light_button" @click="wechatSignLogin">微信登录</button>
-			
 			</view>
-	
+		
+			<view v-else class="unlogin-container">
+				<view class="placeholder-height" />
+				<text class="welcome-text">欢迎使用娃圈狗狗助手</text>
+				<view class="input-group">
+					<input type="text" placeholder="请输入手机号" class="inputer" v-model="inputPhone" />
+					<input type="password" placeholder="请输入密码" class="inputer" v-model="inputPassword" />
+				</view>
+				<view class="action-links">
+					<text class="float-left" @tap="jump2register">注册</text>
+					<text class="float-right" @tap="jump2forgetPassword">忘记密码</text>
+					<view class="clearfix" />
+				</view>
+				<button class="light-button" @click="login">登录</button>
+				<button class="light-button" @click="wechatSignLogin">微信登录</button>
+			</view>
 		</view>
-
-
-
-	</view>
+	</common-page>
+	
 </template>
-
 <script setup>
 	import {
 		ref
@@ -110,10 +93,6 @@
 	console.log(global.isLogin)
 	console.log(global.userInfo)
 
-	//状态栏高度
-	const systemInfo = uni.getSystemInfoSync();
-	const statusBarHeight = ref(systemInfo.statusBarHeight);
-	
 	//登录注册输入
 	let inputPhone = ref("")
 	let inputPassword = ref("")
@@ -138,7 +117,10 @@
 	}
 	// var jWeixin = require('jweixin-module')  
 	
-
+	//jump2register 跳转到register页面
+	function jump2register() {
+		
+	}
 	
 
 	// 裁切头像
@@ -198,6 +180,7 @@
 
 						},
 						fail: (res) => {
+							console.log(res)
 							uni.showToast({
 								title: '上传失败',
 								icon: 'none',
@@ -318,11 +301,11 @@
 		})
 	}
 	
-	// 获取一次个人信息，判断是否是登录超时
-	getUserInfo();
-
 
 	onShow(() => {
+		// 获取一次个人信息，判断是否是登录超时
+		getUserInfo();
+		
 		const pages = getCurrentPages();
 		const currentPage = pages[pages.length - 1];
 		if (currentPage.returnParam) {
@@ -334,125 +317,223 @@
 
 
 <style lang="scss" scoped>
-	.container {
-		// background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
-		background: linear-gradient(180deg, #9cb2c4 0%, white 100%);
-	}
-	.avatar_container {
-		// align-items: center;
-		// width: 100vw;
-		// padding-top: 145px;
-		// background: linear-gradient(180deg, #d7d7d7 0%, rgb(255 255 255) 100%);
+.container {
+	background: #fff;
+}
 
-		.mine_page_avatar {
-			// 头像
-			width: 100%;
-			height: auto;
-			box-shadow: 0 0 8px #baebff;
-			aspect-ratio: 1;
-			margin: 10px auto;
-			display: block;
-			border-radius: 10px;
-		}
-	}
-
-	.button_container {
-		padding: 20px;
-		background: #fff;
-		box-shadow: 0 0 3px #ddd;
-		margin: 10px 0px;
-		border-radius: 10px;
-		text {
-			margin: 20px 0px;
-			font-weight: 900;
-		}
-		.mine_button {
-			background: #fff;
-			border-width: 0px!important;
-			margin: 10px 0px;
-			position: relative;
-			padding-bottom: 10px;
-			text-align: left;
-			text {
-				margin-left: 55px;
-			}
-			
-			&::after{
-				border: none;
-				border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-			}
-			
-			.icon {
-				position: absolute;
-				left: 20px;
-				top: 15px;
-			}
-			.right_bar {
-				position: relative;
-				top: 13px;
-				float: right;
-			}
-		}
-		.button_item {
-			margin: 20px 0px !important;
-			display: block;
-			border-radius: 0px !important;
-		
-			
-		
-		}
-	}
-	
-	.pageinfo_infobox {
+.mine {
+	// background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
+	background: #e0f3ff;
+	background-image: radial-gradient(#fff 20%, transparent 0);
+	background-size: 20px 20px;
+	.full-width {
 		width: 100%;
+		padding: 60rpx 50rpx 20rpx 50rpx;
+		box-sizing: border-box;
+	}
+}
+
+.main-padding {
+	// padding: 20rpx;
+	margin: 100rpx auto;
+	width: 620rpx;
+}
+
+
+
+.avatar-container {
+	display: inline-block;
+	width: calc(30vw - 40rpx);
+	height: calc(30vw - 40rpx);
+	padding: 5rpx;
+	float: left;
+	border: 3rpx solid #fff;
+	border-radius: 100%;
+	background: transparent;
+	box-shadow: 0 0 16rpx #baebff;
+	background: #fff;
+	
+	.mine-page-avatar {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
+		// margin: 20rpx auto;
 		display: block;
-		display: flex;
-		justify-content: space-evenly;
-		padding: 10px;
+		border-radius: 100%;
+	}
+}
+
+.user-info-container {
+	display: inline-block;
+	float: left;
+	width: calc(70vw - 140rpx);
+	padding: 0rpx 20rpx 20rpx 30rpx;
+}
+
+.username-text {
+	display: block;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin: 20rpx 0 40rpx 0;
+	font-weight: bold;
+	color: #606060;
+	font-size: 32rpx;
+}
+
+.user-id-text {
+	font-size: 27rpx;
+	background: linear-gradient(180deg, #ffa5c3 0%, #ffd6d6 100%);
+    padding: 5rpx 15rpx;
+    display: inline-block;
+    border-radius: 10rpx;
+    color: #fff;
+	font-weight: 600;
+}
+
+.clearfix {
+	clear: both;
+}
+
+.pageinfo-infobox {
+	width: 620rpx;
+	display: flex;
+	justify-content: space-evenly;
+	padding: 10rpx;
+	background: #fff;
+	margin: 0rpx auto;
+	border-radius: 20rpx;
+	box-shadow: 0 0 6rpx #ddd;
+	padding-bottom: 30rpx;
+	position: relative;
+	top: 40rpx;
+	
+	.info-item {
+		width: 25vw;
 		
-		.info_item {
-			width: 25vw;
-			
-			.info_tap {
-				display: block;
-				width: 100%;
-				text-align: center;
-				margin: 15px 0px;
-			}
-			.mine_info_number {
-				display: block;
-				width: 100%;
-				text-align: center;
-			}
+		.info-tap {
+			display: block;
+			width: 100%;
+			text-align: center;
+			margin: 30rpx 0;
+			font-size: 28rpx;
+			color: #626262;
+		}
+		
+		.mine-info-number {
+			display: block;
+			width: 100%;
+			text-align: center;
+			font-size: 30rpx;
+			color: #949494;
 		}
 	}
+}
+
+.button-container {
+	// padding: 40rpx;
+	overflow: hidden;
+	background: #fff;
+	box-shadow: 0 0 10rpx #eaeaea;
+	margin: 20rpx 0;
+	border-radius: 20rpx;
+	width: 100%;
 	
-	.inputer {
-		font-size: 20px;
-		border-bottom: 1px #ddd solid;
-		padding: 10px;
-		margin: 40px 0px;
-	}
-	
-	.light_button {
-		color: #fff;
-		background: #65C3D6;
-		box-shadow:0 0 3px #1ed1e1;
-		border: 0px;
-		margin: 20px 0px;
-		border-radius: 15px;
+	.mine-button {
+		background: #fff;
+		border-width: 0 !important;
+		margin: 20rpx 0;
+		position: relative;
+		padding-bottom: 20rpx;
+		text-align: left;
+		font-weight: 600;
 		
+		&::after {
+			border: none;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+		}
+		
+		text {
+			margin-left: 110rpx;
+				color: #606060;
+		}
+		
+		.icon-small {
+			width: 36rpx;
+			height: 36rpx;
+			position: absolute;
+			left: 40rpx;
+			top: 30rpx;
+		}
+		
+		.right-bar {
+			width: 36rpx;
+			height: 36rpx;
+			position: relative;
+			top: 26rpx;
+			float: right;
+		}
 	}
-	.light_button:active {
+}
+
+.unlogin-container {
+	padding: 20rpx 40rpx 0 40rpx;
+	
+	.placeholder-height {
+		width: 100vw;
+		height: 20vh;
+	}
+	
+	.welcome-text {
+		width: 100%;
+		text-align: left;
+		font-size: 60rpx;
+		font-weight: bold;
+		display: block;
+		margin: 40rpx 0 120rpx 0;
+	}
+}
+
+.input-group {
+	margin: 30rpx 0;
+}
+
+.inputer {
+	font-size: 40rpx;
+	border-bottom: 2rpx #ddd solid;
+	padding: 20rpx;
+	margin: 80rpx 0;
+}
+
+.action-links {
+	margin: 20rpx 20rpx 100rpx 20rpx;
+}
+
+.float-left {
+	float: left;
+}
+
+.float-right {
+	float: right;
+}
+
+.light-button {
+	color: #fff;
+	background: #65C3D6;
+	box-shadow: 0 0 6rpx #1ed1e1;
+	border: 0;
+	margin: 40rpx 0;
+	border-radius: 30rpx;
+	height: 90rpx;
+	line-height: 90rpx;
+	font-size: 36rpx;
+	
+	&:active {
 		background: #4e98a9;
 	}
-	
-	uni-button:after {
-		border:0px;
-		border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-	}
-	.last_button:after {
-		border-bottom: 0px!important;
-	}
+}
 
+.last-button::after {
+	border-bottom: 0 !important;
+}
 </style>

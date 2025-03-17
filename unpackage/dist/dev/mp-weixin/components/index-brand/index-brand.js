@@ -2,7 +2,7 @@
 const common_vendor = require("../../common/vendor.js");
 const _sfc_main = {
   __name: "index-brand",
-  props: ["brand"],
+  props: ["brand", "key"],
   setup(__props) {
     const props = __props;
     function jumpBrand() {
@@ -31,10 +31,12 @@ const _sfc_main = {
             c: common_vendor.o(($event) => jumpGoods(doll.id), doll.id),
             d: doll.id
           };
-        })
+        }),
+        i: __props.key
       };
     };
   }
 };
 const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-aa9d9d58"]]);
 wx.createComponent(Component);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/components/index-brand/index-brand.js.map

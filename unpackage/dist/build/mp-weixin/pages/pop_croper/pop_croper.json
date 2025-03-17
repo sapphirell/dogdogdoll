@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "",
+  "usingComponents": {
+    "bt-cropper": "../../uni_modules/bt-cropper/components/bt-cropper/bt-cropper"
+  }
+}

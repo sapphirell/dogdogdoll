@@ -22,6 +22,7 @@ uni.loadFontFace({
   }
 })
 
+
 // #ifdef VUE3
 import { createSSRApp } from 'vue'
 export function createApp() {

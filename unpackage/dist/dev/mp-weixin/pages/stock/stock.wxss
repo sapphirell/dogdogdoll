@@ -24,38 +24,246 @@
 /* 透明度 */
 /* 文章场景相关 */
 .container {
-  background-color: #f8f8f8;
+  background-color: #fff;
+}
+.content {
+  margin-top: 15rpx;
+}
+.head_container {
+  background: linear-gradient(180deg, #b9c3fd 0%, #d3f5ff 100%);
+  overflow: hidden;
+  padding-bottom: 60rpx;
 }
 .switch_tab {
   display: flex;
   justify-content: space-around;
+  background: #fff;
+  width: 100%;
+  height: 100rpx;
+  margin: 40rpx 0;
+  position: relative;
+  background: transparent;
+  /* 移除原渐变色背景 */
 }
 .switch_tab button {
-  background: #fff;
-  color: #888;
-  width: 25vw;
-  text-align: center;
-  padding: 10px;
-  border-radius: 5px;
+  position: relative;
+  background: transparent;
+  color: #666;
+  width: 33.3%;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  margin: 0;
+  border-radius: 0;
+  transition: all 0.3s ease;
 }
-.switch_tab button:after {
-  border: none;
+.switch_tab button::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 4rpx;
+  background: #74c9e5;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
 }
-.switch_tab button:active {
-  background: #e5e5e5;
-  color: #000;
+.switch_tab button text {
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+.switch_tab button.active text {
+  color: #74c9e5;
+  font-weight: 800;
+  font-size: 32rpx;
+  /* 选中时字体变大 */
+}
+.switch_tab button.active::after {
+  width: 80%;
+  /* 下划线宽度 */
+  background: #74c9e5;
+}
+.jump2addButton {
+  background: #74c9e5;
+  color: #fff;
+  border-radius: 100%;
+  width: 110rpx;
+  height: 110rpx;
+  font-size: 40rpx;
+  position: fixed;
+  bottom: 160rpx;
+  right: 40rpx;
+  box-shadow: #dadada;
 }
 .data_body {
-  margin-top: 20px;
+  min-height: 80vh;
+  /* 根据实际内容设置合理高度，避免父容器塌陷 */
+  position: relative;
+  top: -80rpx;
 }
 .tab_body_1st,
 .tab_body_sec,
 .tab_body_3th {
+  border-radius: 50rpx 50rpx 0 0;
+  overflow: hidden;
   background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20rpx 20rpx;
+  box-sizing: border-box;
+  margin: 20rpx 0rpx 20rpx 0rpx;
+  overflow: hidden;
+  width: 100%;
+  min-height: 80vh;
+  /* 根据实际内容设置合理高度，避免父容器塌陷 */
 }
 .none {
   display: none;
+}
+.light_button {
+  color: #fff;
+  background: #65C3D6;
+  box-shadow: 0 0 3rpx #1ed1e1;
+  border: 0rpx;
+  margin: 20rpx 0rpx;
+  border-radius: 15rpx;
+}
+.light_button:active {
+  background: #4e98a9;
+}
+.inputer {
+  font-size: 20rpx;
+  border-bottom: 1rpx #ddd solid;
+  padding: 10rpx;
+  margin: 40rpx 0rpx;
+}
+
+/* 切换动画 */
+.slide_left-enter-active,
+.slide_right-enter-active {
+  /* 注意运动时候的边距和宽度要保持和元素的一致，不然会导致动画抖动 */
+}
+.slide_left-leave-active,
+.slide_right-leave-active {
+  /* 离开无动画 */
+}
+.slide_left-enter-from,
+.slide_left-leave-to,
+.slide_right-enter-from,
+.slide_right-leave-to {
+  /* 关键：确保动画始终使用正确宽度 */
+}
+.sec_container {
+  display: flex;
+  flex-direction: column;
+  /* 每行垂直排列 */
+  gap: 20rpx;
+  /* 行间距 */
+}
+.sec_row {
+  display: flex;
+  /* 每行使用 Flex 布局 */
+  align-items: center;
+  /* 垂直居中 */
+  gap: 10rpx;
+  /* 图片和文字之间的间距 */
+  width: 100%;
+  padding: 10rpx;
+  box-sizing: border-box;
+}
+.sec_image {
+  width: 35vw;
+  /* 图片固定宽度 */
+  height: 45vw;
+  object-fit: cover;
+  /* 图片填充方式 */
+  border-radius: 8rpx;
+  /* 圆角 */
+}
+.sec_content {
+  flex: 1;
+  /* 文字内容占据剩余空间 */
+  display: flex;
+  flex-direction: column;
+  gap: 5rpx;
+  /* 标题和描述之间的间距 */
+  max-width: 50vw;
+}
+.sec_title {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #333;
+}
+.sec_description {
+  font-size: 24rpx;
+  color: #666;
+  overflow: hidden;
+  height: 300rpx;
+}
+.month-header {
+  font-weight: 1000;
+  border-bottom: 1rpx dashed #dadada;
+  width: 100%;
+  display: block;
+  padding-bottom: 10rpx;
+}
+.bill-item {
+  margin: 20rpx 0rpx;
+}
+
+/* 新增样式 */
+.type-picker {
+  padding-left: 25rpx;
+  font-size: 35rpx;
+  color: #585858;
+  font-weight: 1000;
+  margin-top: 10rpx;
+}
+.content-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30rpx;
+  padding: 20rpx;
+}
+.content-grid .grid-item {
+  position: relative;
+  width: calc(33.33% - 22rpx);
+  overflow: hidden;
+  border-radius: 20rpx;
+  background: #fff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+.content-grid .grid-item .item-image {
+  width: 100%;
+  height: 200rpx;
+  display: block;
+  margin-bottom: 10rpx;
+}
+.content-grid .grid-item .item-type {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(255, 118, 105, 0.65);
+  color: #fff;
+  padding: 5rpx 10rpx;
+  border-radius: 10rpx 0 10rpx 0;
+  font-size: 30rpx;
+}
+.content-grid .grid-item .item-info {
+  padding: 5rpx 15rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.content-grid .grid-item .item-info .item-price {
+  font-family: "alimamashuhei";
+  font-weight: 900;
+  color: #ff827e;
+  font-size: 35rpx;
+  flex-shrink: 0;
+  text-shadow: 0 0 3rpx #fff;
+}
+.content-grid .grid-item .item-info .item-name {
+  font-family: "alimamashuhei";
+  color: #39110c;
+  font-size: 30rpx;
+  flex-grow: 1;
+  text-shadow: 0 0 3rpx #fff;
 }

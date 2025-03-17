@@ -1,7 +1,8 @@
 "use strict";
 const common_vendor = require("./vendor.js");
-const websiteUrl = "http://localhost:8080";
-const global = common_vendor.reactive({
+const websiteUrl = "https://api.fantuanpu.com";
+const image1Url = "https://images1.fantuanpu.com/";
+let global = common_vendor.reactive({
   isLogin: false,
   userInfo: {}
 });
@@ -10,7 +11,9 @@ function wechatSignLogin() {
     provider: "weixin",
     onlyAuthorize: true,
     success: (event) => {
-      const { code } = event;
+      const {
+        code
+      } = event;
       if (!code) {
         common_vendor.index.showToast({
           title: "微信登录失败，授权初始化失败",
@@ -21,12 +24,17 @@ function wechatSignLogin() {
       common_vendor.index.request({
         url: `${websiteUrl}/login-with-wechat`,
         method: "POST",
-        data: { js_token: code },
+        data: {
+          js_token: code
+        },
         success: (res) => {
           const data = res.data.data;
-          console.log(data);
+          common_vendor.index.__f__("log", "at common/config.js:50", data);
           if (res.data.status != "success") {
-            common_vendor.index.showToast({ title: data.msg, icon: "none" });
+            common_vendor.index.showToast({
+              title: data.msg,
+              icon: "none"
+            });
             return;
           }
           if (data.jwt_token) {
@@ -54,7 +62,9 @@ function getUserInfo() {
   common_vendor.index.request({
     url: `${websiteUrl}/with-state/mine`,
     method: "GET",
-    header: { Authorization: token },
+    header: {
+      Authorization: token
+    },
     success: (res) => {
       const data = res.data.data;
       if (data) {
@@ -68,6 +78,85 @@ function getUserInfo() {
     }
   });
 }
+function asyncGetUserInfo() {
+  return new Promise((resolve, reject) => {
+    const token = common_vendor.index.getStorageSync("token");
+    if (!token) {
+      clearUserInfo();
+      resolve(null);
+      return;
+    }
+    common_vendor.index.request({
+      url: `${websiteUrl}/with-state/mine`,
+      method: "GET",
+      header: {
+        Authorization: token
+      },
+      success: (res) => {
+        const data = res.data.data;
+        if (data) {
+          common_vendor.index.__f__("log", "at common/config.js:125", "返回：", data);
+          saveUserInfo(data);
+          resolve(data);
+        } else {
+          clearUserInfo();
+          resolve(null);
+        }
+      },
+      fail: (err) => {
+        handleRequestError(err, "获取用户信息失败");
+        resolve(null);
+      }
+    });
+  });
+}
+async function voteScore(type, score, targetId) {
+  let token = common_vendor.index.getStorageSync("token");
+  if (!token) {
+    common_vendor.index.showToast({
+      title: "请先登录",
+      icon: "none"
+    });
+    return 0;
+  }
+  common_vendor.index.request({
+    url: websiteUrl + "/with-state/add-vote-score",
+    method: "POST",
+    header: {
+      "Authorization": token
+    },
+    data: {
+      target_id: parseInt(targetId),
+      score: parseInt(score),
+      type
+    },
+    success: (res) => {
+      common_vendor.index.__f__("log", "at common/config.js:164", res.data);
+      if (res.data.status == "success") {
+        common_vendor.index.showToast({
+          title: "评分成功",
+          icon: "success"
+        });
+        activeModal.value = false;
+        return 0;
+      } else {
+        common_vendor.index.showToast({
+          title: res.data.msg,
+          icon: "none"
+        });
+        return 0;
+      }
+    },
+    fail: (err) => {
+      common_vendor.index.__f__("log", "at common/config.js:182", err);
+      common_vendor.index.showToast({
+        title: "网络请求失败",
+        icon: "none"
+      });
+    }
+  });
+  return 0;
+}
 function saveUserInfo(data) {
   common_vendor.index.setStorageSync("userInfo", data);
   global.userInfo = data;
@@ -79,10 +168,17 @@ function clearUserInfo() {
   global.isLogin = false;
 }
 function handleRequestError(error, message = "请求失败") {
-  console.error(error);
-  common_vendor.index.showToast({ title: message, icon: "none" });
+  common_vendor.index.__f__("error", "at common/config.js:207", error);
+  common_vendor.index.showToast({
+    title: message,
+    icon: "none"
+  });
 }
+exports.asyncGetUserInfo = asyncGetUserInfo;
 exports.getUserInfo = getUserInfo;
 exports.global = global;
+exports.image1Url = image1Url;
+exports.voteScore = voteScore;
 exports.websiteUrl = websiteUrl;
 exports.wechatSignLogin = wechatSignLogin;
+//# sourceMappingURL=../../.sourcemap/mp-weixin/common/config.js.map

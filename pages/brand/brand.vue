@@ -25,9 +25,11 @@
 			<text style="color: rgb(100, 198, 220);display: block;margin: 20px 0px;">收录作品 ({{goods.total}})</text>
 			<view class="brand_goods">
 				<view class="brand_goods_item" style="" v-for="(item, index) in goods.goods_list" :key="item.id">
-					<navigator @click="jumpGoods(item.id)">
-						<image style="" :src="item.goods_images[0]" mode="aspectFit" class="brand_goods_image"></image>
-						
+					<navigator @click="jumpGoods(item.id)" style="width: 100%;height: 100%;">
+						<view style="width: 100%;height: calc(100% - 20px)">
+							<image style="width: 100%;height: 100%;" :src="item.goods_images[0]" mode="aspectFill" class="brand_goods_image"></image>
+						</view>
+						<text style="display: block;width: 100%;text-align: center;font-weight: 900;color: #586f88">{{item.name}}</text>
 					</navigator>
 				</view>
 			</view>
@@ -36,7 +38,7 @@
 				<text style="color: rgb(100, 198, 220);display: block;margin: 20px 0px;">讨论 ({{comments.total}})</text>
 				<view v-if="comments.comment_list">
 					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id" style="margin-bottom: 20px;">
-						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;">
+						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;" @tap="jump2user(item.uid)">
 							<image style="width: 50px;height: 50px;border-radius: 100%;display: block;margin: 10px;" :src="item.avatar" mode="aspectFill"></image>
 							<text style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; ">{{item.username}}</text>
 						</view>
@@ -74,15 +76,25 @@
 			
 		</view>
 
-		<view class="bottom_tab" style="">
-			<textarea class="comment_input" v-model="comment"></textarea>
-			<button style="" @click="addComments">写评论</button>
+
+
+		<view class="bottom_tab" :style="{ paddingBottom : footerBottomHeight }">
+			<!-- 输入框 -->
+			<textarea class="comment_input" v-model="myComment" style="" :adjust-position="false" ></textarea>
+
+			<!-- 按钮 -->
+			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
 		</view>
 	</view>
 </template>
 
 <script setup>
-	import { ref } from 'vue';
+	import {
+		ref,
+		watch,
+		computed,
+
+	} from 'vue';
 	import {
 		websiteUrl,
 		wechatSignLogin,
@@ -90,16 +102,61 @@
 		global, 
 		voteScore,
 	} from "../../common/config.js";
-
 	import {
-		onShow
+		onShow,
+		onHide,
 	} from "@dcloudio/uni-app";
 
 	
 	const props = defineProps(["brand_id"])
 	console.log(props)
 	
-	uni.showLoading({	})
+
+	uni.showLoading({
+		title: '加载中'
+	})
+	
+	
+	// 获取系统信息
+	const systemInfo = uni.getSystemInfoSync()
+	const keyboardHeight = ref(0)
+	
+	// 处理键盘高度变化
+	const keyboardHeightChangeHandler = (res) => {
+		console.log(res)
+		keyboardHeight.value = res.height
+	}
+	
+	// 生命周期
+	onShow(() => {
+		if (process.env.VUE_APP_PLATFORM) {
+			//h5不会弹出软键盘
+			return
+		}
+		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
+	})
+
+	onHide(() => {
+		if (process.env.VUE_APP_PLATFORM) {
+			//h5不会弹出软键盘
+			return
+		}
+		uni.offKeyboardHeightChange?.(keyboardHeightChangeHandler) // 更精准的卸载
+	})
+	
+	// 底部安全区域高度
+	const footerBottomHeight = computed(() => {
+		// 通过系统信息获取安全区域值
+		let safeBottom = systemInfo.safeAreaInsets?.bottom || 10
+		if (keyboardHeight.value > 0) {
+			safeBottom += keyboardHeight.value
+		}
+		let bottom = `${safeBottom}px` // 直接返回计算后的像素值
+		console.log("footer-brand:" + bottom)
+		return bottom
+	})
+	
+	
 	
 	let comment = ref('')
 	let rateValue = ref(0)
@@ -171,7 +228,7 @@
 	}
 	function getBrandGoods() {
 		uni.request({
-			url: 'http://localhost:8080/brand-goods?brand_id=' + props.brand_id + "&page=" + page.value,
+			url: websiteUrl + '/brand-goods?brand_id=' + props.brand_id + "&page=" + page.value,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
@@ -355,7 +412,12 @@
 			url: '/pages/goods/goods?goods_id=' + id
 		})
 	}
-	
+	//跳转到用户页面
+	function jump2user(uid) {
+		uni.navigateTo({
+			url: '/pages/user_page/user_page?uid=' + uid
+		})
+	}
 	let goods = ref({})
 	//brand page
 	let page = ref(1)
@@ -402,9 +464,10 @@
       // padding: 8px; /* 避免元素贴边 */
 	  
 	 .brand_goods_item {
-		  flex: 1 1 calc(33.33% - 16px); /* 固定每个元素宽度为 33.33% */
-		  max-width: calc(33.33% - 16px); /* 设置最大宽度 */
-		  height: 110px; /* 示例高度，可根据需求调整 */
+		  flex: 1 1 calc(33.33% - 12px); /* 固定每个元素宽度为 33.33% */
+		  width: calc(33.33% - 12px); /* 设置最大宽度 */
+		  max-width: calc(33.33% - 12px);
+		  height: 140px; /* 示例高度，可根据需求调整 */
 		  // background-color: #4CAF50;
 		  // height: auto;             /* 高度自动调整以保持比例 */
 		   aspect-ratio: 1; 
@@ -448,37 +511,63 @@
 	border: none;
 }
 // 底部tab
-.bottom_tab {
-	position: fixed;
-    bottom: 0px;
-    z-index: 10;
-    background: #ffffffeb;
-    padding: 10px;
-    width: 100vw;
-    box-sizing: border-box;
-    border-top: 1px solid rgba(221, 221, 221, 0);
-    height: 60px;
-	button {
-		background: rgb(100, 198, 220);
-		border-radius: 10px;
-		width: 90px;
-		color: rgb(255, 255, 255);
-		position: absolute;
-		right: 20px;
-		font-size: 14px;
+	.bottom_tab {
+		display: flex;
+		align-items: center;
+		/* 垂直居中 */
+		gap: 8px;
+		/* 元素间距 */
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		padding: 10px;
+		position: fixed;
+		bottom: 0px;
+		z-index: 100;
+		width: 100vw;
+		background: #fff;
+		left: 0px;
+
+		.replyInfo {
+			flex-shrink: 0;
+			/* 禁止缩小 */
+			max-width: 50px;
+			/* 最大宽度限制 */
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			flex-shrink: 0;
+			max-width: 50px;
+			margin-right: 8px;
+		}
+
+		.comment_input {
+			flex: 1;
+			/* 占据剩余空间 */
+			min-width: 0;
+			/* 允许缩小 */
+			flex: 1;
+			margin-right: 8px;
+			height: 30px;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			min-height: 30px;
+			padding: 8px;
+		}
+
+		button {
+			flex-shrink: 0;
+			/* 固定宽度 */
+			width: 90px;
+			/* 按钮固定宽度 */
+			background: rgb(100, 198, 220);
+			border-radius: 10px;
+			width: 90px;
+			color: rgb(255, 255, 255);
+			font-size: 14px;
+		}
 	}
-	
-	.comment_input {
-		    display: inline;
-		    border: 1px solid rgb(219 219 219);
-		    width: calc(100vw - 140px);
-		    position: absolute;
-		    bottom: 14px;
-		    padding: 5px;
-		    border-radius: 5px;
-			height: 20px;
-	}
-}
+
 //评分弹框
 .modal_shadow {
     position: fixed;

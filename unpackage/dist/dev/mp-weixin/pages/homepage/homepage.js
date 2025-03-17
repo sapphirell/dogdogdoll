@@ -28,14 +28,14 @@ const _sfc_main = {
       { name: "其它配件" }
     ];
     function bindPickerChange(e) {
-      console.log("picker发送选择改变，携带值为", e.detail.value);
+      common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:68", "picker发送选择改变，携带值为", e.detail.value);
       index.value = e.detail.value;
     }
     const systemInfo = common_vendor.index.getSystemInfoSync();
     const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
-    console.log("状态栏高度" + statusBarHeight.value);
+    common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:74", "状态栏高度" + statusBarHeight.value);
     common_vendor.onReachBottom(() => {
-      console.log("onEachBottom!");
+      common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:77", "onEachBottom!");
     });
     function go2goods() {
       common_vendor.index.navigateTo({
@@ -44,9 +44,9 @@ const _sfc_main = {
     }
     return (_ctx, _cache) => {
       return {
-        a: common_assets._imports_0,
+        a: common_assets._imports_0$1,
         b: common_vendor.t(common_vendor.unref(selectSizeArray)[common_vendor.unref(index)]),
-        c: common_assets._imports_1,
+        c: common_assets._imports_1$1,
         d: common_vendor.o(bindPickerChange),
         e: common_vendor.unref(index),
         f: common_vendor.unref(selectSizeArray),
@@ -62,3 +62,4 @@ const _sfc_main = {
   }
 };
 wx.createPage(_sfc_main);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/homepage/homepage.js.map

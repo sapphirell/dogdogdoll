@@ -1,12 +1,12 @@
 <template>
-	<view class="brand">
+	<view class="brand" :key="key">
 		<view class="brand_info_tab">
 			<view @tap="jumpBrand">
 				<image class="index_brand_logo" :src="brand.logo_image" mode="aspectFit"></image>
 				<view class="brand_info">
 					<text class="font-alimamashuhei">{{brand.brand_name}} （{{brand.country_name}} {{brand.type}}）</text>
 					<text class="brand_description">{{brand.description}}</text>
-					<text class="font-alimamashuhei tab_text doll_record" >收录娃娃 ({{brand.total_goods}})</text>
+					<text class="font-alimamashuhei tab_text doll_record" >收录词条 ({{brand.total_goods}})</text>
 				</view>
 				<div style="clear: both;"></div>
 			</view>
@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-const props = defineProps(["brand"])
+const props = defineProps(["brand", "key"])
 function jumpBrand() {
 	uni.navigateTo({
 		url: '/pages/brand/brand?brand_id=' + props.brand.id
@@ -66,7 +66,7 @@ function jumpGoods(id) {
 			width: 100%;
 			// height: 120px;
 			background: #ddd;
-			border-radius: 100%;
+			border-radius: 5rpx;
 			height: auto;             /* 高度自动调整以保持比例 */
 			aspect-ratio: 1; 
 		}
@@ -82,13 +82,13 @@ function jumpGoods(id) {
 }
 .brand {
 	width: 90vw;
-	max-height: 300px;
+	min-height: 150px;
 	margin:0px 8px 5px 8px;
 	padding:15px 5px 10px 5px;
 	// border: 1px solid #ddd;
 	background-color: #fff;
 	border-radius: 8px;
-	box-shadow: 0 1px 3px #ddd;
+	// box-shadow: 0 1px 3px #ddd;
 	// display: flex;
 	float: left;
 	.index_brand_logo {
@@ -98,10 +98,10 @@ function jumpGoods(id) {
 		float: left;
 	}
 	.brand_info_tab {
-		border-bottom: 2px dashed #f7f7f7;
+		// border-bottom: 1px dashed #f7f7f7;
 		    height: 130px;
-		    margin-bottom: 10px;
-			padding-bottom: 12px;
+		    // margin-bottom: 10px;
+			// padding-bottom: 12px;
 	}
 	.brand_info {
 		width: calc(100vw - 155px);

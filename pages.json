@@ -42,7 +42,10 @@
 			"path" : "pages/goods/goods",
 			"style" : 
 			{
-				"navigationBarTitleText" : "商品页面"
+				"navigationBarTitleText" : "商品页面",
+				"app-plus": {
+					"softinputmode": "adjustResize"
+				}
 			}
 		},
 		{
@@ -90,6 +93,41 @@
 		},
 		{
 			"path" : "pages/stock/account_book_form/account_book_form",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/stock/showcase_form/showcase_form",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/stock/bill_form/bill_form",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/collocation/collocation",
+			"style" : 
+			{
+				"navigationBarTitleText" : "分享搭配"
+			}
+		},
+		{
+			"path" : "pages/collocation_share/collocation_share",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/user_page/user_page",
 			"style" : 
 			{
 				"navigationBarTitleText" : ""

@@ -53,7 +53,7 @@
 .dolls .doll_item image.data-v-aa9d9d58 {
   width: 100%;
   background: #ddd;
-  border-radius: 100%;
+  border-radius: 5rpx;
   height: auto;
   /* 高度自动调整以保持比例 */
   aspect-ratio: 1;
@@ -68,12 +68,11 @@
 }
 .brand.data-v-aa9d9d58 {
   width: 90vw;
-  max-height: 300px;
+  min-height: 150px;
   margin: 0px 8px 5px 8px;
   padding: 15px 5px 10px 5px;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 3px #ddd;
   float: left;
 }
 .brand .index_brand_logo.data-v-aa9d9d58 {
@@ -83,10 +82,7 @@
   float: left;
 }
 .brand .brand_info_tab.data-v-aa9d9d58 {
-  border-bottom: 2px dashed #f7f7f7;
   height: 130px;
-  margin-bottom: 10px;
-  padding-bottom: 12px;
 }
 .brand .brand_info.data-v-aa9d9d58 {
   width: calc(100vw - 155px);

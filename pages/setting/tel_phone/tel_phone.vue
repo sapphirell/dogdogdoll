@@ -130,6 +130,9 @@
 </script>
 
 <style lang="less" scoped>
+	text {
+		font-size: 26rpx;
+	}
 	.light_button {
 		color: #fff;
 		background: #65C3D6;
@@ -145,7 +148,7 @@
 	
 
 	.inputer {
-		font-size: 20px;
+			font-size: 28rpx;
 		border-bottom: 1px #ddd solid;
 		padding: 10px;
 		margin: 40px 0px;

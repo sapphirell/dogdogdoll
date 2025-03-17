@@ -1,89 +1,95 @@
-<script>
-	export default {
-		onLaunch: function() {
-			console.log('App Launch')
-		},
-		onShow: function() {
-			console.log('App Show')
-		},
-		onHide: function() {
-			console.log('App Hide')
-		}
-	}
+<script setup>
+	import {
+		ref,
+		computed
+	} from 'vue'
+
 </script>
 
 <style>
 	/*每个页面公共css */
-	
 
-.backbody {
+
+	.backbody {
 		background-color: #C0EDE9;
 		height: 100vh;
-}
+	}
 
-.avatar {
-	border-radius: 50%;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
+	.avatar {
+		border-radius: 50%;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	}
 
-.uni-page-head, .uni-tabbar{
-	padding-top: 15px;
-	/* background-color: rgb(168 168 168)!important; */
-	/* background: linear-gradient(90deg, rgb(189 199 252 / 59%) 0%, rgba(192, 237, 233, 0.5) 100%); */
-}
-.uni-tabbar__icon {
-	position: relative;
-	bottom: 5px;
-}
+	.uni-page-head,
+	.uni-tabbar {
+		padding-top: 15px;
+		/* background-color: rgb(168 168 168)!important; */
+		/* background: linear-gradient(90deg, rgb(189 199 252 / 59%) 0%, rgba(192, 237, 233, 0.5) 100%); */
+	}
 
-.font-alimamashuhei {
-	font-family: "alimamamshuhei"!important;
-}
+	.uni-tabbar__icon {
+		position: relative;
+		bottom: 5px;
+	}
 
-.icon_image {
-	width: 20px;
-	height: 20px;
-	padding: 2px;
-}
+	.font-alimamashuhei {
+		font-family: "alimamamshuhei" !important;
+	}
 
-.icon_inline_text {
-	display: flex; /* 使用 Flexbox */
-	align-items: flex-end; /* 底部对齐 */
-}
+	.icon_image {
+		width: 20px;
+		height: 20px;
+		padding: 2px;
+	}
 
-.uni-tabbar-border {
-	display: none;
-	/*去除导航条border*/
-}
+	.icon_inline_text {
+		display: flex;
+		/* 使用 Flexbox */
+		align-items: flex-end;
+		/* 底部对齐 */
+	}
 
-uni-page-head {
-	height: 60px;
-}
-.uni-page-head {
-	background-color: rgb(255 255 255);
-	color: rgb(0, 0, 0);
-	padding-bottom: 15px;
-	height: 60px;
-	box-shadow: 0 0 15px #00000024;
-}
+	.uni-tabbar-border {
+		display: none;
+		/*去除导航条border*/
+	}
 
-text {
-	color: #373737;
-}
-/* 头像裁剪框css */
-.bt-container {
-	margin: 10px auto;
-}
-/* 文本只显示一行 超出变成省略号 */
-.one_line_text {
-	  white-space: nowrap;       /* 禁止换行 */
-	  overflow: hidden;          /* 隐藏超出内容 */
-	  text-overflow: ellipsis;   /* 显示省略号 */
-}
-/* 高度设置为和宽度一样 */
-.square {
+	uni-page-head {
+		height: 60px;
+	}
 
-	height: auto;
-	aspect-ratio: 1;
-}
+	.uni-page-head {
+		background-color: rgb(255 255 255);
+		color: rgb(0, 0, 0);
+		padding-bottom: 15px;
+		height: 60px;
+		box-shadow: 0 0 15px #00000024;
+	}
+
+	text {
+		color: #373737;
+		font-size: 26rpx;
+	}
+
+	/* 头像裁剪框css */
+	.bt-container {
+		margin: 10px auto;
+	}
+
+	/* 文本只显示一行 超出变成省略号 */
+	.one_line_text {
+		white-space: nowrap;
+		/* 禁止换行 */
+		overflow: hidden;
+		/* 隐藏超出内容 */
+		text-overflow: ellipsis;
+		/* 显示省略号 */
+	}
+
+	/* 高度设置为和宽度一样 */
+	.square {
+
+		height: auto;
+		aspect-ratio: 1;
+	}
 </style>

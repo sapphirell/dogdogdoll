@@ -36,7 +36,7 @@ const _sfc_main = {
           new_password: newPassword.value
         },
         success: (res) => {
-          console.log(res.data);
+          common_vendor.index.__f__("log", "at pages/setting/password/password.vue:65", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "修改成功",
@@ -75,3 +75,4 @@ const _sfc_main = {
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-b825db0b"]]);
 wx.createPage(MiniProgramPage);
+//# sourceMappingURL=../../../../.sourcemap/mp-weixin/pages/setting/password/password.js.map

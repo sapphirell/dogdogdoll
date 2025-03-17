@@ -18,3 +18,4 @@ function parseUnit(size) {
   return 0;
 }
 exports.parseUnit = parseUnit;
+//# sourceMappingURL=../../../../../../.sourcemap/mp-weixin/uni_modules/bt-cropper/components/bt-cropper/utils/tools.js.map

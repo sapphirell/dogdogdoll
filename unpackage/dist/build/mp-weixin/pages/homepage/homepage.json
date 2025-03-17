@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "home",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "common-search": "../../components/common-search/common-search",
+    "homepage-list-item": "../../components/homepage-list-item/homepage-list-item"
+  }
+}

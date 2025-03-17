@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "",
+  "usingComponents": {
+    "common-page": "../../components/common-page/common-page"
+  }
+}

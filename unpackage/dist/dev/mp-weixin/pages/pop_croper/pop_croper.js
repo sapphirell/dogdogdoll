@@ -57,7 +57,7 @@ const _sfc_main = {
         this.dist = res;
         const pages = getCurrentPages();
         const parentPage = pages[pages.length - 2];
-        console.log(parentPage);
+        common_vendor.index.__f__("log", "at pages/pop_croper/pop_croper.vue:82", parentPage);
         parentPage.returnParam = res;
         common_vendor.index.navigateBack({
           delta: 1
@@ -95,3 +95,4 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-ec2e1a43"]]);
 wx.createPage(MiniProgramPage);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/pop_croper/pop_croper.js.map

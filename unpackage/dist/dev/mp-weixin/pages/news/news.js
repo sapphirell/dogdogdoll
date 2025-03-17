@@ -1,8 +1,33 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
+  const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
+  (_easycom_common_search2 + _easycom_common_page2)();
+}
+const _easycom_common_search = () => "../../components/common-search/common-search.js";
+const _easycom_common_page = () => "../../components/common-page/common-page.js";
+if (!Math) {
+  (_easycom_common_search + _easycom_common_page)();
+}
 const _sfc_main = {
   __name: "news",
   setup(__props) {
+    const tabList = common_vendor.ref([
+      "全部",
+      "整体",
+      "单头",
+      "单体",
+      "娃衣",
+      "眼珠",
+      "娃鞋",
+      "手型",
+      "脚型",
+      "袜子",
+      "配饰"
+    ]);
+    let activeType = common_vendor.ref("全部");
     let news = common_vendor.ref({});
     const today = /* @__PURE__ */ new Date();
     const year = today.getFullYear();
@@ -15,19 +40,19 @@ const _sfc_main = {
     const itemWidth = screenWidth / 7;
     let scrollLeft = common_vendor.ref(0);
     const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
-    console.log("状态栏高度" + statusBarHeight.value);
+    common_vendor.index.__f__("log", "at pages/news/news.vue:123", "状态栏高度" + statusBarHeight.value);
     let chooseDate = common_vendor.ref(todayFormat);
     let chooseItem = common_vendor.ref({});
     common_vendor.index.showLoading({
       title: "加载中"
     });
-    function getDateMap() {
+    function getDateMap(type = "全部开售") {
       common_vendor.index.request({
-        url: "http://localhost:8080/goods-news",
+        url: common_config.websiteUrl + `/goods-news?type=${type}`,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          console.log(res.data.data);
+          common_vendor.index.__f__("log", "at pages/news/news.vue:152", res.data.data);
           news.value = res.data.data;
           for (let [key, value] of Object.entries(news.value)) {
             if (key === todayFormat) {
@@ -36,7 +61,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          console.log(err);
+          common_vendor.index.__f__("log", "at pages/news/news.vue:162", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -44,13 +69,17 @@ const _sfc_main = {
         },
         complete: () => {
           scrollLeft.value = itemWidth * 7 - 5;
-          console.log("left:" + scrollLeft.value);
+          common_vendor.index.__f__("log", "at pages/news/news.vue:170", "left:" + scrollLeft.value);
           common_vendor.index.hideLoading();
         }
       });
     }
+    const handleTabClick = (type) => {
+      activeType.value = type;
+      getDateMap(type);
+    };
     function selectDate(date, item) {
-      console.log(item);
+      common_vendor.index.__f__("log", "at pages/news/news.vue:185", item);
       chooseDate.value = date;
       chooseItem.value = item;
     }
@@ -72,36 +101,42 @@ const _sfc_main = {
     getDateMap();
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.f(common_vendor.unref(news), (item, date, i0) => {
+        a: common_vendor.f(tabList.value, (item, index, i0) => {
+          return {
+            a: common_vendor.t(item),
+            b: index,
+            c: common_vendor.unref(activeType) === item ? 1 : "",
+            d: common_vendor.o(($event) => handleTabClick(item), index)
+          };
+        }),
+        b: common_vendor.f(common_vendor.unref(news), (item, date, i0) => {
           return common_vendor.e({
-            a: item.weekday === "日" || item.weekday === "六"
-          }, item.weekday === "日" || item.weekday === "六" ? {
+            a: item.weekday === "周日" || item.weekday === "周六"
+          }, item.weekday === "周日" || item.weekday === "周六" ? {
             b: common_vendor.t(item.weekday)
           } : {}, {
-            c: item.weekday !== "日" && item.weekday !== "六"
-          }, item.weekday !== "日" && item.weekday !== "六" ? {
+            c: item.weekday !== "周日" && item.weekday !== "周六"
+          }, item.weekday !== "周日" && item.weekday !== "周六" ? {
             d: common_vendor.t(item.weekday)
           } : {}, {
             e: common_vendor.unref(chooseDate) !== date
           }, common_vendor.unref(chooseDate) !== date ? {
             f: common_vendor.t(item.day_number)
-          } : {}, {
-            g: common_vendor.unref(chooseDate) === date
-          }, common_vendor.unref(chooseDate) === date ? {
-            h: common_vendor.t(item.day_number)
-          } : {}, {
-            i: item.goods != null
-          }, item.goods != null ? {} : {}, {
-            j: item.id,
-            k: common_vendor.o(($event) => selectDate(date, item), item.id)
+          } : {
+            g: common_vendor.t(item.day_number)
+          }, {
+            h: item.id,
+            i: common_vendor.o(($event) => selectDate(date, item), item.id)
           });
         }),
-        b: common_vendor.unref(scrollLeft),
-        c: common_vendor.t(common_vendor.unref(chooseDate)),
-        d: common_vendor.t(common_vendor.unref(chooseItem).weekday),
-        e: common_vendor.unref(chooseItem).goods == null
+        c: common_vendor.unref(scrollLeft),
+        d: common_vendor.t(common_vendor.unref(chooseDate)),
+        e: common_vendor.t(common_vendor.unref(chooseItem).weekday),
+        f: common_vendor.unref(chooseItem).goods == null
       }, common_vendor.unref(chooseItem).goods == null ? {} : {}, {
-        f: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
+        g: common_vendor.unref(chooseItem).goods
+      }, common_vendor.unref(chooseItem).goods ? {
+        h: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
           return common_vendor.e({
             a: good.goods_image,
             b: common_vendor.t(good.sale_type),
@@ -126,11 +161,16 @@ const _sfc_main = {
             q: common_vendor.o(($event) => jumpGoods(good.goods_id), good.id),
             r: good.id
           });
-        }),
-        g: statusBarHeight.value + "px"
+        })
+      } : {}, {
+        i: common_vendor.p({
+          head_color: "rgb(185 195 253)"
+        })
       });
     };
   }
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-24bc9d41"]]);
+_sfc_main.__runtimeHooks = 2;
 wx.createPage(MiniProgramPage);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/news/news.js.map

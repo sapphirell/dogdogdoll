@@ -54,6 +54,24 @@
 			</view>
 			<view style="clear: both;"></view>
 		</view>
+		
+		<view class="item">
+			<text class="tab_text">检查更新</text>
+			<view class="button_body">
+				<button v-if="needUpdate" @click="checkUpdate">
+					<text class="binded">需要更新</text>
+					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
+					</image>
+				</button>
+				<button v-else @click="checkUpdate">
+					<text class="notBind">无需更新</text>
+					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
+					</image>
+				
+				</button>
+			</view>
+			<view style="clear: both;"></view>
+		</view>
 	</view>
 </template>
 
@@ -74,7 +92,8 @@
 	// 用户信息
 	let userInfo = ref({})
 
-
+	// 是否需要更新
+	let needUpdate = ref(false)
 
 
 	//跳转到密码设置页面
@@ -100,13 +119,26 @@
 			return
 		}
 	}
+	//检查更新
+	function checkUpdate() {
+		// 获取manifest.json文件的内容
+		if (uni.getSystemInfoSync().platform === 'app') {
+		  const version = plus.runtime.version;
+		  console.log('App version from manifest:', version);
+		} else {
+			uni.showToast({
+				title: '您所使用的平台无需更新',
+				icon: 'none'
+			})
+		}
+	} 
 
 	getUserInfo();
 </script>
 
 <style lang="less" scoped>
 	text {
-		font-size: 18px;
+		font-size: 26rpx;
 	}
 
 	button {
