@@ -1,33 +1,81 @@
 <template>
-	<view style="padding: 15px;">
-		<!-- 账单详情/添加/修改 -->
-		<view>
-			<text>账单名称</text>
-			<input class="inputer" type="text" placeholder="名称" v-model="name" />
+	<view class="container">
+		<!-- 表单卡片容器 -->
+		<view class="form-card">
+			<!-- 账单名称 -->
+			<view class="form-item">
+				<text class="form-label">账单名称</text>
+				<input 
+					class="form-input" 
+					type="text" 
+					placeholder="请输入名称"
+					placeholder-class="placeholder-style"
+					v-model="name" />
+			</view>
+
+			<!-- 账单金额 -->
+			<view class="form-item">
+				<text class="form-label">账单金额</text>
+				<input 
+					class="form-input" 
+					type="digit" 
+					placeholder="请输入金额"
+					placeholder-class="placeholder-style"
+					v-model="price" />
+			</view>
+
+			<!-- 账单日期 -->
+			<view class="form-item">
+				<text class="form-label">账单日期</text>
+				<picker 
+					mode="date" 
+					class="form-input"
+					:value="formattedDate" 
+					@change="updateDate">
+					<view class="picker-content">
+						{{ formattedDate || '请选择日期' }}
+					</view>
+				</picker>
+			</view>
+
+			<!-- 账单状态 -->
+			<view class="form-item">
+				<text class="form-label">账单状态</text>
+				<picker 
+					mode="selector" 
+					class="form-input"
+					:value="status" 
+					:range="statusList"
+					@change="updateStatus">
+					<view class="picker-content">
+						{{ statusList[status] || '请选择状态' }}
+					</view>
+				</picker>
+			</view>
+			
+			<view style="overflow: hidden;">
+				<image src="/static/info-circle.png" mode="aspectFill" style="width: 28rpx;height: 28rpx;margin-right: 10rpx; position: relative;top: 3rpx;"></image>
+				<text style="color: #888;">仅用于您的记账，其他人不会看到</text>
+			</view>
 		</view>
 
-		<view>
-			<text>账单金额</text>
-			<input class="inputer" type="digit" placeholder="金额" v-model="price" />
+		<!-- 操作按钮 -->
+		<view class="button-group">
+			<button 
+				class="submit-button" 
+				@click="postSubmit">
+				提交{{ isEdit ? '修改' : '新增' }}
+			</button>
+			<button 
+				class="delete-button" 
+				v-if="isEdit"
+				@click="handleDelete">
+				删除账单
+			</button>
 		</view>
-
-		<view>
-			<text>账单日期</text>
-			<picker mode="date" class="inputer" :value="formattedDate" @change="updateDate">
-				<view class="uni-input">{{ formattedDate }}</view>
-			</picker>
-		</view>
-
-		<view>
-			<text>账单状态</text>
-			<picker mode="selector" class="inputer" :value="status" :range="statusList" @change="updateStatus">
-				<view class="uni-input">{{ statusList[status] }}</view>
-			</picker>
-		</view>
-
-		<button class="light_button" @click="postSubmit">提交</button>
 	</view>
 </template>
+
 
 <script setup>
 	import { ref, onMounted } from 'vue';
@@ -182,33 +230,102 @@
 	}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+	$primary-color: #a6e9f7;
+	$hover-color: #94a5f3;
+	$border-color: #e6e6e6;
+	$radius: 8px;
+
 	.container {
-		background-color: #f8f8f8;
+		padding: 20rpx;
+		background-color: #f5f5f5;
+		min-height: 100vh;
 	}
 
-	.light_button {
-		color: #fff;
-		background: #65C3D6;
-		box-shadow: 0 0 3px #1ed1e1;
-		border: 0px;
-		margin: 20px 0px;
-		border-radius: 15px;
+	.form-card {
+		background: white;
+		border-radius: $radius;
+		padding: 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
 	}
 
-	.light_button:active {
-		background: #4e98a9;
+	.form-item {
+		margin-bottom: 40rpx;
 	}
 
-	.inputer {
-		font-size: 20px;
-		border-bottom: 1px #ddd solid;
-		padding: 10px;
-		margin: 20px 0px;
+	.form-label {
+		display: block;
+		font-size: 28rpx;
+		color: #666;
+		margin-bottom: 16rpx;
+		font-weight: 500;
 	}
 
-	textarea.inputer {
-		height: 120px;
-		resize: none;
+	.form-input {
+		height: 80rpx;
+		padding: 0 20rpx;
+		border: 2rpx solid $border-color;
+		border-radius: $radius;
+		font-size: 28rpx;
+		transition: all 0.3s;
+		line-height: 80rpx;
+		
+		&:focus {
+			border-color: $primary-color;
+			box-shadow: 0 0 8rpx rgba($primary-color, 0.2);
+		}
+	}
+
+	.picker-content {
+		height: 80rpx;
+		line-height: 80rpx;
+		color: #333;
+	}
+
+	.submit-button {
+		margin-top: 60rpx;
+		background: linear-gradient(135deg, $primary-color, $hover-color);
+		color: white;
+		border: none;
+		border-radius: 50rpx;
+		font-size: 32rpx;
+		height: 90rpx;
+		line-height: 90rpx;
+		box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.3);
+		transition: all 0.3s;
+		width: 100%;
+		
+		&:active {
+			transform: translateY(2rpx);
+			box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.3);
+		}
+	}
+
+	.placeholder-style {
+		color: #ccc;
+		font-size: 28rpx;
+	}
+
+	.button-group {
+		margin-top: 60rpx;
+	}
+
+	// 如果需要删除按钮
+	.delete-button {
+		background: linear-gradient(135deg, #adadad, #ffbdbb);
+		color: white;
+		border: none;
+		border-radius: 50rpx;
+		font-size: 32rpx;
+		height: 90rpx;
+		line-height: 90rpx;
+		box-shadow: 0 6rpx 20rpx rgba(255,77,79,0.3);
+		transition: all 0.3s;
+		margin-top: 30rpx;
+		
+		&:active {
+			transform: translateY(2rpx);
+			box-shadow: 0 4rpx 12rpx rgba(255,77,79,0.3);
+		}
 	}
 </style>

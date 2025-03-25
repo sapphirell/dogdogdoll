@@ -170,7 +170,7 @@
 						case 1: // 娃柜
 							return {
 								id: item.id,
-									cover: item.image_url,
+									cover: item.image_urls?.split(',')[0] || '',
 									title: item.name,
 									desc: item.description,
 									time: item.created_at

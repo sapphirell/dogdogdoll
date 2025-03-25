@@ -3,7 +3,7 @@
 	<view class="backbody">
 		<!-- 个人信息部分 -->
 		<view class="pageinfo_userinfo">
-			<image mode="aspectFill" class="avatar mine_avatar" src="../../static/headimg.jpg"></image>
+			<image mode="aspectFill" class="avatar mine_avatar" src="/static/pixsun.png"></image>
 			<view class="pageinfo_infobox">
 				<text class="mine_username font-alimamashuhei">用户名</text>
 				<view>

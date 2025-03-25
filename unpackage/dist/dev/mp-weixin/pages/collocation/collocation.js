@@ -42,11 +42,11 @@ const _sfc_main = {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:100", res.data.data);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:101", res.data.data);
             resolve(res.data);
           },
           fail: (err) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:104", err);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:105", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -70,7 +70,7 @@ const _sfc_main = {
           "goods_image": res.data.goods_images[0],
           "type": props.type
         };
-        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:131", data);
+        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:132", data);
         saveCollocationDataList.value.push(data);
       });
     }
@@ -83,10 +83,10 @@ const _sfc_main = {
       });
     }
     function selectImage() {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:150", "openSelect");
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:151", "openSelect");
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:153", tokenData);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:154", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -94,7 +94,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:162", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:163", common_config.image1Url + tokenData.path);
             uploadList.value.push(common_config.image1Url + tokenData.path);
             common_vendor.index.showToast({
               title: "上传成功",
@@ -139,7 +139,7 @@ const _sfc_main = {
           type: item.type
         }))
       };
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:220", postData);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:221", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-collocation",
         method: "POST",
@@ -166,7 +166,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:249", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:250", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -175,20 +175,20 @@ const _sfc_main = {
       });
     }
     function handleBrandSelect(brandId, brandName) {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:263", "收到品牌ID:", brandId);
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:264", "收到品牌Name:", brandName);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:264", "收到品牌ID:", brandId);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:265", "收到品牌Name:", brandName);
       chooseBrandId.value = parseInt(brandId, 10);
       chooseBrandName.value = brandName;
       getGoods(brandId);
     }
     function handleGoodsSelect(id, name) {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:273", "选中的 id:", id);
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:274", "选中的 name:", name);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:274", "选中的 id:", id);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:275", "选中的 name:", name);
       chooseGoodsId.value = parseInt(id, 10);
       chooseGoodsName.value = name;
     }
     function handleTypeSelect(value) {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:281", "选中的值:", value);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:282", "选中的值:", value);
       chooseType.value = value;
       showSelectTab.value = true;
     }
@@ -198,12 +198,12 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:294", res.data.data);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:295", res.data.data);
           goodsList.value = res.data.data;
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:296", goodsList.value);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:297", goodsList.value);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:300", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:301", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -217,11 +217,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:319", res.data.data);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:320", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:323", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:324", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -242,6 +242,24 @@ const _sfc_main = {
           title: "请选择或填写商品名称",
           icon: "none"
         });
+        return;
+      }
+      if (chooseGoodsId.value == 0) {
+        let data = {
+          "brand_id": chooseBrandId.value,
+          "goods_id": 0,
+          "brand_name": chooseBrandName.value,
+          "goods_name": chooseGoodsName.value,
+          "goods_image": "",
+          "type": chooseType.value
+        };
+        saveCollocationDataList.value.push(data);
+        showSelectTab.value = false;
+        chooseBrandId.value = 0;
+        chooseBrandName.value = "";
+        chooseGoodsId.value = 0;
+        chooseGoodsName.value = "";
+        chooseType.value = "";
         return;
       }
       getGoodsInfo(chooseBrandId.value).then((res) => {
@@ -279,8 +297,8 @@ const _sfc_main = {
             d: index
           };
         }),
-        b: common_assets._imports_1$3,
-        c: common_assets._imports_1$4,
+        b: common_assets._imports_1$6,
+        c: common_assets._imports_1$5,
         d: common_vendor.o(($event) => selectImage(_ctx.index)),
         e: title.value,
         f: common_vendor.o(($event) => title.value = $event.detail.value),
@@ -293,16 +311,19 @@ const _sfc_main = {
         }),
         k: common_assets._imports_2$2,
         l: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
-          return {
-            a: item.goods_image,
-            b: common_vendor.t(item.type),
-            c: common_vendor.t(item.brand_name),
-            d: common_vendor.t(item.goods_name),
-            e: common_vendor.o(($event) => deleteCollcation(index), index),
-            f: index
-          };
+          return common_vendor.e({
+            a: item.goods_image
+          }, item.goods_image ? {
+            b: item.goods_image
+          } : {}, {
+            c: common_vendor.t(item.type),
+            d: common_vendor.t(item.brand_name),
+            e: common_vendor.t(item.goods_name),
+            f: common_vendor.o(($event) => deleteCollcation(index), index),
+            g: index
+          });
         }),
-        m: common_assets._imports_1$3,
+        m: common_assets._imports_1$6,
         n: common_vendor.o(handleBrandSelect),
         o: common_vendor.p({
           mode: "fill",

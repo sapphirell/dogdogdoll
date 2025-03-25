@@ -1,5 +1,5 @@
 import {
-	websiteUrl,
+	websiteUrl, image1Url
 } from "./config.js";
 
 
@@ -61,21 +61,50 @@ export function getQiniuToken() {
 
 // 上传图片到七牛云
 export function uploadImageToQiniu(croperPath, qnToken, fileName) {
+  let authorization = uni.getStorageSync('token');
   return new Promise((resolve, reject) => {
     uni.uploadFile({
       url: 'https://up-cn-east-2.qiniup.com',
       name: 'file',
       method: "POST",
       filePath: croperPath,
-      fileType: 'image', // 仅支付宝小程序，且必填
+      fileType: 'image',
       formData: {
         token: qnToken,
         key: fileName,
-        scope: "hobby-box:" + fileName, // 覆盖上传
+        scope: "hobby-box:" + fileName,
       },
-      success: (res) => {
-        console.log("上传成功");
-        resolve(res);
+      success: async (res) => {
+        try {
+          // 构造完整图片URL（根据你的实际URL结构调整）
+          const fullUrl = image1Url + fileName;
+          
+          // 调用日志接口
+          const logRes = await uni.request({
+            url: `${websiteUrl}/with-state/add-image-log`,
+            method: 'POST',
+            header: {
+              'Content-Type': 'application/json',
+              'Authorization': authorization,
+            },
+            data: {
+              image_url: fullUrl
+            }
+          });
+			console.log(logRes)
+          if (logRes.data.status !== "success") {
+            throw new Error('上传图片失败');
+          }
+
+          resolve({ qiniuRes: res, imageUrl: fullUrl });
+        } catch (logErr) {
+          console.error('日志记录失败:', logErr);
+          uni.showToast({
+            title: '日志记录失败',
+            icon: 'none'
+          });
+          reject('日志记录失败');
+        }
       },
       fail: (err) => {
         uni.showToast({

@@ -5,9 +5,11 @@
 .goods_renew_header_content .choose_tab.data-v-24bc9d41 {
   display: block;
   white-space: nowrap;
-  height: 150rpx;
+  height: 170rpx;
 }
 .goods_renew_header_content .choose_tab text.data-v-24bc9d41 {
+  vertical-align: bottom;
+  line-height: 1;
   transition: all 0.3s ease;
   font-size: 32rpx;
   display: inline-block;
@@ -32,7 +34,7 @@
 .goods_renew_header_content .choose_tab text.active.data-v-24bc9d41::after {
   content: '';
   position: absolute;
-  bottom: 10rpx;
+  bottom: 0rpx;
   left: 50%;
   transform: translateX(-50%);
   width: 60%;
@@ -52,6 +54,8 @@
   font-size: 36rpx;
   width: calc(100vw/7);
   padding-bottom: 15px;
+  position: relative;
+  padding-top: 15rpx;
 }
 .line-height.data-v-24bc9d41 {
   margin: 9px 0px 9px 0px;
@@ -65,4 +69,32 @@
   background: #fff;
   padding: 20px;
   box-shadow: 0 0px 10px #ffffff30;
+}
+.float-number-red.data-v-24bc9d41 {
+  position: absolute;
+  top: 1px;
+  right: -5px;
+  background: #ffb1b1;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 1000;
+}
+.float-number-blue.data-v-24bc9d41 {
+  position: absolute;
+  top: 1px;
+  right: -5px;
+  background: #afe7ff;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 1000;
 }

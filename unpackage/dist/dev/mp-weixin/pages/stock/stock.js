@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
   const _component_transition = common_vendor.resolveComponent("transition");
@@ -23,7 +24,7 @@ const _sfc_main = {
     function switch_tab(index) {
       previousTab.value = activeTab.value;
       activeTab.value = index;
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:150", `切换到 tab ${index}`);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:189", `切换到 tab ${index}`);
       switch (index) {
         case 1:
           getAccountBookData();
@@ -39,6 +40,9 @@ const _sfc_main = {
           break;
       }
     }
+    function countPaid(bills) {
+      return bills.filter((bill) => bill.status === 1).length;
+    }
     const selectedType = common_vendor.ref(0);
     const accountBookTypeList = common_vendor.ref(["全部", "娃头", "娃衣", "眼珠", "假发", "娃鞋"]);
     const accountBookData = common_vendor.ref({});
@@ -49,7 +53,7 @@ const _sfc_main = {
       getAccountBookData(accountBookTypeList.value[selectedType.value]);
     }
     function getAccountBookData(type) {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:189", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:231", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -66,16 +70,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:208", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:250", res.data.data);
           accountBookData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:212", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:254", err);
         }
       });
     }
     function getShowcaseData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:219", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:261", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -88,16 +92,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:233", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:275", res.data.data);
           showcaseData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:237", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:279", err);
         }
       });
     }
     function getBillData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:244", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:286", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -110,11 +114,11 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:258", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:300", res.data.data);
           billData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:262", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:304", err);
         }
       });
     }
@@ -148,6 +152,14 @@ const _sfc_main = {
       common_vendor.index.navigateTo({
         url: "/pages/stock/bill_form/bill_form?bill_id=" + id
       });
+    }
+    function getStatusText(display) {
+      const textMap = {
+        0: "审核中",
+        2: "人工复核中",
+        3: "违规隐藏中"
+      };
+      return textMap[display] || "";
     }
     common_vendor.onShow(() => {
       common_config.asyncGetUserInfo().then((userInfo) => {
@@ -195,47 +207,58 @@ const _sfc_main = {
         r: showcaseData.value.showcases && showcaseData.value.showcases.length > 0
       }, showcaseData.value.showcases && showcaseData.value.showcases.length > 0 ? {
         s: common_vendor.f(showcaseData.value.showcases, (item, index, i0) => {
-          return {
-            a: item.image_url,
-            b: common_vendor.t(item.name),
-            c: common_vendor.t(item.description),
-            d: index,
-            e: common_vendor.o(($event) => go2editorShowCase(item.id), index)
-          };
-        })
+          return common_vendor.e({
+            a: item.display !== 1
+          }, item.display !== 1 ? {
+            b: common_vendor.t(getStatusText(item.display))
+          } : {}, {
+            c: item.image_url_list[0],
+            d: common_vendor.t(item.name),
+            e: common_vendor.t(item.description),
+            f: common_vendor.t(item.views || 0),
+            g: common_vendor.t(item.likes || 0),
+            h: item.display !== 1 ? 1 : "",
+            i: index,
+            j: common_vendor.o(($event) => go2editorShowCase(item.id), index)
+          });
+        }),
+        t: common_assets._imports_0$2,
+        v: common_assets._imports_1$2
       } : {}, {
-        t: common_vendor.o(go2addShowCase),
-        v: activeTab.value !== 2 ? 1 : ""
+        w: common_vendor.o(go2addShowCase),
+        x: activeTab.value !== 2 ? 1 : ""
       }) : {}, {
-        w: common_vendor.p({
+        y: common_vendor.p({
           name: transitionName()
         }),
-        x: activeTab.value === 3
+        z: activeTab.value === 3
       }, activeTab.value === 3 ? {
-        y: common_vendor.f(billData.value, (bills, month, i0) => {
+        A: common_vendor.f(billData.value, (bills, month, i0) => {
           return {
             a: common_vendor.t(month),
-            b: common_vendor.f(bills, (bill, k1, i1) => {
-              return common_vendor.e({
+            b: common_vendor.t(countPaid(bills)),
+            c: common_vendor.t(bills.length),
+            d: common_vendor.f(bills, (bill, k1, i1) => {
+              return {
                 a: common_vendor.t(bill.name),
                 b: common_vendor.t(bill.price),
                 c: common_vendor.t(bill.ymd),
-                d: bill.status === 0
-              }, bill.status === 0 ? {} : {}, {
-                e: bill.id,
-                f: common_vendor.o(($event) => go2addBill(bill.id), bill.id)
-              });
+                d: common_vendor.t(bill.status === 0 ? "未补款" : "已补款"),
+                e: bill.status === 1 ? 1 : "",
+                f: bill.id,
+                g: common_vendor.o(($event) => go2addBill(bill.id), bill.id)
+              };
             }),
-            c: month
+            e: month
           };
         }),
-        z: common_vendor.o(($event) => go2addBill(false)),
-        A: activeTab.value !== 3 ? 1 : ""
+        B: common_vendor.o(($event) => go2addBill(false)),
+        C: activeTab.value !== 3 ? 1 : ""
       } : {}, {
-        B: common_vendor.p({
+        D: common_vendor.p({
           name: transitionName()
         }),
-        C: common_vendor.p({
+        E: common_vendor.p({
           head_color: "rgb(185 195 253)"
         })
       });

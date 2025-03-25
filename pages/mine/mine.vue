@@ -1,13 +1,14 @@
 <template>
 	<common-page head_color="#e0f3ff">
-		<view class="container" >
+		<view class="container">
 			<!-- 个人设置页面 -->
 			<!-- 区分是否登录 -->
 			<view v-if="global.isLogin">
 				<view class="mine">
 					<view class="full-width">
 						<view class="avatar-container">
-							<image mode="aspectFill" class="mine-page-avatar" :src="global.userInfo.avatar" @click="jumpToCroper" />
+							<image mode="aspectFill" class="mine-page-avatar" :src="global.userInfo.avatar"
+								@click="jumpToCroper" />
 						</view>
 						<view class="user-info-container">
 							<text class="username-text font-alimamashuhei">{{global.userInfo.username}}</text>
@@ -17,18 +18,21 @@
 						</view>
 						<view class="clearfix"></view>
 					</view>
-		
+
 					<view class="pageinfo-infobox">
-						<view class="info-item">
-							<text class="info-tap font-alimamashuhei">好友</text>
-							<text class="mine-info-number">10</text>
-						</view>
-						<view class="info-item">
-							<text class="info-tap font-alimamashuhei">消息</text>
-							<text class="mine-info-number">10</text>
-						</view>
-						<view class="info-item">
+						<view class="info-item" @tap="jump2follow">
+							<image src="/static/pixcollocation.png" class="icon"></image>
 							<text class="info-tap font-alimamashuhei">关注</text>
+							<text class="mine-info-number">10</text>
+						</view>
+						<view class="info-item" @tap="jump2message">
+							<image src="/static/pixpaperplane.png" class="icon"></image>
+							<text class="info-tap font-alimamashuhei">消息</text>
+							<text class="mine-info-number">{{ unreadCount }}</text>
+						</view>
+						<view class="info-item" @tap="jump2collocation">
+							<image src="/static/pixttq2.png" class="icon"></image>
+							<text class="info-tap font-alimamashuhei">搭配</text>
 							<text class="mine-info-number">0</text>
 						</view>
 					</view>
@@ -52,31 +56,38 @@
 						</button>
 					</view>
 				</view>
-				
+
 			</view>
-		
+
 			<view v-else class="unlogin-container">
-				<view class="placeholder-height" />
-				<text class="welcome-text">欢迎使用娃圈狗狗助手</text>
-				<view class="input-group">
-					<input type="text" placeholder="请输入手机号" class="inputer" v-model="inputPhone" />
-					<input type="password" placeholder="请输入密码" class="inputer" v-model="inputPassword" />
-				</view>
-				<view class="action-links">
-					<text class="float-left" @tap="jump2register">注册</text>
-					<text class="float-right" @tap="jump2forgetPassword">忘记密码</text>
-					<view class="clearfix" />
-				</view>
-				<button class="light-button" @click="login">登录</button>
-				<button class="light-button" @click="wechatSignLogin">微信登录</button>
+			  <image src="/static/main/1.png" mode="aspectFit" style="width: 380rpx;"></image>
+			  <text class="welcome-text">欢迎使用娃圈狗狗助手</text>
+			  <view class="input-group">
+			    <view class="input-with-icon">
+			      <image class="icon" src="/static/user.png"/>
+			      <input type="text" placeholder="请输入手机号" class="inputer" v-model="inputPhone" />
+			    </view>
+			    <view class="input-with-icon">
+			      <image class="icon" src="/static/key.png" />
+			      <input type="password" placeholder="请输入密码" class="inputer" v-model="inputPassword" />
+			    </view>
+			  </view>
+			  <view class="action-links">
+			    <text class="float-left" @tap="jump2register">注册账号</text>
+			    <text class="float-right" @tap="jump2forgetPassword">忘记密码</text>
+			    <view class="clearfix" />
+			  </view>
+			  <button class="light-button" @click="login">立即登录</button>
+			  <button class="light-button" @click="wechatSignLogin">微信登录</button>
 			</view>
+
 		</view>
 	</common-page>
-	
+
 </template>
 <script setup>
 	import {
-		ref
+		ref, watch
 	} from 'vue';
 
 	import {
@@ -86,16 +97,18 @@
 	import {
 		websiteUrl,
 		wechatSignLogin,
-		getUserInfo, 
-		global, 
+		getUserInfo,
+		global,
 	} from "../../common/config.js";
-	
+
 	console.log(global.isLogin)
 	console.log(global.userInfo)
 
 	//登录注册输入
 	let inputPhone = ref("")
 	let inputPassword = ref("")
+	
+	let unreadCount = ref(0)
 
 
 	//选择图片
@@ -116,12 +129,26 @@
 		global.isLogin = false
 	}
 	// var jWeixin = require('jweixin-module')  
-	
+
 	//jump2register 跳转到register页面
 	function jump2register() {
-		
+		uni.navigateTo({
+			url: `/pages/register/register`
+		})
 	}
 	
+	//jump2follow
+	function jump2follow() {}
+
+	//jump2message
+	function jump2message() {
+		uni.navigateTo({
+			url: `/pages/message_list/message_list`
+		})
+	}
+	
+	//jump2collocation
+	function jump2collocation() {}
 
 	// 裁切头像
 	function jumpToCroper() {
@@ -131,6 +158,28 @@
 			})
 		})
 	}
+	
+	// 获取未读数量
+	const fetchUnreadCount = async () => {
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl}/with-state/unread-message-count`,
+				header: {
+					Authorization: uni.getStorageSync('token')
+				}
+			});
+	
+			if (res.data.status === 'success') {
+				unreadCount.value = res.data.data.count;
+			}
+		} catch (error) {
+			console.log(error)
+			uni.showToast({
+				title: '未读数获取失败',
+				icon: 'none'
+			});
+		}
+	};
 
 	function selectAvatar(croperPath) {
 		console.log("croperPath:" + croperPath);
@@ -253,10 +302,10 @@
 			return
 		}
 
-		
+
 		let phone = inputPhone.value;
 		let password = inputPassword.value;
-		
+
 		uni.request({
 			url: websiteUrl + '/login',
 			method: "POST",
@@ -275,7 +324,7 @@
 					});
 					return
 				}
-				
+
 				//获得token完成登录
 				uni.setStorageSync('token', data.jwt_token)
 				uni.setStorageSync('openid', data.open_id)
@@ -294,18 +343,39 @@
 			},
 		});
 	}
-	
-	function jumpSetting () {
+
+	function jumpSetting() {
 		uni.navigateTo({
 			url: '/pages/setting/setting',
 		})
 	}
 	
+	watch(
+	  () => global.isLogin, // 使用函数返回要监听的值
+	  (newVal) => {
+		console.log("watch", newVal)
+		if (newVal) {
+		  uni.showTabBar({ animation: false })
+		} else {
+		  uni.hideTabBar({ animation: false })
+		}
+	  }
+	)
+	
+	
 
 	onShow(() => {
 		// 获取一次个人信息，判断是否是登录超时
 		getUserInfo();
+		if (global.isLogin) {
+		  uni.showTabBar({ animation: false })
+		} else {
+		  uni.hideTabBar({ animation: false })
+		}
 		
+		
+		//获取未读数量
+		fetchUnreadCount();
 		const pages = getCurrentPages();
 		const currentPage = pages[pages.length - 1];
 		if (currentPage.returnParam) {
@@ -317,223 +387,362 @@
 
 
 <style lang="scss" scoped>
-.container {
-	background: #fff;
-}
-
-.mine {
-	// background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
-	background: #e0f3ff;
-	background-image: radial-gradient(#fff 20%, transparent 0);
-	background-size: 20px 20px;
-	.full-width {
-		width: 100%;
-		padding: 60rpx 50rpx 20rpx 50rpx;
-		box-sizing: border-box;
-	}
-}
-
-.main-padding {
-	// padding: 20rpx;
-	margin: 100rpx auto;
-	width: 620rpx;
-}
-
-
-
-.avatar-container {
-	display: inline-block;
-	width: calc(30vw - 40rpx);
-	height: calc(30vw - 40rpx);
-	padding: 5rpx;
-	float: left;
-	border: 3rpx solid #fff;
-	border-radius: 100%;
-	background: transparent;
-	box-shadow: 0 0 16rpx #baebff;
-	background: #fff;
-	
-	.mine-page-avatar {
-		width: 100%;
-		height: auto;
-		aspect-ratio: 1;
-		// margin: 20rpx auto;
-		display: block;
-		border-radius: 100%;
-	}
-}
-
-.user-info-container {
-	display: inline-block;
-	float: left;
-	width: calc(70vw - 140rpx);
-	padding: 0rpx 20rpx 20rpx 30rpx;
-}
-
-.username-text {
-	display: block;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	margin: 20rpx 0 40rpx 0;
-	font-weight: bold;
-	color: #606060;
-	font-size: 32rpx;
-}
-
-.user-id-text {
-	font-size: 27rpx;
-	background: linear-gradient(180deg, #ffa5c3 0%, #ffd6d6 100%);
-    padding: 5rpx 15rpx;
-    display: inline-block;
-    border-radius: 10rpx;
-    color: #fff;
-	font-weight: 600;
-}
-
-.clearfix {
-	clear: both;
-}
-
-.pageinfo-infobox {
-	width: 620rpx;
-	display: flex;
-	justify-content: space-evenly;
-	padding: 10rpx;
-	background: #fff;
-	margin: 0rpx auto;
-	border-radius: 20rpx;
-	box-shadow: 0 0 6rpx #ddd;
-	padding-bottom: 30rpx;
-	position: relative;
-	top: 40rpx;
-	
-	.info-item {
-		width: 25vw;
-		
-		.info-tap {
-			display: block;
-			width: 100%;
-			text-align: center;
-			margin: 30rpx 0;
-			font-size: 28rpx;
-			color: #626262;
-		}
-		
-		.mine-info-number {
-			display: block;
-			width: 100%;
-			text-align: center;
-			font-size: 30rpx;
-			color: #949494;
-		}
-	}
-}
-
-.button-container {
-	// padding: 40rpx;
-	overflow: hidden;
-	background: #fff;
-	box-shadow: 0 0 10rpx #eaeaea;
-	margin: 20rpx 0;
-	border-radius: 20rpx;
-	width: 100%;
-	
-	.mine-button {
+	.container {
 		background: #fff;
-		border-width: 0 !important;
-		margin: 20rpx 0;
-		position: relative;
-		padding-bottom: 20rpx;
-		text-align: left;
-		font-weight: 600;
-		
-		&::after {
-			border: none;
-			border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-		}
-		
-		text {
-			margin-left: 110rpx;
-				color: #606060;
-		}
-		
-		.icon-small {
-			width: 36rpx;
-			height: 36rpx;
-			position: absolute;
-			left: 40rpx;
-			top: 30rpx;
-		}
-		
-		.right-bar {
-			width: 36rpx;
-			height: 36rpx;
-			position: relative;
-			top: 26rpx;
-			float: right;
-		}
 	}
-}
 
-.unlogin-container {
-	padding: 20rpx 40rpx 0 40rpx;
-	
-	.placeholder-height {
-		width: 100vw;
-		height: 20vh;
+	.mine {
+		// background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
+		background: #e0f3ff;
+		background-image: radial-gradient(#fff 20%, transparent 0);
+		background-size: 20px 20px;
+		height: 400rpx;
+		margin-bottom: 200rpx;
+		.full-width {
+			width: 100%;
+			padding: 60rpx 50rpx 20rpx 50rpx;
+			box-sizing: border-box;
+		}
 	}
-	
-	.welcome-text {
-		width: 100%;
-		text-align: left;
-		font-size: 60rpx;
-		font-weight: bold;
+
+	.main-padding {
+		// padding: 20rpx;
+		margin: 100rpx auto;
+		width: 620rpx;
+	}
+
+
+
+	.avatar-container {
+		display: inline-block;
+		width: calc(30vw - 40rpx);
+		height: calc(30vw - 40rpx);
+		padding: 5rpx;
+		float: left;
+		border: 3rpx solid #fff;
+		border-radius: 100%;
+		background: transparent;
+		box-shadow: 0 0 16rpx #baebff;
+		background: #fff;
+
+		.mine-page-avatar {
+			width: 100%;
+			height: auto;
+			aspect-ratio: 1;
+			// margin: 20rpx auto;
+			display: block;
+			border-radius: 100%;
+		}
+	}
+
+	.user-info-container {
+		display: inline-block;
+		float: left;
+		width: calc(70vw - 140rpx);
+		padding: 0rpx 20rpx 20rpx 30rpx;
+	}
+
+	.username-text {
 		display: block;
-		margin: 40rpx 0 120rpx 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		margin: 20rpx 0 40rpx 0;
+		font-weight: bold;
+		color: #606060;
+		font-size: 32rpx;
 	}
-}
 
-.input-group {
-	margin: 30rpx 0;
-}
+	.user-id-text {
+		font-size: 27rpx;
+		background: linear-gradient(180deg, #ffa5c3 0%, #ffd6d6 100%);
+		padding: 5rpx 15rpx;
+		display: inline-block;
+		border-radius: 10rpx;
+		color: #fff;
+		font-weight: 600;
+	}
 
-.inputer {
-	font-size: 40rpx;
-	border-bottom: 2rpx #ddd solid;
-	padding: 20rpx;
-	margin: 80rpx 0;
-}
+	.clearfix {
+		clear: both;
+	}
 
-.action-links {
-	margin: 20rpx 20rpx 100rpx 20rpx;
-}
+	.pageinfo-infobox {
+		width: 620rpx;
+		display: flex;
+		justify-content: space-evenly;
+		padding: 10rpx;
+		background: #fff;
+		margin: 0rpx auto;
+		border-radius: 20rpx;
+		box-shadow: 0 0 6rpx #ddd;
+		padding-bottom: 30rpx;
+		position: relative;
+		top: 40rpx;
 
-.float-left {
-	float: left;
-}
+		.info-item {
+			width: 200rpx;
+			align-items: center;
+			padding: 10rpx 0rpx;
+			.info-tap {
+				display: block;
+				width: 100%;
+				text-align: center;
+				font-size: 28rpx;
+				color: #626262;
+			}
 
-.float-right {
-	float: right;
-}
+			.mine-info-number {
+				display: block;
+				width: 100%;
+				text-align: center;
+				font-size: 30rpx;
+				color: #949494;
+				font-weight: 1000;
+				margin-top: 20rpx;
+			}
+			
+			.icon {
+				width: 80rpx;
+				height: 80rpx;
+				margin: 10rpx 55rpx 0rpx 55rpx;
+			}
+		}
+	}
 
-.light-button {
-	color: #fff;
-	background: #65C3D6;
-	box-shadow: 0 0 6rpx #1ed1e1;
-	border: 0;
-	margin: 40rpx 0;
-	border-radius: 30rpx;
-	height: 90rpx;
-	line-height: 90rpx;
-	font-size: 36rpx;
+	.button-container {
+		// padding: 40rpx;
+		overflow: hidden;
+		background: #fff;
+		box-shadow: 0 0 5rpx #eaeaea;
+		margin: 20rpx 0;
+		border-radius: 20rpx;
+		width: 100%;
+
+		.mine-button {
+			background: #fff;
+			border-width: 0 !important;
+			margin: 20rpx 0;
+			position: relative;
+			padding-bottom: 20rpx;
+			text-align: left;
+			font-weight: 600;
+
+			&::after {
+				border: none;
+				// border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+			}
+
+			text {
+				margin-left: 110rpx;
+				color: #606060;
+			}
+
+			.icon-small {
+				width: 36rpx;
+				height: 36rpx;
+				position: absolute;
+				left: 40rpx;
+				top: 30rpx;
+			}
+
+			.right-bar {
+				width: 36rpx;
+				height: 36rpx;
+				position: relative;
+				top: 26rpx;
+				float: right;
+			}
+		}
+	}
+
+	// .unlogin-container {
+	// 	padding: 20rpx 40rpx 0 40rpx;
+
+	// 	.placeholder-height {
+	// 		width: 100vw;
+	// 		height: 20vh;
+	// 	}
+
+	// 	.welcome-text {
+	// 		width: 100%;
+	// 		text-align: left;
+	// 		font-size: 60rpx;
+	// 		font-weight: bold;
+	// 		display: block;
+	// 		margin: 40rpx 0 120rpx 0;
+	// 	}
+	// }
+
+	.input-group {
+		margin: 30rpx 0;
+	}
+
+	.inputer {
+		font-size: 40rpx;
+		border-bottom: 2rpx #ddd solid;
+		padding: 20rpx;
+		margin: 80rpx 0;
+		letter-spacing: 5rpx;
+		padding-left: 45rpx;
+	}
+
+	.action-links {
+		margin: 20rpx 20rpx 100rpx 20rpx;
+	}
+
+	.float-left {
+		float: left;
+	}
+
+	.float-right {
+		float: right;
+	}
+
+	.light-button {
+		color: #fff;
+		background: #65C3D6;
+		box-shadow: 0 0 6rpx #1ed1e1;
+		border: 0;
+		margin: 40rpx 0;
+		border-radius: 30rpx;
+		height: 90rpx;
+		line-height: 90rpx;
+		font-size: 36rpx;
+
+		&:active {
+			background: #4e98a9;
+		}
+	}
+
+	.last-button::after {
+		border-bottom: 0 !important;
+	}
+
+	// 注册框
+	.uni-input-input {
+		    letter-spacing: 5rpx;
+		    padding-left: 15rpx;
+	}
+	.unlogin-container {
+		padding: 40rpx 60rpx;
+		background: linear-gradient(135deg, #e0f3ff 0%, #f8fdff 100%);
+		background: #e0f3ff;
+		    background-image: radial-gradient(#fff 20%, transparent 0);
+		    background-size: 20px 20px;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+
+		.placeholder-height {
+			height: 15vh;
+		}
+
+		.welcome-text {
+			font-size: 48rpx;
+			font-weight: 600;
+			color: #2c3e50;
+			text-align: center;
+			position: relative;
+
+			&::after {
+				content: '';
+				display: block;
+				width: 80rpx;
+				height: 6rpx;
+				background: #65C3D6;
+				margin: 20rpx auto;
+				border-radius: 3rpx;
+			}
+		}
+
+		.input-group {
+			width: 100%;
+			margin: 40rpx 0;
+
+			.inputer {
+				height: 100rpx;
+				padding: 0 30rpx;
+				margin: 40rpx 0;
+				border-radius: 16rpx;
+				background: #ffffff;
+				border: 2rpx solid #e6e6e6;
+				font-size: 32rpx;
+				transition: all 0.3s;
+				box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+
+				&:focus {
+					border-color: #65C3D6;
+					box-shadow: 0 4rpx 16rpx rgba(101, 195, 214, 0.2);
+				}
+
+				&::placeholder {
+					color: #bdc3c7;
+				}
+			}
+		}
+
+		.action-links {
+			width: 100%;
+			margin: 30rpx 0;
+
+			text {
+				color: #7f8c8d;
+				font-size: 28rpx;
+				transition: all 0.3s;
+
+				&:active {
+					color: #65C3D6;
+				}
+			}
+		}
+
+		.light-button {
+			width: 100%;
+			height: 70rpx;
+			line-height: 70rpx;
+			border-radius: 50rpx;
+			font-size: 27rpx;
+			font-weight: 500;
+			margin: 30rpx 0;
+			transition: all 0.3s;
+			position: relative;
+			overflow: hidden;
+
+			&[disabled] {
+				opacity: 0.7;
+
+				&::after {
+					background: #bdc3c7;
+				}
+			}
+
+			&:not([disabled]):active {
+				transform: scale(0.98);
+				opacity: 0.9;
+			}
+
 	
-	&:active {
-		background: #4e98a9;
+		}
 	}
-}
 
-.last-button::after {
-	border-bottom: 0 !important;
-}
+	// 输入框图标增强（需要添加图标元素）
+	.input-with-icon {
+		position: relative;
+
+		.icon {
+			position: absolute;
+			left: 30rpx;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 40rpx;
+			height: 40rpx;
+			z-index: 2;
+		}
+
+		input {
+			padding-left: 80rpx !important;
+		}
+	}
 </style>

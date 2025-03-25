@@ -72,6 +72,29 @@
   margin-right: 10rpx;
   width: 100%;
 }
+.filter-tabs.data-v-1cf27b2a {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx 0;
+  background: #fff;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.tab-item.data-v-1cf27b2a {
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+  border: 1rpx solid #4cbbd0;
+  color: #4cbbd0;
+  font-size: 28rpx;
+  transition: all 0.3s;
+  margin: 0 20rpx;
+}
+.tab-item.active.data-v-1cf27b2a {
+  background: #4cbbd0;
+  color: #fff;
+}
 .index_search_box.data-v-1cf27b2a {
   width: calc(100vw - 145rpx);
   border-radius: 15rpx;
@@ -100,18 +123,33 @@
 .china_brand_box.data-v-1cf27b2a {
   display: flex;
   flex-wrap: wrap;
-  /* 允许换行 */
-  justify-content: space-evenly;
+  justify-content: flex-start;
+  /* 修改为从左开始 */
   gap: 10rpx;
-  /* 设置子项之间的间距 */
   width: 100vw;
   margin-top: 30rpx;
+  padding: 0 15rpx;
+  /* 添加两侧间距 */
+  box-sizing: border-box;
   border-radius: 30px;
   overflow: hidden;
   position: relative;
   top: -70rpx;
   background: #fff;
   box-shadow: 0 0px 10px #ffffff30;
+}
+.china_brand_box .dolls.data-v-1cf27b2a {
+  /* 计算宽度：屏幕宽度减去两侧padding后分4列 */
+  width: calc((100% - 30rpx - 30rpx) / 4);
+  /* 解释：
+     100% = 父容器宽度
+     30rpx = 两侧padding（15rpx*2）
+     3*10rpx = 3个间隙（4列有3个间隙）
+  */
+  box-sizing: border-box;
+  /* 如果内容需要保持宽高比可以添加 */
+  aspect-ratio: 1/1;
+  /* 可选：保持正方形 */
 }
 
 /*轮播图*/
@@ -125,4 +163,14 @@
 }
 .banner_swiper .banner_swiper_item.data-v-1cf27b2a {
   background: #fff;
+}
+.loading-more.data-v-1cf27b2a {
+  display: block;
+  width: 100vw;
+}
+.loading-more text.data-v-1cf27b2a {
+  display: block;
+  text-align: center;
+  width: 100%;
+  color: #888;
 }

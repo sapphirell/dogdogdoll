@@ -205,6 +205,7 @@
 	const errorMsg = ref('')
 	//页面id 
 	const pageId = ref(0)
+	const origin = ref(0)
 	//是否点赞过
 	let hasLike = ref(false)
 	//讨论区
@@ -262,10 +263,10 @@
 	}
 
 	// 修改后的数据获取逻辑
-	const fetchData = async (id) => {
+	const fetchData = async (id, origin) => {
 		try {
 			const res = await uni.request({
-				url: websiteUrl + `/view-collocation?collocation_id=${id}`,
+				url: websiteUrl + `/view-collocation?collocation_id=${id}&origin=${origin}`,
 			})
 
 			if (res.data.status !== 'success') {
@@ -384,9 +385,13 @@
 			})
 			return
 		}
+		
+		//区分type, origin=1,type=3   origin=2,type=4
+		let type = origin.value == 1 ? 3 : 4
+		
 		let requestData = {
 			id: parseInt(detailData.value.id),
-			type: 3,
+			type: type,
 		}
 		// 判断是请求点赞接口还是取消点赞接口 add-like unlike
 		let url = hasLike.value ? '/with-state/unlike' : '/with-state/add-like';
@@ -406,7 +411,7 @@
 					})
 					hasLike.value = !hasLike.value
 					getHasLike(detailData.value.id)
-					fetchData(detailData.value.id)
+					fetchData(detailData.value.id, origin.value)
 					return
 				} else {
 					uni.showToast({
@@ -431,9 +436,10 @@
 		if (token == "") {
 			return
 		}
-
+		//区分type, origin=1,type=3   origin=2,type=4
+		let type = origin.value == 1 ? 3 : 4
 		uni.request({
-			url: websiteUrl + '/with-state/hasLike?id=' + id + '&type=3',
+			url: websiteUrl + '/with-state/hasLike?id=' + id + '&type=' + type,
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -606,11 +612,17 @@
 	onLoad((options) => {
 		if (!options.collocation_id) {
 			error.value = true
-			errorMsg.value = '缺少必要参数'
+			errorMsg.value = '缺少必要参数Id'
+			return
+		}
+		if (!options.origin) {
+			error.value = true
+			errorMsg.value = '缺少必要参数Origin'
 			return
 		}
 		pageId.value = options.collocation_id
-		fetchData(options.collocation_id)
+		origin.value = options.origin
+		fetchData(options.collocation_id, options.origin)
 		//获取登录
 		asyncGetUserInfo().then((userInfo) => {
 			console.log(userInfo)

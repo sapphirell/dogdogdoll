@@ -43,6 +43,7 @@ function getQiniuToken() {
   });
 }
 function uploadImageToQiniu(croperPath, qnToken, fileName) {
+  let authorization = common_vendor.index.getStorageSync("token");
   return new Promise((resolve, reject) => {
     common_vendor.index.uploadFile({
       url: "https://up-cn-east-2.qiniup.com",
@@ -50,16 +51,38 @@ function uploadImageToQiniu(croperPath, qnToken, fileName) {
       method: "POST",
       filePath: croperPath,
       fileType: "image",
-      // 仅支付宝小程序，且必填
       formData: {
         token: qnToken,
         key: fileName,
         scope: "hobby-box:" + fileName
-        // 覆盖上传
       },
-      success: (res) => {
-        common_vendor.index.__f__("log", "at common/image.js:77", "上传成功");
-        resolve(res);
+      success: async (res) => {
+        try {
+          const fullUrl = common_config.image1Url + fileName;
+          const logRes = await common_vendor.index.request({
+            url: `${common_config.websiteUrl}/with-state/add-image-log`,
+            method: "POST",
+            header: {
+              "Content-Type": "application/json",
+              "Authorization": authorization
+            },
+            data: {
+              image_url: fullUrl
+            }
+          });
+          common_vendor.index.__f__("log", "at common/image.js:94", logRes);
+          if (logRes.data.status !== "success") {
+            throw new Error("上传图片失败");
+          }
+          resolve({ qiniuRes: res, imageUrl: fullUrl });
+        } catch (logErr) {
+          common_vendor.index.__f__("error", "at common/image.js:101", "日志记录失败:", logErr);
+          common_vendor.index.showToast({
+            title: "日志记录失败",
+            icon: "none"
+          });
+          reject("日志记录失败");
+        }
       },
       fail: (err) => {
         common_vendor.index.showToast({

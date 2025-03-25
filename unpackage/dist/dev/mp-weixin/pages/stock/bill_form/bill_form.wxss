@@ -23,27 +23,82 @@
 /* 垂直间距 */
 /* 透明度 */
 /* 文章场景相关 */
-.container {
-  background-color: #f8f8f8;
+.container.data-v-c24e185a {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
 }
-.light_button {
-  color: #fff;
-  background: #65C3D6;
-  box-shadow: 0 0 3px #1ed1e1;
-  border: 0px;
-  margin: 20px 0px;
-  border-radius: 15px;
+.form-card.data-v-c24e185a {
+  background: white;
+  border-radius: 8px;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
-.light_button:active {
-  background: #4e98a9;
+.form-item.data-v-c24e185a {
+  margin-bottom: 40rpx;
 }
-.inputer {
-  font-size: 20px;
-  border-bottom: 1px #ddd solid;
-  padding: 10px;
-  margin: 20px 0px;
+.form-label.data-v-c24e185a {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+  font-weight: 500;
 }
-textarea.inputer {
-  height: 120px;
-  resize: none;
+.form-input.data-v-c24e185a {
+  height: 80rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid #e6e6e6;
+  border-radius: 8px;
+  font-size: 28rpx;
+  transition: all 0.3s;
+  line-height: 80rpx;
+}
+.form-input.data-v-c24e185a:focus {
+  border-color: #a6e9f7;
+  box-shadow: 0 0 8rpx rgba(166, 233, 247, 0.2);
+}
+.picker-content.data-v-c24e185a {
+  height: 80rpx;
+  line-height: 80rpx;
+  color: #333;
+}
+.submit-button.data-v-c24e185a {
+  margin-top: 60rpx;
+  background: linear-gradient(135deg, #a6e9f7, #94a5f3);
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  box-shadow: 0 6rpx 20rpx rgba(166, 233, 247, 0.3);
+  transition: all 0.3s;
+  width: 100%;
+}
+.submit-button.data-v-c24e185a:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(166, 233, 247, 0.3);
+}
+.placeholder-style.data-v-c24e185a {
+  color: #ccc;
+  font-size: 28rpx;
+}
+.button-group.data-v-c24e185a {
+  margin-top: 60rpx;
+}
+.delete-button.data-v-c24e185a {
+  background: linear-gradient(135deg, #adadad, #ffbdbb);
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  box-shadow: 0 6rpx 20rpx rgba(255, 77, 79, 0.3);
+  transition: all 0.3s;
+  margin-top: 30rpx;
+}
+.delete-button.data-v-c24e185a:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(255, 77, 79, 0.3);
 }

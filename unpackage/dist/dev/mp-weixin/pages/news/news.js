@@ -28,6 +28,7 @@ const _sfc_main = {
       "配饰"
     ]);
     let activeType = common_vendor.ref("全部");
+    let originalNews = common_vendor.ref({});
     let news = common_vendor.ref({});
     const today = /* @__PURE__ */ new Date();
     const year = today.getFullYear();
@@ -40,20 +41,21 @@ const _sfc_main = {
     const itemWidth = screenWidth / 7;
     let scrollLeft = common_vendor.ref(0);
     const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
-    common_vendor.index.__f__("log", "at pages/news/news.vue:123", "状态栏高度" + statusBarHeight.value);
+    common_vendor.index.__f__("log", "at pages/news/news.vue:136", "状态栏高度" + statusBarHeight.value);
     let chooseDate = common_vendor.ref(todayFormat);
     let chooseItem = common_vendor.ref({});
     common_vendor.index.showLoading({
       title: "加载中"
     });
-    function getDateMap(type = "全部开售") {
+    function getDateMap() {
       common_vendor.index.request({
-        url: common_config.websiteUrl + `/goods-news?type=${type}`,
+        url: common_config.websiteUrl + `/goods-news`,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/news/news.vue:152", res.data.data);
-          news.value = res.data.data;
+          common_vendor.index.__f__("log", "at pages/news/news.vue:165", res.data.data);
+          originalNews.value = res.data.data;
+          news.value = filterNews("全部");
           for (let [key, value] of Object.entries(news.value)) {
             if (key === todayFormat) {
               chooseItem.value = value;
@@ -61,7 +63,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/news/news.vue:162", err);
+          common_vendor.index.__f__("log", "at pages/news/news.vue:177", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -69,17 +71,44 @@ const _sfc_main = {
         },
         complete: () => {
           scrollLeft.value = itemWidth * 7 - 5;
-          common_vendor.index.__f__("log", "at pages/news/news.vue:170", "left:" + scrollLeft.value);
+          common_vendor.index.__f__("log", "at pages/news/news.vue:185", "left:" + scrollLeft.value);
           common_vendor.index.hideLoading();
         }
       });
     }
+    function filterNews(type) {
+      const filtered = {};
+      Object.entries(originalNews.value).forEach(([date, info]) => {
+        const copy = {
+          ...info
+        };
+        if (copy.goods) {
+          copy.goods = type === "全部" ? copy.goods : copy.goods.filter((g) => g.type === type);
+          if (copy.goods.length === 0)
+            copy.goods = null;
+        }
+        filtered[date] = copy;
+      });
+      return filtered;
+    }
     const handleTabClick = (type) => {
       activeType.value = type;
-      getDateMap(type);
+      const filtered = filterNews(type);
+      news.value = {
+        ...filtered
+      };
+      const firstValidEntry = Object.entries(filtered).find(([_, v]) => v.goods);
+      if (firstValidEntry) {
+        chooseDate.value = firstValidEntry[0];
+        chooseItem.value = firstValidEntry[1];
+      } else {
+        chooseItem.value = {
+          goods: null
+        };
+      }
     };
     function selectDate(date, item) {
-      common_vendor.index.__f__("log", "at pages/news/news.vue:185", item);
+      common_vendor.index.__f__("log", "at pages/news/news.vue:235", item);
       chooseDate.value = date;
       chooseItem.value = item;
     }
@@ -101,7 +130,10 @@ const _sfc_main = {
     getDateMap();
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.f(tabList.value, (item, index, i0) => {
+        a: common_vendor.p({
+          width: "560rpx"
+        }),
+        b: common_vendor.f(tabList.value, (item, index, i0) => {
           return {
             a: common_vendor.t(item),
             b: index,
@@ -109,34 +141,44 @@ const _sfc_main = {
             d: common_vendor.o(($event) => handleTabClick(item), index)
           };
         }),
-        b: common_vendor.f(common_vendor.unref(news), (item, date, i0) => {
+        c: common_vendor.f(common_vendor.unref(news), (item, date, i0) => {
           return common_vendor.e({
-            a: item.weekday === "周日" || item.weekday === "周六"
+            a: item.goods_number > 0
+          }, item.goods_number > 0 ? common_vendor.e({
+            b: item.weekday === "周日" || item.weekday === "周六"
           }, item.weekday === "周日" || item.weekday === "周六" ? {
-            b: common_vendor.t(item.weekday)
+            c: common_vendor.t(item.goods_number)
           } : {}, {
-            c: item.weekday !== "周日" && item.weekday !== "周六"
+            d: item.weekday !== "周日" && item.weekday !== "周六"
           }, item.weekday !== "周日" && item.weekday !== "周六" ? {
-            d: common_vendor.t(item.weekday)
+            e: common_vendor.t(item.goods_number)
+          } : {}) : {}, {
+            f: item.weekday === "周日" || item.weekday === "周六"
+          }, item.weekday === "周日" || item.weekday === "周六" ? {
+            g: common_vendor.t(item.weekday)
           } : {}, {
-            e: common_vendor.unref(chooseDate) !== date
+            h: item.weekday !== "周日" && item.weekday !== "周六"
+          }, item.weekday !== "周日" && item.weekday !== "周六" ? {
+            i: common_vendor.t(item.weekday)
+          } : {}, {
+            j: common_vendor.unref(chooseDate) !== date
           }, common_vendor.unref(chooseDate) !== date ? {
-            f: common_vendor.t(item.day_number)
+            k: common_vendor.t(item.day_number)
           } : {
-            g: common_vendor.t(item.day_number)
+            l: common_vendor.t(item.day_number)
           }, {
-            h: item.id,
-            i: common_vendor.o(($event) => selectDate(date, item), item.id)
+            m: item.id,
+            n: common_vendor.o(($event) => selectDate(date, item), item.id)
           });
         }),
-        c: common_vendor.unref(scrollLeft),
-        d: common_vendor.t(common_vendor.unref(chooseDate)),
-        e: common_vendor.t(common_vendor.unref(chooseItem).weekday),
-        f: common_vendor.unref(chooseItem).goods == null
+        d: common_vendor.unref(scrollLeft),
+        e: common_vendor.t(common_vendor.unref(chooseDate)),
+        f: common_vendor.t(common_vendor.unref(chooseItem).weekday),
+        g: common_vendor.unref(chooseItem).goods == null
       }, common_vendor.unref(chooseItem).goods == null ? {} : {}, {
-        g: common_vendor.unref(chooseItem).goods
+        h: common_vendor.unref(chooseItem).goods
       }, common_vendor.unref(chooseItem).goods ? {
-        h: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
+        i: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
           return common_vendor.e({
             a: good.goods_image,
             b: common_vendor.t(good.sale_type),
@@ -163,7 +205,7 @@ const _sfc_main = {
           });
         })
       } : {}, {
-        i: common_vendor.p({
+        j: common_vendor.p({
           head_color: "rgb(185 195 253)"
         })
       });

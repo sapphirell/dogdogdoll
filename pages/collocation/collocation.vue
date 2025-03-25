@@ -28,9 +28,10 @@
 		<view class="saveCollocationDataList">
 			<view v-for="(item, index) in saveCollocationDataList" :key="index">
 				<view class="saveCollocationDataItem">
-					<image :src="item.goods_image" mode="aspectFill" style="width: 70px;height: 70px;"></image>
-					
-					<text style="width: calc(100% - 120px);display: inline-block;">{{item.type}} {{item.brand_name}} - {{item.goods_name}} 	</text>
+					<image v-if="item.goods_image" :src="item.goods_image" mode="aspectFill" style="width: 70px;height: 70px;"></image>
+					<text v-else class="no-image">?</text>
+					<text class="info-tap" style="width: calc(100% - 120px);display: inline-block;">{{item.type}} {{item.brand_name}} -
+						{{item.goods_name}} </text>
 					<image src="../../static/cancel.png" class="close_icon" @tap="deleteCollcation(index)" />
 				</view>
 			</view>
@@ -345,6 +346,28 @@
 			})
 			return
 		}
+		
+		//如果没有goods_id，存储goods_name进去即可
+		if (chooseGoodsId.value == 0) {
+			let data  = {
+				"brand_id": chooseBrandId.value,
+				"goods_id": 0,
+				"brand_name": chooseBrandName.value,
+				"goods_name": chooseGoodsName.value,
+				"goods_image": "",
+				"type": chooseType.value,
+			}
+			saveCollocationDataList.value.push(data)
+			showSelectTab.value = false
+			chooseBrandId.value = 0
+			chooseBrandName.value = ""
+			chooseGoodsId.value = 0
+			chooseGoodsName.value = ""
+			chooseType.value = ""
+			return
+		}
+		
+		
 		getGoodsInfo(chooseBrandId.value).then((res) => {
 			let data = {
 				"brand_id": chooseBrandId.value,
@@ -426,16 +449,31 @@
 			background: #fafafa;
 			width: 90vw;
 			margin: 10px auto;
-			text {
-				position: relative;
+
+			.info-tap {
+				position: absolute;
 				bottom: 30px;
 				margin-left: 10px;
 			}
+			
+			.no-image {
+				display: inline-block;
+				width: 70px;
+				height: 70px;
+				bottom: 0px;
+				margin-left: 0px;
+				color: #fda7a7;
+				font-size: 30px;
+				text-align: center;
+				line-height: 70px;
+				font-weight: 1000;
+			}
+			
 			.close_icon {
 				width: 20px;
 				height: 20px;
-				position: relative;
-				top: -25px;
+				position: absolute;
+				bottom: 30px;
 				right: 10px;
 				margin-left: 10px;
 				background: #f2f2f2;

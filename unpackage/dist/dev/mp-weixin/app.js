@@ -20,6 +20,9 @@ if (!Math) {
   "./pages/collocation/collocation.js";
   "./pages/collocation_share/collocation_share.js";
   "./pages/user_page/user_page.js";
+  "./pages/message_list/message_list.js";
+  "./pages/message_info/message_info.js";
+  "./pages/register/register.js";
 }
 const _sfc_main = {
   __name: "App",

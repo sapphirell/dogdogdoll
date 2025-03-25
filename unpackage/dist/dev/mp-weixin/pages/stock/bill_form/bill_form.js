@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../../common/vendor.js");
+const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
 const _sfc_main = {
   __name: "bill_form",
@@ -27,7 +28,7 @@ const _sfc_main = {
           formattedDate.value = formatDate(res.data.data.ymd);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:64", err);
+          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:112", err);
         }
       });
     }
@@ -134,22 +135,28 @@ const _sfc_main = {
       });
     }
     return (_ctx, _cache) => {
-      return {
+      return common_vendor.e({
         a: name.value,
         b: common_vendor.o(($event) => name.value = $event.detail.value),
         c: price.value,
         d: common_vendor.o(($event) => price.value = $event.detail.value),
-        e: common_vendor.t(formattedDate.value),
+        e: common_vendor.t(formattedDate.value || "请选择日期"),
         f: formattedDate.value,
         g: common_vendor.o(updateDate),
-        h: common_vendor.t(statusList[status.value]),
+        h: common_vendor.t(statusList[status.value] || "请选择状态"),
         i: status.value,
         j: statusList,
         k: common_vendor.o(updateStatus),
-        l: common_vendor.o(postSubmit)
-      };
+        l: common_assets._imports_0$6,
+        m: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        n: common_vendor.o(postSubmit),
+        o: common_vendor.unref(isEdit)
+      }, common_vendor.unref(isEdit) ? {
+        p: common_vendor.o((...args) => _ctx.handleDelete && _ctx.handleDelete(...args))
+      } : {});
     };
   }
 };
-wx.createPage(_sfc_main);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-c24e185a"]]);
+wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../../.sourcemap/mp-weixin/pages/stock/bill_form/bill_form.js.map

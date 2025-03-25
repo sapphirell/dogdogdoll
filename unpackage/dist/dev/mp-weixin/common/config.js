@@ -157,6 +157,11 @@ async function voteScore(type, score, targetId) {
   });
   return 0;
 }
+function getScene() {
+  {
+    return 4;
+  }
+}
 function saveUserInfo(data) {
   common_vendor.index.setStorageSync("userInfo", data);
   global.userInfo = data;
@@ -168,13 +173,14 @@ function clearUserInfo() {
   global.isLogin = false;
 }
 function handleRequestError(error, message = "请求失败") {
-  common_vendor.index.__f__("error", "at common/config.js:207", error);
+  common_vendor.index.__f__("error", "at common/config.js:239", error);
   common_vendor.index.showToast({
     title: message,
     icon: "none"
   });
 }
 exports.asyncGetUserInfo = asyncGetUserInfo;
+exports.getScene = getScene;
 exports.getUserInfo = getUserInfo;
 exports.global = global;
 exports.image1Url = image1Url;

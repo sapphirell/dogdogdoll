@@ -41,14 +41,13 @@
 }
 .dolls.data-v-aa9d9d58 {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: flex-start;
+  gap: 20rpx;
 }
 .dolls .doll_item.data-v-aa9d9d58 {
   width: calc(25vw - 15px);
-  height: 150px;
-  margin: 5px auto;
+  height: 110px;
   overflow: hidden;
-  float: left;
 }
 .dolls .doll_item image.data-v-aa9d9d58 {
   width: 100%;
@@ -78,7 +77,6 @@
 .brand .index_brand_logo.data-v-aa9d9d58 {
   width: 100px;
   height: 80px;
-  margin-top: 10px;
   float: left;
 }
 .brand .brand_info_tab.data-v-aa9d9d58 {

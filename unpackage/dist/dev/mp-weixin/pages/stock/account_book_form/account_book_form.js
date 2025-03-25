@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../../common/vendor.js");
+const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
 const common_image = require("../../../common/image.js");
 const _sfc_main = {
@@ -32,21 +33,21 @@ const _sfc_main = {
           id
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:100", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:162", res.data.data);
           name.value = res.data.data.name;
           price.value = res.data.data.price;
           selectedType.value = accountBookTypeList.value.indexOf(res.data.data.type);
           accountImage.value = res.data.data.image_url;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:107", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:169", err);
         }
       });
     }
     function selectImage() {
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:116", tokenData);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:178", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -54,7 +55,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:125", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:187", common_config.image1Url + tokenData.path);
             accountImage.value = common_config.image1Url + tokenData.path;
             common_vendor.index.showToast({
               title: "上传成功",
@@ -90,7 +91,7 @@ const _sfc_main = {
         type: accountBookTypeList.value[selectedType.value],
         image_url: accountImage.value
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:175", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:237", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -99,7 +100,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:185", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:247", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -133,7 +134,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:223", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:285", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -153,7 +154,7 @@ const _sfc_main = {
     }
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.t(accountBookTypeList.value[selectedType.value]),
+        a: common_vendor.t(accountBookTypeList.value[selectedType.value] || "请选择分类"),
         b: selectedType.value,
         c: accountBookTypeList.value,
         d: common_vendor.o(updateSelectedType),
@@ -164,12 +165,20 @@ const _sfc_main = {
         i: accountImage.value
       }, accountImage.value ? {
         j: accountImage.value
+      } : {
+        k: common_vendor.o(selectImage)
+      }, {
+        l: common_assets._imports_0$6,
+        m: common_vendor.unref(isEdit)
+      }, common_vendor.unref(isEdit) ? {
+        n: common_vendor.o((...args) => _ctx.handleDelete && _ctx.handleDelete(...args))
       } : {}, {
-        k: common_vendor.o(selectImage),
-        l: common_vendor.o(postSubmit)
+        o: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        p: common_vendor.o(postSubmit)
       });
     };
   }
 };
-wx.createPage(_sfc_main);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-0299c5b6"]]);
+wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../../.sourcemap/mp-weixin/pages/stock/account_book_form/account_book_form.js.map

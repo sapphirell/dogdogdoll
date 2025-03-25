@@ -9,12 +9,12 @@
 					<image src="../../static/heart2.png" v-else></image>
 					<text>{{ formatNumber(goods.goods_like_count) }}</text>
 				</view>
-				<swiper :interval="3000" :duration="200" @change="onChange" class="banner_swiper">
+				<swiper :interval="3000" :duration="200" @change="onChange" class="banner_swiper" style="max-height: 800px;"  :style="{ height: swiperHeight + 'px' }">
 					<block v-for="(item, key) in goods.goods_images" :key="key">
 						<swiper-item class="banner_swiper_item">
 							<view class="swiper-item">
-								<image :src="item" mode="widthFix" style="width: 100vw;min-height: 25vh;"
-									@tap="viewFullImage(key)"></image>
+								<image :src="item" mode="widthFix" style="width: 100%; display: block;" :class="'swiper-image-'+key" 
+									@tap="viewFullImage(key)" @load="onImageLoad(key)" ></image>
 							</view>
 						</swiper-item>
 					</block>
@@ -50,8 +50,8 @@
 					{{goods.size}} / {{goods.size_detail}}
 				</text>
 			</view>
-			<view v-if="goods.type==='单体' || goods.type === '整体'" class="msg_block">
-				<text class="lable_text">胸型</text>
+			<view v-if="goods.type==='单体' || goods.type === '整体' || goods.type === '单头'" class="msg_block">
+				<text class="lable_text">可选体型</text>
 				<text class="msg_text">
 					{{goods.body_size}}
 				</text>
@@ -85,13 +85,13 @@
 		</view>
 
 		<!-- 搭配参考 -->
-		<view style="padding: 20px;">
+		<view style="padding: 40rpx;">
 			<view style="display: flex;margin: 30px 5px 10px 5px;">
 				<text
-					style="color: rgb(100, 198, 220);font-weight: bold; display: block;width: calc(100% - 85px);">搭配参考</text>
+					style="color: rgb(100, 198, 220);font-weight: bold; display: block;width: calc(100% - 130rpx);">搭配参考</text>
 				<view style="display: flex;">
-					<text style="width: 70px;display: inline-block;color: #888;">查看更多</text>
-					<image src="../../static/right2.png" style="width: 20px;height: 20px;display: inline-block;">
+					<text style="width: 110rpx;display: inline-block;color: #888;">查看更多</text>
+					<image src="../../static/right2.png" style="width: 30rpx;height: 30rpx;display: inline-block;position: relative;top: 3rpx;">
 					</image>
 				</view>
 
@@ -101,7 +101,7 @@
 				<!-- 遍历搭配参考 -->
 				<view v-if="collocationList && collocationList.collocation_relation_list.length > 0"
 					v-for="collocation in collocationList.collocation_relation_list" :key="collocation.collocation_id"
-					style="" class="collocationItem square" @tap="jump2collectionDetail(collocation.collocation_id)">
+					style="" class="collocationItem square" @tap="jump2collectionDetail(collocation.collocation_id, collocation.relation_origin)">
 					<image :src="getImageForList(collocation.image_urls)" mode="aspectFill"
 						style="width: 100%;height: 100%;"></image>
 
@@ -251,7 +251,35 @@
 
 	//引用回复
 	let replyForItem = ref({})
+	
+	//轮播图高度
+	const swiperHeight = ref(400); // 初始高度，根据需求调整
+	const imageHeights = ref([]);
 
+	// 图片加载完成回调
+	function onImageLoad(index) {
+		console.log('图片加载完成', index);
+	  const query = uni.createSelectorQuery();
+	  setTimeout(() => {
+		  query.select(`.swiper-image-${index}`)
+		  		.boundingClientRect(rect => {
+		  		  try {
+		  			if (!rect) {
+		  			  console.warn('未找到图片元素');
+		  			  return;
+		  			}
+		  			console.log(rect)
+		  			imageHeights.value[index] = rect.height;
+		  			const validHeights = imageHeights.value.filter(h => h > 0);
+		  			if (validHeights.length === 0) return;
+		  			swiperHeight.value = Math.max(...validHeights);
+		  		  } catch (e) {
+		  			console.error('高度计算异常:', e);
+		  		  }
+		  		}).exec();
+	  }, 20);
+	 
+	}
 
 	uni.showLoading({
 		title: '加载中'
@@ -526,9 +554,9 @@
 		})
 	}
 	//跳转到收藏详情页面
-	function jump2collectionDetail(collocation_id) {
+	function jump2collectionDetail(collocation_id, origin) {
 		uni.navigateTo({
-			url: '/pages/collocation_share/collocation_share?collocation_id=' + collocation_id
+			url: '/pages/collocation_share/collocation_share?collocation_id=' + collocation_id + '&origin=' + origin
 		})
 	}
 
@@ -615,7 +643,8 @@
 	}
 
 	.banner_swiper {
-		height: 45vh;
+		// min-height: 45vh;
+		// max-height: 55vh;
 		position: relative;
 	}
 
@@ -643,8 +672,13 @@
 		}
 	}
 
+
+	.banner_swiper_item {
+	  height: auto; /* 允许高度自适应 */
+	}
+
 	.swiper-item {
-		height: 45vh;
+	  height: auto; /* 允许内容撑开高度 */
 	}
 
 	.swiper-index-box {
@@ -727,7 +761,7 @@
 		border-radius: 30px;
 		overflow: hidden;
 		position: relative;
-		top: -20px;
+		top: -25px;
 		background: #fff;
 		padding: 20px;
 		box-shadow: 0 0px 10px #ffffff30;

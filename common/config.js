@@ -189,6 +189,38 @@ export async function voteScore(type, score, targetId) {
 
 	return 0;
 }
+// 获取当前场景  评论来源 1=网页 2=ios 3=安卓 4=微信小程序
+export function getScene() {
+	// 获取运行平台信息
+	const platform = process.env.UNI_PLATFORM
+
+	// 微信小程序
+	if (platform === 'mp-weixin') {
+		return 4
+	}
+
+	// H5网页
+	if (platform === 'h5') {
+		return 1
+	}
+
+	// App 环境
+	if (platform === 'app-plus') {
+		const systemInfo = uni.getSystemInfoSync()
+		// iOS 设备
+		if (systemInfo.osName === 'ios') {
+			return 2
+		}
+		// Android 设备
+		if (systemInfo.osName === 'android') {
+			return 3
+		}
+	}
+
+	// 默认返回网页（可根据需要修改）
+	return 1
+}
+
 
 // 工具函数
 function saveUserInfo(data) {

@@ -80,7 +80,7 @@
 
 		<view class="bottom_tab" :style="{ paddingBottom : footerBottomHeight }">
 			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="myComment" style="" :adjust-position="false" ></textarea>
+			<textarea class="comment_input" v-model="comment" style="" :adjust-position="false" ></textarea>
 
 			<!-- 按钮 -->
 			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
@@ -101,6 +101,7 @@
 		getUserInfo, 
 		global, 
 		voteScore,
+		getScene,
 	} from "../../common/config.js";
 	import {
 		onShow,
@@ -318,6 +319,8 @@
 			})
 			return
 		}
+		
+		let scene = getScene()		
 		uni.request({
 			url: websiteUrl + '/with-state/add-comment',
 			method: 'POST',
@@ -329,6 +332,7 @@
 				target_id: parseInt(props.brand_id),
 				content: comment.value,
 				type: 1,
+				origin: scene,
 			},
 			success: (res) => {
 				console.log(res.data);

@@ -78,7 +78,7 @@ const _sfc_main = {
           const data = res.data.data;
           const list = data[listKey];
           const transformed = list.map((item) => {
-            var _a, _b;
+            var _a, _b, _c;
             switch (currentTab.value) {
               case 0:
                 return {
@@ -91,7 +91,7 @@ const _sfc_main = {
               case 1:
                 return {
                   id: item.id,
-                  cover: item.image_url,
+                  cover: ((_c = item.image_urls) == null ? void 0 : _c.split(",")[0]) || "",
                   title: item.name,
                   desc: item.description,
                   time: item.created_at

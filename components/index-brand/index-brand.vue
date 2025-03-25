@@ -55,13 +55,14 @@ function jumpGoods(id) {
 .doll_name {font-family: monospace; color: #806161;}
 .dolls {
 	display: flex;
-	justify-content: space-evenly;
+	justify-content: flex-start;
+	gap: 20rpx;
 	.doll_item {
 		width: calc(25vw - 15px);
-		height: 150px;
-		margin: 5px auto;
+		height: 110px;
+		// margin: 5px auto;
 		overflow: hidden;
-		float: left;
+		// float: left;
 		image {
 			width: 100%;
 			// height: 120px;
@@ -94,14 +95,10 @@ function jumpGoods(id) {
 	.index_brand_logo {
 		width: 100px;
 		height: 80px;
-		margin-top: 10px;
 		float: left;
 	}
 	.brand_info_tab {
-		// border-bottom: 1px dashed #f7f7f7;
-		    height: 130px;
-		    // margin-bottom: 10px;
-			// padding-bottom: 12px;
+		height: 130px;
 	}
 	.brand_info {
 		width: calc(100vw - 155px);

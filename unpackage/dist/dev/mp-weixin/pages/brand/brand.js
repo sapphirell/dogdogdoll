@@ -14,7 +14,7 @@ const _sfc_main = {
   props: ["brand_id"],
   setup(__props) {
     const props = __props;
-    common_vendor.index.__f__("log", "at pages/brand/brand.vue:112", props);
+    common_vendor.index.__f__("log", "at pages/brand/brand.vue:113", props);
     common_vendor.index.showLoading({
       title: "加载中"
     });
@@ -37,7 +37,7 @@ const _sfc_main = {
         safeBottom += keyboardHeight.value;
       }
       let bottom = `${safeBottom}px`;
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:155", "footer-brand:" + bottom);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:156", "footer-brand:" + bottom);
       return bottom;
     });
     let comment = common_vendor.ref("");
@@ -58,7 +58,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:183", rateValue.value, props.brand_id);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:184", rateValue.value, props.brand_id);
       common_config.voteScore(1, rateValue.value, props.brand_id);
     }
     function getBrandsInfo() {
@@ -67,14 +67,14 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:194", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:195", res.data.data);
           brand.value = res.data.data;
           common_vendor.index.setNavigationBarTitle({
             title: res.data.data.brand_name
           });
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:203", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:204", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -101,7 +101,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:235", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:236", res.data.data);
           goods.value.page_index = res.data.data.page_index;
           goods.value.total = res.data.data.total;
           goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
@@ -116,7 +116,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:252", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:253", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -130,7 +130,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:268", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:269", res.data.data);
           comments.value.page_index = res.data.data.page_index;
           comments.value.total = res.data.data.total;
           comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comment_list) : res.data.data.comment_list;
@@ -147,7 +147,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:288", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:289", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -174,6 +174,7 @@ const _sfc_main = {
         });
         return;
       }
+      let scene = common_config.getScene();
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -184,10 +185,11 @@ const _sfc_main = {
           //props.brand_id转为int
           target_id: parseInt(props.brand_id),
           content: comment.value,
-          type: 1
+          type: 1,
+          origin: scene
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:334", res.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:338", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "评论成功",
@@ -207,7 +209,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:356", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:360", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -235,7 +237,7 @@ const _sfc_main = {
           type
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:385", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:389", res.data.data);
           if (res.data.status == "success") {
             rateValue.value = res.data.data.score;
             return res.data.data.score;
@@ -248,7 +250,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:398", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:402", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -328,8 +330,8 @@ const _sfc_main = {
         v: common_vendor.o(voteScoreProxy),
         w: !common_vendor.unref(activeModal) ? 1 : "",
         x: common_vendor.o(($event) => openRate()),
-        y: _ctx.myComment,
-        z: common_vendor.o(($event) => _ctx.myComment = $event.detail.value),
+        y: common_vendor.unref(comment),
+        z: common_vendor.o(($event) => common_vendor.isRef(comment) ? comment.value = $event.detail.value : comment = $event.detail.value),
         A: common_vendor.o(addComments),
         B: footerBottomHeight.value
       });

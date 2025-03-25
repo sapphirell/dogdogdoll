@@ -1,26 +1,88 @@
 <template>
+	<view class="container">
+		<!-- 表单卡片容器 -->
+		<view class="form-card">
+			<!-- 分类选择 -->
+			<view class="form-item">
+				<text class="form-label">分类</text>
+				<picker 
+					mode="selector" 
+					class="form-input"
+					:value="selectedType" 
+					:range="accountBookTypeList"
+					@change="updateSelectedType">
+					<view class="picker-content">
+						{{ accountBookTypeList[selectedType] || '请选择分类' }}
+					</view>
+				</picker>
+			</view>
 
-	<view style="padding: 15px;">
-		<!-- 账本 -->
-		<view>
-			<text>分类</text>
-			<picker mode="selector" class="inputer" :value="selectedType" :range="accountBookTypeList"
-				@change="updateSelectedType">
-				<view class="uni-input">{{ accountBookTypeList[selectedType] }}</view>
+			<!-- 名称 -->
+			<view class="form-item">
+				<text class="form-label">名称</text>
+				<input 
+					class="form-input" 
+					type="text" 
+					placeholder="请输入名称"
+					placeholder-class="placeholder-style"
+					v-model="name" />
+			</view>
 
-			</picker>
+			<!-- 价值 -->
+			<view class="form-item">
+				<text class="form-label">价值</text>
+				<input 
+					class="form-input" 
+					type="digit" 
+					placeholder="请输入价值"
+					placeholder-class="placeholder-style"
+					v-model="price" />
+			</view>
 
+			<!-- 图片上传 -->
+			<view class="form-item">
+				<text class="form-label">物品图片</text>
+				<view class="upload-wrapper">
+					<view v-if="accountImage" class="preview-image">
+						<image 
+							mode="aspectFill" 
+							:src="accountImage"
+							class="image-preview"></image>
+						<text class="image-tip">点击更换图片</text>
+					</view>
+					<button 
+						class="upload-button" 
+						@click="selectImage"
+						v-else>
+						<text class="iconfont icon-camera"></text>
+						选择图片
+					</button>
+				</view>
+			</view>
+			<view style="overflow: hidden;">
+				<image src="/static/info-circle.png" mode="aspectFill" style="width: 28rpx;height: 28rpx;margin-right: 10rpx; position: relative;top: 3rpx;"></image>
+				<text style="color: #888;">仅用于记录您所购买过的物品，其他人不会看到</text>
+			</view>
+			
+			<!-- 操作按钮 -->
+			<view class="button-group">
+				<button 
+					class="delete-button" 
+					v-if="isEdit"
+					@click="handleDelete">
+					删除账本
+				</button>
+				<button 
+					class="submit-button" 
+					@click="postSubmit">
+					提交{{ isEdit ? '修改' : '新增' }}
+				</button>
+			</view>
 		</view>
-		<input class="inputer" type="text" placeholder="名称" v-model="name" />
-		<input class="inputer" type="digit" placeholder="价值" v-model="price" />
-		<view v-if="accountImage">
-			<image mode="aspectFill" :src="accountImage"></image>
-		</view>
-		<button class="" @click="selectImage">选择图片</button>
-		<button class="light_button" @click="postSubmit">提交</button>
+
+
 	</view>
 </template>
-
 <script setup>
 	import {
 		ref
@@ -241,70 +303,152 @@
 	}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+	$primary-color: #a6e9f7;
+	$hover-color: #94a5f3;
+	$border-color: #e6e6e6;
+	$radius: 8px;
+
 	.container {
-		background-color: #f8f8f8;
+		padding: 20rpx;
+		background-color: #f5f5f5;
+		min-height: 100vh;
 	}
 
-	.switch_tab {
-		display: flex;
-		justify-content: space-around;
+	.form-card {
+		background: white;
+		border-radius: $radius;
+		padding: 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+	}
 
-		button {
-			background: #fff;
-			color: #888;
-			width: 25vw;
-			text-align: center;
-			padding: 10px;
-			border-radius: 5px;
+	.form-item {
+		margin-bottom: 40rpx;
+	}
+
+	.form-label {
+		display: block;
+		font-size: 28rpx;
+		color: #666;
+		margin-bottom: 16rpx;
+		font-weight: 500;
+	}
+
+	.form-input {
+		height: 80rpx;
+		padding: 0 20rpx;
+		border: 2rpx solid $border-color;
+		border-radius: $radius;
+		font-size: 28rpx;
+		transition: all 0.3s;
+		line-height: 80rpx;
+		
+		&:focus {
+			border-color: $primary-color;
+			box-shadow: 0 0 8rpx rgba($primary-color, 0.2);
 		}
+	}
 
-		button:after {
-			border: none;
+	.picker-content {
+		height: 80rpx;
+		line-height: 80rpx;
+		color: #333;
+	}
+
+	.upload-wrapper {
+		border: 2rpx dashed $border-color;
+		border-radius: $radius;
+		padding: 30rpx;
+		text-align: center;
+	}
+
+	.preview-image {
+		position: relative;
+		margin: 0 auto;
+		max-width: 400rpx;
+		
+		.image-preview {
+			width: 100%;
+			height: 300rpx;
+			border-radius: $radius;
 		}
-
-		button:active {
-			background: #e5e5e5;
-			color: #000;
+		
+		.image-tip {
+			position: absolute;
+			bottom: 20rpx;
+			left: 50%;
+			transform: translateX(-50%);
+			color: white;
+			font-size: 24rpx;
+			background: rgba(0,0,0,0.5);
+			padding: 8rpx 20rpx;
+			border-radius: 20rpx;
 		}
 	}
 
-	.data_body {
-		margin-top: 20px;
+	.upload-button {
+		background: rgba($primary-color, 0.1);
+		color: $primary-color;
+		border: none;
+		font-size: 28rpx;
+		height: auto;
+		line-height: 1.5;
+		padding: 20rpx;
+		border-radius: $radius;
+		transition: all 0.3s;
+		
+		.iconfont {
+			margin-right: 12rpx;
+		}
+		
+		&:active {
+			background: rgba($primary-color, 0.2);
+		}
 	}
 
-	.tab_body_1st,
-	.tab_body_sec,
-	.tab_body_3th {
-		background-color: #fff;
-		padding: 20px;
-		border-radius: 5px;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	.submit-button {
+		margin-top: 60rpx;
+		background: linear-gradient(135deg, $primary-color, $hover-color);
+		color: white;
+		border: none;
+		border-radius: 50rpx;
+		font-size: 32rpx;
+		height: 90rpx;
+		line-height: 90rpx;
+		box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.3);
+		transition: all 0.3s;
+		width: 100%;
+		
+		&:active {
+			transform: translateY(2rpx);
+			box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.3);
+		}
 	}
 
-	.none {
-		display: none;
+	.placeholder-style {
+		color: #ccc;
+		font-size: 28rpx;
 	}
 
-	.light_button {
-		color: #fff;
-		background: #65C3D6;
-		box-shadow: 0 0 3px #1ed1e1;
-		border: 0px;
-		margin: 20px 0px;
-		border-radius: 15px;
-
+	.button-group {
+		margin-top: 60rpx;
 	}
-
-	.light_button:active {
-		background: #4e98a9;
-	}
-
-
-	.inputer {
-		font-size: 20px;
-		border-bottom: 1px #ddd solid;
-		padding: 10px;
-		margin: 40px 0px;
+	
+	.delete-button {
+		background: linear-gradient(135deg, #adadad, #ffbdbb);
+		color: white;
+		border: none;
+		border-radius: 50rpx;
+		font-size: 32rpx;
+		height: 90rpx;
+		line-height: 90rpx;
+		box-shadow: 0 6rpx 20rpx rgba(255,77,79,0.3);
+		transition: all 0.3s;
+		margin-top: 30rpx;
+		
+		&:active {
+			transform: translateY(2rpx);
+			box-shadow: 0 4rpx 12rpx rgba(255,77,79,0.3);
+		}
 	}
 </style>
