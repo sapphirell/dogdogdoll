@@ -5,12 +5,15 @@
 			{{ selectedValue || placeholder }}
 		</div>
 
-		<transition name="slide-fade">
-			<ul class="select-options" v-show="isOpen">
-				<li v-for="(item, index) in dataList" :key="index" class="option-item" @click="selectItem(item)">
-					{{ item }}
-				</li>
-			</ul>
+		<transition name="slide-fade" >
+			<div class="options-wrapper">
+				<ul class="select-options" v-if="isOpen">
+					<li v-for="(item, index) in dataList" :key="index" class="option-item" @click="selectItem(item)">
+						{{ item }}
+					</li>
+				</ul>
+			</div>
+			
 		</transition>
 	</div>
 </template>
@@ -40,6 +43,7 @@
 	const containerRef = ref(null)
 
 	const toggleOpen = () => {
+	console.log(props.dataList)
 		isOpen.value = !isOpen.value
 	}
 
@@ -95,7 +99,6 @@
 		padding: 0;
 		list-style: none;
 		background: #fff;
-		border: 1px solid #e4e7ed;
 		border-radius: 4px;
 		box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 		overflow-y: auto;

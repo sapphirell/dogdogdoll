@@ -38,6 +38,15 @@
   border-radius: 8px;
   overflow: hidden;
 }
+.follow.data-v-1a297a1d {
+  padding: 12rpx 30rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  display: inline-block;
+  color: #ffffff;
+  font-size: 11px;
+  margin-left: 80rpx;
+}
 .body.data-v-1a297a1d {
   box-shadow: 0px 0px 5px rgb(0 0 0%);
   width: 100vw;
@@ -57,6 +66,18 @@
 }
 .load_more.data-v-1a297a1d::after {
   border: none;
+}
+.mask.data-v-1a297a1d {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  opacity: 0;
+  z-index: 99;
+  width: 100vw;
+  height: 100vh;
 }
 .bottom_tab.data-v-1a297a1d {
   /* 垂直居中 */

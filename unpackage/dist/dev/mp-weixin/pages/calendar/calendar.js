@@ -12,7 +12,7 @@ if (!Math) {
   (_easycom_common_search + _easycom_common_page)();
 }
 const _sfc_main = {
-  __name: "news",
+  __name: "calendar",
   setup(__props) {
     const tabList = common_vendor.ref([
       "全部",
@@ -41,7 +41,7 @@ const _sfc_main = {
     const itemWidth = screenWidth / 7;
     let scrollLeft = common_vendor.ref(0);
     const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
-    common_vendor.index.__f__("log", "at pages/news/news.vue:136", "状态栏高度" + statusBarHeight.value);
+    common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:136", "状态栏高度" + statusBarHeight.value);
     let chooseDate = common_vendor.ref(todayFormat);
     let chooseItem = common_vendor.ref({});
     common_vendor.index.showLoading({
@@ -53,7 +53,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/news/news.vue:165", res.data.data);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:165", res.data.data);
           originalNews.value = res.data.data;
           news.value = filterNews("全部");
           for (let [key, value] of Object.entries(news.value)) {
@@ -63,7 +63,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/news/news.vue:177", err);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:177", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -71,7 +71,7 @@ const _sfc_main = {
         },
         complete: () => {
           scrollLeft.value = itemWidth * 7 - 5;
-          common_vendor.index.__f__("log", "at pages/news/news.vue:185", "left:" + scrollLeft.value);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:185", "left:" + scrollLeft.value);
           common_vendor.index.hideLoading();
         }
       });
@@ -108,7 +108,7 @@ const _sfc_main = {
       }
     };
     function selectDate(date, item) {
-      common_vendor.index.__f__("log", "at pages/news/news.vue:235", item);
+      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:235", item);
       chooseDate.value = date;
       chooseItem.value = item;
     }
@@ -212,7 +212,7 @@ const _sfc_main = {
     };
   }
 };
-const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-24bc9d41"]]);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-6e8913ab"]]);
 _sfc_main.__runtimeHooks = 2;
 wx.createPage(MiniProgramPage);
-//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/news/news.js.map
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/calendar/calendar.js.map

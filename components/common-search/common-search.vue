@@ -1,16 +1,16 @@
 <template>
 	<view class="search_tab">
 		<image class="icon_image" src="../../static/search.png" v-if="props.mode == 'jump'"></image>
-		<input class="common_search_input" placeholder="请输入品牌 …" v-model="searchTerm" @input="onSearchInput" :ignoreCompositionEvent=false />
+		<input class="common_search_input" placeholder="请输入品牌 …" v-model="searchTerm" @input="onSearchInput" :ignoreCompositionEvent="false" />
 		<image class="icon_image" src="../../static/cancel.png" @tap="cancel" v-if="results.length > 0" ></image>
 	</view>
 
 	<!-- 显示搜索结果 -->
-	<view v-if="results.length > 0" class="search_results" :style="{width: width}">
+	<scroll-view v-if="results.length > 0" class="search_results" :style="{width: width}" scroll-y>
 		<view v-for="item in results" :key="item.id" class="result_item"  @tap="onTap(item.id, item.name)">
 			{{ item.name }}
 		</view>
-	</view>
+	</scroll-view >
 </template>
 
 <script setup>
@@ -100,7 +100,7 @@
 
 <style lang="less">
 	.search_tab {
-		padding: 3px 10px;
+		// padding: 3px 10px;
 		box-sizing: border-box;
 		display: flex;
 		align-items: center;
@@ -111,7 +111,7 @@
 		image {
 			position: relative;
 			margin-left: 5px;
-			top: 3px;
+			// top: 3px;
 		}
 
 		.common_search_input {
@@ -120,7 +120,7 @@
 			  padding: 10px 15px;
 			width: calc(100% - 85px);
 			// text-align: center;
-			top: 3px;
+			top: 2rpx;
 			position: relative;
 		}
 	}
@@ -132,6 +132,8 @@
 		border-radius: 5px;
 		position: absolute;
 		z-index: 12;
+		box-shadow: 0 0 15px #0000002b;
+		max-height: 400rpx;
 		.result_item {
 			padding: 15px 0;
 			cursor: pointer;

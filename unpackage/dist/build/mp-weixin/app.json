@@ -20,7 +20,9 @@
     "pages/user_page/user_page",
     "pages/message_list/message_list",
     "pages/message_info/message_info",
-    "pages/register/register"
+    "pages/register/register",
+    "pages/user_like/user_like",
+    "pages/collocation_square/collocation_square"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -35,7 +37,13 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页",
+        "text": "百科",
+        "iconPath": "static/new-icon/home-w.png",
+        "selectedIconPath": "static/new-icon/home-b.png"
+      },
+      {
+        "pagePath": "pages/collocation_square/collocation_square",
+        "text": "广场",
         "iconPath": "static/new-icon/home-w.png",
         "selectedIconPath": "static/new-icon/home-b.png"
       },

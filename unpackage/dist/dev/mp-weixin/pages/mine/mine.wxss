@@ -44,8 +44,8 @@
 }
 .avatar-container.data-v-7c2ebfa5 {
   display: inline-block;
-  width: calc(30vw - 40rpx);
-  height: calc(30vw - 40rpx);
+  width: 180rpx;
+  height: 180rpx;
   padding: 5rpx;
   float: left;
   border: 3rpx solid #fff;
@@ -111,22 +111,22 @@
   display: block;
   width: 100%;
   text-align: center;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #626262;
 }
 .pageinfo-infobox .info-item .mine-info-number.data-v-7c2ebfa5 {
   display: block;
   width: 100%;
   text-align: center;
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #949494;
   font-weight: 1000;
   margin-top: 20rpx;
 }
 .pageinfo-infobox .info-item .icon.data-v-7c2ebfa5 {
-  width: 80rpx;
-  height: 80rpx;
-  margin: 10rpx 55rpx 0rpx 55rpx;
+  width: 60rpx;
+  height: 60rpx;
+  margin: 10rpx 70rpx 0rpx 70rpx;
 }
 .button-container.data-v-7c2ebfa5 {
   overflow: hidden;
@@ -209,10 +209,8 @@
 }
 .unlogin-container.data-v-7c2ebfa5 {
   padding: 40rpx 60rpx;
-  background: linear-gradient(135deg, #e0f3ff 0%, #f8fdff 100%);
-  background: #e0f3ff;
-  background-image: radial-gradient(#fff 20%, transparent 0);
-  background-size: 20px 20px;
+  background: linear-gradient(135deg, #e0f3ff 0%, #fff9fb 100%);
+  background-size: 15px 15px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -222,7 +220,7 @@
   height: 15vh;
 }
 .unlogin-container .welcome-text.data-v-7c2ebfa5 {
-  font-size: 48rpx;
+  font-size: 40rpx;
   font-weight: 600;
   color: #2c3e50;
   text-align: center;
@@ -247,7 +245,6 @@
   margin: 40rpx 0;
   border-radius: 16rpx;
   background: #ffffff;
-  border: 2rpx solid #e6e6e6;
   font-size: 32rpx;
   transition: all 0.3s;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
@@ -310,4 +307,32 @@
 }
 .input-with-icon input.data-v-7c2ebfa5 {
   padding-left: 80rpx !important;
+}
+.submit-btn.data-v-7c2ebfa5 {
+  margin-top: 60rpx;
+  background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  box-shadow: 0 6rpx 20rpx rgba(166, 233, 247, 0.3);
+  transition: all 0.3s;
+  width: 100%;
+}
+.submit-btn.data-v-7c2ebfa5::after {
+  border: none;
+}
+.submit-btn.loading.data-v-7c2ebfa5 {
+  opacity: 0.7;
+  background: #007aff;
+}
+.submit-btn[disabled].data-v-7c2ebfa5 {
+  background: #c8c9cc;
+  color: #fff;
+}
+.submit-btn.data-v-7c2ebfa5:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(166, 233, 247, 0.3);
 }

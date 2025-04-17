@@ -19,6 +19,9 @@ uni.loadFontFace({
   source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
   success() {
 	  console.log('load font success')
+  },
+  fail(e) {
+	  console.log('load font fail', e)
   }
 })
 

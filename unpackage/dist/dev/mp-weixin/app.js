@@ -9,7 +9,7 @@ if (!Math) {
   "./pages/watch_demo/watch_demo.js";
   "./pages/goods/goods.js";
   "./pages/brand/brand.js";
-  "./pages/news/news.js";
+  "./pages/calendar/calendar.js";
   "./pages/pop_croper/pop_croper.js";
   "./pages/setting/setting.js";
   "./pages/setting/password/password.js";
@@ -23,6 +23,9 @@ if (!Math) {
   "./pages/message_list/message_list.js";
   "./pages/message_info/message_info.js";
   "./pages/register/register.js";
+  "./pages/user_like/user_like.js";
+  "./pages/collocation_square/collocation_square.js";
+  "./pages/sale_news/sale_news.js";
 }
 const _sfc_main = {
   __name: "App",
@@ -36,6 +39,9 @@ common_vendor.index.loadFontFace({
   source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
   success() {
     common_vendor.index.__f__("log", "at main.js:21", "load font success");
+  },
+  fail(e) {
+    common_vendor.index.__f__("log", "at main.js:24", "load font fail", e);
   }
 });
 function createApp() {

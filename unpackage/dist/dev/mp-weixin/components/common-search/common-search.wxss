@@ -1,5 +1,4 @@
 .search_tab {
-  padding: 3px 10px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -9,13 +8,12 @@
 .search_tab image {
   position: relative;
   margin-left: 5px;
-  top: 3px;
 }
 .search_tab .common_search_input {
   display: inline-block;
   padding: 10px 15px;
   width: calc(100% - 85px);
-  top: 3px;
+  top: 2rpx;
   position: relative;
 }
 .search_results {
@@ -25,6 +23,8 @@
   border-radius: 5px;
   position: absolute;
   z-index: 12;
+  box-shadow: 0 0 15px #0000002b;
+  max-height: 400rpx;
 }
 .search_results .result_item {
   padding: 15px 0;

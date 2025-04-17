@@ -39,9 +39,10 @@
 
 
 		<common-modal v-model:visible="showSelectTab">
-			<view class="selectTab" style="border: 1px sold #b2b0b4;">
+			<view class="selectTab" style="border: 1px sold #b2b0b4;padding-top: 60rpx;">
 				<common-search mode="fill" @select="handleBrandSelect" width="calc(100vw - 120px)"></common-search>
-				<custom-picker :dataList="goodsList" @select="handleGoodsSelect" margin="10px 0 0 8px"></custom-picker>
+				<view style="height: 30rpx;"></view>
+				<custom-picker :dataList="goodsList" @select="handleGoodsSelect" margin="10px 0 0 0px"></custom-picker>
 				<button @tap="saveCollocation" style="margin-top: 20px;background-color: #fff;">确认</button>
 			</view>
 		</common-modal>
@@ -239,6 +240,8 @@
 					content.value = '';
 					uploadList.value = [];
 					saveCollocationDataList.value = [];
+					// 返回上一页
+					uni.navigateBack();
 				} else {
 					uni.showToast({
 						title: res.data.msg || '提交失败',
@@ -368,7 +371,7 @@
 		}
 		
 		
-		getGoodsInfo(chooseBrandId.value).then((res) => {
+		getGoodsInfo(chooseGoodsId.value).then((res) => {
 			let data = {
 				"brand_id": chooseBrandId.value,
 				"goods_id": chooseGoodsId.value,

@@ -8,11 +8,14 @@
 				<view style="clear: both;"></view>
 			</view>
 			
-		
-			<view  @click="openRate(1)">
-				<uni-rate style="margin-top: 5px;float: left;" :value="brand.score" allow-half="true" disabled-color="rgb(255 157 219)"/>
-				<text style="float: left;margin-left: 20px;position: relative;top: 5px;">{{brand.score}}（{{brand.vote_number}}次评分）</text>
-				<view style="clear: both;"></view>
+			<view style="margin: 20rpx 0rpx;display: flex;justify-content: space-between;">
+				<view  @click="openRate(1)" style="display: inline-block;position: relative;left: -8rpx;">
+					<uni-rate style="margin-top: 5px;float: left;" :value="brand.score" allow-half="true" disabled-color="rgb(255 157 219)"/>
+					<text style="float: left;position: relative;top: 5px;">{{brand.score}}（{{brand.vote_number}}次评分）</text>
+					<view style="clear: both;"></view>
+				</view>
+				<text class="follow"   @click="likeBrand" :style="{ background: hasLikeBrand ? '#ff6a6c' : '#65C3D6' }">{{ hasLikeBrand ? '已关注' : '+ 关注品牌' }}</text>
+				
 			</view>
 			<view style="margin-top: 15px;">
 				<text>别名：{{brand.nickname_list}}</text>
@@ -76,11 +79,12 @@
 			
 		</view>
 
-
+		<!-- 当输入框聚焦后显示的蒙版层 -->
+		<view class="mask" v-show=displayMask  @tap="handleMaskTap" ></view>
 
 		<view class="bottom_tab" :style="{ paddingBottom : footerBottomHeight }">
 			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="comment" style="" :adjust-position="false" ></textarea>
+			<textarea class="comment_input" v-model="comment" style="" :adjust-position="false"  @click="handleFocus" @focus="handleFocus" @blur="handleBlur" ></textarea>
 
 			<!-- 按钮 -->
 			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
@@ -112,6 +116,8 @@
 	const props = defineProps(["brand_id"])
 	console.log(props)
 	
+	const hasLikeBrand = ref(false)
+	
 
 	uni.showLoading({
 		title: '加载中'
@@ -122,6 +128,24 @@
 	const systemInfo = uni.getSystemInfoSync()
 	const keyboardHeight = ref(0)
 	
+	// 蒙版层
+	const displayMask = ref(false)
+	
+	function handleFocus() {
+	  displayMask.value = true;
+	}
+	
+	function handleBlur() {
+	  displayMask.value = false;
+	}
+	
+	// 点击蒙版关闭键盘
+	const handleMaskTap = () => {
+	  displayMask.value = false;
+	  uni.hideKeyboard(); // 调用API关闭键盘
+	};
+	
+	
 	// 处理键盘高度变化
 	const keyboardHeightChangeHandler = (res) => {
 		console.log(res)
@@ -130,7 +154,7 @@
 	
 	// 生命周期
 	onShow(() => {
-		if (process.env.VUE_APP_PLATFORM) {
+		if (process.env.VUE_APP_PLATFORM == "h5") {
 			//h5不会弹出软键盘
 			return
 		}
@@ -138,7 +162,7 @@
 	})
 
 	onHide(() => {
-		if (process.env.VUE_APP_PLATFORM) {
+		if (process.env.VUE_APP_PLATFORM == "h5") {
 			//h5不会弹出软键盘
 			return
 		}
@@ -198,6 +222,7 @@
 				uni.setNavigationBarTitle({
 					title: res.data.data.brand_name
 				})
+				 getHasLikeBrand() // 新增检查关注状态
 		
 			},
 			fail: (err) => {
@@ -211,6 +236,56 @@
 				uni.hideLoading()
 			}
 		})
+	}
+	
+	// 品牌关注方法
+	const likeBrand = async () => {
+	    let token = uni.getStorageSync('token')
+	    if (!global.isLogin) {
+	        uni.showToast({ title: '请先登录', icon: 'none' })
+	        return
+	    }
+	    
+	    try {
+	        const url = `${websiteUrl}/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
+	        const res = await uni.request({
+	            url,
+	            method: 'POST',
+	            header: { Authorization: token },
+	            data: {
+	                id: parseInt(props.brand_id),
+	                type: 2 // 注意：品牌类型可能需要确认，这里假设2代表品牌
+	            }
+	        })
+	
+	        if (res.data.status === "success") {
+	            hasLikeBrand.value = !hasLikeBrand.value
+	            uni.showToast({ title: hasLikeBrand.value ? '关注成功' : '已取消关注', icon: 'none' })
+	            // 更新品牌信息
+	            getBrandsInfo()
+	        } else {
+	            uni.showToast({ title: res.data.msg, icon: 'none' })
+	        }
+	    } catch (err) {
+	        console.error(err)
+	        uni.showToast({ title: '操作失败', icon: 'none' })
+	    }
+	}
+	
+	// 检查是否已关注
+	const getHasLikeBrand = async () => {
+	    
+	    try {
+	        const res = await uni.request({
+	            url: `${websiteUrl}/with-state/hasLike?id=${parseInt(props.brand_id)}&type=2`,
+	            method: 'POST',
+	            header: { Authorization: uni.getStorageSync('token') },
+	        })
+	
+	        hasLikeBrand.value = res.data.data?.id > 0
+	    } catch (err) {
+	        console.error('获取关注状态失败:', err)
+	    }
 	}
 
 	//格式化时间戳
@@ -485,6 +560,15 @@
 	}
 }
 
+.follow {
+	padding: 12rpx 30rpx;
+    border-radius: 20rpx;
+    overflow: hidden;
+    display: inline-block;
+    color: #ffffff;
+    font-size: 11px;
+	margin-left: 80rpx;
+}
 .body {
 	width: 100vw;
     // height: calc(100vh - 50px);
@@ -514,6 +598,19 @@
 .load_more::after {
 	border: none;
 }
+
+.mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: #fff;
+		opacity: 0;
+		z-index: 99;
+		width: 100vw;
+		height: 100vh;
+	}
 // 底部tab
 	.bottom_tab {
 		display: flex;

@@ -1,7 +1,7 @@
 <!-- components/MyModal.vue -->
 <template>
 	<transition name="modal-fade">
-		<view class="modal-mask" v-if="visible" @tap="closeModal" :catchtouchmove="true">
+		<view class="modal-mask" v-if="visible" @tap="closeModal" >
 			<view class="modal-container" @tap.stop>
 				<view class="modal-content">
 					<slot></slot>
@@ -56,5 +56,6 @@
 		position: absolute;
 		top: 20%;
 		/* 确保弹窗内容可交互 */
+		padding-top: 0rpx;
 	}
 </style>

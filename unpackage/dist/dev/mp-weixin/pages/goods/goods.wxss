@@ -86,6 +86,18 @@
   font-size: 14px;
   color: #fff;
 }
+.mask.data-v-7e2880f6 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  opacity: 0;
+  z-index: 99;
+  width: 100vw;
+  height: 100vh;
+}
 .bottom_tab.data-v-7e2880f6 {
   display: flex;
   align-items: center;
@@ -122,11 +134,12 @@
   /* 允许缩小 */
   flex: 1;
   margin-right: 8px;
-  height: 30px;
+  height: 40px;
   border: 1px solid #ddd;
   border-radius: 5px;
   min-height: 30px;
   padding: 8px;
+  box-sizing: border-box;
 }
 .bottom_tab button.data-v-7e2880f6 {
   flex-shrink: 0;

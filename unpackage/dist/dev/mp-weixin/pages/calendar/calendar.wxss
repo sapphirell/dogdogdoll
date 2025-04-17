@@ -1,13 +1,13 @@
-.goods_renew_header_content.data-v-24bc9d41 {
+.goods_renew_header_content.data-v-6e8913ab {
   background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
   overflow: hidden;
 }
-.goods_renew_header_content .choose_tab.data-v-24bc9d41 {
+.goods_renew_header_content .choose_tab.data-v-6e8913ab {
   display: block;
   white-space: nowrap;
   height: 170rpx;
 }
-.goods_renew_header_content .choose_tab text.data-v-24bc9d41 {
+.goods_renew_header_content .choose_tab text.data-v-6e8913ab {
   vertical-align: bottom;
   line-height: 1;
   transition: all 0.3s ease;
@@ -25,13 +25,13 @@
   align-items: center;
   justify-content: center;
 }
-.goods_renew_header_content .choose_tab text.active.data-v-24bc9d41 {
+.goods_renew_header_content .choose_tab text.active.data-v-6e8913ab {
   font-size: 40rpx !important;
   font-weight: bold;
   color: #7dc3d3;
   position: relative;
 }
-.goods_renew_header_content .choose_tab text.active.data-v-24bc9d41::after {
+.goods_renew_header_content .choose_tab text.active.data-v-6e8913ab::after {
   content: '';
   position: absolute;
   bottom: 0rpx;
@@ -42,13 +42,13 @@
   background: #7dc3d3;
   border-radius: 3rpx;
 }
-.scroll-view_H.data-v-24bc9d41 {
+.scroll-view_H.data-v-6e8913ab {
   white-space: nowrap;
   width: 100%;
   display: flex;
   padding-top: 10px;
 }
-.scroll-view-item_H.data-v-24bc9d41 {
+.scroll-view-item_H.data-v-6e8913ab {
   display: inline-block;
   text-align: center;
   font-size: 36rpx;
@@ -57,11 +57,11 @@
   position: relative;
   padding-top: 15rpx;
 }
-.line-height.data-v-24bc9d41 {
+.line-height.data-v-6e8913ab {
   margin: 9px 0px 9px 0px;
   display: block;
 }
-.content-box.data-v-24bc9d41 {
+.content-box.data-v-6e8913ab {
   border-radius: 30px;
   overflow: hidden;
   position: relative;
@@ -70,7 +70,7 @@
   padding: 20px;
   box-shadow: 0 0px 10px #ffffff30;
 }
-.float-number-red.data-v-24bc9d41 {
+.float-number-red.data-v-6e8913ab {
   position: absolute;
   top: 1px;
   right: -5px;
@@ -84,7 +84,7 @@
   text-align: center;
   font-weight: 1000;
 }
-.float-number-blue.data-v-24bc9d41 {
+.float-number-blue.data-v-6e8913ab {
   position: absolute;
   top: 1px;
   right: -5px;

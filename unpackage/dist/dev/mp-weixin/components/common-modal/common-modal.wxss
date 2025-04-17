@@ -24,4 +24,5 @@
 		position: absolute;
 		top: 20%;
 		/* 确保弹窗内容可交互 */
+		padding-top: 0rpx;
 }

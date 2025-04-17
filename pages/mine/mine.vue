@@ -20,10 +20,10 @@
 					</view>
 
 					<view class="pageinfo-infobox">
-						<view class="info-item" @tap="jump2follow">
+						<view class="info-item" @tap="jump2like">
 							<image src="/static/pixcollocation.png" class="icon"></image>
 							<text class="info-tap font-alimamashuhei">关注</text>
-							<text class="mine-info-number">10</text>
+							<text class="mine-info-number">{{ likeCount }}</text>
 						</view>
 						<view class="info-item" @tap="jump2message">
 							<image src="/static/pixpaperplane.png" class="icon"></image>
@@ -60,7 +60,7 @@
 			</view>
 
 			<view v-else class="unlogin-container">
-			  <image src="/static/main/1.png" mode="aspectFit" style="width: 380rpx;"></image>
+			  <image src="/static/main/1.png" mode="aspectFit" style="width: 300rpx;height: 340rpx;"></image>
 			  <text class="welcome-text">欢迎使用娃圈狗狗助手</text>
 			  <view class="input-group">
 			    <view class="input-with-icon">
@@ -77,8 +77,8 @@
 			    <text class="float-right" @tap="jump2forgetPassword">忘记密码</text>
 			    <view class="clearfix" />
 			  </view>
-			  <button class="light-button" @click="login">立即登录</button>
-			  <button class="light-button" @click="wechatSignLogin">微信登录</button>
+			  <button class="submit-btn" @click="login">立即登录</button>
+			  <button class="submit-btn" @click="wechatSignLogin">微信登录</button>
 			</view>
 
 		</view>
@@ -109,6 +109,7 @@
 	let inputPassword = ref("")
 	
 	let unreadCount = ref(0)
+	let likeCount = ref(0)
 
 
 	//选择图片
@@ -138,7 +139,11 @@
 	}
 	
 	//jump2follow
-	function jump2follow() {}
+	function jump2like() {
+		uni.navigateTo({
+			url: `/pages/user_like/user_like`
+		})
+	}
 
 	//jump2message
 	function jump2message() {
@@ -176,6 +181,27 @@
 			console.log(error)
 			uni.showToast({
 				title: '未读数获取失败',
+				icon: 'none'
+			});
+		}
+	};
+	// 获取关注数量
+	const fetchLikeCount = async () => {
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl}/with-state/user-likes-count`,
+				header: {
+					Authorization: uni.getStorageSync('token')
+				}
+			});
+	
+			if (res.data.status === 'success') {
+				likeCount.value = res.data.data.count;
+			}
+		} catch (error) {
+			console.log(error)
+			uni.showToast({
+				title: '关注数获取失败',
 				icon: 'none'
 			});
 		}
@@ -376,6 +402,8 @@
 		
 		//获取未读数量
 		fetchUnreadCount();
+		//获取关注数量化
+		fetchLikeCount();
 		const pages = getCurrentPages();
 		const currentPage = pages[pages.length - 1];
 		if (currentPage.returnParam) {
@@ -390,7 +418,11 @@
 	.container {
 		background: #fff;
 	}
-
+	$primary-color: #a6e9f7;
+	$hover-color: #1ed1e1;
+	$border-color: #e6e6e6;
+	$radius: 8px;
+	
 	.mine {
 		// background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
 		background: #e0f3ff;
@@ -415,8 +447,8 @@
 
 	.avatar-container {
 		display: inline-block;
-		width: calc(30vw - 40rpx);
-		height: calc(30vw - 40rpx);
+		width: 180rpx;
+		height: 180rpx;
 		padding: 5rpx;
 		float: left;
 		border: 3rpx solid #fff;
@@ -488,7 +520,7 @@
 				display: block;
 				width: 100%;
 				text-align: center;
-				font-size: 28rpx;
+				font-size: 26rpx;
 				color: #626262;
 			}
 
@@ -496,16 +528,16 @@
 				display: block;
 				width: 100%;
 				text-align: center;
-				font-size: 30rpx;
+				font-size: 28rpx;
 				color: #949494;
 				font-weight: 1000;
 				margin-top: 20rpx;
 			}
 			
 			.icon {
-				width: 80rpx;
-				height: 80rpx;
-				margin: 10rpx 55rpx 0rpx 55rpx;
+				width: 60rpx;
+				height: 60rpx;
+				margin: 10rpx 70rpx 0rpx 70rpx;
 			}
 		}
 	}
@@ -626,10 +658,12 @@
 	}
 	.unlogin-container {
 		padding: 40rpx 60rpx;
-		background: linear-gradient(135deg, #e0f3ff 0%, #f8fdff 100%);
-		background: #e0f3ff;
-		    background-image: radial-gradient(#fff 20%, transparent 0);
-		    background-size: 20px 20px;
+		    background: linear-gradient(135deg, #e0f3ff 0%, #fff9fb 100%);
+		// background-image: url('/static/120.jpg');
+		// background-size: cover;
+		// background: #e0f3ff;
+		// background-image: radial-gradient(#fff 20%, transparent 0);
+		background-size: 15px 15px;
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
@@ -640,7 +674,7 @@
 		}
 
 		.welcome-text {
-			font-size: 48rpx;
+			font-size: 40rpx;
 			font-weight: 600;
 			color: #2c3e50;
 			text-align: center;
@@ -667,7 +701,7 @@
 				margin: 40rpx 0;
 				border-radius: 16rpx;
 				background: #ffffff;
-				border: 2rpx solid #e6e6e6;
+				// border: 2rpx solid #e6e6e6;
 				font-size: 32rpx;
 				transition: all 0.3s;
 				box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
@@ -745,4 +779,38 @@
 			padding-left: 80rpx !important;
 		}
 	}
+	
+	.submit-btn {
+		margin-top: 60rpx;
+		background: linear-gradient(135deg, $primary-color, $hover-color);
+		color: white;
+		border: none;
+		border-radius: 50rpx;
+		font-size: 32rpx;
+		height: 90rpx;
+		line-height: 90rpx;
+		box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.3);
+		transition: all 0.3s;
+		width: 100%;
+	
+	  &::after {
+	    border: none;
+	  }
+	  
+	  &.loading {
+	    opacity: 0.7;
+	    background: #007aff;
+	  }
+	  
+	  &[disabled] {
+	    background: #c8c9cc;
+	    color: #fff;
+	  }
+		
+		&:active {
+			transform: translateY(2rpx);
+			box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.3);
+		}
+	}
+	
 </style>

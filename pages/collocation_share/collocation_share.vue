@@ -1,5 +1,5 @@
 <template>
-	<common-page>
+	<view>
 		<!-- 图片轮播区域 -->
 		<view style="position: relative;">
 			<view class="heart" @click="likeFn()">
@@ -116,7 +116,7 @@
 		<!-- 加载状态 -->
 		<view v-if="loading" class="loading">加载中...</view>
 		<view v-if="error" class="error">{{ errorMsg }}</view>
-	</common-page>
+	</view>
 </template>
 
 <script setup>

@@ -324,7 +324,7 @@ const _sfc_main = {
         chooseType.value = "";
         return;
       }
-      getGoodsInfo(chooseBrandId.value).then((res) => {
+      getGoodsInfo(chooseGoodsId.value).then((res) => {
         let data = {
           "brand_id": chooseBrandId.value,
           "goods_id": chooseGoodsId.value,

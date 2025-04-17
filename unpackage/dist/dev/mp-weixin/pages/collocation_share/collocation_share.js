@@ -2,14 +2,6 @@
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
-if (!Array) {
-  const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  _easycom_common_page2();
-}
-const _easycom_common_page = () => "../../components/common-page/common-page.js";
-if (!Math) {
-  _easycom_common_page();
-}
 const _sfc_main = {
   __name: "collocation_share",
   setup(__props) {

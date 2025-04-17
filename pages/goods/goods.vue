@@ -53,7 +53,7 @@
 			<view v-if="goods.type==='单体' || goods.type === '整体' || goods.type === '单头'" class="msg_block">
 				<text class="lable_text">可选体型</text>
 				<text class="msg_text">
-					{{goods.body_size}}
+					{{goods.body_size || "未知"}}
 				</text>
 			</view>
 			<view class="msg_block">
@@ -76,10 +76,8 @@
 			</view>
 			<view class="msg_block">
 				<text class="lable_text">制作方</text>
-				<text class="msg_text">
-					<navigator @click="jumpBrand(goods.brand_id)" style="display: inline;">
-						<text>{{goods.brand_name}}</text>
-					</navigator>
+				<text class="msg_text" @click="jumpBrand(goods.brand_id)">
+					{{goods.brand_name}}
 				</text>
 			</view>
 		</view>
@@ -109,9 +107,9 @@
 			</scroll-view>
 
 			<view @tap="jump2collocation"
-				style="border: 1px solid #eaeaea; display: flex;margin: 20px 60px; 0px 0px 0px;border-radius: 15px;">
-				<image src="../../static/paper_plane.png" style="width: 25px;height: 25px;margin: 13px;"></image>
-				<text style=";color: rgb(184 184 184);margin: 15px auto;">上传搭配参考帮助他人</text>
+				style="border: 1px solid #eaeaea; display: flex;margin: 20rpx auto; border-radius: 15rpx;width: 400rpx;">
+				<image src="../../static/paper_plane.png" style="width: 45rpx;height: 45rpx;margin: 18rpx;"></image>
+				<text style=";color: rgb(184 184 184);margin: 12px auto;">上传搭配参考帮助他人</text>
 			</view>
 		</view>
 
@@ -157,6 +155,9 @@
 		</view>
 		<!-- 一个不可见透明元素，撑起80px高度 -->
 		<view style="height: 80px;"></view>
+		
+		<!-- 当输入框聚焦后显示的蒙版层 -->
+		<view class="mask" v-show=displayMask  @tap="handleMaskTap" ></view>
 
 		<view class="bottom_tab" :style="{ paddingBottom : footerBottomHeight }">
 			<!-- 回复信息 -->
@@ -165,7 +166,7 @@
 			</text>
 
 			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="myComment" style="" :adjust-position="false" ></textarea>
+			<textarea class="comment_input" v-model="myComment" style=""  @click="handleFocus" @focus="handleFocus" @blur="handleBlur" :adjust-position="false" ></textarea>
 
 			<!-- 按钮 -->
 			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
@@ -203,27 +204,32 @@
 	// 获取系统信息
 	const systemInfo = uni.getSystemInfoSync()
 	const keyboardHeight = ref(0)
+	
+	// 蒙版层
+	const displayMask = ref(false)
 
 	// 处理键盘高度变化
 	const keyboardHeightChangeHandler = (res) => {
-		console.log(res)
+		console.log("键盘高度变化", res)
 		keyboardHeight.value = res.height
 	}
 
 	// 生命周期
 	onShow(() => {
-		if (process.env.VUE_APP_PLATFORM) {
+		if (process.env.VUE_APP_PLATFORM == "h5") {
 			//h5不会弹出软键盘
 			return
 		}
+		console.log("注册键盘弹出事件")
 		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
 	})
 
 	onHide(() => {
-		if (process.env.VUE_APP_PLATFORM) {
+		if (process.env.VUE_APP_PLATFORM == "h5") {
 			//h5不会弹出软键盘
 			return
 		}
+		console.log("卸载键盘弹出事件")
 		uni.offKeyboardHeightChange?.(keyboardHeightChangeHandler) // 更精准的卸载
 	})
 	// 底部安全区域高度
@@ -255,6 +261,20 @@
 	//轮播图高度
 	const swiperHeight = ref(400); // 初始高度，根据需求调整
 	const imageHeights = ref([]);
+	
+	function handleFocus() {
+	  displayMask.value = true;
+	}
+	
+	function handleBlur() {
+	  displayMask.value = false;
+	}
+	
+	// 点击蒙版关闭键盘
+	const handleMaskTap = () => {
+	  displayMask.value = false;
+	  uni.hideKeyboard(); // 调用API关闭键盘
+	};
 
 	// 图片加载完成回调
 	function onImageLoad(index) {
@@ -694,7 +714,18 @@
 			color: #fff;
 		}
 	}
-
+	.mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: #fff;
+		opacity: 0;
+		z-index: 99;
+		width: 100vw;
+		height: 100vh;
+	}
 	// 底部tab
 	.bottom_tab {
 		display: flex;
@@ -733,11 +764,12 @@
 			/* 允许缩小 */
 			flex: 1;
 			margin-right: 8px;
-			height: 30px;
+			height: 40px;
 			border: 1px solid #ddd;
 			border-radius: 5px;
 			min-height: 30px;
 			padding: 8px;
+			box-sizing: border-box;
 		}
 
 		button {

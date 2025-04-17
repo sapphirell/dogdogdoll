@@ -13,8 +13,6 @@
 			{
 				"navigationBarTitleText" : "home",
 				"navigationStyle": "custom" //自定义导航栏
-			
-			
 			}
 		},
 		{
@@ -56,7 +54,7 @@
 			}
 		},
 		{
-			"path" : "pages/news/news",
+			"path" : "pages/calendar/calendar",
 			"style" : 
 			{
 				"navigationBarTitleText": "上新",
@@ -153,6 +151,27 @@
 			{
 				"navigationBarTitleText" : ""
 			}
+		},
+		{
+			"path" : "pages/user_like/user_like",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/collocation_square/collocation_square",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom" //自定义导航栏
+			}
+		},
+		{
+			"path" : "pages/sale_news/sale_news",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
 		}
 
 	],
@@ -170,12 +189,19 @@
 		"list": [
 			{
 				"pagePath": "pages/index/index",
-				"text": "首页",
+				"text": "百科",
 				"iconPath": "static/new-icon/home-w.png",
 				"selectedIconPath": "static/new-icon/home-b.png"
 			},
 			{
-				"pagePath": "pages/news/news",
+				"pagePath": "pages/collocation_square/collocation_square",
+				"text": "广场",
+				"iconPath": "static/new-icon/home-w.png",
+				"selectedIconPath": "static/new-icon/home-b.png"
+			},
+			
+			{
+				"pagePath": "pages/calendar/calendar",
 				"text": "上新",
 				"iconPath": "static/new-icon/date-w.png",
 				"selectedIconPath": "static/new-icon/date-b.png"
