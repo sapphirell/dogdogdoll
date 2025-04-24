@@ -45,34 +45,34 @@ const _sfc_main = {
       return common_vendor.e({
         a: common_vendor.unref(common_config.global).userInfo.password
       }, common_vendor.unref(common_config.global).userInfo.password ? {
-        b: common_assets._imports_0$4,
+        b: common_assets._imports_0$3,
         c: common_vendor.o(jump2password)
       } : {
-        d: common_assets._imports_0$4,
+        d: common_assets._imports_0$3,
         e: common_vendor.o(jump2password)
       }, {
         f: common_vendor.unref(common_config.global).userInfo.tel_phone
       }, common_vendor.unref(common_config.global).userInfo.tel_phone ? {
-        g: common_assets._imports_0$4,
+        g: common_assets._imports_0$3,
         h: common_vendor.o(jump2telphone)
       } : {
-        i: common_assets._imports_0$4,
+        i: common_assets._imports_0$3,
         j: common_vendor.o(jump2telphone)
       }, {
         k: common_vendor.unref(common_config.global).userInfo.wechat_open_id
       }, common_vendor.unref(common_config.global).userInfo.wechat_open_id ? {
-        l: common_assets._imports_0$4,
+        l: common_assets._imports_0$3,
         m: common_vendor.o(jump2wechat)
       } : {
-        n: common_assets._imports_0$4,
+        n: common_assets._imports_0$3,
         o: common_vendor.o(jump2wechat)
       }, {
         p: common_vendor.unref(needUpdate)
       }, common_vendor.unref(needUpdate) ? {
-        q: common_assets._imports_0$4,
+        q: common_assets._imports_0$3,
         r: common_vendor.o(checkUpdate)
       } : {
-        s: common_assets._imports_0$4,
+        s: common_assets._imports_0$3,
         t: common_vendor.o(checkUpdate)
       });
     };

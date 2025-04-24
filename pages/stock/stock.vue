@@ -1,4 +1,5 @@
 <template>
+	<meta name="theme-color" content="rgb(185 195 253)"></meta>
 	<common-page head_color="rgb(185 195 253)">
 		<view class="container" style="overflow: hidden;">
 			<view class="head_container">
@@ -597,9 +598,9 @@
 				left: 0;
 				background: rgb(255 118 105  / 65%);
 				color: #fff;
-				padding: 5rpx 10rpx;
+				padding: 10rpx 20rpx;
 				border-radius: 10rpx 0 10rpx 0;
-				font-size: 30rpx;
+				font-size: 26rpx;
 			}
 
 			.item-info {
@@ -612,7 +613,7 @@
 					font-family: 'alimamashuhei';
 					font-weight: 900;
 					color: #ff827e;
-					font-size: 35rpx;
+					font-size: 30rpx;
 					flex-shrink: 0;
 					text-shadow: 0 0 3rpx #fff;
 				}
@@ -620,7 +621,7 @@
 				.item-name {
 					font-family: 'alimamashuhei';
 					color: #39110c;
-					font-size: 30rpx;
+					font-size: 22rpx;
 					flex-grow: 1;
 					text-shadow: 0 0 3rpx #fff;
 				}
@@ -790,14 +791,14 @@
 	  }
 	
 	  .showcase-title {
-	    font-size: 32rpx;
+	    font-size: 28rpx;
 	    font-weight: 700;
 	    color: #333;
 	    line-height: 1.4;
 	  }
 	
 	  .showcase-description {
-	    font-size: 26rpx;
+	    font-size: 22rpx;
 	    color: #666;
 	    line-height: 1.6;
 	    display: -webkit-box;

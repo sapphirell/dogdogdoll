@@ -23,6 +23,9 @@
 /* 垂直间距 */
 /* 透明度 */
 /* 文章场景相关 */
+text.data-v-e981f8ca {
+  font-size: 22rpx;
+}
 .container.data-v-e981f8ca {
   padding: 20rpx;
   background: #f5f5f5;
@@ -32,8 +35,9 @@
 .filter-bar.data-v-e981f8ca {
   display: flex;
   align-items: center;
-  padding: 20rpx;
+  padding: 10rpx 20rpx;
   background: #fff;
+  font-size: 22rpx;
   border-radius: 16rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
@@ -56,9 +60,9 @@
 }
 .filter-bar .filter-btn.data-v-e981f8ca {
   width: 120rpx;
-  height: 60rpx;
-  line-height: 60rpx;
-  font-size: 28rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  font-size: 24rpx;
   background: #007aff;
   color: white;
   border-radius: 8rpx;
@@ -91,18 +95,23 @@
   padding: 24rpx;
 }
 .card-list .card .card-content .title.data-v-e981f8ca {
-  display: block;
-  font-size: 29rpx;
+  font-size: 26rpx;
   font-weight: 500;
   color: #333;
   margin-bottom: 16rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: ellipsis;
 }
 .card-list .card .card-content .desc.data-v-e981f8ca {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 25rpx;
+  font-size: 22rpx;
   color: #666;
   line-height: 1.5;
 }
@@ -118,9 +127,10 @@
   border-radius: 8rpx;
 }
 .card-list .card .card-content .goods-tags .tag-box .goods-tag.data-v-e981f8ca {
+  line-height: 20rpx;
   font-size: 20rpx;
   color: #666;
-  max-width: 80rpx;
+  max-width: 110rpx;
   display: inline-block;
   white-space: nowrap;
   overflow: hidden;
@@ -136,10 +146,10 @@
   color: white;
   border: none;
   border-radius: 15rpx;
-  font-size: 25rpx;
+  font-size: 22rpx;
   font-weight: 900;
-  height: 70rpx;
-  line-height: 70rpx;
+  height: 60rpx;
+  line-height: 60rpx;
   box-shadow: 0 6rpx 20rpx rgba(166, 233, 247, 0.3);
   transition: all 0.3s;
 }
@@ -171,7 +181,7 @@
   padding-left: 20rpx;
 }
 .filter-modal .modal-header .title.data-v-e981f8ca {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 500;
 }
 .filter-modal .modal-header .close.data-v-e981f8ca {

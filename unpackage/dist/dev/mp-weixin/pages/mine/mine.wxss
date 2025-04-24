@@ -75,10 +75,10 @@
   margin: 20rpx 0 40rpx 0;
   font-weight: bold;
   color: #606060;
-  font-size: 32rpx;
+  font-size: 26rpx;
 }
 .user-id-text.data-v-7c2ebfa5 {
-  font-size: 27rpx;
+  font-size: 22rpx;
   background: linear-gradient(180deg, #ffa5c3 0%, #ffd6d6 100%);
   padding: 5rpx 15rpx;
   display: inline-block;
@@ -111,14 +111,14 @@
   display: block;
   width: 100%;
   text-align: center;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #626262;
 }
 .pageinfo-infobox .info-item .mine-info-number.data-v-7c2ebfa5 {
   display: block;
   width: 100%;
   text-align: center;
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #949494;
   font-weight: 1000;
   margin-top: 20rpx;
@@ -141,7 +141,6 @@
   border-width: 0 !important;
   margin: 20rpx 0;
   position: relative;
-  padding-bottom: 20rpx;
   text-align: left;
   font-weight: 600;
 }
@@ -151,17 +150,18 @@
 .button-container .mine-button text.data-v-7c2ebfa5 {
   margin-left: 110rpx;
   color: #606060;
+  font-size: 24rpx;
 }
 .button-container .mine-button .icon-small.data-v-7c2ebfa5 {
-  width: 36rpx;
-  height: 36rpx;
+  width: 32rpx;
+  height: 32rpx;
   position: absolute;
   left: 40rpx;
   top: 30rpx;
 }
 .button-container .mine-button .right-bar.data-v-7c2ebfa5 {
-  width: 36rpx;
-  height: 36rpx;
+  width: 32rpx;
+  height: 32rpx;
   position: relative;
   top: 26rpx;
   float: right;
@@ -220,7 +220,7 @@
   height: 15vh;
 }
 .unlogin-container .welcome-text.data-v-7c2ebfa5 {
-  font-size: 40rpx;
+  font-size: 34rpx;
   font-weight: 600;
   color: #2c3e50;
   text-align: center;
@@ -240,12 +240,12 @@
   margin: 40rpx 0;
 }
 .unlogin-container .input-group .inputer.data-v-7c2ebfa5 {
-  height: 100rpx;
-  padding: 0 30rpx;
-  margin: 40rpx 0;
+  height: 80rpx;
+  padding: 0 20rpx;
+  margin: 30rpx 0;
   border-radius: 16rpx;
   background: #ffffff;
-  font-size: 32rpx;
+  font-size: 26rpx;
   transition: all 0.3s;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
@@ -265,7 +265,7 @@
 }
 .unlogin-container .action-links text.data-v-7c2ebfa5 {
   color: #7f8c8d;
-  font-size: 28rpx;
+  font-size: 26rpx;
   transition: all 0.3s;
 }
 .unlogin-container .action-links text.data-v-7c2ebfa5:active {
@@ -309,17 +309,18 @@
   padding-left: 80rpx !important;
 }
 .submit-btn.data-v-7c2ebfa5 {
-  margin-top: 60rpx;
+  margin-top: 40rpx;
   background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
   color: white;
   border: none;
   border-radius: 50rpx;
-  font-size: 32rpx;
-  height: 90rpx;
+  font-size: 26rpx;
+  height: 70rpx;
   line-height: 90rpx;
   box-shadow: 0 6rpx 20rpx rgba(166, 233, 247, 0.3);
   transition: all 0.3s;
   width: 100%;
+  line-height: 66rpx;
 }
 .submit-btn.data-v-7c2ebfa5::after {
   border: none;

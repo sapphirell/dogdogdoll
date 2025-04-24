@@ -13,8 +13,8 @@ if (!Math) {
 const _sfc_main = {
   __name: "mine",
   setup(__props) {
-    common_vendor.index.__f__("log", "at pages/mine/mine.vue:104", common_config.global.isLogin);
-    common_vendor.index.__f__("log", "at pages/mine/mine.vue:105", common_config.global.userInfo);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:105", common_config.global.isLogin);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:106", common_config.global.userInfo);
     let inputPhone = common_vendor.ref("");
     let inputPassword = common_vendor.ref("");
     let unreadCount = common_vendor.ref(0);
@@ -70,7 +70,7 @@ const _sfc_main = {
           unreadCount.value = res.data.data.count;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:181", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:182", error);
         common_vendor.index.showToast({
           title: "未读数获取失败",
           icon: "none"
@@ -89,7 +89,7 @@ const _sfc_main = {
           likeCount.value = res.data.data.count;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:202", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:203", error);
         common_vendor.index.showToast({
           title: "关注数获取失败",
           icon: "none"
@@ -97,7 +97,7 @@ const _sfc_main = {
       }
     };
     function selectAvatar(croperPath) {
-      common_vendor.index.__f__("log", "at pages/mine/mine.vue:211", "croperPath:" + croperPath);
+      common_vendor.index.__f__("log", "at pages/mine/mine.vue:212", "croperPath:" + croperPath);
       let token = common_vendor.index.getStorageSync("token");
       let qnToken = "";
       common_vendor.index.request(
@@ -116,11 +116,11 @@ const _sfc_main = {
               return;
             }
             qnToken = res.data.data.token;
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:231", "获取到的七牛token：" + res.data.data.token);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:232", "获取到的七牛token：" + res.data.data.token);
             let userInfo = common_vendor.index.getStorageSync("userInfo");
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:233", userInfo);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:234", userInfo);
             let fileName = res.data.data.path;
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:236", "fileName:" + fileName);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:237", "fileName:" + fileName);
             common_vendor.index.uploadFile({
               url: "https://up-cn-east-2.qiniup.com",
               name: "file",
@@ -135,11 +135,11 @@ const _sfc_main = {
                 scope: "hobby-box:" + fileName
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/mine/mine.vue:251", "上传成功");
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:252", "上传成功");
                 updateUserInfo("avatar", "https://images1.fantuanpu.com/" + fileName);
               },
               fail: (res2) => {
-                common_vendor.index.__f__("log", "at pages/mine/mine.vue:258", res2);
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:259", res2);
                 common_vendor.index.showToast({
                   title: "上传失败",
                   icon: "none"
@@ -170,7 +170,7 @@ const _sfc_main = {
           "avatar": value
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:291", "更新成功");
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:292", "更新成功");
           common_config.getUserInfo();
         },
         fail: (res) => {
@@ -213,7 +213,7 @@ const _sfc_main = {
           password
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:343", res);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:344", res);
           let data = res.data.data;
           let status = res.data.status;
           if (status != "success") {
@@ -226,7 +226,7 @@ const _sfc_main = {
           common_vendor.index.setStorageSync("token", data.jwt_token);
           common_vendor.index.setStorageSync("openid", data.open_id);
           common_vendor.index.setStorageSync("session_key", data.session_key);
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:358", "jwt:" + data.jwt_token);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:359", "jwt:" + data.jwt_token);
           if (data.jwt_token != null && data.jwt_token != "") {
             common_config.getUserInfo();
           }
@@ -248,7 +248,7 @@ const _sfc_main = {
       () => common_config.global.isLogin,
       // 使用函数返回要监听的值
       (newVal) => {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:382", "watch", newVal);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:383", "watch", newVal);
         if (newVal) {
           common_vendor.index.showTabBar({ animation: false });
         } else {
@@ -279,7 +279,7 @@ const _sfc_main = {
         c: common_vendor.o(jumpToCroper),
         d: common_vendor.t(common_vendor.unref(common_config.global).userInfo.username),
         e: common_vendor.t(common_vendor.unref(common_config.global).userInfo.id),
-        f: common_assets._imports_0$3,
+        f: common_assets._imports_0$2,
         g: common_vendor.t(common_vendor.unref(likeCount)),
         h: common_vendor.o(jump2like),
         i: common_assets._imports_1$3,
@@ -288,12 +288,12 @@ const _sfc_main = {
         l: common_assets._imports_2$1,
         m: common_vendor.o(jump2collocation),
         n: common_assets._imports_3$1,
-        o: common_assets._imports_0$4,
-        p: common_assets._imports_5,
-        q: common_assets._imports_0$4,
+        o: common_assets._imports_0$3,
+        p: common_assets._imports_5$1,
+        q: common_assets._imports_0$3,
         r: common_vendor.o(jumpSetting),
         s: common_assets._imports_6,
-        t: common_assets._imports_0$4,
+        t: common_assets._imports_0$3,
         v: common_vendor.o(logout)
       } : {
         w: common_assets._imports_7,

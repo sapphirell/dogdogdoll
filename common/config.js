@@ -225,6 +225,7 @@ export function getScene() {
 // 工具函数
 function saveUserInfo(data) {
 	uni.setStorageSync('userInfo', data);
+	uni.setStorageSync('token', data.last_token)
 	global.userInfo = data;
 	global.isLogin = true;
 }

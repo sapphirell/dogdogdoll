@@ -1,4 +1,5 @@
 <template>
+	<meta name="theme-color" content="#e0f3ff"></meta>
 	<common-page head_color="#e0f3ff">
 		<view class="container">
 			<!-- 个人设置页面 -->
@@ -13,7 +14,7 @@
 						<view class="user-info-container">
 							<text class="username-text font-alimamashuhei">{{global.userInfo.username}}</text>
 							<text class="user-id-text">
-								<text class="font-alimamashuhei" style="color: #fff;">ID</text> : {{global.userInfo.id}}
+								<text class="font-alimamashuhei" style="color: #fff;font-size: 22rpx;">ID</text> : {{global.userInfo.id}}
 							</text>
 						</view>
 						<view class="clearfix"></view>
@@ -60,7 +61,7 @@
 			</view>
 
 			<view v-else class="unlogin-container">
-			  <image src="/static/main/1.png" mode="aspectFit" style="width: 300rpx;height: 340rpx;"></image>
+			  <image src="/static/main/2.png" mode="aspectFit" style="width: 300rpx;height: 340rpx;position: relative;right: 20rpx;"></image>
 			  <text class="welcome-text">欢迎使用娃圈狗狗助手</text>
 			  <view class="input-group">
 			    <view class="input-with-icon">
@@ -482,11 +483,11 @@
 		margin: 20rpx 0 40rpx 0;
 		font-weight: bold;
 		color: #606060;
-		font-size: 32rpx;
+		font-size: 26rpx;
 	}
 
 	.user-id-text {
-		font-size: 27rpx;
+		font-size: 22rpx;
 		background: linear-gradient(180deg, #ffa5c3 0%, #ffd6d6 100%);
 		padding: 5rpx 15rpx;
 		display: inline-block;
@@ -520,7 +521,7 @@
 				display: block;
 				width: 100%;
 				text-align: center;
-				font-size: 26rpx;
+				font-size: 24rpx;
 				color: #626262;
 			}
 
@@ -528,7 +529,7 @@
 				display: block;
 				width: 100%;
 				text-align: center;
-				font-size: 28rpx;
+				font-size: 24rpx;
 				color: #949494;
 				font-weight: 1000;
 				margin-top: 20rpx;
@@ -556,7 +557,7 @@
 			border-width: 0 !important;
 			margin: 20rpx 0;
 			position: relative;
-			padding-bottom: 20rpx;
+			// padding-bottom: 20rpx;
 			text-align: left;
 			font-weight: 600;
 
@@ -568,19 +569,20 @@
 			text {
 				margin-left: 110rpx;
 				color: #606060;
+				font-size: 24rpx;
 			}
 
 			.icon-small {
-				width: 36rpx;
-				height: 36rpx;
+				width: 32rpx;
+				height: 32rpx;
 				position: absolute;
 				left: 40rpx;
 				top: 30rpx;
 			}
 
 			.right-bar {
-				width: 36rpx;
-				height: 36rpx;
+				width: 32rpx;
+				height: 32rpx;
 				position: relative;
 				top: 26rpx;
 				float: right;
@@ -674,7 +676,7 @@
 		}
 
 		.welcome-text {
-			font-size: 40rpx;
+			font-size: 34rpx;
 			font-weight: 600;
 			color: #2c3e50;
 			text-align: center;
@@ -696,13 +698,13 @@
 			margin: 40rpx 0;
 
 			.inputer {
-				height: 100rpx;
-				padding: 0 30rpx;
-				margin: 40rpx 0;
+				height: 80rpx;
+				padding: 0 20rpx;
+				margin: 30rpx 0;
 				border-radius: 16rpx;
 				background: #ffffff;
 				// border: 2rpx solid #e6e6e6;
-				font-size: 32rpx;
+				font-size: 26rpx;
 				transition: all 0.3s;
 				box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 
@@ -723,7 +725,7 @@
 
 			text {
 				color: #7f8c8d;
-				font-size: 28rpx;
+				font-size: 26rpx;
 				transition: all 0.3s;
 
 				&:active {
@@ -781,17 +783,18 @@
 	}
 	
 	.submit-btn {
-		margin-top: 60rpx;
+		margin-top: 40rpx;
 		background: linear-gradient(135deg, $primary-color, $hover-color);
 		color: white;
 		border: none;
 		border-radius: 50rpx;
-		font-size: 32rpx;
-		height: 90rpx;
+		font-size: 26rpx;
+		height: 70rpx;
 		line-height: 90rpx;
 		box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.3);
 		transition: all 0.3s;
 		width: 100%;
+		line-height: 66rpx;
 	
 	  &::after {
 	    border: none;

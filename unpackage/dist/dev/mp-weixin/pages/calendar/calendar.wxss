@@ -11,7 +11,7 @@
   vertical-align: bottom;
   line-height: 1;
   transition: all 0.3s ease;
-  font-size: 32rpx;
+  font-size: 28rpx;
   display: inline-block;
   margin: 10rpx 20rpx;
   padding: 10rpx 0rpx;
@@ -26,7 +26,7 @@
   justify-content: center;
 }
 .goods_renew_header_content .choose_tab text.active.data-v-6e8913ab {
-  font-size: 40rpx !important;
+  font-size: 36rpx !important;
   font-weight: bold;
   color: #7dc3d3;
   position: relative;

@@ -650,10 +650,10 @@
 			flex: 1;
 			margin-right: 8px;
 			height: 30px;
-			border: 1px solid #ddd;
 			border-radius: 5px;
 			min-height: 30px;
 			padding: 8px;
+			background: #f2f2f2;
 		}
 
 		button {
@@ -666,6 +666,9 @@
 			width: 90px;
 			color: rgb(255, 255, 255);
 			font-size: 14px;
+		}
+		uni-button:after {
+			border: none;
 		}
 	}
 

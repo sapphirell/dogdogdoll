@@ -26,6 +26,7 @@ if (!Math) {
   "./pages/user_like/user_like.js";
   "./pages/collocation_square/collocation_square.js";
   "./pages/sale_news/sale_news.js";
+  "./pages/treehole_publish/treehole_publish.js";
 }
 const _sfc_main = {
   __name: "App",

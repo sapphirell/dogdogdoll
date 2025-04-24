@@ -8,7 +8,7 @@
 .brand-info.data-v-c9c53f1c {
   display: flex;
   align-items: center;
-  padding: 30rpx;
+  padding: 28rpx;
   background: #fff;
   border-bottom: 1px solid #eee;
 }
@@ -22,12 +22,12 @@
   flex: 1;
 }
 .brand-info .brand-details .brand-name.data-v-c9c53f1c {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: bold;
   display: block;
 }
 .brand-info .brand-details .publish-time.data-v-c9c53f1c {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #888;
 }
 .brand-info .follow-btn.data-v-c9c53f1c {
@@ -47,12 +47,12 @@
   padding: 30rpx;
 }
 .content-box .title.data-v-c9c53f1c {
-  font-size: 36rpx;
+  font-size: 28rpx;
   font-weight: bold;
   margin-bottom: 20rpx;
 }
 .content-box .content.data-v-c9c53f1c {
-  font-size: 28rpx;
+  font-size: 22rpx;
   color: #666;
   line-height: 1.6;
 }
@@ -71,4 +71,78 @@
   color: #ffffff;
   font-size: 11px;
   margin-left: 80rpx;
+}
+.bottom_tab.data-v-c9c53f1c {
+  display: flex;
+  align-items: center;
+  /* 垂直居中 */
+  gap: 8px;
+  /* 元素间距 */
+  padding: 10px;
+  box-sizing: border-box;
+  left: 0px;
+  position: fixed;
+  bottom: 0px;
+  z-index: 100;
+  width: 100vw;
+  background: #fff;
+}
+.bottom_tab .replyInfo.data-v-c9c53f1c {
+  /* 禁止缩小 */
+  /* 最大宽度限制 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 50px;
+  margin-right: 8px;
+}
+.bottom_tab .comment_input.data-v-c9c53f1c {
+  /* 占据剩余空间 */
+  min-width: 0;
+  /* 允许缩小 */
+  flex: 1;
+  margin-right: 8px;
+  height: 30px;
+  background: #f2f2f2;
+  border-radius: 5px;
+  min-height: 30px;
+  padding: 8px;
+}
+.bottom_tab button.data-v-c9c53f1c {
+  flex-shrink: 0;
+  /* 固定宽度 */
+  /* 按钮固定宽度 */
+  background: #64c6dc;
+  border-radius: 10px;
+  width: 90px;
+  color: #ffffff;
+  font-size: 14px;
+}
+uni-button.data-v-c9c53f1c:after {
+  border: none;
+}
+.load_more.data-v-c9c53f1c {
+  background: #fff;
+  color: #d6d6d6;
+  font-size: 13px;
+  margin-top: 15px;
+}
+.load_more.data-v-c9c53f1c::after {
+  border: none;
+}
+.mask.data-v-c9c53f1c {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  opacity: 0;
+  z-index: 99;
+  width: 100vw;
+  height: 100vh;
+}
+text.data-v-c9c53f1c {
+  font-size: 22rpx;
 }

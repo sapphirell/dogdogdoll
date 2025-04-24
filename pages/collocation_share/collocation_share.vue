@@ -3,9 +3,12 @@
 		<!-- 图片轮播区域 -->
 		<view style="position: relative;">
 			<view class="heart" @click="likeFn()">
-				<image src="../../static/heart-w.png" v-if="!hasLike"></image>
-				<image src="../../static/heart2.png" v-else></image>
-				<text>{{ formatNumber(detailData.like_count) }}</text>
+<!-- 				<image src="../../static/heart-w.png" v-if="!hasLike"></image>
+				<image src="../../static/heart2.png" v-else></image> -->
+				<uni-icons type="heart" size="28" color="#ff4d4f" v-if="!hasLike"></uni-icons>
+				<uni-icons type="heart-filled" size="28" color="#ff4d4f" v-else></uni-icons>
+				
+				<text class="num">{{ formatNumber(detailData.like_count) }}</text>
 			</view>
 			<swiper class="swiper-box" :indicator-dots="true" :autoplay="false">
 				<swiper-item v-for="(img, index) in detailData.image_url_list" :key="index">
@@ -28,6 +31,7 @@
 
 		<!-- 关联商品列表 -->
 		<view class="goods-list">
+			<!-- <text class="about">相关商品</text> -->
 			<view v-for="item in detailData.collocation_relation_list" :key="item.id" class="goods-item"
 				@click="item.relation_goods_id > 0 ? navigateToGoods(item.relation_goods_id) : null">
 				<!-- 商品图片 -->
@@ -51,16 +55,23 @@
 				</view>
 
 				<view class="goods-info">
-					<text class="brand">{{ item.relation_brand_name }}</text>
-					<text class="category">{{ item.type }}</text>
-					<text class="name">{{ item.relation_goods_name }}</text>
+					<text class="brand">{{ item.relation_brand_name }} - {{ item.relation_goods_name }}</text>
+					<view>
+						<text class="category">{{ item.type }}</text>
+						<text class="price">
+							（{{ item.goodsInfo && item.goodsInfo.total_amount ? item.goodsInfo.total_amount + item.goodsInfo.currency : "贩售价格未收录"}}）</text>
+					</view>
+					<view class="see font-alimamashuhei">
+						去看看 →
+					</view>
+
 				</view>
 			</view>
 		</view>
 
 		<!-- 讨论 -->
 		<view style="padding: 10px;">
-			<text
+			<text  v-if="comments.total"
 				style="color: rgb(100, 198, 220);font-weight: bold; isplay: block;margin: 30px 5px;display: block;">评论区
 				({{comments.total || 0}})</text>
 			<view>
@@ -94,10 +105,14 @@
 						</view>
 						<view style="clear: both;"></view>
 					</view>
-					<button class="load_more" @click="getCollocationComments">加载更多</button>
 				</view>
+				<view style="width: 100%;height: 50rpx;"></view>
+				<view v-if="!comments.total" style="font-size: 12px;color: #888;margin: 20rpx 10rpx;width: 100%;text-align: center;">-    暂无回复    -</view>
+				<button v-if="comments.total" class="load_more" @click="getCollocationComments">加载更多</button>
 			</view>
 		</view>
+
+
 
 		<!-- 评论框 -->
 		<view class="bottom_tab" :adjust-position="false" :style="{ paddingBottom : footerBottomHeight }">
@@ -107,11 +122,16 @@
 			</text>
 
 			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="myComment" style=""></textarea>
+			<textarea class="comment_input" v-model="myComment"  @click="handleFocus" @focus="handleFocus" @blur="handleBlur" style="" :adjust-position="false" ></textarea>
+
 
 			<!-- 按钮 -->
 			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
 		</view>
+		<view style="width: 100%;height: 120rpx;"></view>
+		
+		<!-- 当输入框聚焦后显示的蒙版层 -->
+		<view class="mask" v-show=displayMask  @tap="handleMaskTap" ></view>
 
 		<!-- 加载状态 -->
 		<view v-if="loading" class="loading">加载中...</view>
@@ -162,12 +182,31 @@
 	// 获取系统信息
 	const systemInfo = uni.getSystemInfoSync()
 	const keyboardHeight = ref(0)
-
+	// 蒙版层
+	const displayMask = ref(false)
+	
 	// 处理键盘高度变化
 	const keyboardHeightChangeHandler = (res) => {
 		console.log(res)
 		keyboardHeight.value = res.height
 	}
+
+
+	//遮罩层方法
+	function handleFocus() {
+	  displayMask.value = true;
+	}
+	
+	function handleBlur() {
+	  displayMask.value = false;
+	}
+	
+	// 点击蒙版关闭键盘
+	const handleMaskTap = () => {
+	  displayMask.value = false;
+	  uni.hideKeyboard(); // 调用API关闭键盘
+	};
+	
 
 	// 生命周期
 	onShow(() => {
@@ -385,10 +424,10 @@
 			})
 			return
 		}
-		
+
 		//区分type, origin=1,type=3   origin=2,type=4
 		let type = origin.value == 1 ? 3 : 4
-		
+
 		let requestData = {
 			id: parseInt(detailData.value.id),
 			type: type,
@@ -607,6 +646,17 @@
 		// 返回格式化后的日期时间
 		return `${year}-${month}-${day} ${hours}:${minutes}`;
 	}
+	
+	// 生命周期
+	onShow(() => {
+		if (process.env.VUE_APP_PLATFORM == "h5") {
+			//h5不会弹出软键盘
+			return
+		}
+		console.log("注册键盘弹出事件")
+		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
+	})
+	
 
 	// 获取路由参数
 	onLoad((options) => {
@@ -656,22 +706,30 @@
 		z-index: 10;
 		width: 50px;
 		height: 30px;
+		.uni-icons {
+			width: 30px;
+			height: 30px;
+		}
 
 		image {
 			width: 30px;
 			height: 30px;
 		}
 
-		text {
-			color: #fff;
+		.num {
+			color: #888;
 			font-size: 14px;
-			position: absolute;
-			top: 5px;
-			left: 35px;
+			display: inline-block;
+			position: relative;
+			margin: 10rpx;
+			top: -5px;
+			// left: 35px;
 			font-weight: 1000;
+			color:#ff4d4f;
 
 		}
 	}
+
 
 	/* 页面主体 */
 
@@ -680,38 +738,43 @@
 	}
 
 	.title {
-		font-size: 36rpx;
-		font-weight: bold;
+		font-size: 28rpx;
+		font-weight: 800;
 		display: block;
 		margin-bottom: 20rpx;
 		padding: 30rpx 30rpx 0rpx 30rpx;
 	}
 
 	.content {
-		font-size: 28rpx;
+		display: inline-block;
+		font-size: 22rpx;
 		color: #666;
 		line-height: 1.6;
 		padding: 30rpx 30rpx 0rpx 30rpx;
+		width: 100%;
+		overflow: hidden;
+		box-sizing: border-box;
 	}
 
 	.goods-list {
 		margin-top: 40rpx;
-		border-top: 1px solid #eee;
-		padding-top: 30rpx;
+		padding-top: 20rpx;
+		background: linear-gradient(1deg, #ffffff 0%, #f7f7f7 100%);
 	}
 
 	.goods-item {
 		display: flex;
 		padding: 20rpx;
-		margin-bottom: 30rpx;
+		padding-left: 40rpx;
+		margin-bottom: 10rpx;
 		background: #fff;
 		border-radius: 12rpx;
 		// box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
 	}
 
 	.goods-image {
-		width: 150rpx;
-		height: 150rpx;
+		width: 100rpx;
+		height: 100rpx;
 		border-radius: 8rpx;
 		margin-right: 30rpx;
 	}
@@ -721,21 +784,44 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
+		position: relative;
 	}
 
 	.brand {
-		font-size: 32rpx;
+		font-size: 26rpx;
 		font-weight: bold;
 		color: #333;
 	}
 
 	.category {
-		font-size: 26rpx;
+		font-size: 22rpx;
 		color: #666;
+		display: inline-block;
+	}
+
+	.price {
+		font-size: 22rpx;
+		color: #666;
+		display: inline-block;
+	}
+
+	.see {
+		position: absolute;
+		right: 0;
+		font-size: 0.6875rem;
+		color: #d1d1d1;
+		background: linear-gradient(90deg, #ffffff 0%, #f4f4f4 100%);
+		height: 60px;
+		width: 106px;
+		text-align: center;
+		border-radius: 0 20px 20px 0;
+		line-height: 60px;
+		text-align: right;
+		padding-right: 15px;
 	}
 
 	.name {
-		font-size: 28rpx;
+		font-size: 24rpx;
 		color: #444;
 	}
 
@@ -749,8 +835,8 @@
 
 	/* 新增样式 */
 	.image-container {
-		width: 150rpx;
-		height: 150rpx;
+		width: 100rpx;
+		height: 100rpx;
 		margin-right: 30rpx;
 		position: relative;
 	}
@@ -798,10 +884,10 @@
 	}
 
 	.username {
-		font-size: 15px;
+		font-size: 28rpx;
 		font-weight: 900;
 		color: #333;
-		width: calc(100vw - 40px);
+		width: calc(100vw - 220rpx);
 		overflow: hidden;
 		/* 只显示一行 */
 		white-space: nowrap;
@@ -844,10 +930,11 @@
 			flex: 1;
 			margin-right: 8px;
 			height: 30px;
-			border: 1px solid #ddd;
 			border-radius: 5px;
 			min-height: 30px;
 			padding: 8px;
+			background: #f2f2f2;
+			font-size: 30rpx;
 		}
 
 		button {
@@ -861,5 +948,52 @@
 			color: rgb(255, 255, 255);
 			font-size: 14px;
 		}
+
+		uni-button:after {
+			border: none;
+		}
 	}
+	
+	uni-button:after {
+		border: none;
+	}
+	
+	.load_more {
+		background: #fff;
+		color: #d6d6d6;
+		font-size: 13px;
+		margin-top: 15px;
+	
+		&::after {
+			border: none;
+		}
+	}
+
+	text {
+		font-size: 22rpx;
+	}
+	.about {
+		font-size: 12px;
+		color: rgb(136, 136, 136);
+		margin: 0.625rem 0.3125rem;
+		width: 100%;
+		text-align: center;
+		display: block;
+		margin-top: 0rpx;
+		font-weight: 800;
+	}
+	// 遮罩层
+	.mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: #fff;
+		opacity: 0;
+		z-index: 99;
+		width: 100vw;
+		height: 100vh;
+	}
+	
 </style>

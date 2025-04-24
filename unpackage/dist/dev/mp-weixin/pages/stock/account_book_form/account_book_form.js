@@ -168,7 +168,7 @@ const _sfc_main = {
       } : {
         k: common_vendor.o(selectImage)
       }, {
-        l: common_assets._imports_0$6,
+        l: common_assets._imports_0$4,
         m: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
         n: common_vendor.o((...args) => _ctx.handleDelete && _ctx.handleDelete(...args))

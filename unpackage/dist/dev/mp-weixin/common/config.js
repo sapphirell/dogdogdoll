@@ -1,6 +1,6 @@
 "use strict";
 const common_vendor = require("./vendor.js");
-const websiteUrl = "http://localhost:8080";
+const websiteUrl = "https://api.fantuanpu.com";
 const image1Url = "https://images1.fantuanpu.com/";
 let global = common_vendor.reactive({
   isLogin: false,
@@ -164,6 +164,7 @@ function getScene() {
 }
 function saveUserInfo(data) {
   common_vendor.index.setStorageSync("userInfo", data);
+  common_vendor.index.setStorageSync("token", data.last_token);
   global.userInfo = data;
   global.isLogin = true;
 }
@@ -173,7 +174,7 @@ function clearUserInfo() {
   global.isLogin = false;
 }
 function handleRequestError(error, message = "请求失败") {
-  common_vendor.index.__f__("error", "at common/config.js:239", error);
+  common_vendor.index.__f__("error", "at common/config.js:240", error);
   common_vendor.index.showToast({
     title: message,
     icon: "none"

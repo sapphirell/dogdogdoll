@@ -1,7 +1,14 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
-const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
+}
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
+if (!Math) {
+  _easycom_uni_icons();
+}
 const _sfc_main = {
   __name: "collocation_share",
   setup(__props) {
@@ -17,6 +24,21 @@ const _sfc_main = {
     });
     const systemInfo = common_vendor.index.getSystemInfoSync();
     const keyboardHeight = common_vendor.ref(0);
+    const displayMask = common_vendor.ref(false);
+    const keyboardHeightChangeHandler = (res) => {
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:190", res);
+      keyboardHeight.value = res.height;
+    };
+    function handleFocus() {
+      displayMask.value = true;
+    }
+    function handleBlur() {
+      displayMask.value = false;
+    }
+    const handleMaskTap = () => {
+      displayMask.value = false;
+      common_vendor.index.hideKeyboard();
+    };
     common_vendor.onShow(() => {
       {
         return;
@@ -34,7 +56,7 @@ const _sfc_main = {
         safeBottom += keyboardHeight.value;
       }
       let bottom = `${safeBottom}px`;
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:196", "footer-brand:" + bottom);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:235", "footer-brand:" + bottom);
       return bottom;
     });
     const loading = common_vendor.ref(true);
@@ -68,7 +90,7 @@ const _sfc_main = {
             }
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:245", err);
+            common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:284", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -79,7 +101,7 @@ const _sfc_main = {
       });
     };
     function viewFullImage(index) {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:258", detailData);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:297", detailData);
       common_vendor.index.previewImage({
         current: detailData.value.image_url_list[index],
         urls: detailData.value.image_url_list
@@ -109,7 +131,7 @@ const _sfc_main = {
                   imageError: !goodsInfo
                 };
               } catch (error2) {
-                common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:297", "商品信息获取失败:", error2);
+                common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:336", "商品信息获取失败:", error2);
                 return {
                   ...item,
                   goodsInfo: null,
@@ -151,10 +173,10 @@ const _sfc_main = {
         if (res.data.status === "success") {
           authorInfo.value = res.data.data;
         } else {
-          common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:348", "获取用户信息失败:", res.data.msg);
+          common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:387", "获取用户信息失败:", res.data.msg);
         }
       } catch (error2) {
-        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:351", "用户信息请求失败:", error2);
+        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:390", "用户信息请求失败:", error2);
         common_vendor.index.showToast({
           title: "作者信息加载失败",
           icon: "none"
@@ -199,7 +221,7 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:406", res.data);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:445", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "操作成功",
@@ -218,7 +240,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:425", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:464", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -254,7 +276,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:465", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:504", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -276,7 +298,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:490", res.data.data);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:529", res.data.data);
           comments.value.page_index = res.data.data.page_index;
           comments.value.total = res.data.data.total;
           comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(
@@ -295,7 +317,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:511", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:550", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -330,7 +352,7 @@ const _sfc_main = {
         requestData.reply_for = replyForItem.value.comment;
         requestData.reply_user_id = replyForItem.value.user_id;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:548", requestData);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:587", requestData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -339,7 +361,7 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:557", res.data);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:596", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "评论成功",
@@ -359,7 +381,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:579", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:618", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -384,6 +406,10 @@ const _sfc_main = {
       date.getSeconds().toString().padStart(2, "0");
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
+    common_vendor.onShow(() => {
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:656", "注册键盘弹出事件");
+      common_vendor.index.onKeyboardHeightChange(keyboardHeightChangeHandler);
+    });
     common_vendor.onLoad((options) => {
       if (!options.collocation_id) {
         error.value = true;
@@ -399,7 +425,7 @@ const _sfc_main = {
       origin.value = options.origin;
       fetchData(options.collocation_id, options.origin);
       common_config.asyncGetUserInfo().then((userInfo) => {
-        common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:628", userInfo);
+        common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:678", userInfo);
         getHasLike(options.collocation_id);
       });
       getCollocationComments();
@@ -408,9 +434,17 @@ const _sfc_main = {
       return common_vendor.e({
         a: !common_vendor.unref(hasLike)
       }, !common_vendor.unref(hasLike) ? {
-        b: common_assets._imports_0$5
+        b: common_vendor.p({
+          type: "heart",
+          size: "28",
+          color: "#ff4d4f"
+        })
       } : {
-        c: common_assets._imports_1$4
+        c: common_vendor.p({
+          type: "heart-filled",
+          size: "28",
+          color: "#ff4d4f"
+        })
       }, {
         d: common_vendor.t(formatNumber(detailData.value.like_count)),
         e: common_vendor.o(($event) => likeFn()),
@@ -438,16 +472,20 @@ const _sfc_main = {
             d: item.imageError
           }), {
             e: common_vendor.t(item.relation_brand_name),
-            f: common_vendor.t(item.type),
-            g: common_vendor.t(item.relation_goods_name),
-            h: item.id,
-            i: common_vendor.o(($event) => item.relation_goods_id > 0 ? navigateToGoods(item.relation_goods_id) : null, item.id)
+            f: common_vendor.t(item.relation_goods_name),
+            g: common_vendor.t(item.type),
+            h: common_vendor.t(item.goodsInfo && item.goodsInfo.total_amount ? item.goodsInfo.total_amount + item.goodsInfo.currency : "贩售价格未收录"),
+            i: item.id,
+            j: common_vendor.o(($event) => item.relation_goods_id > 0 ? navigateToGoods(item.relation_goods_id) : null, item.id)
           });
         }),
-        m: common_vendor.t(common_vendor.unref(comments).total || 0),
-        n: common_vendor.unref(comments).comment_list
+        m: common_vendor.unref(comments).total
+      }, common_vendor.unref(comments).total ? {
+        n: common_vendor.t(common_vendor.unref(comments).total || 0)
+      } : {}, {
+        o: common_vendor.unref(comments).comment_list
       }, common_vendor.unref(comments).comment_list ? {
-        o: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
+        p: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
           return {
             a: item.avatar,
             b: common_vendor.t(item.username),
@@ -463,28 +501,38 @@ const _sfc_main = {
             h: item.id
           };
         }),
-        p: common_vendor.s({
+        q: common_vendor.s({
           fontSize: "12px",
           position: "absolute",
           bottom: "3px",
           right: "15px",
           fontWeight: "1000"
-        }),
-        q: common_vendor.o(getCollocationComments)
+        })
       } : {}, {
-        r: common_vendor.unref(replyForItem).id
+        r: !common_vendor.unref(comments).total
+      }, !common_vendor.unref(comments).total ? {} : {}, {
+        s: common_vendor.unref(comments).total
+      }, common_vendor.unref(comments).total ? {
+        t: common_vendor.o(getCollocationComments)
+      } : {}, {
+        v: common_vendor.unref(replyForItem).id
       }, common_vendor.unref(replyForItem).id ? {
-        s: common_vendor.t("@" + common_vendor.unref(replyForItem).username)
+        w: common_vendor.t("@" + common_vendor.unref(replyForItem).username)
       } : {}, {
-        t: common_vendor.unref(myComment),
-        v: common_vendor.o(($event) => common_vendor.isRef(myComment) ? myComment.value = $event.detail.value : myComment = $event.detail.value),
-        w: common_vendor.o(addComments),
-        x: footerBottomHeight.value,
-        y: loading.value
+        x: common_vendor.o(handleFocus),
+        y: common_vendor.o(handleFocus),
+        z: common_vendor.o(handleBlur),
+        A: common_vendor.unref(myComment),
+        B: common_vendor.o(($event) => common_vendor.isRef(myComment) ? myComment.value = $event.detail.value : myComment = $event.detail.value),
+        C: common_vendor.o(addComments),
+        D: footerBottomHeight.value,
+        E: displayMask.value,
+        F: common_vendor.o(handleMaskTap),
+        G: loading.value
       }, loading.value ? {} : {}, {
-        z: error.value
+        H: error.value
       }, error.value ? {
-        A: common_vendor.t(errorMsg.value)
+        I: common_vendor.t(errorMsg.value)
       } : {});
     };
   }

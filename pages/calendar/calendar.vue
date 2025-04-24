@@ -1,4 +1,5 @@
 <template>
+	<meta name="theme-color" content="rgb(185 195 253)"></meta>
 	<common-page head_color="rgb(185 195 253)">
 		<view class="goods_renew_header_content">
 			<view style="width: 80%;margin: 80rpx auto 20rpx auto;">
@@ -278,7 +279,7 @@
 				vertical-align: bottom; // 确保所有状态底部对齐
 				line-height: 1; // 统一行高计算
 				transition: all 0.3s ease;
-				font-size: 32rpx;
+				font-size: 28rpx;
 				display: inline-block;
 				margin: 10rpx 20rpx;
 				padding: 10rpx 0rpx;
@@ -293,7 +294,7 @@
 				justify-content: center;
 
 				&.active {
-					font-size: 40rpx !important;
+					font-size: 36rpx !important;
 					font-weight: bold;
 					color: #7dc3d3;
 					position: relative;

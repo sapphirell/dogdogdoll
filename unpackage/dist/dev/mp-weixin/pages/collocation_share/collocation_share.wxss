@@ -14,50 +14,61 @@
   width: 50px;
   height: 30px;
 }
+.heart .uni-icons.data-v-38d96b75 {
+  width: 30px;
+  height: 30px;
+}
 .heart image.data-v-38d96b75 {
   width: 30px;
   height: 30px;
 }
-.heart text.data-v-38d96b75 {
-  color: #fff;
+.heart .num.data-v-38d96b75 {
+  color: #888;
   font-size: 14px;
-  position: absolute;
-  top: 5px;
-  left: 35px;
+  display: inline-block;
+  position: relative;
+  margin: 10rpx;
+  top: -5px;
   font-weight: 1000;
+  color: #ff4d4f;
 }
 /* 页面主体 */
 .content-box.data-v-38d96b75 {
   padding: 30rpx 0;
 }
 .title.data-v-38d96b75 {
-  font-size: 36rpx;
-  font-weight: bold;
+  font-size: 28rpx;
+  font-weight: 800;
   display: block;
   margin-bottom: 20rpx;
   padding: 30rpx 30rpx 0rpx 30rpx;
 }
 .content.data-v-38d96b75 {
-  font-size: 28rpx;
+  display: inline-block;
+  font-size: 22rpx;
   color: #666;
   line-height: 1.6;
   padding: 30rpx 30rpx 0rpx 30rpx;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .goods-list.data-v-38d96b75 {
   margin-top: 40rpx;
-  border-top: 1px solid #eee;
-  padding-top: 30rpx;
+  padding-top: 20rpx;
+  background: linear-gradient(1deg, #ffffff 0%, #f7f7f7 100%);
 }
 .goods-item.data-v-38d96b75 {
   display: flex;
   padding: 20rpx;
-  margin-bottom: 30rpx;
+  padding-left: 40rpx;
+  margin-bottom: 10rpx;
   background: #fff;
   border-radius: 12rpx;
 }
 .goods-image.data-v-38d96b75 {
-  width: 150rpx;
-  height: 150rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 8rpx;
   margin-right: 30rpx;
 }
@@ -66,18 +77,39 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: relative;
 }
 .brand.data-v-38d96b75 {
-  font-size: 32rpx;
+  font-size: 26rpx;
   font-weight: bold;
   color: #333;
 }
 .category.data-v-38d96b75 {
-  font-size: 26rpx;
+  font-size: 22rpx;
   color: #666;
+  display: inline-block;
+}
+.price.data-v-38d96b75 {
+  font-size: 22rpx;
+  color: #666;
+  display: inline-block;
+}
+.see.data-v-38d96b75 {
+  position: absolute;
+  right: 0;
+  font-size: 0.6875rem;
+  color: #d1d1d1;
+  background: linear-gradient(90deg, #ffffff 0%, #f4f4f4 100%);
+  height: 60px;
+  width: 106px;
+  text-align: center;
+  border-radius: 0 20px 20px 0;
+  line-height: 60px;
+  text-align: right;
+  padding-right: 15px;
 }
 .name.data-v-38d96b75 {
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #444;
 }
 .loading.data-v-38d96b75,
@@ -89,8 +121,8 @@
 }
 /* 新增样式 */
 .image-container.data-v-38d96b75 {
-  width: 150rpx;
-  height: 150rpx;
+  width: 100rpx;
+  height: 100rpx;
   margin-right: 30rpx;
   position: relative;
 }
@@ -132,10 +164,10 @@
   box-shadow: none;
 }
 .username.data-v-38d96b75 {
-  font-size: 15px;
+  font-size: 28rpx;
   font-weight: 900;
   color: #333;
-  width: calc(100vw - 40px);
+  width: calc(100vw - 220rpx);
   overflow: hidden;
   /* 只显示一行 */
   white-space: nowrap;
@@ -172,10 +204,11 @@
   flex: 1;
   margin-right: 8px;
   height: 30px;
-  border: 1px solid #ddd;
   border-radius: 5px;
   min-height: 30px;
   padding: 8px;
+  background: #f2f2f2;
+  font-size: 30rpx;
 }
 .bottom_tab button.data-v-38d96b75 {
   flex-shrink: 0;
@@ -186,4 +219,44 @@
   width: 90px;
   color: #ffffff;
   font-size: 14px;
+}
+.bottom_tab uni-button.data-v-38d96b75:after {
+  border: none;
+}
+uni-button.data-v-38d96b75:after {
+  border: none;
+}
+.load_more.data-v-38d96b75 {
+  background: #fff;
+  color: #d6d6d6;
+  font-size: 13px;
+  margin-top: 15px;
+}
+.load_more.data-v-38d96b75::after {
+  border: none;
+}
+text.data-v-38d96b75 {
+  font-size: 22rpx;
+}
+.about.data-v-38d96b75 {
+  font-size: 12px;
+  color: #888888;
+  margin: 0.625rem 0.3125rem;
+  width: 100%;
+  text-align: center;
+  display: block;
+  margin-top: 0rpx;
+  font-weight: 800;
+}
+.mask.data-v-38d96b75 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  opacity: 0;
+  z-index: 99;
+  width: 100vw;
+  height: 100vh;
 }

@@ -5,9 +5,13 @@
 			<!-- 轮播图部分 -->
 			<view style="position: relative;">
 				<view class="heart" @click="likeFn()">
-					<image src="../../static/heart-w.png" v-if="!hasLike"></image>
-					<image src="../../static/heart2.png" v-else></image>
-					<text>{{ formatNumber(goods.goods_like_count) }}</text>
+<!-- 					<image src="../../static/heart-w.png" v-if="!hasLike"></image>
+					<image src="../../static/heart2.png" v-else></image> -->
+					
+					<uni-icons type="heart" size="28" color="#ff4d4f" v-if="!hasLike"></uni-icons>
+					<uni-icons type="heart-filled" size="28" color="#ff4d4f" v-else></uni-icons>
+					
+					<text class="num" style="color:#ff4d4f;">{{ formatNumber(goods.goods_like_count) }}</text>
 				</view>
 				<swiper :interval="3000" :duration="200" @change="onChange" class="banner_swiper" style="max-height: 800px;"  :style="{ height: swiperHeight + 'px' }">
 					<block v-for="(item, key) in goods.goods_images" :key="key">
@@ -78,6 +82,12 @@
 				<text class="lable_text">制作方</text>
 				<text class="msg_text" @click="jumpBrand(goods.brand_id)">
 					{{goods.brand_name}}
+				</text>
+			</view>
+			<view class="msg_block">
+				<text class="lable_text">备注</text>
+				<text class="msg_text" >
+					{{goods.desc_content}}
 				</text>
 			</view>
 		</view>
@@ -675,18 +685,24 @@
 		z-index: 10;
 		width: 50px;
 		height: 30px;
+		.uni-icons {
+			width: 30px;
+			height: 30px;
+		}
 
 		image {
 			width: 30px;
 			height: 30px;
 		}
 
-		text {
-			color: #fff;
+		.num {
+			color: #888;
 			font-size: 14px;
-			position: absolute;
-			top: 5px;
-			left: 35px;
+			display: inline-block;
+			position: relative;
+			margin: 10rpx;
+			top: -5px;
+			// left: 35px;
 			font-weight: 1000;
 
 		}
@@ -695,12 +711,26 @@
 
 	.banner_swiper_item {
 	  height: auto; /* 允许高度自适应 */
+	  
 	}
 
 	.swiper-item {
 	  height: auto; /* 允许内容撑开高度 */
-	}
+	  uni-image {
+		      position: absolute;
+		      top: -30rpx;
+		      bottom: 0;
+		      margin: auto;
+	  }
 
+	}
+	  .banner_swiper_item {
+		  // 图片不足高度时用灰色波点背景
+		      height: auto;
+		      background: #ffffff;
+		    background-image: radial-gradient(#dfdfdf 20%, transparent 0);
+		    background-size: 20px 20px;
+	  }
 	.swiper-index-box {
 		position: absolute;
 		bottom: 30px;
@@ -765,11 +795,11 @@
 			flex: 1;
 			margin-right: 8px;
 			height: 40px;
-			border: 1px solid #ddd;
 			border-radius: 5px;
 			min-height: 30px;
 			padding: 8px;
 			box-sizing: border-box;
+			background: #f2f2f2;
 		}
 
 		button {
@@ -782,6 +812,10 @@
 			width: 90px;
 			color: rgb(255, 255, 255);
 			font-size: 14px;
+		}
+		
+		uni-button:after {
+			border: none;
 		}
 	}
 
@@ -796,7 +830,7 @@
 		top: -25px;
 		background: #fff;
 		padding: 20px;
-		box-shadow: 0 0px 10px #ffffff30;
+		box-shadow: 0px -10px 10px #0000000d;
 
 		.msg_block {
 			font-size: 17px;

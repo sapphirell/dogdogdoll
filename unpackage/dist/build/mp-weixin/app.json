@@ -7,7 +7,7 @@
     "pages/watch_demo/watch_demo",
     "pages/goods/goods",
     "pages/brand/brand",
-    "pages/news/news",
+    "pages/calendar/calendar",
     "pages/pop_croper/pop_croper",
     "pages/setting/setting",
     "pages/setting/password/password",
@@ -22,7 +22,8 @@
     "pages/message_info/message_info",
     "pages/register/register",
     "pages/user_like/user_like",
-    "pages/collocation_square/collocation_square"
+    "pages/collocation_square/collocation_square",
+    "pages/sale_news/sale_news"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -48,7 +49,7 @@
         "selectedIconPath": "static/new-icon/home-b.png"
       },
       {
-        "pagePath": "pages/news/news",
+        "pagePath": "pages/calendar/calendar",
         "text": "上新",
         "iconPath": "static/new-icon/date-w.png",
         "selectedIconPath": "static/new-icon/date-b.png"

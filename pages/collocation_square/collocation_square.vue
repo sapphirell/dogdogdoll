@@ -1,4 +1,5 @@
 <template>
+	<meta name="theme-color" content="#f5f5f5"></meta>
 	<common-page head_color="#f5f5f5">
 		<view class="container">
 			<view v-if="miniProgram" style="height: 40rpx;"></view>
@@ -13,14 +14,14 @@
 					</view>
 					<text v-if="!filterGoods.length" class="tip">当前无筛选条件</text>
 				</view>
-				<button class="submit-btn" @tap="fetchCollocations(true)" >筛选</button>
+				<button class="submit-btn" @tap="fetchCollocations(true)">筛选</button>
 			</view>
 
 			<!-- 搭配列表 -->
 			<scroll-view class="card-list" scroll-y @scrolltolower="loadMore" :show-scrollbar="false">
 				<view class="cards-container" :style="{ height: containerHeight + 'px' }">
 					<view v-for="(item, index) in collocationList" :key="item.collocation_id" class="card"
-						:id="'card-' + index" :style="cardStyle(index)">
+						:id="'card-' + index" :style="cardStyle(index)" @tap="jump2collectionDetail(item.collocation_id, item.origin )">
 						<image :src="item.image_urls[0]" mode="aspectFill" class="card-image" lazy-load />
 						<view class="card-content">
 							<text class="title">{{ item.title }}</text>
@@ -45,7 +46,7 @@
 			</scroll-view>
 
 			<!-- 筛选弹窗 -->
-			<common-modal v-model:visible="showFilterModal" v-if="showFilterModal" :visible="showFilterModal" >
+			<common-modal v-model:visible="showFilterModal" v-if="showFilterModal" :visible="showFilterModal">
 				<view class="filter-modal">
 					<view class="modal-header">
 						<text class="title">筛选条件</text>
@@ -55,7 +56,7 @@
 					<view class="filter-items">
 						<view class="filter-item">
 							<!-- <text class="label">品牌搜索</text> -->
-							<common-search mode="fill" @select="handleBrandSelect" width="450rpx"  />
+							<common-search mode="fill" @select="handleBrandSelect" width="450rpx" />
 						</view>
 
 						<view class="filter-item" v-if="selectedBrand">
@@ -108,7 +109,7 @@
 	const selectedBrand = ref(null)
 	const filterGoods = ref([]) // 现在存储的是 {goods_id, goods_name} 对象数组
 	const tempSelectGoods = ref(null) // 临时存储选择的商品
-	
+
 	// 是否小程序
 	const miniProgram = process.env.VUE_APP_PLATFORM === 'mp-weixin'
 
@@ -127,19 +128,20 @@
 	// 计算布局逻辑
 	const calculateLayout = (instance) => {
 		// 获取组件实例的正确方式
-
+		console.log("进入计算布局逻辑")
 		if (!instance) {
 			console.log("无法获取instance")
 			return
 		}
-
+		console.log("获取成功")
 		if (!collocationList.value) {
 			console.log("无列表数据，不需要计算布局")
 			return
 		}
-
-		const query = uni.createSelectorQuery().in(instance.ctx)
-
+		console.log("获取成功，准备createSelectorQuery")
+		console.log(instance)
+		const query = uni.createSelectorQuery().in(instance.proxy)
+		console.log("获取到query")
 		// 收集所有查询任务
 		const tasks = collocationList.value.map((_, index) => {
 			return new Promise((resolve) => {
@@ -154,17 +156,25 @@
 
 		// 统一执行查询
 		query.exec(async () => {
+			console.log("进入Query")
 			// 重置列高
 			columnsHeight[0] = 0
 			columnsHeight[1] = 0
 
 			// 按顺序处理所有查询结果
 			const results = await Promise.all(tasks)
+			if (!results.length) {
+				console.warn('未查询到任何卡片元素');
+				return;
+			}
 			results.forEach(({
 				index,
 				rect
 			}) => {
-				if (!rect) return
+				if (!rect) {
+					console.error(`卡片${index}元素查询失败`);
+					return
+				}
 
 				const item = collocationList.value[index]
 				const colIdx = columnsHeight[0] <= columnsHeight[1] ? 0 : 1
@@ -226,16 +236,17 @@
 				const newItems = data.collocation_relation_list
 
 				collocationList.value = reset ?
-					newItems :
-					[...collocationList.value, ...newItems]
+					newItems : [...collocationList.value, ...newItems]
 
 				noMore.value = data.total <= currentPage.value * pageSize
 				currentPage.value++
-
+				console.log("等待next tick")
 				await nextTick()
+				console.log("等待完成")
 				calculateLayout(instance)
 				// 500ms 后再运行一次计算布局
 				setTimeout(() => {
+					console.log("二次计算布局")
 					calculateLayout(instance)
 				}, 500)
 			}
@@ -282,20 +293,20 @@
 			console.log("未选择有效goods")
 			return
 		}
-		
+
 		// 避免重复添加
 		for (const g of filterGoods.value) {
 			if (g.goods_id === goodsId) {
 				return
 			}
 		}
-		
+
 
 		tempSelectGoods.value = {
 			goods_id: goodsId,
 			goods_name: goodsName
 		}
-		
+
 	}
 	// 移除单个商品
 	const removeGood = (goodsId) => {
@@ -312,8 +323,14 @@
 		filterGoods.value = []
 		goodsOptions.value = []
 	}
-
-
+	
+	// 跳转到搭配
+	function jump2collectionDetail(collocation_id, origin) {
+		uni.navigateTo({
+			url: '/pages/collocation_share/collocation_share?collocation_id=' + collocation_id + '&origin=' + origin
+		})
+	}
+	
 	// 确认筛选
 	const confirmFilter = async () => {
 		filterGoods.value.push(tempSelectGoods.value)
@@ -343,6 +360,11 @@
 	$hover-color: #1ed1e1;
 	$border-color: #e6e6e6;
 	$radius: 8px;
+	
+	text {
+		font-size: 22rpx;
+	}
+
 	.container {
 		padding: 20rpx;
 		background: #f5f5f5;
@@ -353,8 +375,9 @@
 	.filter-bar {
 		display: flex;
 		align-items: center;
-		padding: 20rpx;
+		padding: 10rpx 20rpx;
 		background: #fff;
+		font-size: 22rpx;
 		border-radius: 16rpx;
 		margin-bottom: 20rpx;
 		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
@@ -381,9 +404,9 @@
 
 		.filter-btn {
 			width: 120rpx;
-			height: 60rpx;
-			line-height: 60rpx;
-			font-size: 28rpx;
+			height: 40rpx;
+			line-height: 40rpx;
+			font-size: 24rpx;
 			background: #007aff;
 			color: white;
 			border-radius: 8rpx;
@@ -423,11 +446,17 @@
 				padding: 24rpx;
 
 				.title {
-					display: block;
-					font-size: 29rpx;
+					font-size: 26rpx;
 					font-weight: 500;
 					color: #333;
 					margin-bottom: 16rpx;
+					display: -webkit-box;
+					-webkit-box-orient: vertical;
+					-webkit-line-clamp: 1;
+					 overflow: hidden;
+					 white-space: normal;
+					 text-overflow: ellipsis;
+					 
 				}
 
 				.desc {
@@ -435,7 +464,7 @@
 					-webkit-box-orient: vertical;
 					-webkit-line-clamp: 2;
 					overflow: hidden;
-					font-size: 25rpx;
+					font-size: 22rpx;
 					color: #666;
 					line-height: 1.5;
 				}
@@ -452,11 +481,11 @@
 						border-radius: 8rpx;
 
 						.goods-tag {
+							line-height: 20rpx;
 							font-size: 20rpx;
 							color: #666;
-							max-width: 80rpx;
+							max-width: 110rpx;
 							display: inline-block;
-							// 一行，超出隐藏
 							white-space: nowrap;
 							overflow: hidden;
 						}
@@ -467,40 +496,42 @@
 			}
 		}
 	}
-	
+
 	.modal-container {
 		padding-top: 0rpx;
-	
+
 	}
+
 	.search_tab {
 		padding: 0px;
 	}
+
 	.submit-btn {
 		background: linear-gradient(135deg, $primary-color, $hover-color);
 		color: white;
 		border: none;
 		border-radius: 15rpx;
-		font-size: 25rpx;
+		font-size: 22rpx;
 		font-weight: 900;
-		height: 70rpx;
-		line-height: 70rpx;
+		height: 60rpx;
+		line-height: 60rpx;
 		box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.3);
 		transition: all 0.3s;
-	
-	  &::after {
-	    border: none;
-	  }
-	  
-	  &.loading {
-	    opacity: 0.7;
-	    background: #007aff;
-	  }
-	  
-	  &[disabled] {
-	    background: #c8c9cc;
-	    color: #fff;
-	  }
-		
+
+		&::after {
+			border: none;
+		}
+
+		&.loading {
+			opacity: 0.7;
+			background: #007aff;
+		}
+
+		&[disabled] {
+			background: #c8c9cc;
+			color: #fff;
+		}
+
 		&:active {
 			transform: translateY(2rpx);
 			box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.3);
@@ -520,8 +551,9 @@
 			padding-left: 20rpx;
 
 			.title {
-				font-size: 32rpx;
+				font-size: 28rpx;
 				font-weight: 500;
+				
 			}
 
 			.close {
@@ -556,14 +588,16 @@
 				line-height: 50rpx;
 				border-radius: 12rpx;
 				font-size: 22rpx;
+
 				&::after {
-						border: none;
-					}
+					border: none;
+				}
+
 				&.reset {
 					background: #f0f2f5;
 					color: #666;
-					
-					
+
+
 				}
 
 				&.confirm {

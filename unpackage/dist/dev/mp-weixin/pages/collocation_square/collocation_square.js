@@ -45,15 +45,20 @@ const _sfc_main = {
       };
     };
     const calculateLayout = (instance2) => {
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:131", "进入计算布局逻辑");
       if (!instance2) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:132", "无法获取instance");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:133", "无法获取instance");
         return;
       }
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:136", "获取成功");
       if (!collocationList.value) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:137", "无列表数据，不需要计算布局");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:138", "无列表数据，不需要计算布局");
         return;
       }
-      const query = common_vendor.index.createSelectorQuery().in(instance2.ctx);
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:141", "获取成功，准备createSelectorQuery");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:142", instance2);
+      const query = common_vendor.index.createSelectorQuery().in(instance2.proxy);
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:144", "获取到query");
       const tasks = collocationList.value.map((_, index) => {
         return new Promise((resolve) => {
           query.select(`#card-${index}`).boundingClientRect((rect) => {
@@ -65,15 +70,22 @@ const _sfc_main = {
         });
       });
       query.exec(async () => {
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:159", "进入Query");
         columnsHeight[0] = 0;
         columnsHeight[1] = 0;
         const results = await Promise.all(tasks);
+        if (!results.length) {
+          common_vendor.index.__f__("warn", "at pages/collocation_square/collocation_square.vue:167", "未查询到任何卡片元素");
+          return;
+        }
         results.forEach(({
           index,
           rect
         }) => {
-          if (!rect)
+          if (!rect) {
+            common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:175", `卡片${index}元素查询失败`);
             return;
+          }
           const item = collocationList.value[index];
           const colIdx = columnsHeight[0] <= columnsHeight[1] ? 0 : 1;
           const left = colIdx * (cardWidth.value + 10);
@@ -94,7 +106,7 @@ const _sfc_main = {
     });
     const fetchCollocations = async (reset = false) => {
       if (loading.value || noMore.value) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:197", "正在加载中或没有更多了");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:207", "正在加载中或没有更多了");
         return;
       }
       try {
@@ -120,9 +132,12 @@ const _sfc_main = {
           collocationList.value = reset ? newItems : [...collocationList.value, ...newItems];
           noMore.value = data.total <= currentPage.value * pageSize;
           currentPage.value++;
+          common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:243", "等待next tick");
           await common_vendor.nextTick$1();
+          common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:245", "等待完成");
           calculateLayout(instance);
           setTimeout(() => {
+            common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:249", "二次计算布局");
             calculateLayout(instance);
           }, 500);
         }
@@ -147,17 +162,17 @@ const _sfc_main = {
           url: `${common_config.websiteUrl}/goods-name-list?id=${brandId}`,
           method: "GET"
         });
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:270", "商品列表:", res.data);
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:281", "商品列表:", res.data);
         if (res.data.status === "success") {
           goodsOptions.value = res.data.data;
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:275", "加载商品失败:", error);
+        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:286", "加载商品失败:", error);
       }
     };
     const handleGoodsSelect = (goodsId, goodsName) => {
       if (!goodsId) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:282", "未选择有效goods");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:293", "未选择有效goods");
         return;
       }
       for (const g of filterGoods.value) {
@@ -182,6 +197,11 @@ const _sfc_main = {
       filterGoods.value = [];
       goodsOptions.value = [];
     };
+    function jump2collectionDetail(collocation_id, origin) {
+      common_vendor.index.navigateTo({
+        url: "/pages/collocation_share/collocation_share?collocation_id=" + collocation_id + "&origin=" + origin
+      });
+    }
     const confirmFilter = async () => {
       filterGoods.value.push(tempSelectGoods.value);
       showFilterModal.value = false;
@@ -221,7 +241,8 @@ const _sfc_main = {
             }),
             e: item.collocation_id,
             f: "card-" + index,
-            g: common_vendor.s(cardStyle(index))
+            g: common_vendor.s(cardStyle(index)),
+            h: common_vendor.o(($event) => jump2collectionDetail(item.collocation_id, item.origin), item.collocation_id)
           };
         }),
         g: containerHeight.value + "px",

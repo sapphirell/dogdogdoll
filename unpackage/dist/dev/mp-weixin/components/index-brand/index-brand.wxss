@@ -38,6 +38,7 @@
 .doll_name.data-v-aa9d9d58 {
   font-family: monospace;
   color: #806161;
+  font-size: 22rpx;
 }
 .dolls.data-v-aa9d9d58 {
   display: flex;
@@ -80,7 +81,7 @@
   float: left;
 }
 .brand .brand_info_tab.data-v-aa9d9d58 {
-  height: 130px;
+  min-height: 210rpx;
 }
 .brand .brand_info.data-v-aa9d9d58 {
   width: calc(100vw - 155px);
@@ -103,11 +104,12 @@
   text-overflow: ellipsis;
   line-height: 1.7;
   /* 行高 */
-  max-height: 5.2em;
+  max-height: 5.5em;
   /* 最大高度，行数 * 行高 */
   text-align-last: left;
   text-align: left;
   box-sizing: border-box;
   padding-left: 5px;
   padding-top: 8px;
+  font-size: 22rpx;
 }

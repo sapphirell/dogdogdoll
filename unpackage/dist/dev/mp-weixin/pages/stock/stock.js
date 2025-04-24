@@ -24,7 +24,7 @@ const _sfc_main = {
     function switch_tab(index) {
       previousTab.value = activeTab.value;
       activeTab.value = index;
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:189", `切换到 tab ${index}`);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:190", `切换到 tab ${index}`);
       switch (index) {
         case 1:
           getAccountBookData();
@@ -53,7 +53,7 @@ const _sfc_main = {
       getAccountBookData(accountBookTypeList.value[selectedType.value]);
     }
     function getAccountBookData(type) {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:231", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:232", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -70,16 +70,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:250", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:251", res.data.data);
           accountBookData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:254", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:255", err);
         }
       });
     }
     function getShowcaseData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:261", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:262", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -92,16 +92,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:275", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:276", res.data.data);
           showcaseData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:279", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:280", err);
         }
       });
     }
     function getBillData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:286", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:287", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -114,11 +114,11 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:300", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:301", res.data.data);
           billData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:304", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:305", err);
         }
       });
     }
@@ -222,7 +222,7 @@ const _sfc_main = {
             j: common_vendor.o(($event) => go2editorShowCase(item.id), index)
           });
         }),
-        t: common_assets._imports_0$2,
+        t: common_assets._imports_0$1,
         v: common_assets._imports_1$2
       } : {}, {
         w: common_vendor.o(go2addShowCase),

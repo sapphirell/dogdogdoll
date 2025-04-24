@@ -111,10 +111,10 @@
   flex: 1;
   margin-right: 8px;
   height: 30px;
-  border: 1px solid #ddd;
   border-radius: 5px;
   min-height: 30px;
   padding: 8px;
+  background: #f2f2f2;
 }
 .bottom_tab button.data-v-1a297a1d {
   flex-shrink: 0;
@@ -125,6 +125,9 @@
   width: 90px;
   color: #ffffff;
   font-size: 14px;
+}
+.bottom_tab uni-button.data-v-1a297a1d:after {
+  border: none;
 }
 .modal_shadow.data-v-1a297a1d {
   position: fixed;

@@ -52,7 +52,7 @@ function jumpGoods(id) {
 	    font-size: 14px;
 	    color: #6eb9d2!important;
 }
-.doll_name {font-family: monospace; color: #806161;}
+.doll_name {font-family: monospace; color: #806161; font-size: 22rpx;}
 .dolls {
 	display: flex;
 	justify-content: flex-start;
@@ -98,7 +98,7 @@ function jumpGoods(id) {
 		float: left;
 	}
 	.brand_info_tab {
-		height: 130px;
+		min-height: 210rpx;
 	}
 	.brand_info {
 		width: calc(100vw - 155px);
@@ -118,12 +118,13 @@ function jumpGoods(id) {
 			overflow: hidden;
 			text-overflow: ellipsis;
 			line-height: 1.7; /* 行高 */
-			max-height: 5.2em; /* 最大高度，行数 * 行高 */
+			max-height: 5.5em; /* 最大高度，行数 * 行高 */
 			text-align-last: left;
 			text-align: left;
 			box-sizing: border-box;
 			padding-left: 5px;
 			padding-top: 8px;
+			font-size: 22rpx;
 		}
 	}
 	

@@ -4,24 +4,28 @@ const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
   const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
+  const _component_transition = common_vendor.resolveComponent("transition");
   const _easycom_index_brand2 = common_vendor.resolveComponent("index-brand");
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_common_search2 + _easycom_index_brand2 + _easycom_common_page2)();
+  (_easycom_common_search2 + _component_transition + _easycom_index_brand2 + _easycom_uni_icons2 + _easycom_common_page2)();
 }
 const _easycom_common_search = () => "../../components/common-search/common-search.js";
 const _easycom_index_brand = () => "../../components/index-brand/index-brand.js";
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_common_search + _easycom_index_brand + _easycom_common_page)();
+  (_easycom_common_search + _easycom_index_brand + _easycom_uni_icons + _easycom_common_page)();
 }
 const _sfc_main = {
   __name: "index",
   setup(__props) {
     let brandsList = common_vendor.ref([]);
     let data = common_vendor.ref([
-      "https://images1.fantuanpu.com/box/100024/28a0d23e82607d47a56edb08daa85d0f",
-      "https://images1.fantuanpu.com/box/100024/28a0d23e82607d47a56edb08daa85d0f",
-      "https://images1.fantuanpu.com/box/100024/28a0d23e82607d47a56edb08daa85d0f"
+      "https://images1.fantuanpu.com/spd/log/2025_04_21/234a245d0f8963b1b9b022efe3653cfb.jpg",
+      "https://images1.fantuanpu.com/box/100024/16524d8c1583feacbeebc37d37ee02a4",
+      "https://images1.fantuanpu.com/spd/log/2025_04_21/d34dfe99334e9f5a82a9f63708fcfefe.jpg",
+      "https://images1.fantuanpu.com/box/100024/16524d8c1583feacbeebc37d37ee02a4"
     ]);
     const tabs = common_vendor.ref([
       {
@@ -50,6 +54,16 @@ const _sfc_main = {
     const newsPageSize = common_vendor.ref(10);
     const newsHasMore = common_vendor.ref(true);
     const newsLoading = common_vendor.ref(false);
+    let hotList = common_vendor.ref([]);
+    const hotPage = common_vendor.ref(1);
+    const hotPageSize = common_vendor.ref(10);
+    const hotHasMore = common_vendor.ref(true);
+    const hotLoading = common_vendor.ref(false);
+    let treeholeList = common_vendor.ref([]);
+    const treeholePage = common_vendor.ref(1);
+    const treeholePageSize = common_vendor.ref(10);
+    const treeholeHasMore = common_vendor.ref(true);
+    const treeholeLoading = common_vendor.ref(false);
     const activeTab = common_vendor.ref("news");
     const switchTab = (tab) => {
       activeTab.value = tab;
@@ -95,7 +109,7 @@ const _sfc_main = {
           newsPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:247", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:385", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -105,6 +119,47 @@ const _sfc_main = {
           newsLoading.value = false;
           common_vendor.index.hideLoading();
         }
+      });
+    }
+    function getHotCollocations() {
+      if (!hotHasMore.value || hotLoading.value)
+        return;
+      hotLoading.value = true;
+      common_vendor.index.showLoading();
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/hot-collocation",
+        data: {
+          page: hotPage.value,
+          pageSize: hotPageSize.value
+        },
+        success: (res) => {
+          const newData = res.data.data.collocation_relation_list;
+          if (newData.length === 0) {
+            hotHasMore.value = false;
+            return;
+          }
+          hotList.value = [...hotList.value, ...newData.map((item) => ({
+            ...item
+          }))];
+          hotHasMore.value = hotList.value.length < res.data.data.total;
+          hotPage.value++;
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("log", "at pages/index/index.vue:423", err);
+          common_vendor.index.showToast({
+            title: "加载失败",
+            icon: "none"
+          });
+        },
+        complete: () => {
+          hotLoading.value = false;
+          common_vendor.index.hideLoading();
+        }
+      });
+    }
+    function jumpToCollocationDetail(item) {
+      common_vendor.index.navigateTo({
+        url: `/pages/collocation_share/collocation_share?collocation_id=${item.collocation_id}&origin=${item.origin}`
       });
     }
     function getBrands() {
@@ -133,7 +188,7 @@ const _sfc_main = {
           page.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:289", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:473", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -145,48 +200,143 @@ const _sfc_main = {
         }
       });
     }
+    function getTreeholeList() {
+      if (!treeholeHasMore.value || treeholeLoading.value)
+        return;
+      treeholeLoading.value = true;
+      common_vendor.index.showLoading();
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/treehole-submissions",
+        data: {
+          page: treeholePage.value,
+          pageSize: treeholePageSize.value
+        },
+        success: (res) => {
+          const newData = res.data.data.submission_list.map((item) => ({
+            ...item,
+            images: item.images || []
+          }));
+          if (newData.length === 0) {
+            treeholeHasMore.value = false;
+            return;
+          }
+          treeholeList.value = [...treeholeList.value, ...newData];
+          treeholeHasMore.value = treeholeList.value.length < res.data.data.total;
+          treeholePage.value++;
+        },
+        fail: (err) => {
+          common_vendor.index.showToast({
+            title: "加载失败",
+            icon: "none"
+          });
+        },
+        complete: () => {
+          treeholeLoading.value = false;
+          common_vendor.index.hideLoading();
+        }
+      });
+    }
+    function handlePublish() {
+      if (!common_config.global.isLogin) {
+        common_vendor.index.showModal({
+          title: "提示",
+          content: "需要登录后才能发布树洞",
+          success: (res) => {
+            if (res.confirm)
+              common_vendor.index.navigateTo({
+                url: "/pages/login/login"
+              });
+          }
+        });
+        return;
+      }
+      common_vendor.index.navigateTo({
+        url: "/pages/treehole_publish/treehole_publish"
+      });
+    }
+    function previewImage(images, index) {
+      common_vendor.index.previewImage({
+        current: index,
+        urls: images
+      });
+    }
+    function handleLike(item) {
+      if (!common_config.global.isLogin) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
+      common_vendor.index.request({
+        url: common_config.websiteUrl + (item.has_liked ? "/with-state/unlike" : "/with-state/add-like"),
+        method: "POST",
+        header: {
+          Authorization: common_config.global.token
+        },
+        data: {
+          target_id: item.id,
+          type: 5
+        },
+        // 5表示树洞类型
+        success: (res) => {
+          if (res.data.status === "success") {
+            item.has_liked = !item.has_liked;
+            item.like_count += item.has_liked ? 1 : -1;
+          } else {
+            common_vendor.index.showD;
+          }
+        }
+      });
+    }
     const formatTime = (timestamp) => {
       const date = new Date(timestamp * 1e3);
       return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
     };
     common_vendor.onLoad(() => {
+      common_config.getUserInfo();
       getBrands();
       getNews();
+      getHotCollocations();
+      getTreeholeList();
     });
     common_vendor.onReachBottom(() => {
       if (activeTab.value === "brands") {
         getBrands();
       } else if (activeTab.value === "news") {
         getNews();
+      } else if (activeTab.value === "second") {
+        getTreeholeList();
       }
     });
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.p({
+        a: common_assets._imports_7,
+        b: common_vendor.p({
           width: "680rpx"
         }),
-        b: common_vendor.f(common_vendor.unref(data), (item, k0, i0) => {
+        c: common_vendor.f(common_vendor.unref(data), (item, k0, i0) => {
           return {
             a: item,
             b: item
           };
         }),
-        c: common_vendor.o(onChange),
-        d: common_assets._imports_0,
-        e: activeTab.value === "news" ? 1 : "",
-        f: common_vendor.o(($event) => switchTab("news")),
-        g: common_assets._imports_1,
-        h: activeTab.value === "brands" ? 1 : "",
-        i: common_vendor.o(($event) => switchTab("brands")),
-        j: common_assets._imports_2,
-        k: activeTab.value === "hot" ? 1 : "",
-        l: common_vendor.o(($event) => switchTab("hot")),
-        m: common_assets._imports_3,
-        n: activeTab.value === "second" ? 1 : "",
-        o: common_vendor.o(($event) => switchTab("second")),
-        p: activeTab.value === "news"
+        d: common_vendor.o(onChange),
+        e: common_assets._imports_1,
+        f: activeTab.value === "news" ? 1 : "",
+        g: common_vendor.o(($event) => switchTab("news")),
+        h: common_assets._imports_2,
+        i: activeTab.value === "brands" ? 1 : "",
+        j: common_vendor.o(($event) => switchTab("brands")),
+        k: common_assets._imports_3,
+        l: activeTab.value === "hot" ? 1 : "",
+        m: common_vendor.o(($event) => switchTab("hot")),
+        n: common_assets._imports_4,
+        o: activeTab.value === "second" ? 1 : "",
+        p: common_vendor.o(($event) => switchTab("second")),
+        q: activeTab.value === "news"
       }, activeTab.value === "news" ? common_vendor.e({
-        q: common_vendor.f(common_vendor.unref(newsList), (item, k0, i0) => {
+        r: common_vendor.f(common_vendor.unref(newsList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.image_list.length > 0
           }, item.image_list.length > 0 ? {
@@ -205,13 +355,17 @@ const _sfc_main = {
             h: common_vendor.o(($event) => jump2saleNews(item), item.id)
           });
         }),
-        r: newsLoading.value
+        s: newsLoading.value
       }, newsLoading.value ? {} : {}, {
-        s: !newsHasMore.value
+        t: !newsHasMore.value
       }, !newsHasMore.value ? {} : {}) : {}, {
-        t: activeTab.value === "brands"
+        v: common_vendor.p({
+          name: "fade",
+          mode: "out-in"
+        }),
+        w: activeTab.value === "brands"
       }, activeTab.value === "brands" ? common_vendor.e({
-        v: common_vendor.f(tabs.value, (tab, index, i0) => {
+        x: common_vendor.f(tabs.value, (tab, index, i0) => {
           return {
             a: common_vendor.t(tab.label),
             b: index,
@@ -219,24 +373,138 @@ const _sfc_main = {
             d: common_vendor.o(($event) => handleTabClick(tab.value), index)
           };
         }),
-        w: common_vendor.f(common_vendor.unref(brandsList), (item, index, i0) => {
+        y: activeSearchType.value == 1
+      }, activeSearchType.value == 1 ? {} : {}, {
+        z: activeSearchType.value == 2
+      }, activeSearchType.value == 2 ? {} : {}, {
+        A: activeSearchType.value == 3
+      }, activeSearchType.value == 3 ? {} : {}, {
+        B: common_vendor.f(common_vendor.unref(brandsList), (item, index, i0) => {
           return {
-            a: "1cf27b2a-2-" + i0 + ",1cf27b2a-0",
+            a: "1cf27b2a-4-" + i0 + ",1cf27b2a-3",
             b: common_vendor.p({
               brand: item
             }),
             c: item.id
           };
         }),
-        x: loading.value
+        C: loading.value
       }, loading.value ? {} : {}, {
-        y: !hasMore.value
+        D: !hasMore.value
       }, !hasMore.value ? {} : {}) : {}, {
-        z: activeTab.value === "hot"
-      }, activeTab.value === "hot" ? {} : {}, {
-        A: activeTab.value === "second"
-      }, activeTab.value === "second" ? {} : {}, {
-        B: common_vendor.p({
+        E: common_vendor.p({
+          name: "fade",
+          mode: "out-in"
+        }),
+        F: activeTab.value === "hot"
+      }, activeTab.value === "hot" ? common_vendor.e({
+        G: common_vendor.f(common_vendor.unref(hotList), (item, k0, i0) => {
+          return common_vendor.e({
+            a: item.image_urls.length > 0
+          }, item.image_urls.length > 0 ? {
+            b: common_vendor.f(item.image_urls, (img, idx, i1) => {
+              return {
+                a: img,
+                b: idx
+              };
+            })
+          } : {}, {
+            c: common_vendor.t(item.title),
+            d: common_vendor.t(item.content),
+            e: common_vendor.f(item.relation_list, (tag, tIdx, i1) => {
+              return {
+                a: common_vendor.t(tag.relation_goods_name),
+                b: common_vendor.t(tag.relation_brand_name),
+                c: tIdx
+              };
+            }),
+            f: item.avatar,
+            g: common_vendor.t(item.origin == 1 ? "搭配" : "展示柜"),
+            h: common_vendor.t(formatTime(item.created_at)),
+            i: "1cf27b2a-6-" + i0 + ",1cf27b2a-5",
+            j: common_vendor.t(item.like_count),
+            k: item.collocation_id,
+            l: common_vendor.o(($event) => jumpToCollocationDetail(item), item.collocation_id)
+          });
+        }),
+        H: common_vendor.p({
+          type: "heart",
+          size: "18",
+          color: "#ff4d4f"
+        }),
+        I: hotLoading.value
+      }, hotLoading.value ? {} : {}, {
+        J: !hotHasMore.value
+      }, !hotHasMore.value ? {} : {}) : {}, {
+        K: common_vendor.p({
+          name: "fade",
+          mode: "out-in"
+        }),
+        L: activeTab.value === "second"
+      }, activeTab.value === "second" ? common_vendor.e({
+        M: common_vendor.p({
+          type: "plusempty",
+          size: "30",
+          color: "#fff"
+        }),
+        N: common_vendor.o(handlePublish),
+        O: common_vendor.f(common_vendor.unref(treeholeList), (item, k0, i0) => {
+          return common_vendor.e({
+            a: item.avatar !== ""
+          }, item.avatar !== "" ? {
+            b: item.avatar
+          } : {
+            c: common_assets._imports_5
+          }, {
+            d: common_vendor.t(item.is_anonymous ? "匿名用户" : item.author_name),
+            e: common_vendor.t(formatTime(item.created_at)),
+            f: common_vendor.t(item.content),
+            g: item.images.length > 0
+          }, item.images.length > 0 ? {
+            h: common_vendor.f(item.images, (img, idx, i1) => {
+              return {
+                a: img,
+                b: common_vendor.o(($event) => previewImage(item.images, idx), idx),
+                c: idx
+              };
+            })
+          } : {}, {
+            i: "1cf27b2a-9-" + i0 + ",1cf27b2a-7",
+            j: common_vendor.p({
+              type: item.has_liked ? "hand-up-filled" : "hand-up",
+              size: "18",
+              color: item.has_liked ? "#ff4d4f" : "#666"
+            }),
+            k: common_vendor.t(item.like_count || 0),
+            l: common_vendor.o(($event) => handleLike(item), item.id),
+            m: "1cf27b2a-10-" + i0 + ",1cf27b2a-7",
+            n: common_vendor.t(item.comment_count || 0),
+            o: common_vendor.o(($event) => _ctx.handleComment(item), item.id),
+            p: "1cf27b2a-11-" + i0 + ",1cf27b2a-7",
+            q: common_vendor.t(item.id),
+            r: common_vendor.o(($event) => _ctx.copyUrl(item), item.id),
+            s: item.id
+          });
+        }),
+        P: common_vendor.p({
+          type: "chat",
+          size: "18",
+          color: "#666"
+        }),
+        Q: common_vendor.p({
+          type: "flag",
+          size: "18",
+          color: "#666"
+        }),
+        R: treeholeLoading.value
+      }, treeholeLoading.value ? {} : {}, {
+        S: !treeholeHasMore.value
+      }, !treeholeHasMore.value ? {} : {}) : {}, {
+        T: common_vendor.p({
+          name: "fade",
+          mode: "out-in"
+        }),
+        U: common_vendor.p({
           head_color: "rgb(255 230 215) "
         })
       });
