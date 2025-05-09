@@ -42,11 +42,11 @@ const _sfc_main = {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:102", res.data.data);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:103", res.data.data);
             resolve(res.data);
           },
           fail: (err) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:106", err);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:107", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -70,7 +70,7 @@ const _sfc_main = {
           "goods_image": res.data.goods_images[0],
           "type": props.type
         };
-        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:133", data);
+        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:134", data);
         saveCollocationDataList.value.push(data);
       });
     }
@@ -83,10 +83,10 @@ const _sfc_main = {
       });
     }
     function selectImage() {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:152", "openSelect");
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:153", "openSelect");
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:155", tokenData);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:156", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -94,7 +94,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:164", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:165", common_config.image1Url + tokenData.path);
             uploadList.value.push(common_config.image1Url + tokenData.path);
             common_vendor.index.showToast({
               title: "上传成功",
@@ -127,10 +127,12 @@ const _sfc_main = {
         });
         return;
       }
+      let scene = common_config.getScene();
       const postData = {
         title: title.value,
         content: content.value,
         image_url_list: uploadList.value,
+        scene,
         relation_data_list: saveCollocationDataList.value.map((item) => ({
           goods_id: item.goods_id,
           goods_name: item.goods_name,
@@ -139,7 +141,7 @@ const _sfc_main = {
           type: item.type
         }))
       };
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:222", postData);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:225", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-collocation",
         method: "POST",
@@ -150,7 +152,7 @@ const _sfc_main = {
         },
         timeout: 5e3,
         success: (res) => {
-          if (res.data.code === 200) {
+          if (res.data.status === "success") {
             common_vendor.index.showToast({
               title: "提交成功"
             });
@@ -167,7 +169,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:253", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:256", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -176,20 +178,20 @@ const _sfc_main = {
       });
     }
     function handleBrandSelect(brandId, brandName) {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:267", "收到品牌ID:", brandId);
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:268", "收到品牌Name:", brandName);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:270", "收到品牌ID:", brandId);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:271", "收到品牌Name:", brandName);
       chooseBrandId.value = parseInt(brandId, 10);
       chooseBrandName.value = brandName;
       getGoods(brandId);
     }
     function handleGoodsSelect(id, name) {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:277", "选中的 id:", id);
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:278", "选中的 name:", name);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:280", "选中的 id:", id);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:281", "选中的 name:", name);
       chooseGoodsId.value = parseInt(id, 10);
       chooseGoodsName.value = name;
     }
     function handleTypeSelect(value) {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:285", "选中的值:", value);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:288", "选中的值:", value);
       chooseType.value = value;
       showSelectTab.value = true;
     }
@@ -199,12 +201,12 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:298", res.data.data);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:301", res.data.data);
           goodsList.value = res.data.data;
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:300", goodsList.value);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:303", goodsList.value);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:304", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:307", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -218,11 +220,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:323", res.data.data);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:326", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:327", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:330", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -310,7 +312,7 @@ const _sfc_main = {
           dataList: typeList.value,
           placeholder: "关联娃物"
         }),
-        k: common_assets._imports_2$2,
+        k: common_assets._imports_2$3,
         l: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
           return common_vendor.e({
             a: item.goods_image

@@ -66,6 +66,7 @@
 		getUserInfo,
 		global,
 		asyncGetUserInfo,
+		getScene,
 	} from "../../common/config.js";
 
 	import {
@@ -204,13 +205,15 @@
 			});
 			return;
 		}
-
+		
+		let scene = getScene()		
 
 		// 构造请求数据
 		const postData = {
 			title: title.value,
 			content: content.value,
 			image_url_list: uploadList.value,
+			scene: scene,
 			relation_data_list: saveCollocationDataList.value.map(item => ({
 				goods_id: item.goods_id,
 				goods_name: item.goods_name,
@@ -231,7 +234,7 @@
 			},
 			timeout: 5000,
 			success: (res) => {
-				if (res.data.code === 200) {
+				if (res.data.status === "success") {
 					uni.showToast({
 						title: '提交成功'
 					});

@@ -1,5 +1,5 @@
 <template>
-	<common-page>
+	<view>
 		<view v-if="!isEditable" class="edit-tip">
 			<text>当前状态不可编辑</text>
 		</view>
@@ -50,8 +50,10 @@
 
 		<common-modal v-model:visible="showSelectTab">
 			<view class="selectTab" style="border: 1px sold #b2b0b4;">
+				<view style="margin-top: 40rpx;"></view>
 				<common-search mode="fill" @select="handleBrandSelect" width="calc(100vw - 120px)"></common-search>
-				<custom-picker :dataList="goodsList" @select="handleGoodsSelect" margin="10px 0 0 8px"></custom-picker>
+				<view style="margin-top: 20rpx;"></view>
+				<custom-picker :dataList="goodsList" @select="handleGoodsSelect"></custom-picker>
 				<button @tap="saveCollocation" style="margin-top: 20px;background-color: #fff;">确认</button>
 			</view>
 		</common-modal>
@@ -62,7 +64,7 @@
 			<button @click="submitForm">提交</button>
 		</view>
 
-	</common-page>
+	</view>
 </template>
 
 <script setup>
@@ -78,6 +80,7 @@
 		getUserInfo,
 		global,
 		asyncGetUserInfo,
+		getScene,
 	} from "../../../common/config.js";
 
 	import {
@@ -106,7 +109,12 @@
 	// 是否可编辑
 	const isEditable = computed(() => [-1, 1, 3].includes(display.value));
 	// const displayText = computed(() => displayOptions.value[display.value]);
-	const showDelete = computed(() => !!props.showcase_id);
+	const showDelete = computed(() => {
+		if (props.showcase_id > 0) {
+			return true
+		} 
+		return false
+	});
 
 
 	// 修改响应式数据
@@ -227,17 +235,15 @@
 				if (res.confirm) {
 					try {
 						const res = await uni.request({
-							url: `${websiteUrl}/with-state/delete-showcase`,
-							method: 'DELETE',
-							data: {
-								id: props.showcase_id
-							},
+							url: `${websiteUrl}/with-state/delete-showcase?id=` + props.showcase_id,
+							method: 'POST',
+						
 							header: {
 								'Authorization': uni.getStorageSync('token'),
 							}
 						})
 
-						if (res.data.code === 200) {
+						if (res.data.status === "success") {
 							uni.showToast({
 								title: '删除成功'
 							})
@@ -280,12 +286,13 @@
 			});
 			return;
 		}
-
+		let scene = getScene()		
 		let postData = {
 			name: name.value,
 			description: description.value,
 			image_urls: uploadList.value.join(','),
 			display: display.value,
+			origin: scene,
 			relations: saveCollocationDataList.value.map(item => ({
 				relation_goods_id: item.goods_id,
 				relation_goods_name: item.goods_name,
@@ -297,9 +304,10 @@
 		};
 
 		try {
-			const url = `${websiteUrl}/with-state/update-showcase`
+			let url = `${websiteUrl}/with-state/add-showcase`
 			// id 转int
 			if (props.showcase_id) {
+				url = `${websiteUrl}/with-state/update-showcase`
 				postData = {
 					...postData,
 					id: parseInt(props.showcase_id, 10)
@@ -587,6 +595,7 @@
 		display: flex;
 		justify-content: space-around;
 		gap: 20px;
+		margin-bottom: 20rpx;
 
 		button {
 
@@ -602,8 +611,8 @@
 		}
 
 		.delete-btn {
-			opacity: 0.6;
-			pointer-events: none;
+			// opacity: 0.6;
+			// pointer-events: none;
 		}
 	}
 

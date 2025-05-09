@@ -1,84 +1,23 @@
 <template>
-	<view class="container">
-		<view class="item">
-			<text class="tab_text">密码设置</text>
-			<view class="button_body">
-				<button v-if="global.userInfo.password" @click="jump2password">
-					<text class="binded">已设置</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-				</button>
-				<button v-else @click="jump2password">
-					<text class="notBind">未设置</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-
-				</button>
+	<view class="settings-container">
+		<!-- 统一item结构 -->
+		<view 
+			v-for="(item, index) in menuItems" 
+			:key="index"
+			class="menu-item"
+			@click="item.action(item)"
+		>
+			<text class="menu-label">{{ item.label }}</text>
+			<view class="menu-value">
+				<text :class="item.status ? 'active' : 'inactive'">{{ item.displayValue }}</text>
+				<image class="arrow-icon" src="../../static/right.png" />
 			</view>
-			<view style="clear: both;"></view>
-		</view>
-
-
-		<view class="item">
-			<text class="tab_text">手机号</text>
-			<view class="button_body">
-				<button v-if="global.userInfo.tel_phone" @click="jump2telphone">
-					<text class="binded">已绑定</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-				</button>
-				<button v-else @click="jump2telphone">
-					<text class="notBind">未设置</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-
-				</button>
-			</view>
-			<view style="clear: both;"></view>
-		</view>
-
-		<view class="item">
-			<text class="tab_text">微信账号</text>
-			<view class="button_body">
-				<button v-if="global.userInfo.wechat_open_id" @click="jump2wechat">
-					<text class="binded">已绑定</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-				</button>
-				<button v-else @click="jump2wechat">
-					<text class="notBind">未绑定</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-
-				</button>
-			</view>
-			<view style="clear: both;"></view>
-		</view>
-		
-		<view class="item">
-			<text class="tab_text">检查更新</text>
-			<view class="button_body">
-				<button v-if="needUpdate" @click="checkUpdate">
-					<text class="binded">需要更新</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-				</button>
-				<button v-else @click="checkUpdate">
-					<text class="notBind">无需更新</text>
-					<image src="../../static/right.png" style="width: 18px;height: 18px;position: relative;top: 3px;">
-					</image>
-				
-				</button>
-			</view>
-			<view style="clear: both;"></view>
 		</view>
 	</view>
 </template>
 
 <script setup>
-	import {
-		ref
-	} from 'vue';
+	import { ref, computed } from 'vue'
 	import {
 		websiteUrl,
 		wechatSignLogin,
@@ -88,6 +27,41 @@
 	uni.setNavigationBarTitle({
 		title: '设置'
 	});
+	
+	const menuItems = computed(() => [
+	  {
+	    label: '更改用户名',
+	    action: jump2username,
+	    status: !!global.userInfo.password,
+	    displayValue: global.userInfo.password ? '去修改' : '未设置'
+	  },
+	  {
+	    label: '更改密码',
+	    action: jump2password,
+	    status: !!global.userInfo.password,
+	    displayValue: global.userInfo.password ? '去修改' : '未设置'
+	  },
+	  {
+	  	label: '绑定手机号',
+	  	action: jump2telphone,
+	  	status: !!global.userInfo.tel_phone,  // 修正字段名
+	  	displayValue: global.userInfo.tel_phone ? 
+	  		global.userInfo.tel_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : 
+	  		'去绑定'
+	  },
+	  {
+	    label: '绑定微信',
+	    action: jump2wechat,
+	    status: !!global.userInfo.wechat_open_id,
+	    displayValue: global.userInfo.wechat_open_id ? '已绑定' : '去绑定'
+	  },
+	  {
+	    label: '检查更新',
+	    action: checkUpdate,
+	    status: false,
+	    displayValue: '无需更新'
+	  }
+	])
 
 	// 用户信息
 	let userInfo = ref({})
@@ -108,15 +82,22 @@
 			url: '/pages/setting/tel_phone/tel_phone'
 		})
 	}
+	//跳转到修改用户名
+	function jump2username() {
+		uni.navigateTo({
+			url: '/pages/setting/username/username'
+		})
+	}
 	//绑定微信
 	function jump2wechat() {
-		//是否绑定过微信
-		if (userInfo.wechat_open_id) {
-			uni.showToast({
-				title: '已绑定微信',
-				icon: 'none'
+		if (global.userInfo.wechat_open_id) {
+			uni.showToast({ title: '已绑定微信', icon: 'none' })
+		} else {
+			// 添加实际绑定逻辑
+			wechatSignLogin().then(res => {
+				uni.showToast({ title: '绑定成功' })
+				getUserInfo()
 			})
-			return
 		}
 	}
 	//检查更新
@@ -137,72 +118,72 @@
 </script>
 
 <style lang="less" scoped>
-	text {
-		font-size: 26rpx;
+	@primary-color: #4cbbd0;
+	@text-color: #333;
+	@secondary-text: #666;
+	@border-color: #eee;
+	
+	.settings-container {
+		padding: 24rpx;
+		background: #f8f8f8;
+		min-height: 100vh;
 	}
-
-	button {
+	
+	.menu-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 32rpx;
+		margin-bottom: 24rpx;
 		background: #fff;
+		border-radius: 16rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+		transition: all 0.2s ease;
+		
+		&:active {
+			background: #fafafa;
+			transform: scale(0.98);
+		}
+	}
+	
+	.menu-label {
+		font-size: 30rpx;
+		color: @text-color;
+		font-weight: 500;
+	}
+	
+	.menu-value {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+		
+		text {
+			font-size: 28rpx;
+			&.active {
+				color: @primary-color;
+			}
+			&.inactive {
+				color: @secondary-text;
+			}
+		}
+	}
+	
+	.arrow-icon {
+		width: 36rpx;
+		height: 36rpx;
+		opacity: 0.6;
+	}
+	
+	// 统一按钮样式重置
+	button {
+		background: transparent;
+		padding: 0;
+		margin: 0;
+		line-height: 1;
+		border-radius: 0;
+		
 		&::after {
 			border: none;
 		}
-	}
-
-	uni-button {
-		font-size: 18px;
-		background-color: #fff;
-		width: 120px;
-		margin: 0px;
-		padding: 0px;
-	}
-
-	uni-button:after {
-		border: 0px;
-		display: inline-block;
-		float: right;
-		width: 80px;
-	}
-
-	.container {
-		// background: #f7f7f7;
-		height: 100vh;
-
-		.item {
-
-			background: #fff;
-			padding: 5px;
-			margin: 15px;
-			box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-			border-radius: 8px;
-
-			.tab_text {
-				float: left;
-				padding: 11px;
-			}
-
-			.button_body {
-				width: 120px;
-				float: right;
-				box-sizing: border-box;
-
-				.binded {
-					color: #4cbbd0!important;
-				}
-
-				.notBind {
-					color: #a2a2a2!important;
-				}
-			}
-
-			image {
-				margin-left: 8px;
-			}
-		}
-	}
-	.inputer {
-		font-size: 20px;
-		border-bottom: 1px #ddd solid;
-		padding: 10px;
-		margin: 40px 0px;
 	}
 </style>

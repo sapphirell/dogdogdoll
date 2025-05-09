@@ -87,6 +87,26 @@ const _sfc_main = {
       brandsList.value = [];
       getBrands();
     };
+    function jump2userWhenNotAnonymous(item) {
+      if (item.is_anonymous == 1) {
+        return;
+      }
+      common_vendor.index.navigateTo({
+        url: "/pages/user_page/user_page?uid=" + item.uid
+      });
+    }
+    function copyUrl(item) {
+      let url = "http://m.dogdogdoll.com/#/pages/treehole_detail/treehole_detail?id=" + item.id;
+      common_vendor.index.setClipboardData({
+        data: url,
+        success: function() {
+          common_vendor.index.showToast({
+            title: "复制链接成功",
+            icon: "none"
+          });
+        }
+      });
+    }
     function getNews() {
       if (!newsHasMore.value || newsLoading.value)
         return;
@@ -109,7 +129,7 @@ const _sfc_main = {
           newsPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:385", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:411", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -119,6 +139,11 @@ const _sfc_main = {
           newsLoading.value = false;
           common_vendor.index.hideLoading();
         }
+      });
+    }
+    function jump2treeholeDetail(item) {
+      common_vendor.index.navigateTo({
+        url: "/pages/treehole_detail/treehole_detail?id=" + item.id
       });
     }
     function getHotCollocations() {
@@ -145,7 +170,7 @@ const _sfc_main = {
           hotPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:423", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:456", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -188,7 +213,7 @@ const _sfc_main = {
           page.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:473", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:506", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -268,14 +293,22 @@ const _sfc_main = {
         });
         return;
       }
+      let token = common_vendor.index.getStorageSync("token");
+      if (!token) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
       common_vendor.index.request({
         url: common_config.websiteUrl + (item.has_liked ? "/with-state/unlike" : "/with-state/add-like"),
         method: "POST",
         header: {
-          Authorization: common_config.global.token
+          Authorization: token
         },
         data: {
-          target_id: item.id,
+          id: item.id,
           type: 5
         },
         // 5表示树洞类型
@@ -458,10 +491,12 @@ const _sfc_main = {
           }, {
             d: common_vendor.t(item.is_anonymous ? "匿名用户" : item.author_name),
             e: common_vendor.t(formatTime(item.created_at)),
-            f: common_vendor.t(item.content),
-            g: item.images.length > 0
+            f: common_vendor.t(item.id),
+            g: common_vendor.o(($event) => jump2userWhenNotAnonymous(item), item.id),
+            h: common_vendor.t(item.content),
+            i: item.images.length > 0
           }, item.images.length > 0 ? {
-            h: common_vendor.f(item.images, (img, idx, i1) => {
+            j: common_vendor.f(item.images, (img, idx, i1) => {
               return {
                 a: img,
                 b: common_vendor.o(($event) => previewImage(item.images, idx), idx),
@@ -469,21 +504,20 @@ const _sfc_main = {
               };
             })
           } : {}, {
-            i: "1cf27b2a-9-" + i0 + ",1cf27b2a-7",
-            j: common_vendor.p({
+            k: "1cf27b2a-9-" + i0 + ",1cf27b2a-7",
+            l: common_vendor.p({
               type: item.has_liked ? "hand-up-filled" : "hand-up",
               size: "18",
               color: item.has_liked ? "#ff4d4f" : "#666"
             }),
-            k: common_vendor.t(item.like_count || 0),
-            l: common_vendor.o(($event) => handleLike(item), item.id),
-            m: "1cf27b2a-10-" + i0 + ",1cf27b2a-7",
-            n: common_vendor.t(item.comment_count || 0),
-            o: common_vendor.o(($event) => _ctx.handleComment(item), item.id),
-            p: "1cf27b2a-11-" + i0 + ",1cf27b2a-7",
-            q: common_vendor.t(item.id),
-            r: common_vendor.o(($event) => _ctx.copyUrl(item), item.id),
-            s: item.id
+            m: common_vendor.t(item.like_count || 0),
+            n: common_vendor.o(($event) => handleLike(item), item.id),
+            o: "1cf27b2a-10-" + i0 + ",1cf27b2a-7",
+            p: common_vendor.t(item.comment_count || 0),
+            q: "1cf27b2a-11-" + i0 + ",1cf27b2a-7",
+            r: common_vendor.o(($event) => copyUrl(item), item.id),
+            s: item.id,
+            t: common_vendor.o(($event) => jump2treeholeDetail(item), item.id)
           });
         }),
         P: common_vendor.p({
@@ -492,7 +526,7 @@ const _sfc_main = {
           color: "#666"
         }),
         Q: common_vendor.p({
-          type: "flag",
+          type: "redo",
           size: "18",
           color: "#666"
         }),

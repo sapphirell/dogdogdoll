@@ -1,73 +1,55 @@
-<!-- components/MySelect.vue -->
+<!-- components/common-name-picker.vue -->
 <template>
 	<div class="select-container" ref="containerRef">
 		<div class="select-input" @click="toggleOpen">
 			{{ selectedValue || placeholder }}
 		</div>
 
-		<transition name="slide-fade" >
-			<div class="options-wrapper">
-				<ul class="select-options" v-if="isOpen">
-					<li v-for="(item, index) in dataList" :key="index" class="option-item" @click="selectItem(item)">
-						{{ item }}
-					</li>
-				</ul>
+		<transition name="slide-fade">
+			<div v-if="isOpen">
+				<!-- 添加遮罩层 -->
+				<div class="mask" @click="isOpen = false"></div>
+				<div class="options-wrapper">
+					<ul class="select-options">
+						<li v-for="(item, index) in dataList" :key="index" class="option-item" @click="selectItem(item)">
+							{{ item }}
+						</li>
+					</ul>
+				</div>
 			</div>
-			
 		</transition>
 	</div>
 </template>
 
 <script setup>
-	import {
-		ref,
-		onMounted,
-		onUnmounted
-	} from 'vue'
+import { ref } from 'vue'
 
-	const props = defineProps({
-		dataList: {
-			type: Array,
-			default: () => []
-		},
-		placeholder: {
-			type: String,
-			default: '请选择'
-		}
-	})
-
-	const emit = defineEmits(['select'])
-
-	const isOpen = ref(false)
-	const selectedValue = ref('')
-	const containerRef = ref(null)
-
-	const toggleOpen = () => {
-	console.log(props.dataList)
-		isOpen.value = !isOpen.value
+const props = defineProps({
+	dataList: {
+		type: Array,
+		default: () => []
+	},
+	placeholder: {
+		type: String,
+		default: '请选择'
 	}
+})
 
-	const selectItem = (item) => {
-		selectedValue.value = item
-		isOpen.value = false
-		emit('select', item)
-	}
+const emit = defineEmits(['select'])
 
-	const handleClickOutside = (event) => {
-		if (containerRef.value && !containerRef.value.contains(event.target)) {
-			isOpen.value = false
-		}
-	}
+const isOpen = ref(false)
+const selectedValue = ref('')
 
-	onMounted(() => {
-		document.addEventListener('click', handleClickOutside)
-	})
+const toggleOpen = () => {
+	isOpen.value = !isOpen.value
+}
 
-	onUnmounted(() => {
-		document.removeEventListener('click', handleClickOutside)
-	})
+const selectItem = (item) => {
+	selectedValue.value = item
+	isOpen.value = false
+	emit('select', item)
+}
 </script>
-
 <style scoped>
 	.select-container {
 		position: relative;
@@ -83,6 +65,8 @@
 		cursor: pointer;
 		background-color: #fff;
 		transition: border-color 0.3s;
+		box-sizing: border-box;
+		margin: 0rpx;
 	}
 
 	.select-input:hover {

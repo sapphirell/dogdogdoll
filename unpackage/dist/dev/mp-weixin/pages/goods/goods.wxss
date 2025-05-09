@@ -192,13 +192,15 @@
   align-items: flex-start;
 }
 .msg_body .msg_block .lable_text.data-v-7e2880f6 {
-  width: 30%;
+  width: 45%;
+  font-size: 24rpx;
   display: inline-block;
   color: #4cbbd0;
   font-weight: bold;
 }
 .msg_body .msg_block .msg_text.data-v-7e2880f6 {
   width: 70%;
+  font-size: 24rpx;
   display: inline-block;
 }
 .load_more.data-v-7e2880f6 {

@@ -74,7 +74,7 @@ const _sfc_main = {
       return common_vendor.e({
         a: props.mode == "jump"
       }, props.mode == "jump" ? {
-        b: common_assets._imports_0$5
+        b: common_assets._imports_0$6
       } : {}, {
         c: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
         d: searchTerm.value,

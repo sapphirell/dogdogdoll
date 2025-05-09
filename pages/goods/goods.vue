@@ -46,7 +46,13 @@
 					{{goods.goods_sales[0].sub_amount + goods.goods_sales[0].fin_amount}}
 					{{goods.goods_sales[0].currency}}
 				</text>
+				
 				<text v-else>未知</text>
+				
+			</view>
+			<view class="msg_block">
+				<text class="lable_text">初贩时间</text>
+				<text class="msg_text">{{goods.sub_time1 > 0 ? formatTimestamp(goods.sub_time1) : "未知"}}</text>
 			</view>
 			<view class="msg_block">
 				<text class="lable_text">尺寸</text>
@@ -68,7 +74,8 @@
 			</view>
 			<view class="msg_block">
 				<text class="lable_text">贩售情报</text>
-				<text v-if="goods.goods_sales == null">暂无收录贩售信息</text>
+			
+				<text v-if="goods.goods_sales == null">暂无收录贩售详细信息</text>
 				<view class="msg_text">
 					<text v-for="sale in goods.goods_sales" :key="sale.id"
 						style="width: 100%;display: block;margin-bottom: 10px;">
@@ -80,7 +87,7 @@
 			</view>
 			<view class="msg_block">
 				<text class="lable_text">制作方</text>
-				<text class="msg_text" @click="jumpBrand(goods.brand_id)">
+				<text class="msg_text" style="color: #55aae5" @click="jumpBrand(goods.brand_id)">
 					{{goods.brand_name}}
 				</text>
 			</view>
@@ -123,64 +130,27 @@
 			</view>
 		</view>
 
-		<!-- 讨论 -->
-		<view style="padding: 20px;">
-			<text
-				style="color: rgb(100, 198, 220);font-weight: bold; isplay: block;margin: 30px 5px;display: block;">评论区
-				({{comments.total || 0}})</text>
-			<view>
-				<view v-if="comments.comment_list">
-					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id"
-						style="margin-bottom: 20px;">
-						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;" @tap="jump2user(item.uid)">
-							<image style="width: 50px;height: 50px;border-radius: 100%;display: block;margin: 10px;"
-								:src="item.avatar" mode="aspectFill"></image>
-							<text
-								style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; ">{{item.username}}</text>
-						</view>
-
-						<view
-							style="float: left;padding: 15px 15px 30px 15px;background: rgb(245 245 245);width: calc(100vw - 170px);min-height: 60px;border-radius: 15px;position: relative;top:2px;">
-							<!-- <text class="floor" style="position: absolute;top: -12px;right: 10px;color: #888;font-size: 20px;">#{{item.floor}}</text> -->
-							<text
-								style="width: 100%; white-space: normal;word-break: break-all;">{{item.comment}}</text>
-
-							<!-- 格式化时间戳created_at为日期 -->
-							<text
-								style="color: #888;font-size: 12px;position: absolute;bottom: 3px;left: 15px;">{{formatTimestamp(item.created_at)}}
-								floor#{{item.floor}}</text>
-							<!-- 引用此回复 -->
-							<text :style="[
-									{ fontSize: '12px', position: 'absolute', bottom: '3px', right: '15px' ,fontWeight: '1000'},
-									replyForItem.id === item.id ? { color: '#fd6669' } : { color: '#888' }
-								  ]" @tap="replyFor(item)">
-								引用此回复
-							</text>
-						</view>
-						<view style="clear: both;"></view>
-					</view>
-					<button class="load_more" @click="getBrandComments">加载更多</button>
-				</view>
-			</view>
-		</view>
+		<!-- 评论区（保留原有结构，需根据接口调整） -->
+		<view style="padding: 10px;">
+			<comment-list ref="commentListRef" :type="2" :relation-id="parseInt(props.goods_id)" @reply="handleReplyComment" />
+		</view> <!-- 加载状态 -->
+		
+		<view v-if="loading" class="loading">加载中...</view>
+		<view v-if="error" class="error">{{ errorMsg }}</view>
+		
+		<!-- 输入框 -->
+		<comment-input 
+		  ref="commentInputRef"
+		  :reply-info="replyForItem" 
+		  :target-id="props.goods_id" 
+		  @submit="handleCommentSubmit"
+		  @update:reply-info="val => replyForItem = val" 
+		/>
+		
 		<!-- 一个不可见透明元素，撑起80px高度 -->
 		<view style="height: 80px;"></view>
 		
-		<!-- 当输入框聚焦后显示的蒙版层 -->
-		<view class="mask" v-show=displayMask  @tap="handleMaskTap" ></view>
 
-		<view class="bottom_tab" :style="{ paddingBottom : footerBottomHeight }">
-			<!-- 回复信息 -->
-			<text v-if="replyForItem.id" class="replyInfo" style="">
-				{{'@' + replyForItem.username}}
-			</text>
-
-			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="myComment" style=""  @click="handleFocus" @focus="handleFocus" @blur="handleBlur" :adjust-position="false" ></textarea>
-
-			<!-- 按钮 -->
-			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
-		</view>
 	</view>
 
 
@@ -194,7 +164,7 @@
 
 	} from 'vue';
 	import {
-		asyncGetUserInfo
+		asyncGetUserInfo, getScene
 	} from '../../common/config';
 
 	import {
@@ -213,78 +183,121 @@
 
 	// 获取系统信息
 	const systemInfo = uni.getSystemInfoSync()
-	const keyboardHeight = ref(0)
+
 	
-	// 蒙版层
-	const displayMask = ref(false)
+	// 回复
+	const commentListRef = ref(null)  // 必须与模板中的ref名称一致
+	const commentInputRef = ref(null) // 输入框聚焦状态联动
+	let commentsPage = ref(1)
+	//引用回复
+	let replyForItem = ref({})
 
-	// 处理键盘高度变化
-	const keyboardHeightChangeHandler = (res) => {
-		console.log("键盘高度变化", res)
-		keyboardHeight.value = res.height
-	}
-
-	// 生命周期
-	onShow(() => {
-		if (process.env.VUE_APP_PLATFORM == "h5") {
-			//h5不会弹出软键盘
-			return
-		}
-		console.log("注册键盘弹出事件")
-		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
-	})
-
-	onHide(() => {
-		if (process.env.VUE_APP_PLATFORM == "h5") {
-			//h5不会弹出软键盘
-			return
-		}
-		console.log("卸载键盘弹出事件")
-		uni.offKeyboardHeightChange?.(keyboardHeightChangeHandler) // 更精准的卸载
-	})
-	// 底部安全区域高度
-	const footerBottomHeight = computed(() => {
-		// 通过系统信息获取安全区域值
-		let safeBottom = systemInfo.safeAreaInsets?.bottom || 10
-		if (keyboardHeight.value > 0) {
-			safeBottom += keyboardHeight.value
-		}
-		let bottom = `${safeBottom}px` // 直接返回计算后的像素值
-		console.log("footer:" + bottom)
-		return bottom
-	})
 
 
 	let goods = ref({})
-	let comments = ref({})
-	let commentsPage = ref(1)
+
 	let swiperIndex = ref(1)
-	let myComment = ref("")
+
 	//是否点赞过这个商品
 	let hasLike = ref(false)
 	//搭配参考列表
 	let collocationList = ref(false)
 
-	//引用回复
-	let replyForItem = ref({})
 	
 	//轮播图高度
 	const swiperHeight = ref(400); // 初始高度，根据需求调整
 	const imageHeights = ref([]);
 	
-	function handleFocus() {
-	  displayMask.value = true;
+
+	
+	// 引用回复
+	const handleReplyComment = ({
+		parent,
+		target
+	}) => {
+		console.log("parent", parent)
+		console.log("target", target)
+		// 判断是回复的楼主还是楼内
+		let item = parent
+		if (target != null) {
+			item = target
+		}
+	
+		if (replyForItem.value.id == item.id) {
+			replyForItem.value = {}
+			return
+		}
+		console.log("item", item)
+		replyForItem.value = item;
+		// 聚焦输入框
+		commentInputRef.value?.focusInput()
+	}
+	const handleCommentSubmit = ({
+		content,
+		replyInfo,
+		origin
+	}) => {
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+		console.log("reply_info", replyInfo)
+		const requestData = {
+			content,
+			origin,
+			target_id: parseInt(pageId.value),
+			type: 2,
+			...(replyInfo.id && {
+				reply_id: replyInfo.id,
+				reply_for: replyInfo.comment,
+				reply_user_id: replyInfo.user_id,
+				parent_id: replyInfo.parent_id > 0  ? replyInfo.parent_id : replyInfo.id,
+			})
+		}
+	
+		uni.request({
+			url: websiteUrl + '/with-state/add-comment',
+			method: 'POST',
+			header: {
+				'Authorization': token
+			},
+			data: requestData,
+			success: (res) => {
+				if (res.data.status == "success") {
+					const newComment = res.data.data
+					if (newComment.parent_id === 0) {
+						// 主评论
+						commentListRef.value?.addNewComment(newComment)
+					} else {
+						// 子评论
+						commentListRef.value?.addReplyComment(newComment)
+					}
+	
+					uni.showToast({
+						title: '评论成功',
+						icon: 'success'
+					})
+	
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+				}
+			},
+			fail: (err) => {
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			}
+		});
 	}
 	
-	function handleBlur() {
-	  displayMask.value = false;
-	}
-	
-	// 点击蒙版关闭键盘
-	const handleMaskTap = () => {
-	  displayMask.value = false;
-	  uni.hideKeyboard(); // 调用API关闭键盘
-	};
 
 	// 图片加载完成回调
 	function onImageLoad(index) {
@@ -380,109 +393,8 @@
 		replyForItem.value = item;
 	}
 
-	function getBrandComments() {
-		uni.request({
-			url: websiteUrl + '/goods-comment?goods_id=' + props.goods_id + "&page=" + commentsPage.value,
-			method: 'GET',
-			timeout: 5000,
-			success: (res) => {
-				console.log(res.data.data);
-				comments.value.page_index = res.data.data.page_index;
-				comments.value.total = res.data.data.total;
-				comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(
-					res.data.data.comment_list) : res.data.data.comment_list;
-				//如果返回的列表size大于0，页码增加
-				if (res.data.data.comment_list != null) {
-					if (res.data.data.comment_list.length > 0) {
-						commentsPage.value += 1
-					}
-					//如果返回的列表size等于0，且page>1提示无更多数据
-					if (res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
-						uni.showToast({
-							title: '没有更多数据了',
-							icon: 'none'
-						})
-					}
-				}
 
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			}
-		})
-	}
-
-	//提交评论
-	function addComments() {
-		let token = uni.getStorageSync('token');
-		if (!global.isLogin) {
-			uni.showToast({
-				title: '请先登录',
-				icon: 'none'
-			})
-			return
-		}
-		if (myComment.value == "") {
-			uni.showToast({
-				title: '请输入评论内容',
-				icon: 'none'
-			})
-			return
-		}
-		let requestData = {
-			content: myComment.value,
-			target_id: parseInt(props.goods_id),
-			type: 2,
-		}
-		//是否有引用内容，如果有引用内容，需要同步
-		if (replyForItem.value.id) {
-			requestData.reply_id = replyForItem.value.id
-			requestData.reply_for = replyForItem.value.comment
-			requestData.reply_user_id = replyForItem.value.user_id
-		}
-		console.log(requestData)
-		uni.request({
-			url: websiteUrl + '/with-state/add-comment',
-			method: 'POST',
-			header: {
-				'Authorization': token,
-			},
-			data: requestData,
-			success: (res) => {
-				console.log(res.data);
-				if (res.data.status == "success") {
-					uni.showToast({
-						title: '评论成功',
-						icon: 'success'
-					})
-					//清空评论
-					myComment.value = ""
-					//重新获取评论
-					commentsPage.value = 1;
-					comments.value = {}
-					getBrandComments();
-					return;
-				} else {
-					uni.showToast({
-						title: res.data.msg,
-						icon: 'none'
-					})
-					return
-				}
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			},
-		});
-	}
+	
 	//
 	function likeFn() {
 		let token = uni.getStorageSync('token');
@@ -635,8 +547,7 @@
 	}
 	//加载商品
 	getGoods();
-	//加载评论
-	getBrandComments();
+
 	//加载搭配参考
 	getCollocation()
 	//获取登录
@@ -840,7 +751,8 @@
 			align-items: flex-start;
 
 			.lable_text {
-				width: 30%;
+				width: 45%;
+				font-size: 24rpx;
 				display: inline-block;
 				color: #4cbbd0;
 				font-weight: bold;
@@ -848,6 +760,7 @@
 
 			.msg_text {
 				width: 70%;
+				font-size: 24rpx;
 				display: inline-block;
 				// color: #4cbbd0;
 			}

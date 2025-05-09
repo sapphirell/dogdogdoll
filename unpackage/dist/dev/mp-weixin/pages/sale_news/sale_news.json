@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "",
-  "usingComponents": {}
+  "usingComponents": {
+    "comment-list": "../../components/comment-list/comment-list",
+    "comment-input": "../../components/comment-input/comment-input"
+  }
 }

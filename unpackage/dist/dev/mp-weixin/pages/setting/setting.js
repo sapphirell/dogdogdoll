@@ -8,8 +8,41 @@ const _sfc_main = {
     common_vendor.index.setNavigationBarTitle({
       title: "设置"
     });
-    let userInfo = common_vendor.ref({});
-    let needUpdate = common_vendor.ref(false);
+    const menuItems = common_vendor.computed(() => [
+      {
+        label: "更改用户名",
+        action: jump2username,
+        status: !!common_config.global.userInfo.password,
+        displayValue: common_config.global.userInfo.password ? "去修改" : "未设置"
+      },
+      {
+        label: "更改密码",
+        action: jump2password,
+        status: !!common_config.global.userInfo.password,
+        displayValue: common_config.global.userInfo.password ? "去修改" : "未设置"
+      },
+      {
+        label: "绑定手机号",
+        action: jump2telphone,
+        status: !!common_config.global.userInfo.tel_phone,
+        // 修正字段名
+        displayValue: common_config.global.userInfo.tel_phone ? common_config.global.userInfo.tel_phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") : "去绑定"
+      },
+      {
+        label: "绑定微信",
+        action: jump2wechat,
+        status: !!common_config.global.userInfo.wechat_open_id,
+        displayValue: common_config.global.userInfo.wechat_open_id ? "已绑定" : "去绑定"
+      },
+      {
+        label: "检查更新",
+        action: checkUpdate,
+        status: false,
+        displayValue: "无需更新"
+      }
+    ]);
+    common_vendor.ref({});
+    common_vendor.ref(false);
     function jump2password() {
       common_vendor.index.navigateTo({
         url: "/pages/setting/password/password"
@@ -20,19 +53,25 @@ const _sfc_main = {
         url: "/pages/setting/tel_phone/tel_phone"
       });
     }
+    function jump2username() {
+      common_vendor.index.navigateTo({
+        url: "/pages/setting/username/username"
+      });
+    }
     function jump2wechat() {
-      if (userInfo.wechat_open_id) {
-        common_vendor.index.showToast({
-          title: "已绑定微信",
-          icon: "none"
+      if (common_config.global.userInfo.wechat_open_id) {
+        common_vendor.index.showToast({ title: "已绑定微信", icon: "none" });
+      } else {
+        common_config.wechatSignLogin().then((res) => {
+          common_vendor.index.showToast({ title: "绑定成功" });
+          common_config.getUserInfo();
         });
-        return;
       }
     }
     function checkUpdate() {
       if (common_vendor.index.getSystemInfoSync().platform === "app") {
         const version = plus.runtime.version;
-        common_vendor.index.__f__("log", "at pages/setting/setting.vue:127", "App version from manifest:", version);
+        common_vendor.index.__f__("log", "at pages/setting/setting.vue:108", "App version from manifest:", version);
       } else {
         common_vendor.index.showToast({
           title: "您所使用的平台无需更新",
@@ -42,39 +81,18 @@ const _sfc_main = {
     }
     common_config.getUserInfo();
     return (_ctx, _cache) => {
-      return common_vendor.e({
-        a: common_vendor.unref(common_config.global).userInfo.password
-      }, common_vendor.unref(common_config.global).userInfo.password ? {
-        b: common_assets._imports_0$3,
-        c: common_vendor.o(jump2password)
-      } : {
-        d: common_assets._imports_0$3,
-        e: common_vendor.o(jump2password)
-      }, {
-        f: common_vendor.unref(common_config.global).userInfo.tel_phone
-      }, common_vendor.unref(common_config.global).userInfo.tel_phone ? {
-        g: common_assets._imports_0$3,
-        h: common_vendor.o(jump2telphone)
-      } : {
-        i: common_assets._imports_0$3,
-        j: common_vendor.o(jump2telphone)
-      }, {
-        k: common_vendor.unref(common_config.global).userInfo.wechat_open_id
-      }, common_vendor.unref(common_config.global).userInfo.wechat_open_id ? {
-        l: common_assets._imports_0$3,
-        m: common_vendor.o(jump2wechat)
-      } : {
-        n: common_assets._imports_0$3,
-        o: common_vendor.o(jump2wechat)
-      }, {
-        p: common_vendor.unref(needUpdate)
-      }, common_vendor.unref(needUpdate) ? {
-        q: common_assets._imports_0$3,
-        r: common_vendor.o(checkUpdate)
-      } : {
-        s: common_assets._imports_0$3,
-        t: common_vendor.o(checkUpdate)
-      });
+      return {
+        a: common_vendor.f(menuItems.value, (item, index, i0) => {
+          return {
+            a: common_vendor.t(item.label),
+            b: common_vendor.t(item.displayValue),
+            c: common_vendor.n(item.status ? "active" : "inactive"),
+            d: index,
+            e: common_vendor.o(($event) => item.action(item), index)
+          };
+        }),
+        b: common_assets._imports_0$3
+      };
     };
   }
 };

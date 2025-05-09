@@ -34,13 +34,13 @@
 						<view class="info-item" @tap="jump2collocation">
 							<image src="/static/pixttq2.png" class="icon"></image>
 							<text class="info-tap font-alimamashuhei">搭配</text>
-							<text class="mine-info-number">0</text>
+							<text class="mine-info-number">{{ myCollocationCount }}</text>
 						</view>
 					</view>
 				</view>
 				<view class="main-padding">
 					<view class="button-container">
-						<button class="mine-button">
+						<button class="mine-button" @click="jump2myComment">
 							<image class="icon-small" src="../../static/mypost.png" />
 							<text>我的帖子</text>
 							<image class="right-bar" src="../../static/right.png" />
@@ -111,6 +111,7 @@
 	
 	let unreadCount = ref(0)
 	let likeCount = ref(0)
+	let myCollocationCount = ref(0)
 
 
 	//选择图片
@@ -145,6 +146,12 @@
 			url: `/pages/user_like/user_like`
 		})
 	}
+	
+	function jump2myComment() {
+		uni.navigateTo({
+			url: `/pages/my_comment/my_comment`
+		})
+	}
 
 	//jump2message
 	function jump2message() {
@@ -152,9 +159,19 @@
 			url: `/pages/message_list/message_list`
 		})
 	}
+	//jump2forgetPassword
+	function jump2forgetPassword() {
+		uni.navigateTo({
+			url: `/pages/reset_password/reset_password`
+		})
+	}
 	
 	//jump2collocation
-	function jump2collocation() {}
+	function jump2collocation() {
+		uni.navigateTo({
+			url: `/pages/my_collocation/my_collocation`
+		})
+	}
 
 	// 裁切头像
 	function jumpToCroper() {
@@ -203,6 +220,28 @@
 			console.log(error)
 			uni.showToast({
 				title: '关注数获取失败',
+				icon: 'none'
+			});
+		}
+	};
+	
+	// 获取我的搭配数量 my-collocation-count
+	const fetchMyCollocationCount = async () => {
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl}/with-state/my-collocation-count`,
+				header: {
+					Authorization: uni.getStorageSync('token')
+				}
+			});
+	
+			if (res.data.status === 'success') {
+				myCollocationCount.value = res.data.data;
+			}
+		} catch (error) {
+			console.log(error)
+			uni.showToast({
+				title: '搭配数获取失败',
 				icon: 'none'
 			});
 		}
@@ -405,6 +444,8 @@
 		fetchUnreadCount();
 		//获取关注数量化
 		fetchLikeCount();
+		// 获取我的搭配数量
+		fetchMyCollocationCount();
 		const pages = getCurrentPages();
 		const currentPage = pages[pages.length - 1];
 		if (currentPage.returnParam) {

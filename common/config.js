@@ -56,8 +56,10 @@ export function wechatSignLogin() {
 						return
 					}
 					if (data.jwt_token) {
+						// 微信登录成功
+						console.log("data.token:", data.jwt_token);
 						uni.setStorageSync('token', data.jwt_token);
-						saveUserInfo(data);
+						
 						//刷新当前页面数据
 						getUserInfo();
 					}
@@ -76,11 +78,13 @@ export function wechatSignLogin() {
 // 获取用户信息
 export function getUserInfo() {
 	const token = uni.getStorageSync('token');
+	console.log("token:", token)
 	if (!token) {
+		console.log("没有token，无法获取用户信息");
 		clearUserInfo();
 		return;
 	}
-
+	console.log("请求接口")
 	uni.request({
 		url: `${websiteUrl}/with-state/mine`,
 		method: 'GET',
@@ -90,8 +94,10 @@ export function getUserInfo() {
 		success: (res) => {
 			const data = res.data.data;
 			if (data) {
+				console.log("获取用户信息成功,进行存储", data);
 				saveUserInfo(data);
 			} else {
+				console.log("无法获取，清理用户状态")
 				clearUserInfo();
 			}
 		},

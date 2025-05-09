@@ -21,15 +21,15 @@ const _sfc_main = {
         b: common_vendor.t(__props.brand.brand_name),
         c: common_vendor.t(__props.brand.country_name),
         d: common_vendor.t(__props.brand.type),
-        e: common_vendor.t(__props.brand.description),
-        f: common_vendor.t(__props.brand.total_goods),
+        e: common_vendor.t(__props.brand.total_goods),
+        f: common_vendor.t(__props.brand.description),
         g: common_vendor.o(jumpBrand),
         h: common_vendor.f(__props.brand.goods, (doll, index, i0) => {
           return {
             a: doll.goods_images[0],
             b: common_vendor.t(doll.name),
-            c: common_vendor.o(($event) => jumpGoods(doll.id), doll.id),
-            d: doll.id
+            c: doll.id,
+            d: common_vendor.o(($event) => jumpGoods(doll.id), doll.id)
           };
         }),
         i: __props.key

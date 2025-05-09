@@ -24,7 +24,7 @@ const _sfc_main = {
     function switch_tab(index) {
       previousTab.value = activeTab.value;
       activeTab.value = index;
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:190", `切换到 tab ${index}`);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:180", `切换到 tab ${index}`);
       switch (index) {
         case 1:
           getAccountBookData();
@@ -53,7 +53,7 @@ const _sfc_main = {
       getAccountBookData(accountBookTypeList.value[selectedType.value]);
     }
     function getAccountBookData(type) {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:232", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:222", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -70,16 +70,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:251", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:241", res.data.data);
           accountBookData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:255", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:245", err);
         }
       });
     }
     function getShowcaseData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:262", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:252", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -92,16 +92,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:276", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:266", res.data.data);
           showcaseData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:280", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:270", err);
         }
       });
     }
     function getBillData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:287", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:277", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -114,11 +114,11 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:301", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:291", res.data.data);
           billData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:305", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:295", err);
         }
       });
     }
@@ -195,18 +195,20 @@ const _sfc_main = {
             f: common_vendor.o(($event) => go2editor(item.id), index)
           };
         })
-      } : {}, {
-        n: common_vendor.o(go2addAccountBook),
-        o: activeTab.value !== 1 ? 1 : ""
+      } : {
+        n: common_assets._imports_0$1
+      }, {
+        o: common_vendor.o(go2addAccountBook),
+        p: activeTab.value !== 1 ? 1 : ""
       }) : {}, {
-        p: common_vendor.p({
+        q: common_vendor.p({
           name: transitionName()
         }),
-        q: activeTab.value === 2
+        r: activeTab.value === 2
       }, activeTab.value === 2 ? common_vendor.e({
-        r: showcaseData.value.showcases && showcaseData.value.showcases.length > 0
+        s: showcaseData.value.showcases && showcaseData.value.showcases.length > 0
       }, showcaseData.value.showcases && showcaseData.value.showcases.length > 0 ? {
-        s: common_vendor.f(showcaseData.value.showcases, (item, index, i0) => {
+        t: common_vendor.f(showcaseData.value.showcases, (item, index, i0) => {
           return common_vendor.e({
             a: item.display !== 1
           }, item.display !== 1 ? {
@@ -222,18 +224,22 @@ const _sfc_main = {
             j: common_vendor.o(($event) => go2editorShowCase(item.id), index)
           });
         }),
-        t: common_assets._imports_0$1,
-        v: common_assets._imports_1$2
-      } : {}, {
-        w: common_vendor.o(go2addShowCase),
-        x: activeTab.value !== 2 ? 1 : ""
+        v: common_assets._imports_1$2,
+        w: common_assets._imports_2$1
+      } : {
+        x: common_assets._imports_0$1
+      }, {
+        y: common_vendor.o(go2addShowCase),
+        z: activeTab.value !== 2 ? 1 : ""
       }) : {}, {
-        y: common_vendor.p({
+        A: common_vendor.p({
           name: transitionName()
         }),
-        z: activeTab.value === 3
-      }, activeTab.value === 3 ? {
-        A: common_vendor.f(billData.value, (bills, month, i0) => {
+        B: activeTab.value === 3
+      }, activeTab.value === 3 ? common_vendor.e({
+        C: Object.keys(billData.value).length > 0
+      }, Object.keys(billData.value).length > 0 ? {
+        D: common_vendor.f(billData.value, (bills, month, i0) => {
           return {
             a: common_vendor.t(month),
             b: common_vendor.t(countPaid(bills)),
@@ -251,14 +257,17 @@ const _sfc_main = {
             }),
             e: month
           };
-        }),
-        B: common_vendor.o(($event) => go2addBill(false)),
-        C: activeTab.value !== 3 ? 1 : ""
-      } : {}, {
-        D: common_vendor.p({
+        })
+      } : {
+        E: common_assets._imports_0$1
+      }, {
+        F: common_vendor.o(($event) => go2addBill(false)),
+        G: activeTab.value !== 3 ? 1 : ""
+      }) : {}, {
+        H: common_vendor.p({
           name: transitionName()
         }),
-        E: common_vendor.p({
+        I: common_vendor.p({
           head_color: "rgb(185 195 253)"
         })
       });

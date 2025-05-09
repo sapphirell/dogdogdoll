@@ -104,10 +104,10 @@
 						</view>
 						<view class="brand_type_description" style="display: block;width: 100%;">
 							<text
-								v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多，但设计和审美上还是比较单一的。</text>
+								v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
 							<text
-								v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花样非常多。但需要注意存在工期拖延，品控不良的可能性。</text>
-							<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计多样化。但价格较高，并且一些知名的大娃社的品控也没有很高。</text>
+								v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
+							<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
 						</view>
 						<view v-for="(item, index) in brandsList" :key="item.id">
 							<index-brand :brand="item"></index-brand>
@@ -171,10 +171,11 @@
 							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
 						</view>
 						<!-- 树洞列表 -->
-						<view v-for="item in treeholeList" :key="item.id" class="treehole-item">
+						<view v-for="item in treeholeList" :key="item.id" class="treehole-item"
+							@tap="jump2treeholeDetail(item)">
 							<!-- 用户信息 -->
-							<view class="user-info">
-								
+							<view class="user-info" @tap.stop="jump2userWhenNotAnonymous(item)">
+
 								<image v-if="item.avatar !== ''" :src="item.avatar" class="avatar" mode="aspectFill">
 								</image>
 								<image v-else src="/static/noname.png" class="avatar" mode="scaleToFill"></image>
@@ -184,14 +185,14 @@
 							</view>
 
 							<!-- 内容 -->
-							<text class="content" @tap="jump2treeholeDetail(item)">{{ item.content }}</text>
+							<text class="content">{{ item.content }}</text>
 
 							<!-- 图片 -->
 							<view v-if="item.images.length > 0" class="image-grid">
 								<swiper class="image-swiper" :autoplay="true" :circular="true" indicator-dots>
 									<swiper-item v-for="(img, idx) in item.images" :key="idx">
 										<image :src="img" mode="aspectFill" class="swiper-image"
-											@click="previewImage(item.images, idx)" />
+											@tap.stop="previewImage(item.images, idx)" />
 									</swiper-item>
 								</swiper>
 							</view>
@@ -203,15 +204,15 @@
 										:color="item.has_liked ? '#ff4d4f' : '#666'"></uni-icons>
 									<text class="count">{{ item.like_count || 0 }}</text>
 								</view>
-								<view class="action-item" @click="handleComment(item)">
+								<view class="action-item">
 									<uni-icons type="chat" size="18" color="#666"></uni-icons>
 									<text class="count">{{ item.comment_count || 0 }}</text>
 								</view>
-								<view class="action-item" @click="copyUrl(item)">
+								<view class="action-item" @click.stop="copyUrl(item)">
 									<uni-icons type="redo" size="18" color="#666"></uni-icons>
 									<text class="count">分享</text>
 								</view>
-								
+
 							</view>
 						</view>
 
@@ -361,13 +362,22 @@
 		brandsList.value = [];
 		getBrands();
 	}
-	
+
+	function jump2userWhenNotAnonymous(item) {
+		if (item.is_anonymous == 1) {
+			return
+		}
+		uni.navigateTo({
+			url: '/pages/user_page/user_page?uid=' + item.uid
+		})
+	}
+
 	function copyUrl(item) {
 		let url = "http://m.dogdogdoll.com/#/" + "pages/treehole_detail/treehole_detail?id=" + item.id
 		// 复制到剪贴板
 		uni.setClipboardData({
 			data: url,
-			success: function () {
+			success: function() {
 				uni.showToast({
 					title: '复制链接成功',
 					icon: 'none'
@@ -410,11 +420,11 @@
 			}
 		})
 	}
-	
+
 	function jump2treeholeDetail(item) {
-	
+
 		uni.navigateTo({
-		  url: '/pages/treehole_detail/treehole_detail?id=' + item.id
+			url: '/pages/treehole_detail/treehole_detail?id=' + item.id
 		})
 	}
 
@@ -570,10 +580,12 @@
 
 	// 图片预览
 	function previewImage(images, index) {
+
 		uni.previewImage({
 			current: index,
 			urls: images
 		})
+
 	}
 
 	// 处理点赞
@@ -597,7 +609,7 @@
 			url: websiteUrl + (item.has_liked ? '/with-state/unlike' : '/with-state/add-like'),
 			method: 'POST',
 			header: {
-				Authorization: token, 
+				Authorization: token,
 			},
 			data: {
 				id: item.id,
@@ -777,7 +789,7 @@
 
 	.body_list {
 		position: relative;
-		min-height: 60vh;
+		min-height: 110vh;
 
 		// top: -60rpx;
 		transition: all 0.3s ease;
@@ -959,6 +971,7 @@
 					margin-bottom: 10rpx;
 					white-space: nowrap;
 					overflow: hidden;
+					text-overflow: ellipsis;
 					-webkit-box-orient: vertical;
 					-webkit-line-clamp: 1;
 				}
@@ -1147,11 +1160,13 @@
 			border-radius: 50%;
 			margin-right: 15rpx;
 		}
+
 		.cid {
 			font-size: 24rpx;
 			color: #666;
 			margin-left: 20rpx;
 		}
+
 		.username {
 			font-size: 24rpx;
 			color: #333;
@@ -1161,13 +1176,15 @@
 			margin-left: 10rpx;
 			margin-right: 40rpx;
 			font-weight: 800;
-			
+			display: inline-block;
+
 			// 只显示一行
 			overflow: hidden;
 			white-space: nowrap;
-			    display: -webkit-box;
-			    -webkit-box-orient: vertical;
-				-webkit-line-clamp: 1;
+			text-overflow: ellipsis;
+			// display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 1;
 		}
 
 		.time {
@@ -1267,5 +1284,50 @@
 			color: #888;
 			padding: 10rpx 30rpx;
 		}
+	}
+	
+	
+	.brand_type_description {
+	    background: rgba(76, 187, 208, 0.05);
+	    border-radius: 12rpx;
+	    padding: 24rpx;
+	    margin: 20rpx 0;
+	    position: relative;
+	    overflow: hidden;
+	    
+	    &::before {
+	        content: "";
+	        position: absolute;
+	        left: 0;
+	        top: 50%;
+	        transform: translateY(-50%);
+	        width: 4rpx;
+	        height: 70%;
+	        background: #4cbbd0;
+	        border-radius: 4rpx;
+	    }
+	
+	    text {
+	        font-size: 24rpx;
+	        color: #7f8c8d;
+	        line-height: 1.6;
+	        display: block;
+	        padding-left: 16rpx;
+	        position: relative;
+	        text-align: justify;
+	        
+	        &::after {
+	            content: " 🐻 ";
+	            color: rgba(76, 187, 208, 0.2);
+	            position: absolute;
+	            font-size: 40rpx;
+	            right: -10rpx;
+	            bottom: -20rpx;
+	            transform: rotate(15deg);
+	        }
+	    }
+	
+	   
+	    
 	}
 </style>

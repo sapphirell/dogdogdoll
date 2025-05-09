@@ -1,0 +1,69 @@
+/* 保持原样式不变 */
+.mask.data-v-88f35a0c {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  opacity: 0;
+  z-index: 99;
+  width: 100vw;
+  height: 100vh;
+}
+.bottom_tab.data-v-88f35a0c {
+  display: flex;
+  align-items: center;
+  /* 垂直居中 */
+  gap: 8px;
+  /* 元素间距 */
+  padding: 10px;
+  box-sizing: border-box;
+  left: 0px;
+  position: fixed;
+  bottom: 0px;
+  z-index: 100;
+  width: 100vw;
+  background: #fff;
+}
+.bottom_tab .replyInfo.data-v-88f35a0c {
+  /* 禁止缩小 */
+  /* 最大宽度限制 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 50px;
+  margin-right: 8px;
+}
+.bottom_tab .comment_input.data-v-88f35a0c {
+  /* 占据剩余空间 */
+  min-width: 0;
+  /* 允许缩小 */
+  flex: 1;
+  margin-right: 8px;
+  background: #f2f2f2;
+  border-radius: 5px;
+  padding: 8px 8px 8px 10px;
+  line-height: normal;
+  font-size: 26rpx;
+  color: #373838;
+  height: 40rpx;
+  transition: height 0.3s ease;
+}
+.bottom_tab .comment_input.expanded.data-v-88f35a0c {
+  height: 80rpx !important;
+}
+.bottom_tab button.data-v-88f35a0c {
+  flex-shrink: 0;
+  /* 固定宽度 */
+  /* 按钮固定宽度 */
+  background: #64c6dc;
+  border-radius: 10px;
+  width: 90px;
+  color: #ffffff;
+  font-size: 14px;
+}
+uni-button.data-v-88f35a0c:after {
+  border: none;
+}

@@ -3,12 +3,12 @@
 		<!-- 图片轮播区域 -->
 		<view style="position: relative;">
 			<view class="heart" @click="likeFn()">
-<!-- 				<image src="../../static/heart-w.png" v-if="!hasLike"></image>
+				<!-- 				<image src="../../static/heart-w.png" v-if="!hasLike"></image>
 				<image src="../../static/heart2.png" v-else></image> -->
 				<uni-icons type="heart" size="28" color="#ff4d4f" v-if="!hasLike"></uni-icons>
 				<uni-icons type="heart-filled" size="28" color="#ff4d4f" v-else></uni-icons>
-				
-				<text class="num">{{ formatNumber(detailData.like_count) }}</text>
+
+				<text class="num">{{ detailData?.like_count ? formatNumber(detailData.like_count) : 0 }}</text>
 			</view>
 			<swiper class="swiper-box" :indicator-dots="true" :autoplay="false">
 				<swiper-item v-for="(img, index) in detailData.image_url_list" :key="index">
@@ -18,9 +18,13 @@
 
 		</view>
 		<!-- 新增作者信息区域 -->
-		<view class="author-info" @click="navigateToUser(detailData.uid)">
+		<view class="author-info" @click="jump2user(detailData.uid)">
 			<image class="avatar" :src="authorInfo.avatar" mode="aspectFill" />
-			<text class="username">{{ authorInfo.user_name || '未知用户' }}</text>
+			<view class="user-meta">
+				<text class="username">{{ authorInfo.user_name || '未知用户' }}</text>
+				<!-- 新增发布时间 -->
+				<text class="publish-time">发布于 {{ formatTimestamp(detailData.created_at) }}</text>
+			</view>
 		</view>
 
 		<!-- 图文信息区域 -->
@@ -69,69 +73,21 @@
 			</view>
 		</view>
 
-		<!-- 讨论 -->
-		<view style="padding: 10px;">
-			<text  v-if="comments.total"
-				style="color: rgb(100, 198, 220);font-weight: bold; isplay: block;margin: 30px 5px;display: block;">评论区
-				({{comments.total || 0}})</text>
-			<view>
-				<view v-if="comments.comment_list">
-					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id"
-						style="margin-bottom: 20px;">
-						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;">
-							<image style="width: 50px;height: 50px;border-radius: 100%;display: block;margin: 10px;"
-								:src="item.avatar" mode="aspectFill"></image>
-							<text
-								style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; ">{{item.username}}</text>
-						</view>
-
-						<view
-							style="float: left;padding: 15px 15px 30px 15px;background: rgb(245 245 245);width: calc(100vw - 170px);min-height: 60px;border-radius: 15px;position: relative;top:2px;">
-							<!-- <text class="floor" style="position: absolute;top: -12px;right: 10px;color: #888;font-size: 20px;">#{{item.floor}}</text> -->
-							<text
-								style="width: 100%; white-space: normal;word-break: break-all;">{{item.comment}}</text>
-
-							<!-- 格式化时间戳created_at为日期 -->
-							<text
-								style="color: #888;font-size: 12px;position: absolute;bottom: 3px;left: 15px;">{{formatTimestamp(item.created_at)}}
-								floor#{{item.floor}}</text>
-							<!-- 引用此回复 -->
-							<text :style="[
-								{ fontSize: '12px', position: 'absolute', bottom: '3px', right: '15px' ,fontWeight: '1000'},
-								replyForItem.id === item.id ? { color: '#fd6669' } : { color: '#888' }
-							  ]" @tap="replyFor(item)">
-								引用此回复
-							</text>
-						</view>
-						<view style="clear: both;"></view>
-					</view>
-				</view>
-				<view style="width: 100%;height: 50rpx;"></view>
-				<view v-if="!comments.total" style="font-size: 12px;color: #888;margin: 20rpx 10rpx;width: 100%;text-align: center;">-    暂无回复    -</view>
-				<button v-if="comments.total" class="load_more" @click="getCollocationComments">加载更多</button>
-			</view>
-		</view>
+		<!-- 评论区（保留原有结构，需根据接口调整） -->
+		<view style="padding: 10px;" v-if="origin > 0">
+			<comment-list ref="commentListRef" :type="origin == 1 ? 3 : 6" :relation-id="parseInt(pageId)"
+				@reply="handleReplyComment" />
+		</view> <!-- 加载状态 -->
 
 
-
-		<!-- 评论框 -->
-		<view class="bottom_tab" :adjust-position="false" :style="{ paddingBottom : footerBottomHeight }">
-			<!-- 回复信息 -->
-			<text v-if="replyForItem.id" class="replyInfo" style="">
-				{{'@' + replyForItem.username}}
-			</text>
-
-			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="myComment"  @click="handleFocus" @focus="handleFocus" @blur="handleBlur" style="" :adjust-position="false" ></textarea>
+		<!-- 输入框 -->
+		<comment-input ref="commentInputRef" :reply-info="replyForItem" :target-id="pageId"
+			@submit="handleCommentSubmit" @update:reply-info="val => replyForItem = val" />
 
 
-			<!-- 按钮 -->
-			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
-		</view>
 		<view style="width: 100%;height: 120rpx;"></view>
-		
-		<!-- 当输入框聚焦后显示的蒙版层 -->
-		<view class="mask" v-show=displayMask  @tap="handleMaskTap" ></view>
+
+
 
 		<!-- 加载状态 -->
 		<view v-if="loading" class="loading">加载中...</view>
@@ -157,6 +113,7 @@
 		getUserInfo,
 		global,
 		asyncGetUserInfo,
+		getScene,
 	} from "../../common/config.js";
 
 	import {
@@ -181,84 +138,49 @@
 
 	// 获取系统信息
 	const systemInfo = uni.getSystemInfoSync()
-	const keyboardHeight = ref(0)
-	// 蒙版层
-	const displayMask = ref(false)
-	
-	// 处理键盘高度变化
-	const keyboardHeightChangeHandler = (res) => {
-		console.log(res)
-		keyboardHeight.value = res.height
-	}
-
-
-	//遮罩层方法
-	function handleFocus() {
-	  displayMask.value = true;
-	}
-	
-	function handleBlur() {
-	  displayMask.value = false;
-	}
-	
-	// 点击蒙版关闭键盘
-	const handleMaskTap = () => {
-	  displayMask.value = false;
-	  uni.hideKeyboard(); // 调用API关闭键盘
-	};
-	
-
-	// 生命周期
-	onShow(() => {
-		if (process.env.VUE_APP_PLATFORM) {
-			//h5不会弹出软键盘
-			return
-		}
-		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
-	})
-
-	onHide(() => {
-		if (process.env.VUE_APP_PLATFORM) {
-			//h5不会弹出软键盘
-			return
-		}
-		uni.offKeyboardHeightChange?.(keyboardHeightChangeHandler) // 更精准的卸载
-	})
-	// 底部安全区域高度
-	const footerBottomHeight = computed(() => {
-		// 通过系统信息获取安全区域值
-		let safeBottom = systemInfo.safeAreaInsets?.bottom || 10
-		if (keyboardHeight.value > 0) {
-			safeBottom += keyboardHeight.value
-		}
-		let bottom = `${safeBottom}px` // 直接返回计算后的像素值
-		console.log("footer-brand:" + bottom)
-		return bottom
-	})
-
 
 
 
 	const loading = ref(true)
 	const error = ref(false)
 	const errorMsg = ref('')
+
+	const props = defineProps({
+
+		collocation_id: {
+			type: String,
+			default: 0
+		},
+		origin: {
+			type: String,
+			default: 0
+		},
+	})
 	//页面id 
 	const pageId = ref(0)
 	const origin = ref(0)
 	//是否点赞过
 	let hasLike = ref(false)
-	//讨论区
-	let comments = ref({})
+
+	// 回复
+	const commentListRef = ref(null) // 必须与模板中的ref名称一致
+	const commentInputRef = ref(null) // 输入框聚焦状态联动
 	let commentsPage = ref(1)
-	let myComment = ref("")
 	//引用回复
 	let replyForItem = ref({})
+
 
 	// 设置页面标题
 	uni.setNavigationBarTitle({
 		title: '搭配详情'
 	})
 
+	//跳转到用户页面
+	function jump2user(uid) {
+		uni.navigateTo({
+			url: '/pages/user_page/user_page?uid=' + uid
+		})
+	}
 
 
 	// 获取商品详情
@@ -518,46 +440,35 @@
 			return `${kValue}k+`;
 		}
 	}
-	// 获取搭配评论
-	function getCollocationComments() {
-		uni.request({
-			url: websiteUrl + '/collocation-comment?collocation_id=' + pageId.value + "&page=" + commentsPage
-				.value,
-			method: 'GET',
-			timeout: 5000,
-			success: (res) => {
-				console.log(res.data.data);
-				comments.value.page_index = res.data.data.page_index;
-				comments.value.total = res.data.data.total;
-				comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(
-					res.data.data.comment_list) : res.data.data.comment_list;
-				//如果返回的列表size大于0，页码增加
-				if (res.data.data.comment_list != null) {
-					if (res.data.data.comment_list.length > 0) {
-						commentsPage.value += 1
-					}
-					//如果返回的列表size等于0，且page>1提示无更多数据
-					if (res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
-						uni.showToast({
-							title: '没有更多数据了',
-							icon: 'none'
-						})
-					}
-				}
 
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			}
-		})
+
+	// 引用回复
+	const handleReplyComment = ({
+		parent,
+		target
+	}) => {
+		console.log("parent", parent)
+		console.log("target", target)
+		// 判断是回复的楼主还是楼内
+		let item = parent
+		if (target != null) {
+			item = target
+		}
+
+		if (replyForItem.value.id == item.id) {
+			replyForItem.value = {}
+			return
+		}
+		console.log("item", item)
+		replyForItem.value = item;
+		// 聚焦输入框
+		commentInputRef.value?.focusInput()
 	}
-
-	//提交评论
-	function addComments() {
+	const handleCommentSubmit = ({
+		content,
+		replyInfo,
+		origin
+	}) => {
 		let token = uni.getStorageSync('token');
 		if (!global.isLogin) {
 			uni.showToast({
@@ -566,73 +477,60 @@
 			})
 			return
 		}
-		if (myComment.value == "") {
-			uni.showToast({
-				title: '请输入评论内容',
-				icon: 'none'
-			})
-			return
-		}
-		let requestData = {
-			content: myComment.value,
+		console.log("reply_info", replyInfo)
+
+		const requestData = {
+			content,
+			origin,
 			target_id: parseInt(pageId.value),
-			type: 3, // 搭配分享
+			type: props.origin == 1 ? 3 : 6,
+			...(replyInfo.id && {
+				reply_id: replyInfo.id,
+				reply_for: replyInfo.comment,
+				reply_user_id: replyInfo.user_id,
+				parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id,
+			})
 		}
-		//是否有引用内容，如果有引用内容，需要同步
-		if (replyForItem.value.id) {
-			requestData.reply_id = replyForItem.value.id
-			requestData.reply_for = replyForItem.value.comment
-			requestData.reply_user_id = replyForItem.value.user_id
-		}
-		console.log(requestData)
+
 		uni.request({
 			url: websiteUrl + '/with-state/add-comment',
 			method: 'POST',
 			header: {
-				'Authorization': token,
+				'Authorization': token
 			},
 			data: requestData,
 			success: (res) => {
-				console.log(res.data);
 				if (res.data.status == "success") {
+					const newComment = res.data.data
+					if (newComment.parent_id === 0) {
+						// 主评论
+						commentListRef.value?.addNewComment(newComment)
+					} else {
+						// 子评论
+						commentListRef.value?.addReplyComment(newComment)
+					}
+
 					uni.showToast({
 						title: '评论成功',
 						icon: 'success'
 					})
-					//清空评论
-					myComment.value = ""
-					//重新获取评论
-					commentsPage.value = 1;
-					comments.value = {}
-					getCollocationComments();
-					return;
+
 				} else {
 					uni.showToast({
 						title: res.data.msg,
 						icon: 'none'
 					})
-					return
 				}
 			},
 			fail: (err) => {
-				console.log(err);
 				uni.showToast({
 					title: '网络请求失败',
 					icon: 'none'
 				})
-			},
+			}
 		});
 	}
-	//replyFor 引用回复
-	function replyFor(item) {
-		//如果重复点击，清空
-		if (replyForItem.value.id == item.id) {
-			replyForItem.value = {}
-			return
-		}
 
-		replyForItem.value = item;
-	}
 	//格式化时间戳
 	function formatTimestamp(timestamp) {
 		const date = new Date(timestamp * 1000);
@@ -646,7 +544,7 @@
 		// 返回格式化后的日期时间
 		return `${year}-${month}-${day} ${hours}:${minutes}`;
 	}
-	
+
 	// 生命周期
 	onShow(() => {
 		if (process.env.VUE_APP_PLATFORM == "h5") {
@@ -656,31 +554,38 @@
 		console.log("注册键盘弹出事件")
 		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
 	})
-	
+
 
 	// 获取路由参数
 	onLoad((options) => {
-		if (!options.collocation_id) {
-			error.value = true
-			errorMsg.value = '缺少必要参数Id'
-			return
-		}
-		if (!options.origin) {
-			error.value = true
-			errorMsg.value = '缺少必要参数Origin'
-			return
-		}
-		pageId.value = options.collocation_id
-		origin.value = options.origin
-		fetchData(options.collocation_id, options.origin)
-		//获取登录
-		asyncGetUserInfo().then((userInfo) => {
-			console.log(userInfo)
-			getHasLike(options.collocation_id)
+		try {
+			if (!options.collocation_id) {
+				error.value = true
+				errorMsg.value = '缺少必要参数Id'
+				return
+			}
+			if (!options.origin) {
+				error.value = true
+				errorMsg.value = '缺少必要参数Origin'
+				return
+			}
+			pageId.value = options.collocation_id
+			origin.value = options.origin
+			fetchData(options.collocation_id, options.origin)
+			//获取登录
+			asyncGetUserInfo().then((userInfo) => {
+				console.log(userInfo)
+				getHasLike(options.collocation_id)
 
-		})
-		//获取评论
-		getCollocationComments()
+			})
+		
+		} catch (err) {
+			console.error('onLoad Error:', err)
+			uni.showToast({
+				title: '加载失败',
+				icon: 'none'
+			})
+		}
 	})
 </script>
 
@@ -706,6 +611,7 @@
 		z-index: 10;
 		width: 50px;
 		height: 30px;
+
 		.uni-icons {
 			width: 30px;
 			height: 30px;
@@ -725,7 +631,7 @@
 			top: -5px;
 			// left: 35px;
 			font-weight: 1000;
-			color:#ff4d4f;
+			color: #ff4d4f;
 
 		}
 	}
@@ -869,28 +775,35 @@
 		align-items: center;
 		padding: 30rpx 30rpx 0rpx 30rpx;
 		margin: 20rpx 0;
-		border-radius: 16rpx;
-		box-sizing: border-box;
-		width: calc(100vw - 20px);
-		overflow: hidden;
-	}
 
-	.avatar {
-		width: 40px;
-		height: 40px;
-		border-radius: 100%;
-		margin-right: 20rpx;
-		box-shadow: none;
-	}
+		.avatar {
+			width: 40px;
+			height: 40px;
+			border-radius: 100%;
+			margin-right: 20rpx;
+		}
 
-	.username {
-		font-size: 28rpx;
-		font-weight: 900;
-		color: #333;
-		width: calc(100vw - 220rpx);
-		overflow: hidden;
-		/* 只显示一行 */
-		white-space: nowrap;
+		.user-meta {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.username {
+			font-size: 28rpx;
+			font-weight: 900;
+			color: #333;
+			max-width: 400rpx;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		/* 新增发布时间样式 */
+		.publish-time {
+			font-size: 22rpx;
+			color: #999;
+			margin-top: 8rpx;
+		}
 	}
 
 	// 底部tab
@@ -953,17 +866,17 @@
 			border: none;
 		}
 	}
-	
+
 	uni-button:after {
 		border: none;
 	}
-	
+
 	.load_more {
 		background: #fff;
 		color: #d6d6d6;
 		font-size: 13px;
 		margin-top: 15px;
-	
+
 		&::after {
 			border: none;
 		}
@@ -972,6 +885,7 @@
 	text {
 		font-size: 22rpx;
 	}
+
 	.about {
 		font-size: 12px;
 		color: rgb(136, 136, 136);
@@ -982,6 +896,7 @@
 		margin-top: 0rpx;
 		font-weight: 800;
 	}
+
 	// 遮罩层
 	.mask {
 		position: fixed;
@@ -995,5 +910,4 @@
 		width: 100vw;
 		height: 100vh;
 	}
-	
 </style>

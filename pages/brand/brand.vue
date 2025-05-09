@@ -11,7 +11,7 @@
 			<view style="margin: 20rpx 0rpx;display: flex;justify-content: space-between;">
 				<view  @click="openRate(1)" style="display: inline-block;position: relative;left: -8rpx;">
 					<uni-rate style="margin-top: 5px;float: left;" :value="brand.score" allow-half="true" disabled-color="rgb(255 157 219)"/>
-					<text style="float: left;position: relative;top: 5px;">{{brand.score}}（{{brand.vote_number}}次评分）</text>
+					<text style="float: left;position: relative;top: 5px;"> {{brand.score}}（{{brand.vote_number}}次评分）</text>
 					<view style="clear: both;"></view>
 				</view>
 				<text class="follow"   @click="likeBrand" :style="{ background: hasLikeBrand ? '#ff6a6c' : '#65C3D6' }">{{ hasLikeBrand ? '已关注' : '+ 关注品牌' }}</text>
@@ -38,25 +38,11 @@
 			</view>
 			<button class="load_more" @click="getBrandGoods">加载更多</button>
 			<view>
-				<text style="color: rgb(100, 198, 220);display: block;margin: 20px 0px;">讨论 ({{comments.total}})</text>
-				<view v-if="comments.comment_list">
-					<view class="comment_item" v-for="(item,index) in comments.comment_list" :key="item.id" style="margin-bottom: 20px;">
-						<view style="float: left; width: 80px;padding: 0px 10px 10px 0px;" @tap="jump2user(item.uid)">
-							<image style="width: 50px;height: 50px;border-radius: 100%;display: block;margin: 10px;" :src="item.avatar" mode="aspectFill"></image>
-							<text style="display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; ">{{item.username}}</text>
-						</view>
-			
-						<view style="float: left;padding: 15px 15px 30px 15px;background: rgb(245 245 245);width: calc(100vw - 170px);min-height: 60px;border-radius: 15px;position: relative;top:2px;">
-							<!-- <text class="floor" style="position: absolute;top: -12px;right: 10px;color: #888;font-size: 20px;">#{{item.floor}}</text> -->
-							<text style="width: 100%; white-space: normal;word-break: break-all;">{{item.comment}}</text>
-						
-							<!-- 格式化时间戳created_at为日期 -->
-							<text style="color: #888;font-size: 12px;position: absolute;bottom: 3px;left: 15px;">{{formatTimestamp(item.created_at)}} floor#{{item.floor}}</text>
-						</view>
-						<view style="clear: both;"></view>
-					</view>
-					<button class="load_more" @click="getBrandComments">加载更多</button>
-				</view>
+				<!-- 评论区 -->
+				<comment-list ref="commentListRef" :type="1" :relation-id="parseInt(props.brand_id)" @reply="handleReplyComment" />
+
+				<view v-if="loading" class="loading">加载中...</view>
+				<view v-if="error" class="error">{{ errorMsg }}</view>
 			</view>
 			
 		</view>
@@ -78,17 +64,16 @@
 			</view>
 			
 		</view>
-
-		<!-- 当输入框聚焦后显示的蒙版层 -->
-		<view class="mask" v-show=displayMask  @tap="handleMaskTap" ></view>
-
-		<view class="bottom_tab" :style="{ paddingBottom : footerBottomHeight }">
-			<!-- 输入框 -->
-			<textarea class="comment_input" v-model="comment" style="" :adjust-position="false"  @click="handleFocus" @focus="handleFocus" @blur="handleBlur" ></textarea>
-
-			<!-- 按钮 -->
-			<button style="flex-shrink: 0; width: 90px;" @click="addComments">写评论</button>
-		</view>
+		<!-- 输入框 -->
+		<comment-input 
+		  ref="commentInputRef"
+		  :reply-info="replyForItem" 
+		  :target-id="props.brand_id" 
+		  @submit="handleCommentSubmit"
+		  @update:reply-info="val => replyForItem = val" 
+		/>
+		
+		
 	</view>
 </template>
 
@@ -119,6 +104,7 @@
 	const hasLikeBrand = ref(false)
 	
 
+	const activeModal = ref(false)
 	uni.showLoading({
 		title: '加载中'
 	})
@@ -126,68 +112,103 @@
 	
 	// 获取系统信息
 	const systemInfo = uni.getSystemInfoSync()
-	const keyboardHeight = ref(0)
-	
-	// 蒙版层
-	const displayMask = ref(false)
-	
-	function handleFocus() {
-	  displayMask.value = true;
-	}
-	
-	function handleBlur() {
-	  displayMask.value = false;
-	}
-	
-	// 点击蒙版关闭键盘
-	const handleMaskTap = () => {
-	  displayMask.value = false;
-	  uni.hideKeyboard(); // 调用API关闭键盘
-	};
-	
-	
-	// 处理键盘高度变化
-	const keyboardHeightChangeHandler = (res) => {
-		console.log(res)
-		keyboardHeight.value = res.height
-	}
-	
-	// 生命周期
-	onShow(() => {
-		if (process.env.VUE_APP_PLATFORM == "h5") {
-			//h5不会弹出软键盘
-			return
-		}
-		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
-	})
 
-	onHide(() => {
-		if (process.env.VUE_APP_PLATFORM == "h5") {
-			//h5不会弹出软键盘
-			return
-		}
-		uni.offKeyboardHeightChange?.(keyboardHeightChangeHandler) // 更精准的卸载
-	})
-	
-	// 底部安全区域高度
-	const footerBottomHeight = computed(() => {
-		// 通过系统信息获取安全区域值
-		let safeBottom = systemInfo.safeAreaInsets?.bottom || 10
-		if (keyboardHeight.value > 0) {
-			safeBottom += keyboardHeight.value
-		}
-		let bottom = `${safeBottom}px` // 直接返回计算后的像素值
-		console.log("footer-brand:" + bottom)
-		return bottom
-	})
-	
-	
-	
-	let comment = ref('')
 	let rateValue = ref(0)
 	
-	//是否打开弹窗
-	let activeModal = ref(false)
+	// 回复
+	const commentListRef = ref(null)  // 必须与模板中的ref名称一致
+	const commentInputRef = ref(null) // 输入框聚焦状态联动
+	let commentsPage = ref(1)
+	//引用回复
+	let replyForItem = ref({})
+	
+	// 引用回复
+	const handleReplyComment = ({
+		parent,
+		target
+	}) => {
+		console.log("parent", parent)
+		console.log("target", target)
+		// 判断是回复的楼主还是楼内
+		let item = parent
+		if (target != null) {
+			item = target
+		}
+	
+		if (replyForItem.value.id == item.id) {
+			replyForItem.value = {}
+			return
+		}
+		console.log("item", item)
+		replyForItem.value = item;
+		// 聚焦输入框
+		commentInputRef.value?.focusInput()
+	}
+	const handleCommentSubmit = ({
+		content,
+		replyInfo,
+		origin
+	}) => {
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+		console.log("reply_info", replyInfo)
+		const requestData = {
+			content,
+			origin,
+			target_id: parseInt(pageId.value),
+			type: 1,
+			...(replyInfo.id && {
+				reply_id: replyInfo.id,
+				reply_for: replyInfo.comment,
+				reply_user_id: replyInfo.user_id,
+				parent_id: replyInfo.parent_id > 0  ? replyInfo.parent_id : replyInfo.id,
+			})
+		}
+	
+		uni.request({
+			url: websiteUrl + '/with-state/add-comment',
+			method: 'POST',
+			header: {
+				'Authorization': token
+			},
+			data: requestData,
+			success: (res) => {
+				if (res.data.status == "success") {
+					const newComment = res.data.data
+					if (newComment.parent_id === 0) {
+						// 主评论
+						commentListRef.value?.addNewComment(newComment)
+					} else {
+						// 子评论
+						commentListRef.value?.addReplyComment(newComment)
+					}
+	
+					uni.showToast({
+						title: '评论成功',
+						icon: 'success'
+					})
+	
+				} else {
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+				}
+			},
+			fail: (err) => {
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			}
+		});
+	}
 	
 	function voteScoreProxy() {
 		if (rateValue.value == 0) {
@@ -335,40 +356,6 @@
 	}
 	
 	
-	function getBrandComments() {
-		uni.request({
-			url: websiteUrl + '/brand-comment?brand_id=' + props.brand_id + "&page=" + commentsPage.value,
-			method: 'GET',
-			timeout: 5000,
-			success: (res) => {
-				console.log(res.data.data);
-				comments.value.page_index = res.data.data.page_index;
-				comments.value.total = res.data.data.total;
-				comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(res.data.data.comment_list) : res.data.data.comment_list;
-				//如果返回的列表size大于0，页码增加
-				if(res.data.data.comment_list != null) {
-					if(res.data.data.comment_list.length > 0) {
-						commentsPage.value += 1
-					}
-					//如果返回的列表size等于0，且page>1提示无更多数据
-					if(res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
-						uni.showToast({
-							title: '没有更多数据了',
-							icon: 'none'
-						})
-					}
-				}
-				
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			}
-		})
-	}
 	
 	//打开弹窗
 	function openRate(i) {
@@ -501,14 +488,12 @@
 	//brand page
 	let page = ref(1)
 	let brand = ref({})
-	let comments = ref({})
-	let commentsPage = ref(1)
+	
 	// 获取品牌信息
 	getBrandsInfo()
 	// 获取品牌娃娃列表
 	getBrandGoods()
-	//获取品牌评论
-	getBrandComments()
+	
 
 	//获取我的评分
 	getMyScore(1, props.brand_id)

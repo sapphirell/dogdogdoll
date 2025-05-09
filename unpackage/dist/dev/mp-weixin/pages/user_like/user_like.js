@@ -5,10 +5,22 @@ const _sfc_main = {
   __name: "user_like",
   setup(__props) {
     const categories = common_vendor.ref([
-      { type: 1, name: "商品" },
-      { type: 2, name: "品牌" },
-      { type: 3, name: "搭配" },
-      { type: 4, name: "展示柜" }
+      {
+        type: 1,
+        name: "商品"
+      },
+      {
+        type: 2,
+        name: "品牌"
+      },
+      {
+        type: 3,
+        name: "搭配"
+      },
+      {
+        type: 4,
+        name: "展示柜"
+      }
     ]);
     const activeCategory = common_vendor.ref(1);
     const currentList = common_vendor.ref([]);
@@ -26,7 +38,9 @@ const _sfc_main = {
     const checkLogin = async () => {
       const userInfo = await common_config.asyncGetUserInfo();
       if (!userInfo) {
-        common_vendor.index.navigateTo({ url: "/pages/login/login" });
+        common_vendor.index.navigateTo({
+          url: "/pages/login/login"
+        });
       }
     };
     const switchCategory = (type) => {
@@ -65,7 +79,10 @@ const _sfc_main = {
           pagination.page += 1;
         }
       } catch (error) {
-        common_vendor.index.showToast({ title: "加载失败", icon: "none" });
+        common_vendor.index.showToast({
+          title: "加载失败",
+          icon: "none"
+        });
       } finally {
         loading.value = false;
       }
@@ -74,7 +91,7 @@ const _sfc_main = {
       if (!noMore.value) {
         loadData();
       } else {
-        common_vendor.index.__f__("log", "at pages/user_like/user_like.vue:186", "no more");
+        common_vendor.index.__f__("log", "at pages/user_like/user_like.vue:201", "no more");
       }
     };
     const resetPagination = () => {
@@ -89,18 +106,55 @@ const _sfc_main = {
       const url = (images == null ? void 0 : images.split(",")[0]) || "";
       return url ? url : ``;
     };
+    const unfollowGoods = async (id) => {
+      try {
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl}/user/unfollow`,
+          method: "POST",
+          data: {
+            id
+          },
+          header: {
+            Authorization: common_vendor.index.getStorageSync("token")
+          }
+        });
+        if (res.data.status === "success") {
+          currentList.value = currentList.value.filter((item) => item.id !== id);
+          common_vendor.index.showToast({
+            title: "已取消关注",
+            icon: "success"
+          });
+        }
+      } catch (error) {
+        common_vendor.index.showToast({
+          title: "操作失败",
+          icon: "none"
+        });
+      }
+    };
     const navigateToGoods = (id) => {
-      common_vendor.index.navigateTo({ url: `/pages/goods/goods?goods_id=${id}` });
+      common_vendor.index.navigateTo({
+        url: `/pages/goods/goods?goods_id=${id}`
+      });
     };
     const navigateToBrand = (id) => {
-      common_vendor.index.navigateTo({ url: `/pages/brand/brand?brand_id=${id}` });
+      common_vendor.index.navigateTo({
+        url: `/pages/brand/brand?brand_id=${id}`
+      });
     };
     const navigateToCollocation = (id) => {
-      common_vendor.index.navigateTo({ url: `/pages/collocation/detail?id=${id}` });
+      common_vendor.index.navigateTo({
+        url: `/pages/collocation/detail?id=${id}`
+      });
     };
     const navigateToShowcase = (id) => {
-      common_vendor.index.navigateTo({ url: `/pages/showcase/detail?id=${id}` });
+      common_vendor.index.navigateTo({
+        url: `/pages/showcase/detail?id=${id}`
+      });
     };
+    common_vendor.index.setNavigationBarTitle({
+      title: "我的关注"
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.f(categories.value, (item, index, i0) => {
@@ -116,28 +170,38 @@ const _sfc_main = {
             a: activeCategory.value === 1 && item.goods
           }, activeCategory.value === 1 && item.goods ? {
             b: getFirstImage(item.goods.goods_images),
-            c: common_vendor.t(item.goods.name),
-            d: common_vendor.o(($event) => navigateToGoods(item.goods.id), item.id)
+            c: common_vendor.t(item.goods.total_amount),
+            d: common_vendor.t(item.goods.name),
+            e: common_vendor.o(($event) => unfollowGoods(item.id), item.id),
+            f: common_vendor.t(item.goods.brand_name),
+            g: common_vendor.t(item.goods.size),
+            h: common_vendor.t(item.goods.skin.split(" ")[0]),
+            i: common_vendor.t(item.goods.type),
+            j: common_vendor.t(item.goods.doll_material),
+            k: common_vendor.o(($event) => navigateToGoods(item.goods.id), item.id)
           } : {}, {
-            e: activeCategory.value === 2 && item.brand
+            l: activeCategory.value === 2 && item.brand
           }, activeCategory.value === 2 && item.brand ? {
-            f: item.brand.logo_image,
-            g: common_vendor.t(item.brand.brand_name),
-            h: common_vendor.o(($event) => navigateToBrand(item.brand.id), item.id)
+            m: item.brand.logo_image,
+            n: common_vendor.t(item.brand.brand_name),
+            o: common_vendor.t(item.brand.country_name),
+            p: common_vendor.t(item.brand.description),
+            q: common_vendor.o(($event) => _ctx.unfollowBrand(item.id), item.id),
+            r: common_vendor.o(($event) => navigateToBrand(item.brand.id), item.id)
           } : {}, {
-            i: activeCategory.value === 3 && item.collocation
+            s: activeCategory.value === 3 && item.collocation
           }, activeCategory.value === 3 && item.collocation ? {
-            j: getFirstCollocationImage(item.collocation.image_urls),
-            k: common_vendor.t(item.collocation.title),
-            l: common_vendor.o(($event) => navigateToCollocation(item.collocation.id), item.id)
+            t: getFirstCollocationImage(item.collocation.image_urls),
+            v: common_vendor.t(item.collocation.title),
+            w: common_vendor.o(($event) => navigateToCollocation(item.collocation.id), item.id)
           } : {}, {
-            m: activeCategory.value === 4 && item.showcase
+            x: activeCategory.value === 4 && item.showcase
           }, activeCategory.value === 4 && item.showcase ? {
-            n: getFirstImage(item.showcase.image_urls),
-            o: common_vendor.t(item.showcase.name),
-            p: common_vendor.o(($event) => navigateToShowcase(item.showcase.id), item.id)
+            y: getFirstImage(item.showcase.image_urls),
+            z: common_vendor.t(item.showcase.name),
+            A: common_vendor.o(($event) => navigateToShowcase(item.showcase.id), item.id)
           } : {}, {
-            q: item.id
+            B: item.id
           });
         }),
         c: loading.value

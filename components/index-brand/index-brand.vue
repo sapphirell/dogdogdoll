@@ -1,25 +1,32 @@
 <template>
-	<view class="brand" :key="key">
-		<view class="brand_info_tab">
-			<view @tap="jumpBrand">
-				<image class="index_brand_logo" :src="brand.logo_image" mode="aspectFit"></image>
-				<view class="brand_info">
-					<text class="font-alimamashuhei">{{brand.brand_name}} （{{brand.country_name}} {{brand.type}}）</text>
-					<text class="brand_description">{{brand.description}}</text>
-					<text class="font-alimamashuhei tab_text doll_record" >收录词条 ({{brand.total_goods}})</text>
+	<view class="brand-card" :key="key">
+		<!-- 品牌信息卡片 -->
+		<view class="brand-header" @tap="jumpBrand">
+			<image class="brand-logo" :src="brand.logo_image" mode="aspectFit"></image>
+			<view class="brand-meta">
+				<view class="title-row">
+					<text class="brand-title">{{brand.brand_name}}</text>
+					<text class="brand-tag">{{brand.country_name}}·{{brand.type}}</text>
+					<text class="goods-count">收录{{brand.total_goods}}款</text>
 				</view>
-				<div style="clear: both;"></div>
+				<text class="brand-desc">{{brand.description}}</text>
 			</view>
 		</view>
-	
-		<view class="dolls">
-			<view class="doll_item" v-for="(doll, index) in brand.goods" :key="doll.id">
-				<view @tap="jumpGoods(doll.id)" >
-					<image class="doll_images" :src="doll.goods_images[0]" mode="aspectFill"></image>
-					<text class=" doll_name">{{doll.name}}</text>
+
+		<!-- 横向滚动商品列表 -->
+		<scroll-view class="goods-scroll" scroll-x :show-scrollbar="false">
+			<view class="goods-list">
+				<view 
+					class="goods-item" 
+					v-for="(doll, index) in brand.goods" 
+					:key="doll.id"
+					@tap="jumpGoods(doll.id)"
+				>
+					<image class="goods-image" :src="doll.goods_images[0]" mode="aspectFill"></image>
+					<text class="goods-name">{{doll.name}}</text>
 				</view>
 			</view>
-		</view>
+		</scroll-view>
 	</view>
 </template>
 
@@ -38,96 +45,122 @@ function jumpGoods(id) {
 }
 </script>
 
-<style lang="scss" scoped>
-.tab_text {
-	color: #806161;
-	margin-left: 5px;
-	font-size: 13px;
-	
-}
-.doll_record {
-	    text-align: left!important;
-	    margin-top: 15px;
-	    margin-left: 5px;
-	    font-size: 14px;
-	    color: #6eb9d2!important;
-}
-.doll_name {font-family: monospace; color: #806161; font-size: 22rpx;}
-.dolls {
-	display: flex;
-	justify-content: flex-start;
-	gap: 20rpx;
-	.doll_item {
-		width: calc(25vw - 15px);
-		height: 110px;
-		// margin: 5px auto;
-		overflow: hidden;
-		// float: left;
-		image {
-			width: 100%;
-			// height: 120px;
-			background: #ddd;
-			border-radius: 5rpx;
-			height: auto;             /* 高度自动调整以保持比例 */
-			aspect-ratio: 1; 
-		}
-		text {
-			text-align: center;
-			overflow: hidden;
-			white-space: nowrap;
-			text-overflow: ellipsis;
-			width: 100%;
-			display: block;
-		}
-	}
-}
-.brand {
-	width: 90vw;
-	min-height: 150px;
-	margin:0px 8px 5px 8px;
-	padding:15px 5px 10px 5px;
-	// border: 1px solid #ddd;
-	background-color: #fff;
-	border-radius: 8px;
-	// box-shadow: 0 1px 3px #ddd;
-	// display: flex;
-	float: left;
-	.index_brand_logo {
-		width: 100px;
-		height: 80px;
-		float: left;
-	}
-	.brand_info_tab {
-		min-height: 210rpx;
-	}
-	.brand_info {
-		width: calc(100vw - 155px);
-		height: 70px;
-		float: left;
-		text {
-			text-align: center;
-			width: 100%;
-			display: block;
-			color: #888;
-			overflow: hidden;
-		}
-		.brand_description {
-			display: -webkit-box;
-			-webkit-box-orient: vertical;
-			-webkit-line-clamp: 3; /* 设置显示的行数 */
-			overflow: hidden;
-			text-overflow: ellipsis;
-			line-height: 1.7; /* 行高 */
-			max-height: 5.5em; /* 最大高度，行数 * 行高 */
-			text-align-last: left;
-			text-align: left;
-			box-sizing: border-box;
-			padding-left: 5px;
-			padding-top: 8px;
-			font-size: 22rpx;
-		}
-	}
-	
 
+<style lang="scss" scoped>
+.brand-card {
+	width: 660rpx;
+	background: #fff;
+	border-radius: 16rpx;
+	margin: 20rpx 0rpx;
+	padding: 24rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+}
+
+.brand-header {
+	display: flex;
+	gap: 20rpx;
+	margin-bottom: 24rpx;
+	
+	.brand-logo {
+		flex-shrink: 0;
+		width: 140rpx;
+		height: 140rpx;
+		border-radius: 8rpx;
+		background: #f8f9fa;
+	}
+}
+
+.brand-meta {
+	flex: 1;
+	min-width: 0; /* 防止内容溢出 */
+	
+	.title-row {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		margin-bottom: 12rpx;
+		white-space: nowrap;
+		overflow: hidden;
+	}
+	
+	.brand-title {
+		font-size: 28rpx;
+		font-weight: 500;
+		color: #2c3e50;
+		max-width: 40%; /* 根据实际情况调整 */
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	
+	.brand-tag {
+		font-size: 20rpx;
+		color: #95a5a6;
+		background: #f8f9fa;
+		padding: 2rpx 10rpx;
+		border-radius: 6rpx;
+		flex-shrink: 0;
+	}
+	
+	.goods-count {
+		font-size: 20rpx;
+		color: #3498db;
+		margin-left: auto;
+		flex-shrink: 0;
+	}
+	
+	.brand-desc {
+		font-size: 24rpx;
+		color: #7f8c8d;
+		line-height: 1.4;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+}
+
+/* 横向滚动样式 */
+.goods-scroll {
+	width: 100%;
+	white-space: nowrap;
+	
+	.goods-list {
+		display: inline-flex;
+		gap: 20rpx;
+	}
+	
+	.goods-item {
+		width: 180rpx;
+		flex-shrink: 0;
+	}
+	
+	.goods-image {
+		width: 180rpx;
+		height: 260rpx;
+		border-radius: 8rpx;
+		background: #f8f9fa;
+	}
+	
+	.goods-name {
+		display: block;
+		padding: 8rpx 4rpx;
+		font-size: 22rpx;
+		color: #666;
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		line-height: 1.4;
+	}
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
+	color: transparent;
 }
 </style>

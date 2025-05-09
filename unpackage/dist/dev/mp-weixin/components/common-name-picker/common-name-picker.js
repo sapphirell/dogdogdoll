@@ -18,13 +18,10 @@ const _sfc_main = {
   },
   emits: ["select"],
   setup(__props, { emit: __emit }) {
-    const props = __props;
     const emit = __emit;
     const isOpen = common_vendor.ref(false);
     const selectedValue = common_vendor.ref("");
-    const containerRef = common_vendor.ref(null);
     const toggleOpen = () => {
-      common_vendor.index.__f__("log", "at components/common-name-picker/common-name-picker.vue:46", props.dataList);
       isOpen.value = !isOpen.value;
     };
     const selectItem = (item) => {
@@ -32,24 +29,14 @@ const _sfc_main = {
       isOpen.value = false;
       emit("select", item);
     };
-    const handleClickOutside = (event) => {
-      if (containerRef.value && !containerRef.value.contains(event.target)) {
-        isOpen.value = false;
-      }
-    };
-    common_vendor.onMounted(() => {
-      document.addEventListener("click", handleClickOutside);
-    });
-    common_vendor.onUnmounted(() => {
-      document.removeEventListener("click", handleClickOutside);
-    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.t(selectedValue.value || __props.placeholder),
         b: common_vendor.o(toggleOpen),
         c: isOpen.value
       }, isOpen.value ? {
-        d: common_vendor.f(__props.dataList, (item, index, i0) => {
+        d: common_vendor.o(($event) => isOpen.value = false),
+        e: common_vendor.f(__props.dataList, (item, index, i0) => {
           return {
             a: common_vendor.t(item),
             b: index,
@@ -57,7 +44,7 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        e: common_vendor.p({
+        f: common_vendor.p({
           name: "slide-fade"
         })
       });

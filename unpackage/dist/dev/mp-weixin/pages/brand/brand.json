@@ -1,6 +1,8 @@
 {
   "navigationBarTitleText": "品牌页面",
   "usingComponents": {
-    "uni-rate": "../../uni_modules/uni-rate/components/uni-rate/uni-rate"
+    "uni-rate": "../../uni_modules/uni-rate/components/uni-rate/uni-rate",
+    "comment-list": "../../components/comment-list/comment-list",
+    "comment-input": "../../components/comment-input/comment-input"
   }
 }

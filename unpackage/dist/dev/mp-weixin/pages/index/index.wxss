@@ -128,7 +128,7 @@
 }
 .body_list.data-v-1cf27b2a {
   position: relative;
-  min-height: 60vh;
+  min-height: 110vh;
   transition: all 0.3s ease;
   transform-origin: top center;
 }
@@ -278,6 +278,7 @@
   margin-bottom: 10rpx;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
@@ -435,18 +436,24 @@
   border-radius: 50%;
   margin-right: 15rpx;
 }
+.user-info .cid.data-v-1cf27b2a {
+  font-size: 24rpx;
+  color: #666;
+  margin-left: 20rpx;
+}
 .user-info .username.data-v-1cf27b2a {
   font-size: 24rpx;
   color: #333;
-  margin-right: 40rpx;
-  width: 368rpx;
+  margin-right: 60rpx;
+  width: 250rpx;
   overflow: hidden;
   margin-left: 10rpx;
-  margin-right: 10rpx;
+  margin-right: 40rpx;
   font-weight: 800;
+  display: inline-block;
   overflow: hidden;
   white-space: nowrap;
-  display: -webkit-box;
+  text-overflow: ellipsis;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
@@ -527,4 +534,41 @@
   font-size: 22rpx;
   color: #888;
   padding: 10rpx 30rpx;
+}
+.brand_type_description.data-v-1cf27b2a {
+  background: rgba(76, 187, 208, 0.05);
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin: 20rpx 0;
+  position: relative;
+  overflow: hidden;
+}
+.brand_type_description.data-v-1cf27b2a::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4rpx;
+  height: 70%;
+  background: #4cbbd0;
+  border-radius: 4rpx;
+}
+.brand_type_description text.data-v-1cf27b2a {
+  font-size: 24rpx;
+  color: #7f8c8d;
+  line-height: 1.6;
+  display: block;
+  padding-left: 16rpx;
+  position: relative;
+  text-align: justify;
+}
+.brand_type_description text.data-v-1cf27b2a::after {
+  content: " 🐻 ";
+  color: rgba(76, 187, 208, 0.2);
+  position: absolute;
+  font-size: 40rpx;
+  right: -10rpx;
+  bottom: -20rpx;
+  transform: rotate(15deg);
 }

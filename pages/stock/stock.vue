@@ -1,5 +1,6 @@
 <template>
-	<meta name="theme-color" content="rgb(185 195 253)"></meta>
+	<meta name="theme-color" content="rgb(185 195 253)">
+	</meta>
 	<common-page head_color="rgb(185 195 253)">
 		<view class="container" style="overflow: hidden;">
 			<view class="head_container">
@@ -41,8 +42,10 @@
 							</view>
 						</view>
 
-						<view class="content" v-else>
-							<text>暂无数据</text>
+						<view class="empty-state" v-else>
+							<image class="empty-icon" src="/static/empty.png"></image>
+							<text class="empty-text">空空如也～</text>
+							<text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
 						</view>
 
 						<view>
@@ -53,58 +56,39 @@
 				<transition :name="transitionName()">
 					<view class="tab_body_sec" v-if="activeTab === 2" :class="{ none: activeTab !== 2 }">
 						<!-- 展示柜 -->
-	<!-- 					<view v-if="showcaseData.showcases && showcaseData.showcases.length > 0" class="sec_container">
-
-							<view v-for="(item, index) in showcaseData.showcases" :key="index" class="sec_row"
+						<view v-if="showcaseData.showcases && showcaseData.showcases.length > 0"
+							class="showcase-container">
+							<view v-for="(item, index) in showcaseData.showcases" :key="index" class="showcase-card"
 								@tap="go2editorShowCase(item.id)">
-								<view  class="shadow-mask" v-if="item.display == 0">审核中</view>
-								<view  class="shadow-mask" v-if="item.display == 2">人工复核中</view>
-								<view  class="shadow-mask" v-if="item.display == 3">违规隐藏中</view>
-								<view  class="sec_row_body" :class="{ filter : item.display !== 1 }">
-									<image :src="item.image_url" mode="aspectFill" class="sec_image"></image>
-									<view class="sec_content">
-										<text class="font-alimamashuhei one_line_text sec_title">{{ item.name }}</text>
-										<text class="sec_description">{{ item.description }}</text>
+								<view v-if="item.display !== 1" class="status-overlay">
+									<text class="status-text">{{ getStatusText(item.display) }}</text>
+								</view>
+
+								<view class="card-content" :class="{ 'blur-effect': item.display !== 1 }">
+									<image :src="item.image_url_list[0]" mode="aspectFill" class="showcase-image">
+									</image>
+									<view class="showcase-info">
+										<text class="showcase-title one_line_text">{{ item.name }}</text>
+										<text class="showcase-description multi_line_text">{{ item.description }}</text>
+										<view class="interaction-bar">
+											<view class="interaction-item">
+												<image src="/static/eye.png" class="interaction-icon"></image>
+												<text class="interaction-count">{{ item.views || 0 }}</text>
+											</view>
+											<view class="interaction-item">
+												<image src="/static/6.png" class="interaction-icon"></image>
+												<text class="interaction-count">{{ item.likes || 0 }}</text>
+											</view>
+										</view>
 									</view>
 								</view>
-								
 							</view>
-
-						</view> -->
-						 <view v-if="showcaseData.showcases && showcaseData.showcases.length > 0" class="showcase-container">
-						      <view 
-						        v-for="(item, index) in showcaseData.showcases" 
-						        :key="index" 
-						        class="showcase-card"
-						        @tap="go2editorShowCase(item.id)"
-						      >
-						        <view v-if="item.display !== 1" class="status-overlay" >
-						          <text class="status-text">{{ getStatusText(item.display) }}</text>
-						        </view>
-						        
-						        <view class="card-content" :class="{ 'blur-effect': item.display !== 1 }">
-						          <image 
-						            :src="item.image_url_list[0]" 
-						            mode="aspectFill" 
-						            class="showcase-image"
-						          ></image>
-						          <view class="showcase-info">
-						            <text class="showcase-title one_line_text">{{ item.name }}</text>
-						            <text class="showcase-description multi_line_text">{{ item.description }}</text>
-						            <view class="interaction-bar">
-						              <view class="interaction-item">
-						                <image src="/static/eye.png" class="interaction-icon"></image>
-						                <text class="interaction-count">{{ item.views || 0 }}</text>
-						              </view>
-						              <view class="interaction-item">
-						                <image src="/static/6.png" class="interaction-icon"></image>
-						                <text class="interaction-count">{{ item.likes || 0 }}</text>
-						              </view>
-						            </view>
-						          </view>
-						        </view>
-						      </view>
-						    </view>
+						</view>
+						<view class="empty-state" v-else>
+						  <image class="empty-icon" src="/static/empty.png"></image>
+						  <text class="empty-text">展示柜空空如也</text>
+						  <text class="empty-tip">快来创建你的展示空间吧！</text>
+						</view>
 						<!-- 添加展示柜数据 -->
 						<view>
 							<button class="jump2addButton" @tap="go2addShowCase">+</button>
@@ -113,43 +97,49 @@
 				</transition>
 				<transition :name="transitionName()">
 					<view class="tab_body_3th" v-if="activeTab === 3" :class="{ none: activeTab !== 3 }">
-							<view class="calendar-container">
-								<view v-for="(bills, month) in billData" :key="month">
-									<view class="month-header-container">
-										<text class="month-header font-alimamashuhei">{{ month }} 账单</text>
-										<text class="month-stats">
-											已补/总计：{{ countPaid(bills) }}/{{ bills.length }}
-										</text>
-									</view>
-					
-									<view v-for="bill in bills" :key="bill.id" class="bill-item" @tap="go2addBill(bill.id)">
-										<view class="bill-left">
-											<view class="bill-name-container">
-												<text class="bill-name">{{ bill.name }}</text>
-											</view>
-											<view class="due-amount-container">
-												<text class="due-label">待补款:</text>
-												<text class="due-amount">¥{{ bill.price }}</text>
-											</view>
+						<view class="calendar-container"  v-if="Object.keys(billData).length > 0">
+							<view v-for="(bills, month) in billData" :key="month">
+								<view class="month-header-container">
+									<text class="month-header font-alimamashuhei">{{ month }} 账单</text>
+									<text class="month-stats">
+										已补/总计：{{ countPaid(bills) }}/{{ bills.length }}
+									</text>
+								</view>
+
+								<view v-for="bill in bills" :key="bill.id" class="bill-item" @tap="go2addBill(bill.id)">
+									<view class="bill-left">
+										<view class="bill-name-container">
+											<text class="bill-name">{{ bill.name }}</text>
 										</view>
-										
-										<view class="bill-right">
-											<view class="date-container">
-												<text class="date-text">日期: {{ bill.ymd }}</text>
-											</view>
-											<view class="status-container">
-												<text class="status-text" :class="{'paid': bill.status === 1}">
-													{{ bill.status === 0 ? '未补款' : '已补款' }}
-												</text>
-											</view>
+										<view class="due-amount-container">
+											<text class="due-label">待补款:</text>
+											<text class="due-amount">¥{{ bill.price }}</text>
+										</view>
+									</view>
+
+									<view class="bill-right">
+										<view class="date-container">
+											<text class="date-text">日期: {{ bill.ymd }}</text>
+										</view>
+										<view class="status-container">
+											<text class="status-text" :class="{'paid': bill.status === 1}">
+												{{ bill.status === 0 ? '未补款' : '已补款' }}
+											</text>
 										</view>
 									</view>
 								</view>
 							</view>
-							<view>
-								<button class="jump2addButton" @tap="go2addBill(false)">+</button>
-							</view>
 						</view>
+						
+						<view class="empty-state" v-else>
+						  <image class="empty-icon" src="/static/empty.png"></image>
+						  <text class="empty-text">暂无待补尾款</text>
+						  <text class="empty-tip">增加添加一个到账本试试吧～</text>
+						</view>
+						<view>
+							<button class="jump2addButton" @tap="go2addBill(false)">+</button>
+						</view>
+					</view>
 				</transition>
 			</view>
 		</view>
@@ -346,23 +336,23 @@
 	}
 	// 展示柜状态
 	function getStatusClass(display) {
-	  const statusMap = {
-		0: 'reviewing',
-		2: 'rechecking',
-		3: 'violation'
-	  }
-	  return statusMap[display] || '';
+		const statusMap = {
+			0: 'reviewing',
+			2: 'rechecking',
+			3: 'violation'
+		}
+		return statusMap[display] || '';
 	}
 
 	function getStatusText(display) {
-	  const textMap = {
-		0: '审核中',
-		2: '人工复核中',
-		3: '违规隐藏中'
-	  }
-	  return textMap[display] || '';
+		const textMap = {
+			0: '审核中',
+			2: '人工复核中',
+			3: '违规隐藏中'
+		}
+		return textMap[display] || '';
 	}
-	
+
 	onShow(() => {
 		// 加载用户信息
 		asyncGetUserInfo().then((userInfo) => {
@@ -386,7 +376,7 @@
 	.content {
 		margin-top: 15rpx;
 	}
-	
+
 	.head_container {
 		background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
 		overflow: hidden;
@@ -596,7 +586,7 @@
 				position: absolute;
 				top: 0;
 				left: 0;
-				background: rgb(255 118 105  / 65%);
+				background: rgb(255 118 105 / 65%);
 				color: #fff;
 				padding: 10rpx 20rpx;
 				border-radius: 10rpx 0 10rpx 0;
@@ -628,14 +618,14 @@
 			}
 		}
 	}
-	
+
 	// 尾款日历
-	
+
 	.tab_body_3th {
 		.calendar-container {
 			padding: 20rpx;
 		}
-	
+
 		.month-header-container {
 			display: flex;
 			justify-content: space-between;
@@ -644,17 +634,17 @@
 			border-bottom: 1rpx dashed #eee;
 			margin-bottom: 20rpx;
 		}
-	
+
 		.month-header {
 			font-size: 32rpx;
 			color: #333;
 		}
-	
+
 		.month-stats {
 			font-size: 26rpx;
 			color: #999;
 		}
-	
+
 		.bill-item {
 			display: flex;
 			justify-content: space-between;
@@ -665,18 +655,18 @@
 			border-radius: 16rpx;
 			box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 			transition: all 0.2s ease;
-	
+
 			&:active {
 				transform: scale(0.98);
 				background: #f8f8f8;
 			}
 		}
-	
+
 		.bill-left {
 			flex: 1;
 			margin-right: 30rpx;
 		}
-	
+
 		.bill-name {
 			font-size: 28rpx;
 			color: #333;
@@ -684,161 +674,228 @@
 			display: block;
 			margin-bottom: 15rpx;
 		}
-	
+
 		.due-label {
 			font-size: 24rpx;
 			color: #999;
 			margin-right: 10rpx;
 		}
-	
+
 		.due-amount {
 			color: #74c9e5;
 			font-weight: bold;
 			font-size: 28rpx;
 		}
-	
+
 		.bill-right {
 			text-align: right;
 		}
-	
+
 		.date-text {
 			font-size: 24rpx;
 			color: #999;
 			display: block;
 			margin-bottom: 15rpx;
 		}
-	
+
 		.status-text {
 			font-size: 26rpx;
 			color: #ff6666;
-			
+
 			&.paid {
 				color: #74c9e5;
 			}
 		}
 	}
-	
-	
+
+
 	// 展示柜
 	.tab_body_sec {
-	  .showcase-container {
-	    padding: 30rpx;
-	    display: grid;
-	    gap: 30rpx;
-	  }
+		.showcase-container {
+			padding: 30rpx;
+			display: grid;
+			gap: 30rpx;
+		}
+
+		.showcase-card {
+			position: relative;
+			background: #fff;
+			border-radius: 24rpx;
+			box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.08);
+			transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+			overflow: hidden;
+
+			&:active {
+				transform: scale(0.98);
+				box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+			}
+		}
+
+		.status-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.4);
+			z-index: 2;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			backdrop-filter: blur(10rpx);
+
+			&.reviewing {
+				background: rgba(116, 202, 229, 0.8);
+			}
+
+			&.rechecking {
+				background: rgba(255, 193, 7, 0.8);
+			}
+
+			&.violation {
+				background: rgba(244, 67, 54, 0.8);
+			}
+		}
+
+		.status-text {
+			color: #fff;
+			font-size: 32rpx;
+			font-weight: bold;
+			text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+			margin-top: 20rpx;
+		}
+
+
+		.card-content {
+			display: flex;
+			height: 320rpx;
+			position: relative;
+		}
+
+		.showcase-image {
+			width: 280rpx;
+			height: 100%;
+			flex-shrink: 0;
+			border-radius: 24rpx 0 0 24rpx;
+		}
+
+		.showcase-info {
+			flex: 1;
+			padding: 30rpx;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+		}
+
+		.showcase-title {
+			font-size: 28rpx;
+			font-weight: 700;
+			color: #333;
+			line-height: 1.4;
+		}
+
+		.showcase-description {
+			font-size: 22rpx;
+			color: #666;
+			line-height: 1.6;
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 3;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.interaction-bar {
+			display: flex;
+			gap: 40rpx;
+			margin-top: 20rpx;
+		}
+
+		.interaction-item {
+			display: flex;
+			align-items: center;
+			gap: 12rpx;
+		}
+
+		.interaction-icon {
+			width: 36rpx;
+			height: 36rpx;
+			opacity: 0.8;
+		}
+
+		.interaction-count {
+			font-size: 24rpx;
+			color: #999;
+		}
+
+		.blur-effect {
+			filter: blur(8rpx);
+			opacity: 0.9;
+		}
+
+		@keyframes rotating {
+			from {
+				transform: rotate(0deg);
+			}
+
+			to {
+				transform: rotate(360deg);
+			}
+		}
+	}
 	
-	  .showcase-card {
-	    position: relative;
-	    background: #fff;
-	    border-radius: 24rpx;
-	    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.08);
-	    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-	    overflow: hidden;
-	    
-	    &:active {
-	      transform: scale(0.98);
-	      box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-	    }
-	  }
-	
-	  .status-overlay {
-	    position: absolute;
-	    top: 0;
-	    left: 0;
-	    right: 0;
-	    bottom: 0;
-	    background: rgba(0, 0, 0, 0.4);
-	    z-index: 2;
-	    display: flex;
-	    flex-direction: column;
-	    align-items: center;
-	    justify-content: center;
-	    backdrop-filter: blur(10rpx);
-	    
-	    &.reviewing { background: rgba(116, 202, 229, 0.8); }
-	    &.rechecking { background: rgba(255, 193, 7, 0.8); }
-	    &.violation { background: rgba(244, 67, 54, 0.8); }
-	  }
-	
-	  .status-text {
-	    color: #fff;
-	    font-size: 32rpx;
-	    font-weight: bold;
-	    text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
-	    margin-top: 20rpx;
-	  }
-	
-	
-	  .card-content {
-	    display: flex;
-	    height: 320rpx;
-	    position: relative;
-	  }
-	
-	  .showcase-image {
-	    width: 280rpx;
-	    height: 100%;
-	    flex-shrink: 0;
-	    border-radius: 24rpx 0 0 24rpx;
-	  }
-	
-	  .showcase-info {
-	    flex: 1;
-	    padding: 30rpx;
-	    display: flex;
-	    flex-direction: column;
-	    justify-content: space-between;
-	  }
-	
-	  .showcase-title {
-	    font-size: 28rpx;
-	    font-weight: 700;
-	    color: #333;
-	    line-height: 1.4;
-	  }
-	
-	  .showcase-description {
-	    font-size: 22rpx;
-	    color: #666;
-	    line-height: 1.6;
-	    display: -webkit-box;
-	    -webkit-box-orient: vertical;
-	    -webkit-line-clamp: 3;
-	    overflow: hidden;
-	    text-overflow: ellipsis;
-	  }
-	
-	  .interaction-bar {
-	    display: flex;
-	    gap: 40rpx;
-	    margin-top: 20rpx;
-	  }
-	
-	  .interaction-item {
-	    display: flex;
-	    align-items: center;
-	    gap: 12rpx;
-	  }
-	
-	  .interaction-icon {
-	    width: 36rpx;
-	    height: 36rpx;
+	// 空数据样式
+	.empty-state {
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	  min-height: 60vh;
+	  padding: 40rpx;
+	  text-align: center;
+	  
+	  .empty-icon {
+	    width: 240rpx;
+	    height: 240rpx;
 	    opacity: 0.8;
+	    margin-bottom: 40rpx;
 	  }
 	
-	  .interaction-count {
-	    font-size: 24rpx;
-	    color: #999;
+	  .empty-text {
+	    font-size: 32rpx;
+	    color: #888;
+	    margin-bottom: 20rpx;
+	    font-weight: 500;
 	  }
 	
-	  .blur-effect {
-	    filter: blur(8rpx);
-	    opacity: 0.9;
-	  }
-	
-	  @keyframes rotating {
-	    from { transform: rotate(0deg); }
-	    to { transform: rotate(360deg); }
+	  .empty-tip {
+	    font-size: 26rpx;
+	    color: #aaa;
+	    line-height: 1.6;
 	  }
 	}
+	
+	/* 针对展示柜的特殊调整 */
+	.tab_body_sec .empty-state {
+	  padding-top: 100rpx;
+	  
+	  .empty-icon {
+	    width: 280rpx;
+	    height: 280rpx;
+	  }
+	}
+	
+	/* 尾款日历特殊样式 */
+	.tab_body_3th .empty-state {
+	  .empty-icon {
+	    width: 260rpx;
+	    height: 260rpx;
+	  }
+	  
+	  // .empty-text {
+	  //   color: #74c9e5;
+	  // }
+	}
+
 </style>

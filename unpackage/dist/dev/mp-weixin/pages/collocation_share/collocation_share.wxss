@@ -151,26 +151,31 @@
   align-items: center;
   padding: 30rpx 30rpx 0rpx 30rpx;
   margin: 20rpx 0;
-  border-radius: 16rpx;
-  box-sizing: border-box;
-  width: calc(100vw - 20px);
-  overflow: hidden;
+  /* 新增发布时间样式 */
 }
-.avatar.data-v-38d96b75 {
+.author-info .avatar.data-v-38d96b75 {
   width: 40px;
   height: 40px;
   border-radius: 100%;
   margin-right: 20rpx;
-  box-shadow: none;
 }
-.username.data-v-38d96b75 {
+.author-info .user-meta.data-v-38d96b75 {
+  display: flex;
+  flex-direction: column;
+}
+.author-info .username.data-v-38d96b75 {
   font-size: 28rpx;
   font-weight: 900;
   color: #333;
-  width: calc(100vw - 220rpx);
+  max-width: 400rpx;
   overflow: hidden;
-  /* 只显示一行 */
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+.author-info .publish-time.data-v-38d96b75 {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 8rpx;
 }
 .bottom_tab.data-v-38d96b75 {
   display: flex;

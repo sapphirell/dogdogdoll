@@ -3,14 +3,28 @@ const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  _easycom_uni_icons2();
+  const _easycom_comment_list2 = common_vendor.resolveComponent("comment-list");
+  const _easycom_comment_input2 = common_vendor.resolveComponent("comment-input");
+  (_easycom_uni_icons2 + _easycom_comment_list2 + _easycom_comment_input2)();
 }
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
+const _easycom_comment_list = () => "../../components/comment-list/comment-list.js";
+const _easycom_comment_input = () => "../../components/comment-input/comment-input.js";
 if (!Math) {
-  _easycom_uni_icons();
+  (_easycom_uni_icons + _easycom_comment_list + _easycom_comment_input)();
 }
 const _sfc_main = {
   __name: "collocation_share",
+  props: {
+    collocation_id: {
+      type: String,
+      default: 0
+    },
+    origin: {
+      type: String,
+      default: 0
+    }
+  },
   setup(__props) {
     const detailData = common_vendor.ref({
       title: "",
@@ -22,56 +36,26 @@ const _sfc_main = {
       userName: "",
       avatar: ""
     });
-    const systemInfo = common_vendor.index.getSystemInfoSync();
-    const keyboardHeight = common_vendor.ref(0);
-    const displayMask = common_vendor.ref(false);
-    const keyboardHeightChangeHandler = (res) => {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:190", res);
-      keyboardHeight.value = res.height;
-    };
-    function handleFocus() {
-      displayMask.value = true;
-    }
-    function handleBlur() {
-      displayMask.value = false;
-    }
-    const handleMaskTap = () => {
-      displayMask.value = false;
-      common_vendor.index.hideKeyboard();
-    };
-    common_vendor.onShow(() => {
-      {
-        return;
-      }
-    });
-    common_vendor.onHide(() => {
-      {
-        return;
-      }
-    });
-    const footerBottomHeight = common_vendor.computed(() => {
-      var _a;
-      let safeBottom = ((_a = systemInfo.safeAreaInsets) == null ? void 0 : _a.bottom) || 10;
-      if (keyboardHeight.value > 0) {
-        safeBottom += keyboardHeight.value;
-      }
-      let bottom = `${safeBottom}px`;
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:235", "footer-brand:" + bottom);
-      return bottom;
-    });
+    common_vendor.index.getSystemInfoSync();
     const loading = common_vendor.ref(true);
     const error = common_vendor.ref(false);
     const errorMsg = common_vendor.ref("");
+    const props = __props;
     const pageId = common_vendor.ref(0);
     const origin = common_vendor.ref(0);
     let hasLike = common_vendor.ref(false);
-    let comments = common_vendor.ref({});
-    let commentsPage = common_vendor.ref(1);
-    let myComment = common_vendor.ref("");
+    const commentListRef = common_vendor.ref(null);
+    const commentInputRef = common_vendor.ref(null);
+    common_vendor.ref(1);
     let replyForItem = common_vendor.ref({});
     common_vendor.index.setNavigationBarTitle({
       title: "搭配详情"
     });
+    function jump2user(uid) {
+      common_vendor.index.navigateTo({
+        url: "/pages/user_page/user_page?uid=" + uid
+      });
+    }
     const getGoodsInfo = (id) => {
       return new Promise((resolve, reject) => {
         if (!id || id === 0) {
@@ -90,7 +74,7 @@ const _sfc_main = {
             }
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:284", err);
+            common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:206", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -101,7 +85,7 @@ const _sfc_main = {
       });
     };
     function viewFullImage(index) {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:297", detailData);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:219", detailData);
       common_vendor.index.previewImage({
         current: detailData.value.image_url_list[index],
         urls: detailData.value.image_url_list
@@ -131,7 +115,7 @@ const _sfc_main = {
                   imageError: !goodsInfo
                 };
               } catch (error2) {
-                common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:336", "商品信息获取失败:", error2);
+                common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:258", "商品信息获取失败:", error2);
                 return {
                   ...item,
                   goodsInfo: null,
@@ -173,20 +157,13 @@ const _sfc_main = {
         if (res.data.status === "success") {
           authorInfo.value = res.data.data;
         } else {
-          common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:387", "获取用户信息失败:", res.data.msg);
+          common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:309", "获取用户信息失败:", res.data.msg);
         }
       } catch (error2) {
-        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:390", "用户信息请求失败:", error2);
+        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:312", "用户信息请求失败:", error2);
         common_vendor.index.showToast({
           title: "作者信息加载失败",
           icon: "none"
-        });
-      }
-    };
-    const navigateToUser = (uid) => {
-      if (uid) {
-        common_vendor.index.navigateTo({
-          url: `/pages/user/profile?uid=${uid}`
         });
       }
     };
@@ -221,7 +198,7 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:445", res.data);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:367", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "操作成功",
@@ -240,7 +217,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:464", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:386", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -276,7 +253,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:504", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:426", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -292,40 +269,30 @@ const _sfc_main = {
         return `${kValue}k+`;
       }
     }
-    function getCollocationComments() {
-      common_vendor.index.request({
-        url: common_config.websiteUrl + "/collocation-comment?collocation_id=" + pageId.value + "&page=" + commentsPage.value,
-        method: "GET",
-        timeout: 5e3,
-        success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:529", res.data.data);
-          comments.value.page_index = res.data.data.page_index;
-          comments.value.total = res.data.data.total;
-          comments.value.comment_list = comments.value.comment_list ? comments.value.comment_list.concat(
-            res.data.data.comment_list
-          ) : res.data.data.comment_list;
-          if (res.data.data.comment_list != null) {
-            if (res.data.data.comment_list.length > 0) {
-              commentsPage.value += 1;
-            }
-            if (res.data.data.comment_list.length == 0 && commentsPage.value > 1) {
-              common_vendor.index.showToast({
-                title: "没有更多数据了",
-                icon: "none"
-              });
-            }
-          }
-        },
-        fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:550", err);
-          common_vendor.index.showToast({
-            title: "网络请求失败",
-            icon: "none"
-          });
-        }
-      });
-    }
-    function addComments() {
+    const handleReplyComment = ({
+      parent,
+      target
+    }) => {
+      var _a;
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:450", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:451", "target", target);
+      let item = parent;
+      if (target != null) {
+        item = target;
+      }
+      if (replyForItem.value.id == item.id) {
+        replyForItem.value = {};
+        return;
+      }
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:462", "item", item);
+      replyForItem.value = item;
+      (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
+    };
+    const handleCommentSubmit = ({
+      content,
+      replyInfo,
+      origin: origin2
+    }) => {
       let token = common_vendor.index.getStorageSync("token");
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
@@ -334,25 +301,19 @@ const _sfc_main = {
         });
         return;
       }
-      if (myComment.value == "") {
-        common_vendor.index.showToast({
-          title: "请输入评论内容",
-          icon: "none"
-        });
-        return;
-      }
-      let requestData = {
-        content: myComment.value,
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:480", "reply_info", replyInfo);
+      const requestData = {
+        content,
+        origin: origin2,
         target_id: parseInt(pageId.value),
-        type: 3
-        // 搭配分享
+        type: props.origin == 1 ? 3 : 6,
+        ...replyInfo.id && {
+          reply_id: replyInfo.id,
+          reply_for: replyInfo.comment,
+          reply_user_id: replyInfo.user_id,
+          parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+        }
       };
-      if (replyForItem.value.id) {
-        requestData.reply_id = replyForItem.value.id;
-        requestData.reply_for = replyForItem.value.comment;
-        requestData.reply_user_id = replyForItem.value.user_id;
-      }
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:587", requestData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -361,41 +322,33 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:596", res.data);
+          var _a, _b;
           if (res.data.status == "success") {
+            const newComment = res.data.data;
+            if (newComment.parent_id === 0) {
+              (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
+            } else {
+              (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+            }
             common_vendor.index.showToast({
               title: "评论成功",
               icon: "success"
             });
-            myComment.value = "";
-            commentsPage.value = 1;
-            comments.value = {};
-            getCollocationComments();
-            return;
           } else {
             common_vendor.index.showToast({
               title: res.data.msg,
               icon: "none"
             });
-            return;
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:618", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
           });
         }
       });
-    }
-    function replyFor(item) {
-      if (replyForItem.value.id == item.id) {
-        replyForItem.value = {};
-        return;
-      }
-      replyForItem.value = item;
-    }
+    };
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp * 1e3);
       const year = date.getFullYear();
@@ -407,30 +360,38 @@ const _sfc_main = {
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
     common_vendor.onShow(() => {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:656", "注册键盘弹出事件");
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:554", "注册键盘弹出事件");
       common_vendor.index.onKeyboardHeightChange(keyboardHeightChangeHandler);
     });
     common_vendor.onLoad((options) => {
-      if (!options.collocation_id) {
-        error.value = true;
-        errorMsg.value = "缺少必要参数Id";
-        return;
+      try {
+        if (!options.collocation_id) {
+          error.value = true;
+          errorMsg.value = "缺少必要参数Id";
+          return;
+        }
+        if (!options.origin) {
+          error.value = true;
+          errorMsg.value = "缺少必要参数Origin";
+          return;
+        }
+        pageId.value = options.collocation_id;
+        origin.value = options.origin;
+        fetchData(options.collocation_id, options.origin);
+        common_config.asyncGetUserInfo().then((userInfo) => {
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:577", userInfo);
+          getHasLike(options.collocation_id);
+        });
+      } catch (err) {
+        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:583", "onLoad Error:", err);
+        common_vendor.index.showToast({
+          title: "加载失败",
+          icon: "none"
+        });
       }
-      if (!options.origin) {
-        error.value = true;
-        errorMsg.value = "缺少必要参数Origin";
-        return;
-      }
-      pageId.value = options.collocation_id;
-      origin.value = options.origin;
-      fetchData(options.collocation_id, options.origin);
-      common_config.asyncGetUserInfo().then((userInfo) => {
-        common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:678", userInfo);
-        getHasLike(options.collocation_id);
-      });
-      getCollocationComments();
     });
     return (_ctx, _cache) => {
+      var _a;
       return common_vendor.e({
         a: !common_vendor.unref(hasLike)
       }, !common_vendor.unref(hasLike) ? {
@@ -446,7 +407,7 @@ const _sfc_main = {
           color: "#ff4d4f"
         })
       }, {
-        d: common_vendor.t(formatNumber(detailData.value.like_count)),
+        d: common_vendor.t(((_a = detailData.value) == null ? void 0 : _a.like_count) ? formatNumber(detailData.value.like_count) : 0),
         e: common_vendor.o(($event) => likeFn()),
         f: common_vendor.f(detailData.value.image_url_list, (img, index, i0) => {
           return {
@@ -457,17 +418,18 @@ const _sfc_main = {
         }),
         g: authorInfo.value.avatar,
         h: common_vendor.t(authorInfo.value.user_name || "未知用户"),
-        i: common_vendor.o(($event) => navigateToUser(detailData.value.uid)),
-        j: common_vendor.t(detailData.value.title),
-        k: common_vendor.t(detailData.value.content),
-        l: common_vendor.f(detailData.value.collocation_relation_list, (item, k0, i0) => {
-          var _a, _b;
+        i: common_vendor.t(formatTimestamp(detailData.value.created_at)),
+        j: common_vendor.o(($event) => jump2user(detailData.value.uid)),
+        k: common_vendor.t(detailData.value.title),
+        l: common_vendor.t(detailData.value.content),
+        m: common_vendor.f(detailData.value.collocation_relation_list, (item, k0, i0) => {
+          var _a2, _b;
           return common_vendor.e({
             a: item.relation_goods_id === 0
           }, item.relation_goods_id === 0 ? {} : common_vendor.e({
             b: item.imageLoaded
           }, item.imageLoaded ? {
-            c: ((_b = (_a = item.goodsInfo) == null ? void 0 : _a.goods_images) == null ? void 0 : _b[0]) || "/static/goods-default.png"
+            c: ((_b = (_a2 = item.goodsInfo) == null ? void 0 : _a2.goods_images) == null ? void 0 : _b[0]) || "/static/goods-default.png"
           } : item.imageError ? {} : {}, {
             d: item.imageError
           }), {
@@ -479,60 +441,31 @@ const _sfc_main = {
             j: common_vendor.o(($event) => item.relation_goods_id > 0 ? navigateToGoods(item.relation_goods_id) : null, item.id)
           });
         }),
-        m: common_vendor.unref(comments).total
-      }, common_vendor.unref(comments).total ? {
-        n: common_vendor.t(common_vendor.unref(comments).total || 0)
-      } : {}, {
-        o: common_vendor.unref(comments).comment_list
-      }, common_vendor.unref(comments).comment_list ? {
-        p: common_vendor.f(common_vendor.unref(comments).comment_list, (item, index, i0) => {
-          return {
-            a: item.avatar,
-            b: common_vendor.t(item.username),
-            c: common_vendor.t(item.comment),
-            d: common_vendor.t(formatTimestamp(item.created_at)),
-            e: common_vendor.t(item.floor),
-            f: common_vendor.s(common_vendor.unref(replyForItem).id === item.id ? {
-              color: "#fd6669"
-            } : {
-              color: "#888"
-            }),
-            g: common_vendor.o(($event) => replyFor(item), item.id),
-            h: item.id
-          };
+        n: origin.value > 0
+      }, origin.value > 0 ? {
+        o: common_vendor.sr(commentListRef, "38d96b75-2", {
+          "k": "commentListRef"
         }),
-        q: common_vendor.s({
-          fontSize: "12px",
-          position: "absolute",
-          bottom: "3px",
-          right: "15px",
-          fontWeight: "1000"
+        p: common_vendor.o(handleReplyComment),
+        q: common_vendor.p({
+          type: origin.value == 1 ? 3 : 6,
+          ["relation-id"]: parseInt(pageId.value)
         })
       } : {}, {
-        r: !common_vendor.unref(comments).total
-      }, !common_vendor.unref(comments).total ? {} : {}, {
-        s: common_vendor.unref(comments).total
-      }, common_vendor.unref(comments).total ? {
-        t: common_vendor.o(getCollocationComments)
-      } : {}, {
-        v: common_vendor.unref(replyForItem).id
-      }, common_vendor.unref(replyForItem).id ? {
-        w: common_vendor.t("@" + common_vendor.unref(replyForItem).username)
-      } : {}, {
-        x: common_vendor.o(handleFocus),
-        y: common_vendor.o(handleFocus),
-        z: common_vendor.o(handleBlur),
-        A: common_vendor.unref(myComment),
-        B: common_vendor.o(($event) => common_vendor.isRef(myComment) ? myComment.value = $event.detail.value : myComment = $event.detail.value),
-        C: common_vendor.o(addComments),
-        D: footerBottomHeight.value,
-        E: displayMask.value,
-        F: common_vendor.o(handleMaskTap),
-        G: loading.value
+        r: common_vendor.sr(commentInputRef, "38d96b75-3", {
+          "k": "commentInputRef"
+        }),
+        s: common_vendor.o(handleCommentSubmit),
+        t: common_vendor.o((val) => common_vendor.isRef(replyForItem) ? replyForItem.value = val : replyForItem = val),
+        v: common_vendor.p({
+          ["reply-info"]: common_vendor.unref(replyForItem),
+          ["target-id"]: pageId.value
+        }),
+        w: loading.value
       }, loading.value ? {} : {}, {
-        H: error.value
+        x: error.value
       }, error.value ? {
-        I: common_vendor.t(errorMsg.value)
+        y: common_vendor.t(errorMsg.value)
       } : {});
     };
   }

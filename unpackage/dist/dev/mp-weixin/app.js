@@ -27,6 +27,11 @@ if (!Math) {
   "./pages/collocation_square/collocation_square.js";
   "./pages/sale_news/sale_news.js";
   "./pages/treehole_publish/treehole_publish.js";
+  "./pages/treehole_detail/treehole_detail.js";
+  "./pages/reset_password/reset_password.js";
+  "./pages/setting/username/username.js";
+  "./pages/my_comment/my_comment.js";
+  "./pages/my_collocation/my_collocation.js";
 }
 const _sfc_main = {
   __name: "App",

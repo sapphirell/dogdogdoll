@@ -23,7 +23,11 @@
     "pages/register/register",
     "pages/user_like/user_like",
     "pages/collocation_square/collocation_square",
-    "pages/sale_news/sale_news"
+    "pages/sale_news/sale_news",
+    "pages/treehole_publish/treehole_publish",
+    "pages/treehole_detail/treehole_detail",
+    "pages/reset_password/reset_password",
+    "pages/setting/username/username"
   ],
   "window": {
     "navigationBarTextStyle": "black",
