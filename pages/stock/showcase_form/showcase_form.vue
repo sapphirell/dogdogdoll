@@ -1,5 +1,6 @@
 <template>
 	<view>
+		<meta name="theme-color" content="#F8F8F8"></meta>
 		<view v-if="!isEditable" class="edit-tip">
 			<text>当前状态不可编辑</text>
 		</view>
@@ -61,7 +62,7 @@
 
 		<view class="footer">
 			<button v-if="showDelete" @click="handleDelete" class="delete-btn">删除</button>
-			<button @click="submitForm">提交</button>
+			<button @click="submitForm">发表</button>
 		</view>
 
 	</view>

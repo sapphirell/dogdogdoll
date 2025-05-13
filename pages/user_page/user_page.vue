@@ -1,5 +1,6 @@
 <template>
 	<view class="page-container">
+		<meta name="theme-color" content="#F8F8F8"></meta>
 		<view class="header_container">
 			<!-- 头部区域 -->
 			<view class="header">

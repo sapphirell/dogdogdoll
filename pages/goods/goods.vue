@@ -1,6 +1,7 @@
 <template>
 
 	<view v-if="goods.name">
+		<meta name="theme-color" content="#F8F8F8"></meta>
 		<view>
 			<!-- 轮播图部分 -->
 			<view style="position: relative;">

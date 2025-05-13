@@ -1,5 +1,6 @@
 <template>
 	<view>
+		<meta name="theme-color" content="#F8F8F8"></meta>
 		<image :src="brand.logo_image" mode="aspectFit" class="brand_logo"></image>
 		<view class="body">
 			<view>

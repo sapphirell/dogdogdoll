@@ -1,5 +1,6 @@
 <template>
 	<view class="container" v-if="detailData">
+		<meta name="theme-color" content="#F8F8F8"></meta>
 		<!-- 头部作者信息 -->
 		<view class="header">
 			<view class="author-info">

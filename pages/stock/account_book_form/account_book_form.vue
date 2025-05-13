@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<meta name="theme-color" content="#F8F8F8"></meta>
 		<!-- 表单卡片容器 -->
 		<view class="form-card">
 			<!-- 分类选择 -->
@@ -75,7 +76,7 @@
 				<button 
 					class="submit-button" 
 					@click="postSubmit">
-					提交{{ isEdit ? '修改' : '新增' }}
+					记录{{ isEdit ? '修改' : '新增' }}
 				</button>
 			</view>
 		</view>
