@@ -28,7 +28,7 @@ const _sfc_main = {
           formattedDate.value = formatDate(res.data.data.ymd);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:112", err);
+          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:113", err);
         }
       });
     }
@@ -37,6 +37,37 @@ const _sfc_main = {
       const selectedDate = e.detail.value;
       date.value = selectedDate;
       formattedDate.value = formatDate(selectedDate);
+    }
+    function handleDelete() {
+      common_vendor.index.showModal({
+        title: "提示",
+        content: "确定删除该账单吗？",
+        success: (res) => {
+          if (res.confirm) {
+            common_vendor.index.request({
+              url: common_config.websiteUrl + "/with-state/delete-tail-bill?id=" + parseInt(props.bill_id, 10),
+              method: "POST",
+              header: { "Authorization": common_vendor.index.getStorageSync("token") },
+              success: (res2) => {
+                if (res2.data.status == "success") {
+                  common_vendor.index.showToast({
+                    title: "删除成功",
+                    icon: "success"
+                  });
+                  setTimeout(() => {
+                    common_vendor.index.navigateBack();
+                  }, 500);
+                } else {
+                  common_vendor.index.showToast({
+                    title: res2.data.msg,
+                    icon: "none"
+                  });
+                }
+              }
+            });
+          }
+        }
+      });
     }
     function formatDate(dateStr) {
       let date2 = new Date(dateStr);
@@ -152,7 +183,7 @@ const _sfc_main = {
         n: common_vendor.o(postSubmit),
         o: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        p: common_vendor.o((...args) => _ctx.handleDelete && _ctx.handleDelete(...args))
+        p: common_vendor.o(handleDelete)
       } : {});
     };
   }

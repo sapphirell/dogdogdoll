@@ -1,9 +1,6 @@
 {
   "navigationBarTitleText": "",
   "usingComponents": {
-    "common-name-picker": "../../../components/common-name-picker/common-name-picker",
-    "common-search": "../../../components/common-search/common-search",
-    "custom-picker": "../../../components/custom-picker/custom-picker",
-    "common-modal": "../../../components/common-modal/common-modal"
+    "relation-picker": "../../../components/relation-picker/relation-picker"
   }
 }

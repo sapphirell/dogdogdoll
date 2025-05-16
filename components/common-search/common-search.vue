@@ -1,37 +1,52 @@
 <template>
-	<view class="search_tab">
+	<view class="search_tab" :class="$attrs.class" :style="{
+			background: background || '#fff'
+		}">
 		<image class="icon_image" src="../../static/search.png" v-if="props.mode == 'jump'"></image>
-		<input class="common_search_input" placeholder="请输入品牌 …" v-model="searchTerm" @input="onSearchInput" :ignoreCompositionEvent="false" />
-		<image class="icon_image" src="../../static/cancel.png" @tap="cancel" v-if="results.length > 0" ></image>
+		<input class="common_search_input" placeholder="请输入品牌 …" v-model="searchTerm" @input="onSearchInput"
+			:ignoreCompositionEvent="false" />
+		<image class="icon_image" src="../../static/cancel.png" @tap="cancel" v-if="results.length > 0"></image>
 	</view>
 
 	<!-- 显示搜索结果 -->
 	<scroll-view v-if="results.length > 0" class="search_results" :style="{width: width}" scroll-y>
-		<view v-for="item in results" :key="item.id" class="result_item"  @tap="onTap(item.id, item.name)">
+		<view v-for="item in results" :key="item.id" class="result_item" @tap="onTap(item.id, item.name)">
 			{{ item.name }}
 		</view>
-	</scroll-view >
+	</scroll-view>
 </template>
 
 <script setup>
-	import { ref } from 'vue';
+	import {
+		ref
+	} from 'vue';
 	import {
 		websiteUrl,
 	} from "../../common/config.js";
 
 	// 新增 props 接收父组件参数
 	const props = defineProps({
-	  mode: {
-		type: String,
-		default: 'jump', // 默认跳转模式
-		validator: (value) => ['jump', 'fill'].includes(value) // 参数校验
-	  },
-	  width: {
-		  type: String,
-		  default: '100%'
-	  }
+		mode: {
+			type: String,
+			default: 'jump', // 默认跳转模式
+			validator: (value) => ['jump', 'fill'].includes(value) // 参数校验
+		},
+		width: {
+			type: String,
+			default: '100%'
+		},
+		background: {
+			type: String,
+			default: ''
+		},
+		fontSize: {
+			type: String,
+			default: ''
+		},
 	});
-
+	defineOptions({
+		inheritAttrs: false
+	})
 	// 新增事件定义
 	const emit = defineEmits(['select']);
 
@@ -44,8 +59,8 @@
 			results.value = []; // 如果输入框为空，则清空结果
 			return;
 		}
-		
-		emit('select', 0, searchTerm.value);        // 清空向父组件传递的id
+
+		emit('select', 0, searchTerm.value); // 清空向父组件传递的id
 
 		// 发起请求进行搜索
 		try {
@@ -79,19 +94,19 @@
 	};
 
 	const onTap = (brandId, brandName) => {
-	  if (props.mode === 'jump') {
-		// 跳转模式
-		uni.navigateTo({
-		  url: `/pages/brand/brand?brand_id=${brandId}`
-		});
-	  } else if (props.mode === 'fill') {
-		// 填充模式
-		searchTerm.value = brandName;   // 填充品牌名称
-		results.value = [];             // 清空搜索结果
-		emit('select', brandId, brandName);        // 向父组件传递选中ID
-	  }
+		if (props.mode === 'jump') {
+			// 跳转模式
+			uni.navigateTo({
+				url: `/pages/brand/brand?brand_id=${brandId}`
+			});
+		} else if (props.mode === 'fill') {
+			// 填充模式
+			searchTerm.value = brandName; // 填充品牌名称
+			results.value = []; // 清空搜索结果
+			emit('select', brandId, brandName); // 向父组件传递选中ID
+		}
 	};
-	
+
 	function cancel() {
 		searchTerm.value = '';
 		results.value = [];
@@ -117,11 +132,12 @@
 		.common_search_input {
 			display: inline-block;
 			// margin-left: 15px;
-			  padding: 10px 15px;
+			padding: 10px 15px;
 			width: calc(100% - 85px);
 			// text-align: center;
 			top: 2rpx;
 			position: relative;
+			font-size: 22rpx;
 		}
 	}
 
@@ -134,7 +150,10 @@
 		z-index: 12;
 		box-shadow: 0 0 15px #0000002b;
 		max-height: 400rpx;
+		font-size: 22rpx;
+
 		.result_item {
+			font-size: 22rpx;
 			padding: 15px 0;
 			cursor: pointer;
 			color: #333;

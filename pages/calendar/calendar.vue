@@ -2,7 +2,7 @@
 	<meta name="theme-color" content="rgb(185 195 253)"></meta>
 	<common-page head_color="rgb(185 195 253)">
 		<view class="goods_renew_header_content">
-			<view style="width: 80%;margin: 80rpx auto 20rpx auto;">
+			<view style="width: 80%;margin: 40rpx auto 20rpx auto;" :style="miniProgram ? 'width:500rpx; margin:20rpx 20rpx 0rpx 20rpx' : ''">
 				<common-search width="560rpx"></common-search>
 			</view>
 			<scroll-view scroll-x="true" class="choose_tab" :show-scrollbar="false">
@@ -131,7 +131,8 @@
 	const screenWidth = systemInfo.screenWidth;
 	const itemWidth = screenWidth / 7
 	let scrollLeft = ref(0)
-
+	// 是否小程序
+	const miniProgram = process.env.VUE_APP_PLATFORM === 'mp-weixin'
 	//状态栏高度
 	const statusBarHeight = ref(systemInfo.statusBarHeight);
 	console.log("状态栏高度" + statusBarHeight.value)

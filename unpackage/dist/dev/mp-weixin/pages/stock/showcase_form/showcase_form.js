@@ -4,18 +4,12 @@ const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
 const common_image = require("../../../common/image.js");
 if (!Array) {
-  const _easycom_common_name_picker2 = common_vendor.resolveComponent("common-name-picker");
-  const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
-  const _easycom_custom_picker2 = common_vendor.resolveComponent("custom-picker");
-  const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
-  (_easycom_common_name_picker2 + _easycom_common_search2 + _easycom_custom_picker2 + _easycom_common_modal2)();
+  const _easycom_relation_picker2 = common_vendor.resolveComponent("relation-picker");
+  _easycom_relation_picker2();
 }
-const _easycom_common_name_picker = () => "../../../components/common-name-picker/common-name-picker.js";
-const _easycom_common_search = () => "../../../components/common-search/common-search.js";
-const _easycom_custom_picker = () => "../../../components/custom-picker/custom-picker.js";
-const _easycom_common_modal = () => "../../../components/common-modal/common-modal.js";
+const _easycom_relation_picker = () => "../../../components/relation-picker/relation-picker.js";
 if (!Math) {
-  (_easycom_common_name_picker + _easycom_common_search + _easycom_custom_picker + _easycom_common_modal)();
+  _easycom_relation_picker();
 }
 const _sfc_main = {
   __name: "showcase_form",
@@ -28,11 +22,28 @@ const _sfc_main = {
     ]);
     const typeList = common_vendor.ref([]);
     const showSelectTab = common_vendor.ref(false);
-    const chooseBrandName = common_vendor.ref("");
-    const chooseBrandId = common_vendor.ref(0);
-    const chooseGoodsName = common_vendor.ref("");
-    const chooseGoodsId = common_vendor.ref(0);
-    const chooseType = common_vendor.ref("");
+    common_vendor.ref("");
+    common_vendor.ref(0);
+    common_vendor.ref("");
+    common_vendor.ref(0);
+    common_vendor.ref("");
+    const handleRelationConfirm = (selectedData) => {
+      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:111", "收到选择数据:", selectedData);
+      saveCollocationDataList.value.push({
+        brand_id: selectedData.brand_id,
+        goods_id: selectedData.goods.id,
+        brand_name: selectedData.brand.name,
+        goods_name: selectedData.goods.name,
+        goods_image: selectedData.goods.image,
+        type: selectedData.type
+      });
+    };
+    const handleRelationCancel = () => {
+      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:125", "用户取消选择");
+    };
+    const showRelationPicker = () => {
+      showSelectTab.value = true;
+    };
     const isEditable = common_vendor.computed(() => [-1, 1, 3].includes(display.value));
     const showDelete = common_vendor.computed(() => {
       if (props.showcase_id > 0) {
@@ -43,30 +54,6 @@ const _sfc_main = {
     const name = common_vendor.ref("");
     const description = common_vendor.ref("");
     const display = common_vendor.ref(-1);
-    function getGoodsInfo(id) {
-      return new Promise((resolve, reject) => {
-        common_vendor.index.request({
-          url: common_config.websiteUrl + "/goods?id=" + id,
-          method: "GET",
-          timeout: 5e3,
-          success: (res) => {
-            common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:134", res.data.data);
-            resolve(res.data);
-          },
-          fail: (err) => {
-            common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:138", err);
-            common_vendor.index.showToast({
-              title: "网络请求失败",
-              icon: "none"
-            });
-            reject(err);
-          },
-          complete: () => {
-            common_vendor.index.hideLoading();
-          }
-        });
-      });
-    }
     const saveCollocationDataList = common_vendor.ref([]);
     async function getShowCaseInfo() {
       var _a;
@@ -85,7 +72,7 @@ const _sfc_main = {
         description.value = data.description;
         display.value = data.display;
         uploadList.value = ((_a = data.image_urls) == null ? void 0 : _a.split(",")) || [];
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:175", data);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:198", data);
         if (data.relations) {
           saveCollocationDataList.value = data.relations.map((r) => ({
             goods_id: r.relation_goods_id,
@@ -109,27 +96,19 @@ const _sfc_main = {
         urls: uploadList.value
       });
     }
-    function selectImage() {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:204", "openSelect");
-      common_image.chooseImage().then((res) => {
-        common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:207", tokenData);
-          common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
-            if (uploadRes.statusCode != 200) {
-              common_vendor.index.showToast({
-                title: "上传失败",
-                icon: "none"
-              });
-            }
-            common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:216", common_config.image1Url + tokenData.path);
-            uploadList.value.push(common_config.image1Url + tokenData.path);
-            common_vendor.index.showToast({
-              title: "上传成功",
-              icon: "success"
-            });
-          });
-        });
-      });
+    async function selectImage() {
+      try {
+        const imagePaths = await common_image.chooseImageList(9);
+        for (const path of imagePaths) {
+          const tokenData = await common_image.getQiniuToken();
+          await common_image.uploadImageToQiniu(path, tokenData.token, tokenData.path);
+          uploadList.value.push(common_config.image1Url + tokenData.path);
+        }
+        common_vendor.index.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: "success" });
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:245", "上传出错:", error);
+        common_vendor.index.showToast({ title: "部分图片上传失败", icon: "none" });
+      }
     }
     async function handleDelete() {
       common_vendor.index.showModal({
@@ -232,49 +211,12 @@ const _sfc_main = {
           return;
         }
       } catch (err) {
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:340", err);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:360", err);
         common_vendor.index.showToast({
           title: "提交失败",
           icon: "none"
         });
       }
-    }
-    function handleBrandSelect(brandId, brandName) {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:352", "收到品牌ID:", brandId);
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:353", "收到品牌Name:", brandName);
-      chooseBrandId.value = parseInt(brandId, 10);
-      chooseBrandName.value = brandName;
-      getGoods(brandId);
-    }
-    function handleGoodsSelect(id, name2) {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:362", "选中的 id:", id);
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:363", "选中的 name:", name2);
-      chooseGoodsId.value = parseInt(id, 10);
-      chooseGoodsName.value = name2;
-    }
-    function handleTypeSelect(value) {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:370", "选中的值:", value);
-      chooseType.value = value;
-      showSelectTab.value = true;
-    }
-    function getGoods(id) {
-      common_vendor.index.request({
-        url: common_config.websiteUrl + "/goods-name-list?id=" + id,
-        method: "GET",
-        timeout: 5e3,
-        success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:383", res.data.data);
-          goodsList.value = res.data.data;
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:385", goodsList.value);
-        },
-        fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:389", err);
-          common_vendor.index.showToast({
-            title: "网络请求失败",
-            icon: "none"
-          });
-        }
-      });
     }
     function getTypes() {
       common_vendor.index.request({
@@ -282,67 +224,16 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:408", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:380", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:412", err);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:384", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
           });
         }
-      });
-    }
-    function saveCollocation() {
-      if (chooseBrandName.value == "") {
-        common_vendor.index.showToast({
-          title: "请选择或填写品牌名称",
-          icon: "none"
-        });
-        return;
-      }
-      if (chooseGoodsName.value == "") {
-        common_vendor.index.showToast({
-          title: "请选择或填写商品名称",
-          icon: "none"
-        });
-        return;
-      }
-      if (chooseGoodsId.value == 0) {
-        let data = {
-          "brand_id": chooseBrandId.value,
-          "goods_id": 0,
-          "brand_name": chooseBrandName.value,
-          "goods_name": chooseGoodsName.value,
-          "goods_image": "",
-          "type": chooseType.value
-        };
-        saveCollocationDataList.value.push(data);
-        showSelectTab.value = false;
-        chooseBrandId.value = 0;
-        chooseBrandName.value = "";
-        chooseGoodsId.value = 0;
-        chooseGoodsName.value = "";
-        chooseType.value = "";
-        return;
-      }
-      getGoodsInfo(chooseGoodsId.value).then((res) => {
-        let data = {
-          "brand_id": chooseBrandId.value,
-          "goods_id": chooseGoodsId.value,
-          "brand_name": chooseBrandName.value,
-          "goods_name": chooseGoodsName.value,
-          "goods_image": res.data.goods_images[0],
-          "type": chooseType.value
-        };
-        saveCollocationDataList.value.push(data);
-        showSelectTab.value = false;
-        chooseBrandId.value = 0;
-        chooseBrandName.value = "";
-        chooseGoodsId.value = 0;
-        chooseGoodsName.value = "";
-        chooseType.value = "";
       });
     }
     function deleteImage(index) {
@@ -387,14 +278,10 @@ const _sfc_main = {
         l: common_vendor.o(($event) => description.value = $event.detail.value),
         m: isEditable.value
       }, isEditable.value ? {
-        n: common_vendor.o(handleTypeSelect),
-        o: common_vendor.p({
-          dataList: typeList.value,
-          placeholder: "关联娃物"
-        }),
-        p: common_assets._imports_2$3
+        n: common_assets._imports_2$3,
+        o: common_vendor.o(showRelationPicker)
       } : {}, {
-        q: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
+        p: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
           return common_vendor.e({
             a: item.goods_image
           }, item.goods_image ? {
@@ -410,26 +297,20 @@ const _sfc_main = {
             h: index
           });
         }),
-        r: isEditable.value,
-        s: common_vendor.o(handleBrandSelect),
-        t: common_vendor.p({
-          mode: "fill",
-          width: "calc(100vw - 120px)"
-        }),
-        v: common_vendor.o(handleGoodsSelect),
-        w: common_vendor.p({
-          dataList: goodsList.value
-        }),
-        x: common_vendor.o(saveCollocation),
-        y: common_vendor.o(($event) => showSelectTab.value = $event),
-        z: common_vendor.p({
+        q: isEditable.value,
+        r: common_vendor.o(handleRelationConfirm),
+        s: common_vendor.o(handleRelationCancel),
+        t: common_vendor.o(($event) => showSelectTab.value = $event),
+        v: common_vendor.p({
+          typeList: typeList.value,
+          goodsList: goodsList.value,
           visible: showSelectTab.value
         }),
-        A: showDelete.value
+        w: showDelete.value
       }, showDelete.value ? {
-        B: common_vendor.o(handleDelete)
+        x: common_vendor.o(handleDelete)
       } : {}, {
-        C: common_vendor.o(submitForm)
+        y: common_vendor.o(submitForm)
       });
     };
   }

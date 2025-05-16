@@ -2,18 +2,16 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
-  const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
-  const _easycom_custom_picker2 = common_vendor.resolveComponent("custom-picker");
+  const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
   const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_common_search2 + _easycom_custom_picker2 + _easycom_common_modal2 + _easycom_common_page2)();
+  (_easycom_goods_search2 + _easycom_common_modal2 + _easycom_common_page2)();
 }
-const _easycom_common_search = () => "../../components/common-search/common-search.js";
-const _easycom_custom_picker = () => "../../components/custom-picker/custom-picker.js";
+const _easycom_goods_search = () => "../../components/goods-search/goods-search.js";
 const _easycom_common_modal = () => "../../components/common-modal/common-modal.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_common_search + _easycom_custom_picker + _easycom_common_modal + _easycom_common_page)();
+  (_easycom_goods_search + _easycom_common_modal + _easycom_common_page)();
 }
 const pageSize = 10;
 const _sfc_main = {
@@ -32,8 +30,7 @@ const _sfc_main = {
     const instance = common_vendor.getCurrentInstance();
     const selectedBrand = common_vendor.ref(null);
     const filterGoods = common_vendor.ref([]);
-    const tempSelectGoods = common_vendor.ref(null);
-    const miniProgram = true;
+    common_vendor.ref(null);
     const cardStyle = (index) => {
       const item = collocationList.value[index];
       if (!item.position)
@@ -45,20 +42,20 @@ const _sfc_main = {
       };
     };
     const calculateLayout = (instance2) => {
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:131", "进入计算布局逻辑");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:132", "进入计算布局逻辑");
       if (!instance2) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:133", "无法获取instance");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:134", "无法获取instance");
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:136", "获取成功");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:137", "获取成功");
       if (!collocationList.value) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:138", "无列表数据，不需要计算布局");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:139", "无列表数据，不需要计算布局");
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:141", "获取成功，准备createSelectorQuery");
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:142", instance2);
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:142", "获取成功，准备createSelectorQuery");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:143", instance2);
       const query = common_vendor.index.createSelectorQuery().in(instance2.proxy);
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:144", "获取到query");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:145", "获取到query");
       const tasks = collocationList.value.map((_, index) => {
         return new Promise((resolve) => {
           query.select(`#card-${index}`).boundingClientRect((rect) => {
@@ -70,12 +67,12 @@ const _sfc_main = {
         });
       });
       query.exec(async () => {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:159", "进入Query");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:160", "进入Query");
         columnsHeight[0] = 0;
         columnsHeight[1] = 0;
         const results = await Promise.all(tasks);
         if (!results.length) {
-          common_vendor.index.__f__("warn", "at pages/collocation_square/collocation_square.vue:167", "未查询到任何卡片元素");
+          common_vendor.index.__f__("warn", "at pages/collocation_square/collocation_square.vue:168", "未查询到任何卡片元素");
           return;
         }
         results.forEach(({
@@ -83,7 +80,7 @@ const _sfc_main = {
           rect
         }) => {
           if (!rect) {
-            common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:175", `卡片${index}元素查询失败`);
+            common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:176", `卡片${index}元素查询失败`);
             return;
           }
           const item = collocationList.value[index];
@@ -105,88 +102,93 @@ const _sfc_main = {
       cardWidth.value = (systemInfo.windowWidth - padding) / 2;
     });
     const fetchCollocations = async (reset = false) => {
+      if (reset) {
+        collocationList.value = [];
+        currentPage.value = 1;
+        noMore.value = false;
+        loading.value = false;
+      }
       if (loading.value || noMore.value) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:207", "正在加载中或没有更多了");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:214", "正在加载或没有更多数据，停止请求");
         return;
       }
       try {
         loading.value = true;
-        if (reset) {
-          collocationList.value = [];
-          currentPage.value = 1;
-        }
         const params = {
           page: currentPage.value,
           page_size: pageSize,
           filter_goods_id_list: filterGoods.value.map((g) => g.goods_id)
-          // 传递ID数组
         };
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:228", "请求参数:", JSON.stringify(params, null, 2));
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/collocation-list`,
           method: "POST",
-          data: params
+          data: params,
+          header: {
+            "content-type": "application/json"
+            // 确保使用JSON格式
+          }
         });
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:239", "接口响应:", res);
         if (res.data.status === "success") {
-          const data = res.data.data;
-          const newItems = data.collocation_relation_list;
+          const data = res.data.data || {};
+          const newItems = Array.isArray(data.collocation_relation_list) ? data.collocation_relation_list : [];
           collocationList.value = reset ? newItems : [...collocationList.value, ...newItems];
-          noMore.value = data.total <= currentPage.value * pageSize;
+          noMore.value = newItems.length < pageSize;
           currentPage.value++;
-          common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:243", "等待next tick");
+          if (reset && newItems.length === 0) {
+            common_vendor.index.showToast({
+              title: "暂无相关搭配",
+              icon: "none"
+            });
+          }
+          common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:264", "等待next tick");
           await common_vendor.nextTick$1();
-          common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:245", "等待完成");
+          common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:266", "等待完成");
           calculateLayout(instance);
           setTimeout(() => {
-            common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:249", "二次计算布局");
+            common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:270", "二次计算布局");
             calculateLayout(instance);
           }, 500);
         }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:275", "请求失败:", error);
+        common_vendor.index.showToast({
+          title: "加载失败",
+          icon: "none"
+        });
       } finally {
         loading.value = false;
       }
     };
-    const showFilter = () => showFilterModal.value = true;
-    const handleBrandSelect = (brandId, brandName) => {
-      selectedBrand.value = {
-        id: brandId,
-        name: brandName
-      };
-      filterBrand.value = brandName;
-      if (brandId) {
-        loadGoodsOptions(brandId);
-      }
+    const showFilter = () => {
+      showFilterModal.value = true;
     };
-    const loadGoodsOptions = async (brandId) => {
-      try {
-        const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/goods-name-list?id=${brandId}`,
-          method: "GET"
-        });
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:281", "商品列表:", res.data);
-        if (res.data.status === "success") {
-          goodsOptions.value = res.data.data;
-        }
-      } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:286", "加载商品失败:", error);
-      }
-    };
-    const handleGoodsSelect = (goodsId, goodsName) => {
-      if (!goodsId) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:293", "未选择有效goods");
+    const handleGoodsSelect = (goods) => {
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:320", "选择商品:", goods);
+      if (!(goods == null ? void 0 : goods.id))
         return;
-      }
-      for (const g of filterGoods.value) {
-        if (g.goods_id === goodsId) {
-          return;
-        }
-      }
-      tempSelectGoods.value = {
-        goods_id: goodsId,
-        goods_name: goodsName
+      const newGoods = {
+        goods_id: goods.id,
+        goods_name: `${goods.brand_name ? goods.brand_name + "·" : ""}${goods.name}`
       };
+      const exists = filterGoods.value.some(
+        (item) => item.goods_id === newGoods.goods_id
+      );
+      if (!exists) {
+        filterGoods.value = [...filterGoods.value, newGoods];
+      }
     };
-    const removeGood = (goodsId) => {
-      event.stopPropagation();
+    const applyFilter = async () => {
+      showFilterModal.value = false;
+      await fetchCollocations(true);
+    };
+    const closeFilter = () => {
+      showFilterModal.value = false;
+    };
+    const removeGood = (goodsId, event) => {
+      var _a;
+      (_a = event == null ? void 0 : event.stopPropagation) == null ? void 0 : _a.call(event);
       filterGoods.value = filterGoods.value.filter((g) => g.goods_id !== goodsId);
       noMore.value = false;
       fetchCollocations(true);
@@ -202,12 +204,6 @@ const _sfc_main = {
         url: "/pages/collocation_share/collocation_share?collocation_id=" + collocation_id + "&origin=" + origin
       });
     }
-    const confirmFilter = async () => {
-      filterGoods.value.push(tempSelectGoods.value);
-      showFilterModal.value = false;
-      noMore.value = false;
-      await fetchCollocations(true);
-    };
     const loadMore = () => {
       if (!noMore.value)
         fetchCollocations();
@@ -215,19 +211,18 @@ const _sfc_main = {
     common_vendor.onMounted(fetchCollocations);
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: miniProgram
-      }, {}, {
-        b: common_vendor.f(filterGoods.value, (goods, k0, i0) => {
+        a: common_vendor.f(filterGoods.value, (goods, k0, i0) => {
           return {
             a: common_vendor.t(goods.goods_name),
-            b: common_vendor.o(($event) => removeGood(goods.goods_id), goods.goods_id),
-            c: goods.goods_id
+            b: goods.goods_id,
+            c: common_vendor.o((e) => removeGood(goods.goods_id, e), goods.goods_id)
           };
         }),
-        c: !filterGoods.value.length
+        b: !filterGoods.value.length
       }, !filterGoods.value.length ? {} : {}, {
-        d: common_vendor.o(showFilter),
-        e: common_vendor.o(($event) => fetchCollocations(true)),
+        c: common_vendor.o(showFilter),
+        d: common_vendor.o(($event) => fetchCollocations(true)),
+        e: common_vendor.s("width:500rpx"),
         f: common_vendor.f(collocationList.value, (item, index, i0) => {
           return {
             a: item.image_urls[0],
@@ -251,31 +246,27 @@ const _sfc_main = {
         i: noMore.value
       }, noMore.value ? {} : {}, {
         j: common_vendor.o(loadMore),
-        k: showFilterModal.value
-      }, showFilterModal.value ? common_vendor.e({
-        l: common_vendor.o(($event) => showFilterModal.value = false),
-        m: common_vendor.o(handleBrandSelect),
-        n: common_vendor.p({
+        k: common_vendor.o(closeFilter),
+        l: common_vendor.o(handleGoodsSelect),
+        m: common_vendor.p({
           mode: "fill",
-          width: "450rpx"
+          background: "#f8f8f8",
+          width: "90%"
         }),
-        o: selectedBrand.value
-      }, selectedBrand.value ? {
-        p: common_vendor.o(handleGoodsSelect),
-        q: common_vendor.p({
-          dataList: goodsOptions.value,
-          multiple: true
-        })
-      } : {}, {
-        r: common_vendor.o(resetFilter),
-        s: common_vendor.o(confirmFilter),
-        t: common_vendor.o(($event) => showFilterModal.value = $event),
-        v: common_vendor.p({
-          visible: showFilterModal.value,
+        n: common_vendor.f(filterGoods.value, (goods, k0, i0) => {
+          return {
+            a: common_vendor.t(goods.goods_name),
+            b: goods.goods_id,
+            c: common_vendor.o((e) => removeGood(goods.goods_id, e), goods.goods_id)
+          };
+        }),
+        o: common_vendor.o(resetFilter),
+        p: common_vendor.o(applyFilter),
+        q: common_vendor.o(($event) => showFilterModal.value = $event),
+        r: common_vendor.p({
           visible: showFilterModal.value
-        })
-      }) : {}, {
-        w: common_vendor.p({
+        }),
+        s: common_vendor.p({
           head_color: "#f5f5f5"
         })
       });

@@ -2,8 +2,7 @@
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
   "usingComponents": {
-    "common-search": "../../components/common-search/common-search",
-    "custom-picker": "../../components/custom-picker/custom-picker",
+    "goods-search": "../../components/goods-search/goods-search",
     "common-modal": "../../components/common-modal/common-modal",
     "common-page": "../../components/common-page/common-page"
   }

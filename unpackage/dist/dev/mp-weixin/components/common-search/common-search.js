@@ -2,7 +2,9 @@
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
-const _sfc_main = {
+const _sfc_main = /* @__PURE__ */ Object.assign({
+  inheritAttrs: false
+}, {
   __name: "common-search",
   props: {
     mode: {
@@ -15,6 +17,14 @@ const _sfc_main = {
     width: {
       type: String,
       default: "100%"
+    },
+    background: {
+      type: String,
+      default: ""
+    },
+    fontSize: {
+      type: String,
+      default: ""
     }
   },
   emits: ["select"],
@@ -37,7 +47,7 @@ const _sfc_main = {
             "Content-Type": "application/json"
           }
         });
-        common_vendor.index.__f__("log", "at components/common-search/common-search.vue:60", "请求结果:", res.data);
+        common_vendor.index.__f__("log", "at components/common-search/common-search.vue:75", "请求结果:", res.data);
         if (res.data.status == "success") {
           if (res.data.data == null) {
             results.value = [];
@@ -50,7 +60,7 @@ const _sfc_main = {
           return;
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/common-search/common-search.vue:75", "请求错误:", error);
+        common_vendor.index.__f__("error", "at components/common-search/common-search.vue:90", "请求错误:", error);
         results.value = [];
         return;
       }
@@ -83,19 +93,21 @@ const _sfc_main = {
         f: common_assets._imports_1$6,
         g: common_vendor.o(cancel)
       } : {}, {
-        h: results.value.length > 0
+        h: common_vendor.n(_ctx.$attrs.class),
+        i: __props.background || "#fff",
+        j: results.value.length > 0
       }, results.value.length > 0 ? {
-        i: common_vendor.f(results.value, (item, k0, i0) => {
+        k: common_vendor.f(results.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.name),
             b: item.id,
             c: common_vendor.o(($event) => onTap(item.id, item.name), item.id)
           };
         }),
-        j: __props.width
+        l: __props.width
       } : {});
     };
   }
-};
+});
 wx.createComponent(_sfc_main);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/components/common-search/common-search.js.map

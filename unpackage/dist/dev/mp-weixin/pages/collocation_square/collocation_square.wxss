@@ -29,7 +29,6 @@ text.data-v-e981f8ca {
 .container.data-v-e981f8ca {
   padding: 20rpx;
   background: #f5f5f5;
-  padding-top: 50rpx;
   overflow: hidden;
 }
 .filter-bar.data-v-e981f8ca {

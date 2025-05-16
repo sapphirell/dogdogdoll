@@ -1,0 +1,9 @@
+{
+  "component": true,
+  "usingComponents": {
+    "common-name-picker": "../common-name-picker/common-name-picker",
+    "common-search": "../common-search/common-search",
+    "custom-picker": "../custom-picker/custom-picker",
+    "common-modal": "../common-modal/common-modal"
+  }
+}

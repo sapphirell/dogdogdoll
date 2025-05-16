@@ -1,15 +1,17 @@
 <template>
-	<meta name="theme-color" content="#f5f5f5"></meta>
+	<meta name="theme-color" content="#f5f5f5">
+	</meta>
 	<common-page head_color="#f5f5f5">
+
 		<view class="container">
-			<view v-if="miniProgram" style="height: 40rpx;"></view>
+			<!-- <view v-if="miniProgram" style="height: 40rpx;"></view> -->
 			<!-- 筛选栏 -->
-			<view class="filter-bar">
+			<view class="filter-bar" :style="miniProgram ? 'width:500rpx' : ''">
 				<view class="filter-tags" @tap="showFilter">
 					<view class="selected-goods">
-						<view v-for="goods in filterGoods" :key="goods.goods_id" class="tag">
+						<view v-for="goods in filterGoods" :key="goods.goods_id" class="tag" @tap.stop="(e) => removeGood(goods.goods_id, e)">
 							{{ goods.goods_name }}
-							<text class="remove" @tap="removeGood(goods.goods_id)">×</text>
+							<text class="remove">×</text>
 						</view>
 					</view>
 					<text v-if="!filterGoods.length" class="tip">当前无筛选条件</text>
@@ -18,10 +20,11 @@
 			</view>
 
 			<!-- 搭配列表 -->
-			<scroll-view class="card-list" scroll-y @scrolltolower="loadMore" :show-scrollbar="false">
+			<scroll-view class="card-list" scroll-y @scrolltolower="loadMore" :show-scrollbar="false" >
 				<view class="cards-container" :style="{ height: containerHeight + 'px' }">
 					<view v-for="(item, index) in collocationList" :key="item.collocation_id" class="card"
-						:id="'card-' + index" :style="cardStyle(index)" @tap="jump2collectionDetail(item.collocation_id, item.origin )">
+						:id="'card-' + index" :style="cardStyle(index)"
+						@tap="jump2collectionDetail(item.collocation_id, item.origin )">
 						<image :src="item.image_urls[0]" mode="aspectFill" class="card-image" lazy-load />
 						<view class="card-content">
 							<text class="title">{{ item.title }}</text>
@@ -46,29 +49,27 @@
 			</scroll-view>
 
 			<!-- 筛选弹窗 -->
-			<common-modal v-model:visible="showFilterModal" v-if="showFilterModal" :visible="showFilterModal">
+			<common-modal v-model:visible="showFilterModal">
 				<view class="filter-modal">
 					<view class="modal-header">
-						<text class="title">筛选条件</text>
-						<text class="close" @tap="showFilterModal = false">×</text>
+						<text class="title">筛选看想要的娃物搭配吧！</text>
+						<text class="close" @tap="closeFilter">×</text>
 					</view>
 
-					<view class="filter-items">
-						<view class="filter-item">
-							<!-- <text class="label">品牌搜索</text> -->
-							<common-search mode="fill" @select="handleBrandSelect" width="450rpx" />
-						</view>
+					<!-- 商品搜索组件 -->
+					<goods-search mode="fill" @select="handleGoodsSelect" :background="'#f8f8f8'" :width="'90%'" />
 
-						<view class="filter-item" v-if="selectedBrand">
-							<!-- <text class="label">商品选择</text> -->
-							<custom-picker :dataList="goodsOptions" @select="handleGoodsSelect" multiple />
-
+					<!-- 已选商品展示 -->
+					<view class="selected-goods">
+						<view v-for="goods in filterGoods" :key="goods.goods_id" class="goods-tag"  @tap.stop="(e) => removeGood(goods.goods_id, e)">
+							{{ goods.goods_name }}
+							<text class="remove" >×</text>
 						</view>
 					</view>
 
 					<view class="action-btns">
 						<button class="btn reset" @tap="resetFilter">重置</button>
-						<button class="btn confirm submit-btn" @tap="confirmFilter">确认</button>
+						<button class="btn confirm" @tap="applyFilter">应用筛选</button>
 					</view>
 				</view>
 			</common-modal>
@@ -203,43 +204,63 @@
 
 	// 获取搭配列表
 	const fetchCollocations = async (reset = false) => {
-		if (loading.value || noMore.value) {
-			console.log('正在加载中或没有更多了')
-			return
+		if (reset) {
+			collocationList.value = [];
+			currentPage.value = 1; // 重置页码
+			noMore.value = false; // 重置没有更多数据状态
+			loading.value = false; // 重置加载状态
 		}
+		if (loading.value || noMore.value) {
+			console.log("正在加载或没有更多数据，停止请求")
+			return
+		};
 
 		try {
-			loading.value = true
-			if (reset) {
-				collocationList.value = []
-				currentPage.value = 1
-			}
-
+			loading.value = true;
+			// 构造请求参数
 			const params = {
 				page: currentPage.value,
 				page_size: pageSize,
-				filter_goods_id_list: filterGoods.value.map(g => g.goods_id) // 传递ID数组
-			}
+				filter_goods_id_list: filterGoods.value.map(g => g.goods_id)
+			};
 
-			// 如果需要品牌筛选可以添加
-			// if(selectedBrand.value) params.brand_id = selectedBrand.value.id
+			// 添加调试信息
+			console.log('请求参数:', JSON.stringify(params, null, 2));
 
 			const res = await uni.request({
 				url: `${websiteUrl}/collocation-list`,
 				method: 'POST',
-				data: params
-			})
+				data: params,
+				header: {
+					'content-type': 'application/json' // 确保使用JSON格式
+				}
+			});
 
+			console.log('接口响应:', res);
 
 			if (res.data.status === 'success') {
-				const data = res.data.data
-				const newItems = data.collocation_relation_list
-
-				collocationList.value = reset ?
-					newItems : [...collocationList.value, ...newItems]
-
-				noMore.value = data.total <= currentPage.value * pageSize
-				currentPage.value++
+				  // 添加安全解构
+				  const data = res.data.data || {}
+				  const newItems = Array.isArray(data.collocation_relation_list) 
+				    ? data.collocation_relation_list 
+				    : []
+				
+				  collocationList.value = reset 
+				    ? newItems 
+				    : [...collocationList.value, ...newItems]
+				
+				  noMore.value = newItems.length < pageSize
+				  currentPage.value++
+				
+				  // 添加空数据提示
+				  if (reset && newItems.length === 0) {
+				    uni.showToast({
+				      title: '暂无相关搭配',
+				      icon: 'none'
+				    })
+				  }
+				
+				
 				console.log("等待next tick")
 				await nextTick()
 				console.log("等待完成")
@@ -250,13 +271,21 @@
 					calculateLayout(instance)
 				}, 500)
 			}
+		} catch (error) {
+			console.error('请求失败:', error);
+			uni.showToast({
+				title: '加载失败',
+				icon: 'none'
+			});
 		} finally {
-			loading.value = false
+			loading.value = false;
 		}
-	}
+	};
 
 	// 筛选处理
-	const showFilter = () => showFilterModal.value = true
+	const showFilter = () => {
+		showFilterModal.value = true;
+	};
 
 	// 品牌选择处理
 	const handleBrandSelect = (brandId, brandName) => {
@@ -287,34 +316,50 @@
 		}
 	}
 
+	const handleGoodsSelect = (goods) => {
+		console.log("选择商品:", goods)
+		if (!goods?.id) return;
 
-	const handleGoodsSelect = (goodsId, goodsName) => {
-		if (!goodsId) {
-			console.log("未选择有效goods")
-			return
+		// 转换数据结构
+		const newGoods = {
+			goods_id: goods.id,
+			goods_name: `${goods.brand_name ? goods.brand_name + '·' : ''}${goods.name}`
+		};
+
+		// 检查重复
+		const exists = filterGoods.value.some(
+			item => item.goods_id === newGoods.goods_id
+		);
+
+		if (!exists) {
+			// 使用解构赋值触发响应式更新
+			filterGoods.value = [...filterGoods.value, newGoods];
 		}
 
-		// 避免重复添加
-		for (const g of filterGoods.value) {
-			if (g.goods_id === goodsId) {
-				return
-			}
-		}
+		// 强制更新视图（可选）
+		// await nextTick(); 
+
+	};
+
+	// 应用筛选
+	const applyFilter = async () => {
+		showFilterModal.value = false;
+		// 强制重置并加载第一页
+		await fetchCollocations(true);
+	};
+	// 关闭弹窗时清空临时选择
+	const closeFilter = () => {
+		showFilterModal.value = false;
+	};
 
 
-		tempSelectGoods.value = {
-			goods_id: goodsId,
-			goods_name: goodsName
-		}
-
-	}
 	// 移除单个商品
-	const removeGood = (goodsId) => {
+	const removeGood = (goodsId,event) => {
 		// 阻止事件冒泡
-		event.stopPropagation()
-		filterGoods.value = filterGoods.value.filter(g => g.goods_id !== goodsId)
-		noMore.value = false
-		fetchCollocations(true)
+	  event?.stopPropagation?.()  // 安全调用
+	  filterGoods.value = filterGoods.value.filter(g => g.goods_id !== goodsId)
+	  noMore.value = false
+	  fetchCollocations(true)
 	}
 	// 重置筛选
 	const resetFilter = () => {
@@ -323,14 +368,15 @@
 		filterGoods.value = []
 		goodsOptions.value = []
 	}
-	
+
 	// 跳转到搭配
 	function jump2collectionDetail(collocation_id, origin) {
 		uni.navigateTo({
-			url: '/pages/collocation_share/collocation_share?collocation_id=' + collocation_id + '&origin=' + origin
+			url: '/pages/collocation_share/collocation_share?collocation_id=' + collocation_id + '&origin=' +
+				origin
 		})
 	}
-	
+
 	// 确认筛选
 	const confirmFilter = async () => {
 		filterGoods.value.push(tempSelectGoods.value)
@@ -360,7 +406,7 @@
 	$hover-color: #1ed1e1;
 	$border-color: #e6e6e6;
 	$radius: 8px;
-	
+
 	text {
 		font-size: 22rpx;
 	}
@@ -368,7 +414,7 @@
 	.container {
 		padding: 20rpx;
 		background: #f5f5f5;
-		padding-top: 50rpx;
+		// padding-top: 50rpx;
 		overflow: hidden;
 	}
 
@@ -453,10 +499,10 @@
 					display: -webkit-box;
 					-webkit-box-orient: vertical;
 					-webkit-line-clamp: 1;
-					 overflow: hidden;
-					 white-space: normal;
-					 text-overflow: ellipsis;
-					 
+					overflow: hidden;
+					white-space: normal;
+					text-overflow: ellipsis;
+
 				}
 
 				.desc {
@@ -553,7 +599,7 @@
 			.title {
 				font-size: 28rpx;
 				font-weight: 500;
-				
+
 			}
 
 			.close {

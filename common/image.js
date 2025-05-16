@@ -15,6 +15,20 @@ export function chooseImage() {
 	})
 }
 
+export function chooseImageList(count = 9) {
+  return new Promise((resolve, reject) => {
+    uni.chooseImage({
+      count: count,
+      success: (res) => {
+        resolve(res.tempFilePaths);
+      },
+      fail: (err) => {
+        reject(err);
+      }
+    });
+  });
+}
+
 //裁切图片
 export function jumpToCroper() {
 	chooseImage().then(src => {

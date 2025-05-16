@@ -1,4 +1,9 @@
 
+.select-container.data-v-c7d66d43,.select-input.data-v-c7d66d43 {
+		background: #f8f8f8;
+		font-size: 22rpx;
+		color: #393a3b;
+}
 .select-container.data-v-c7d66d43 {
 		position: relative;
 		display: inline-block;
@@ -7,6 +12,7 @@
 }
 .select-input.data-v-c7d66d43 {
 		padding: 8px 16px;
+		
 		/* border: 1px solid #dcdfe6; */
 		border-radius: 4px;
 		cursor: pointer;
@@ -20,7 +26,6 @@
 }
 .select-options.data-v-c7d66d43 {
 		position: absolute;
-		top: 40px;
 		left: 0;
 		right: 0;
 		max-height: 200px;

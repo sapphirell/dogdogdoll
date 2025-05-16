@@ -33,21 +33,55 @@ const _sfc_main = {
           id
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:162", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:163", res.data.data);
           name.value = res.data.data.name;
           price.value = res.data.data.price;
           selectedType.value = accountBookTypeList.value.indexOf(res.data.data.type);
           accountImage.value = res.data.data.image_url;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:169", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:170", err);
+        }
+      });
+    }
+    function handleDelete() {
+      common_vendor.index.showModal({
+        title: "提示",
+        content: "确定删除该账本吗？",
+        success: (res) => {
+          if (res.confirm) {
+            common_vendor.index.request({
+              url: common_config.websiteUrl + "/with-state/delete-account-book?id=" + parseInt(props.account_book_id, 10),
+              method: "POST",
+              header: {
+                "Authorization": common_vendor.index.getStorageSync("token")
+              },
+              success: (res2) => {
+                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:188", res2.data);
+                if (res2.data.status == "success") {
+                  common_vendor.index.showToast({
+                    title: "删除成功",
+                    icon: "success"
+                  });
+                  setTimeout(() => {
+                    common_vendor.index.navigateBack();
+                  }, 500);
+                } else {
+                  common_vendor.index.showToast({
+                    title: res2.data.msg,
+                    icon: "none"
+                  });
+                }
+              }
+            });
+          }
         }
       });
     }
     function selectImage() {
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:178", tokenData);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:215", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -55,7 +89,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:187", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:224", common_config.image1Url + tokenData.path);
             accountImage.value = common_config.image1Url + tokenData.path;
             common_vendor.index.showToast({
               title: "上传成功",
@@ -91,7 +125,7 @@ const _sfc_main = {
         type: accountBookTypeList.value[selectedType.value],
         image_url: accountImage.value
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:237", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:274", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -100,7 +134,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:247", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:284", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -134,7 +168,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:285", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:322", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -171,7 +205,7 @@ const _sfc_main = {
         l: common_assets._imports_0$4,
         m: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        n: common_vendor.o((...args) => _ctx.handleDelete && _ctx.handleDelete(...args))
+        n: common_vendor.o(handleDelete)
       } : {}, {
         o: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
         p: common_vendor.o(postSubmit)

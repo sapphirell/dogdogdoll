@@ -15,6 +15,7 @@
   width: calc(100% - 85px);
   top: 2rpx;
   position: relative;
+  font-size: 22rpx;
 }
 .search_results {
   margin-top: 10px;
@@ -25,8 +26,10 @@
   z-index: 12;
   box-shadow: 0 0 15px #0000002b;
   max-height: 400rpx;
+  font-size: 22rpx;
 }
 .search_results .result_item {
+  font-size: 22rpx;
   padding: 15px 0;
   cursor: pointer;
   color: #333;

@@ -8,12 +8,17 @@ const _sfc_main = {
       default: "#ffffff"
     }
   },
-  setup(__props) {
+  emits: ["scroll"],
+  setup(__props, { emit: __emit }) {
     common_vendor.useCssVars((_ctx) => ({
       "9d29b882": headerHeight.value,
       "20ceeea2": __props.head_color,
       "1341f44d": footerHeight.value
     }));
+    const emit = __emit;
+    const handleScroll = (e) => {
+      emit("scroll", e.detail);
+    };
     const systemInfo = common_vendor.index.getSystemInfoSync();
     const navBarHeight = common_vendor.computed(() => {
       const menuButtonInfo = common_vendor.index.getMenuButtonBoundingClientRect();
@@ -30,7 +35,8 @@ const _sfc_main = {
     });
     return (_ctx, _cache) => {
       return {
-        a: common_vendor.s(_ctx.__cssVars())
+        a: common_vendor.o(handleScroll),
+        b: common_vendor.s(_ctx.__cssVars())
       };
     };
   }

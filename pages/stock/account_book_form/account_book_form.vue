@@ -171,6 +171,42 @@
 			}
 		});
 	}
+	// 删除账本 /delete-account-book
+	function handleDelete() {
+		uni.showModal({
+			title: '提示',
+			content: '确定删除该账本吗？',
+			success: (res) => {
+				if (res.confirm) {
+					uni.request({
+						url: websiteUrl + '/with-state/delete-account-book?id=' +  parseInt(props.account_book_id, 10),
+						method: 'POST',
+						header: {
+							'Authorization': uni.getStorageSync('token'),
+						},
+						success: (res) => {
+							console.log(res.data);
+							if (res.data.status == "success") {
+								uni.showToast({
+									title: '删除成功',
+									icon: 'success'
+								})
+								//一秒后返回上级页面
+								setTimeout(() => {
+									uni.navigateBack()
+								}, 500)
+							} else {
+								uni.showToast({
+									title: res.data.msg,
+									icon: 'none'
+								})
+							}
+						},
+					})
+				}
+			}
+		})
+	}
 
 	//选择图片
 	function selectImage() {

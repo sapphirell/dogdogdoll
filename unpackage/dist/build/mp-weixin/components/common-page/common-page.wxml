@@ -1,1 +1,1 @@
-<view class="page-container" style="{{a}}"><view class="header-placeholder"></view><view class="content-container"><scroll-view class="main-content" scroll-y><slot></slot></scroll-view></view><view class="footer-placeholder"></view></view>
+<view class="page-container" style="{{b}}"><view class="header-placeholder"></view><view class="content-container"><scroll-view class="main-content" scroll-y bindscroll="{{a}}"><slot></slot></scroll-view></view><view class="footer-placeholder"></view></view>

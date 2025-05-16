@@ -1,42 +1,73 @@
 
 .custom-select.data-v-edb43aad {
-		position: relative;
-		
-		/* width: 100%; */
+			position: relative;
+			z-index: 2;
 }
 .select-input.data-v-edb43aad {
-		width: 100%;
-		padding: 10px 15px;
-		border-radius: 4px;
+			padding: 20rpx 32rpx;
+			border-radius: 12rpx;
+			background: #f8f8f8;
+			font-size: 22rpx;
+			color: #333;
+			height: 72rpx;
+			box-sizing: border-box;
+			width: 100%;
+			line-height: normal;
 }
 .dropdown.data-v-edb43aad {
-		position: absolute;
-		width: 100%;
-		max-height: 200px;
-		overflow-y: auto;
-		/* border: 1px solid #f2f2f2; */
-		border-radius: 4px;
-		background-color: #fff;
-		z-index: 1000;
-		box-shadow: 0 0 10rpx #00000009;
+			position: absolute;
+			width: 100%;
+			max-height: 320rpx;
+			overflow-y: auto;
+			border-radius: 12rpx;
+			background-color: #fff;
+			z-index: 1000;
+			box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08);
+			margin-top: 8rpx;
+			border: 1rpx solid #eee;
 }
 .dropdown-item.data-v-edb43aad {
-		padding: 8px;
-		cursor: pointer;
+			padding: 24rpx 32rpx;
+			font-size: 22rpx;
+			color: #333;
+			transition: all 0.2s;
+			position: relative;
 }
-.dropdown-item.data-v-edb43aad:hover {
-		background-color: #f0f0f0;
+.dropdown-item.data-v-edb43aad:active {
+			background-color: #f8f8f8;
 }
-
-	/* 进入和离开动画 */
+.dropdown-item.data-v-edb43aad:not(:last-child)::after {
+			content: '';
+			position: absolute;
+			left: 32rpx;
+			right: 32rpx;
+			bottom: 0;
+			height: 1rpx;
+			background: #f0f0f0;
+}
+	
+		/* 自定义滚动条 */
+.dropdown.data-v-edb43aad::-webkit-scrollbar {
+			width: 4rpx;
+}
+.dropdown.data-v-edb43aad::-webkit-scrollbar-track {
+			background: #f8f8f8;
+			border-radius: 4rpx;
+}
+.dropdown.data-v-edb43aad::-webkit-scrollbar-thumb {
+			background: #ddd;
+			border-radius: 4rpx;
+}
+	
+		/* 优化动画效果 */
 .slide-fade-enter-active.data-v-edb43aad {
-		transition: all 0.1s ease-out;
+			transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .slide-fade-leave-active.data-v-edb43aad {
-		transition: all 0.1s cubic-bezier(1, 0.5, 0.8, 1);
+			transition: all 0.15s cubic-bezier(0.4, 0, 1, 1);
 }
 .slide-fade-enter-from.data-v-edb43aad,
-	.slide-fade-leave-to.data-v-edb43aad {
-		transform: translateY(-10px);
-		opacity: 0;
+		.slide-fade-leave-to.data-v-edb43aad {
+			opacity: 0;
+			transform: translateY(-16rpx);
 }

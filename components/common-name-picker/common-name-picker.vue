@@ -1,24 +1,24 @@
 <!-- components/common-name-picker.vue -->
 <template>
-	<div class="select-container" ref="containerRef">
-		<div class="select-input" @click="toggleOpen">
+	<view class="select-container" ref="containerRef">
+		<view class="select-input" @click="toggleOpen">
 			{{ selectedValue || placeholder }}
-		</div>
+		</view>
 
 		<transition name="slide-fade">
-			<div v-if="isOpen">
+			<view v-if="isOpen">
 				<!-- 添加遮罩层 -->
-				<div class="mask" @click="isOpen = false"></div>
-				<div class="options-wrapper">
+				<view class="mask" @click="isOpen = false"></view>
+				<view class="options-wrapper">
 					<ul class="select-options">
 						<li v-for="(item, index) in dataList" :key="index" class="option-item" @click="selectItem(item)">
 							{{ item }}
 						</li>
 					</ul>
-				</div>
-			</div>
+				</view>
+			</view>
 		</transition>
-	</div>
+	</view>
 </template>
 
 <script setup>
@@ -51,6 +51,11 @@ const selectItem = (item) => {
 }
 </script>
 <style scoped>
+	.select-container,.select-input {
+		background: #f8f8f8;
+		font-size: 22rpx;
+		color: #393a3b;
+	}
 	.select-container {
 		position: relative;
 		display: inline-block;
@@ -60,6 +65,7 @@ const selectItem = (item) => {
 
 	.select-input {
 		padding: 8px 16px;
+		
 		/* border: 1px solid #dcdfe6; */
 		border-radius: 4px;
 		cursor: pointer;
@@ -75,7 +81,6 @@ const selectItem = (item) => {
 
 	.select-options {
 		position: absolute;
-		top: 40px;
 		left: 0;
 		right: 0;
 		max-height: 200px;

@@ -18,7 +18,7 @@ const _sfc_main = {
   props: ["brand_id"],
   setup(__props) {
     const props = __props;
-    common_vendor.index.__f__("log", "at pages/brand/brand.vue:102", props);
+    common_vendor.index.__f__("log", "at pages/brand/brand.vue:103", props);
     const hasLikeBrand = common_vendor.ref(false);
     const activeModal = common_vendor.ref(false);
     common_vendor.index.showLoading({
@@ -35,8 +35,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:130", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:131", "target", target);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:131", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:132", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -45,7 +45,7 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:142", "item", item);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:143", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
@@ -62,7 +62,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:160", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:161", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -125,7 +125,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:229", rateValue.value, props.brand_id);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:230", rateValue.value, props.brand_id);
       common_config.voteScore(1, rateValue.value, props.brand_id);
     }
     function getBrandsInfo() {
@@ -134,7 +134,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:240", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:241", res.data.data);
           brand.value = res.data.data;
           common_vendor.index.setNavigationBarTitle({
             title: res.data.data.brand_name
@@ -142,7 +142,7 @@ const _sfc_main = {
           getHasLikeBrand();
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:250", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:251", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -179,7 +179,7 @@ const _sfc_main = {
           common_vendor.index.showToast({ title: res.data.msg, icon: "none" });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:291", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:292", err);
         common_vendor.index.showToast({ title: "操作失败", icon: "none" });
       }
     };
@@ -193,7 +193,7 @@ const _sfc_main = {
         });
         hasLikeBrand.value = ((_a = res.data.data) == null ? void 0 : _a.id) > 0;
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:308", "获取关注状态失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:309", "获取关注状态失败:", err);
       }
     };
     function getBrandGoods() {
@@ -202,7 +202,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:332", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:333", res.data.data);
           goods.value.page_index = res.data.data.page_index;
           goods.value.total = res.data.data.total;
           goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
@@ -217,7 +217,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:349", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:350", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -248,7 +248,7 @@ const _sfc_main = {
           type
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:451", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:452", res.data.data);
           if (res.data.status == "success") {
             rateValue.value = res.data.data.score;
             return res.data.data.score;
@@ -261,7 +261,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:464", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:465", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"

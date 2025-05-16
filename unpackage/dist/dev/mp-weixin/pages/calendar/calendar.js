@@ -41,7 +41,7 @@ const _sfc_main = {
     const itemWidth = screenWidth / 7;
     let scrollLeft = common_vendor.ref(0);
     const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
-    common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:137", "状态栏高度" + statusBarHeight.value);
+    common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:138", "状态栏高度" + statusBarHeight.value);
     let chooseDate = common_vendor.ref(todayFormat);
     let chooseItem = common_vendor.ref({});
     common_vendor.index.showLoading({
@@ -53,7 +53,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:166", res.data.data);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:167", res.data.data);
           originalNews.value = res.data.data;
           news.value = filterNews("全部");
           for (let [key, value] of Object.entries(news.value)) {
@@ -63,7 +63,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:178", err);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:179", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -71,7 +71,7 @@ const _sfc_main = {
         },
         complete: () => {
           scrollLeft.value = itemWidth * 7 - 5;
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:186", "left:" + scrollLeft.value);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:187", "left:" + scrollLeft.value);
           common_vendor.index.hideLoading();
         }
       });
@@ -108,7 +108,7 @@ const _sfc_main = {
       }
     };
     function selectDate(date, item) {
-      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:236", item);
+      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:237", item);
       chooseDate.value = date;
       chooseItem.value = item;
     }
@@ -133,7 +133,8 @@ const _sfc_main = {
         a: common_vendor.p({
           width: "560rpx"
         }),
-        b: common_vendor.f(tabList.value, (item, index, i0) => {
+        b: common_vendor.s("width:500rpx; margin:20rpx 20rpx 0rpx 20rpx"),
+        c: common_vendor.f(tabList.value, (item, index, i0) => {
           return {
             a: common_vendor.t(item),
             b: index,
@@ -141,7 +142,7 @@ const _sfc_main = {
             d: common_vendor.o(($event) => handleTabClick(item), index)
           };
         }),
-        c: common_vendor.f(common_vendor.unref(news), (item, date, i0) => {
+        d: common_vendor.f(common_vendor.unref(news), (item, date, i0) => {
           return common_vendor.e({
             a: item.goods_number > 0
           }, item.goods_number > 0 ? common_vendor.e({
@@ -171,14 +172,14 @@ const _sfc_main = {
             n: common_vendor.o(($event) => selectDate(date, item), item.id)
           });
         }),
-        d: common_vendor.unref(scrollLeft),
-        e: common_vendor.t(common_vendor.unref(chooseDate)),
-        f: common_vendor.t(common_vendor.unref(chooseItem).weekday),
-        g: common_vendor.unref(chooseItem).goods == null
+        e: common_vendor.unref(scrollLeft),
+        f: common_vendor.t(common_vendor.unref(chooseDate)),
+        g: common_vendor.t(common_vendor.unref(chooseItem).weekday),
+        h: common_vendor.unref(chooseItem).goods == null
       }, common_vendor.unref(chooseItem).goods == null ? {} : {}, {
-        h: common_vendor.unref(chooseItem).goods
+        i: common_vendor.unref(chooseItem).goods
       }, common_vendor.unref(chooseItem).goods ? {
-        i: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
+        j: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
           return common_vendor.e({
             a: good.goods_image,
             b: common_vendor.t(good.sale_type),
@@ -205,7 +206,7 @@ const _sfc_main = {
           });
         })
       } : {}, {
-        j: common_vendor.p({
+        k: common_vendor.p({
           head_color: "rgb(185 195 253)"
         })
       });

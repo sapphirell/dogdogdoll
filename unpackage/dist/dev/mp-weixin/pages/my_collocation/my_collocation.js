@@ -41,7 +41,10 @@ const _sfc_main = {
           page.value++;
         }
       } catch (error) {
-        common_vendor.index.showToast({ title: "加载失败", icon: "none" });
+        common_vendor.index.showToast({
+          title: "加载失败",
+          icon: "none"
+        });
       } finally {
         loading.value = false;
       }

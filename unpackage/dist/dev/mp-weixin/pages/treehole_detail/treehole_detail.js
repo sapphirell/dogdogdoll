@@ -38,8 +38,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:109", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:110", "target", target);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:110", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:111", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -48,7 +48,7 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:121", "item", item);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:122", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
@@ -65,7 +65,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:139", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:140", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -90,10 +90,10 @@ const _sfc_main = {
           if (res.data.status == "success") {
             const newComment = res.data.data;
             if (newComment.parent_id === 0) {
-              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:164", "添加主评论");
+              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:165", "添加主评论");
               (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
             } else {
-              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:168", "添加子评论");
+              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:169", "添加子评论");
               (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
             }
             common_vendor.index.showToast({
@@ -174,7 +174,7 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:262", res.data);
+          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:263", res.data);
           if (res.data.status == "success") {
             if (res.data.data.id > 0) {
               hasLiked.value = true;
@@ -190,7 +190,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:280", err);
+          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:281", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -233,7 +233,7 @@ const _sfc_main = {
     };
     common_vendor.onMounted(async () => {
       pageId.value = props.id;
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:346", "pageId", pageId.value);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:347", "pageId", pageId.value);
       try {
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/treehole-detail?id=${props.id}`
@@ -242,7 +242,7 @@ const _sfc_main = {
           detailData.value = res.data.data;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:357", error);
+        common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:358", error);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"

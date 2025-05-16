@@ -122,6 +122,40 @@
 		date.value = selectedDate;  // 存储原始日期
 		formattedDate.value = formatDate(selectedDate);
 	}
+	//handleDelete POST /delete-tail-bill
+	function handleDelete() {
+		uni.showModal({
+			title: '提示',
+			content: '确定删除该账单吗？',
+			success: (res) => {
+				if (res.confirm) {
+					uni.request({
+						url: websiteUrl + '/with-state/delete-tail-bill?id=' + parseInt(props.bill_id, 10),
+						method: 'POST',
+						header: { 'Authorization': uni.getStorageSync('token') },
+						success: (res) => {
+							if (res.data.status == "success") {
+								uni.showToast({
+									title: '删除成功',
+									icon: 'success'
+								});
+								setTimeout(() => {
+									uni.navigateBack();
+								}, 500);
+							} else {
+								uni.showToast({
+									title: res.data.msg,
+									icon: 'none'
+								});
+							}
+						}
+					});
+				}
+			}
+		});
+	}
+	
+	
 
 	function formatDate(dateStr) {
 		let date = new Date(dateStr);

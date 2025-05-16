@@ -7,7 +7,7 @@
     <!-- 页面内容区域 -->
     <view class="content-container">
       <!-- 这里放页面主要内容 -->
-      <scroll-view class="main-content" scroll-y>
+      <scroll-view class="main-content" scroll-y   @scroll="handleScroll">
         <slot></slot>
       </scroll-view>
     </view>
@@ -20,6 +20,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 
+
+const emit = defineEmits(['scroll'])
+
+const handleScroll = (e) => {
+  emit('scroll', e.detail) // 传递滚动事件
+}
 // 获取系统信息
 const systemInfo = uni.getSystemInfoSync()
 

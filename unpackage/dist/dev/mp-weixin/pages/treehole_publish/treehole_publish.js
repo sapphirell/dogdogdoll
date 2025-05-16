@@ -36,10 +36,10 @@ const _sfc_main = {
       title: "投稿树洞"
     });
     function selectImage() {
-      common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:107", "openSelect");
+      common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:108", "openSelect");
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:110", tokenData);
+          common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:111", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -47,7 +47,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:119", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:120", common_config.image1Url + tokenData.path);
             uploadList.value.push(common_config.image1Url + tokenData.path);
             common_vendor.index.showToast({
               title: "上传成功",
@@ -70,7 +70,7 @@ const _sfc_main = {
           }));
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:149", "获取分类失败:", err);
+        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:150", "获取分类失败:", err);
       }
     };
     function handleCategoryChange(e) {
@@ -141,7 +141,7 @@ const _sfc_main = {
         }
       } catch (err) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:235", "提交失败:", err);
+        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:236", "提交失败:", err);
         common_vendor.index.showToast({
           title: "网络请求失败",
           icon: "none"

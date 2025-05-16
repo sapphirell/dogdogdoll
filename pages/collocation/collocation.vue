@@ -18,9 +18,9 @@
 		<textarea v-model="content" placeholder="请输入正文" style="padding: 10px;margin:10px 15px 5px 15px;display: block;line-height: 28px;width: calc(100% - 50px);"></textarea>
 		<view class="oneLine"></view>
 		<view class="">
-			<view style="display: flex;padding: 10px 15px;position: relative;">
-				<common-name-picker style="width:650rpx" :dataList="typeList" placeholder="关联娃物" @select="handleTypeSelect"></common-name-picker>
-				<image src="../../static/right2.png" style="width: 20px; height: 20px;margin: 10px;position: absolute;right: 40rpx;" mode="aspectFill"></image>
+			<view class="relation-trigger"  @tap="showRelationPicker">
+			  <text class="placeholder">点击关联娃物</text>
+			  <image src="/static/right2.png" class="arrow-icon" />
 			</view>
 		</view>
 		
@@ -37,15 +37,13 @@
 			</view>
 		</view>
 
-
-		<common-modal v-model:visible="showSelectTab">
-			<view class="selectTab" style="border: 1px sold #b2b0b4;padding-top: 60rpx;">
-				<common-search mode="fill" @select="handleBrandSelect" width="calc(100vw - 120px)"></common-search>
-				<view style="height: 30rpx;"></view>
-				<custom-picker :dataList="goodsList" @select="handleGoodsSelect" margin="10px 0 0 0px"></custom-picker>
-				<button @tap="saveCollocation" style="margin-top: 20px;background-color: #fff;">确认</button>
-			</view>
-		</common-modal>
+		 <relation-picker
+		   v-model:visible="showSelectTab"
+		    :typeList="typeList"
+		    :goodsList="goodsList"
+		    @confirm="handleRelationConfirm"
+		    @cancel="handleRelationCancel"
+		  />
 
 
 		<view class="footer">
@@ -73,7 +71,8 @@
 		chooseImage,
 		jumpToCroper,
 		getQiniuToken,
-		uploadImageToQiniu
+		uploadImageToQiniu,
+		chooseImageList,
 	} from "../../common/image.js";
 	
 	//接受参数 propsGoodsId propsGoodsName propsBrandId propsBrandName如果是非空或非0，添加一条
@@ -91,6 +90,29 @@
 	const chooseGoodsName = ref("")
 	const chooseGoodsId = ref(0)
 	const chooseType = ref("")
+	
+	// 处理确认事件
+	const handleRelationConfirm = (selectedData) => {
+	  // 这里处理选择后的数据保存逻辑
+	  console.log('收到选择数据:', selectedData)
+	  // 将数据添加到 saveCollocationDataList
+	  saveCollocationDataList.value.push({
+		brand_id: selectedData.brand_id,
+		goods_id: selectedData.goods.id,
+		brand_name: selectedData.brand.name,
+		goods_name: selectedData.goods.name,
+		goods_image: selectedData.goods.image,
+		type: selectedData.type
+	  })
+	}
+	// 处理取消事件
+	const handleRelationCancel = () => {
+	  console.log('用户取消选择')
+	}
+	
+	const showRelationPicker = () => {
+	  showSelectTab.value = true;
+	}
 	
 	//获取商品详情
 	function getGoodsInfo(id) {
@@ -148,32 +170,30 @@
 		});
 	}
 
+
 	//选择图片
-	function selectImage() {
-		console.log("openSelect")
-		chooseImage().then((res) => {
-			getQiniuToken().then((tokenData) => {
-				console.log(tokenData)
-
-				uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
-					if (uploadRes.statusCode != 200) {
-						uni.showToast({
-							title: '上传失败',
-							icon: 'none'
-						})
-					}
-					console.log(image1Url + tokenData.path)
-					//image1Url + tokenData.path;
-					uploadList.value.push(image1Url + tokenData.path);
-
-					uni.showToast({
-						title: '上传成功',
-						icon: 'success'
-					})
-
-				}) //uploadImageToQiniu
-			}) //getQiniuToken
-		}) //chooseImage
+	async function selectImage() {
+	  try {
+	    // 选择多张图片
+	    const imagePaths = await chooseImageList(9);
+	    
+	    // 逐个上传
+	    for (const path of imagePaths) {
+	      // 为每个图片获取独立token
+	      const tokenData = await getQiniuToken();
+	      
+	      // 上传到七牛云
+	      await uploadImageToQiniu(path, tokenData.token, tokenData.path);
+	      
+	      // 添加到展示列表
+	      uploadList.value.push(image1Url + tokenData.path);
+	    }
+	    
+	    uni.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: 'success' });
+	  } catch (error) {
+	    console.error('上传出错:', error);
+	    uni.showToast({ title: '部分图片上传失败', icon: 'none' });
+	  }
 	}
 	
 	function addRelated() {}
@@ -191,9 +211,9 @@
 			return;
 		}
 		// 基本验证
-		if (!title.value.trim() || !content.value.trim()) {
+		if (!title.value.trim()) {
 			uni.showToast({
-				title: '标题和正文不能为空',
+				title: '标题不能为空',
 				icon: 'none'
 			});
 			return;
@@ -265,31 +285,7 @@
 
 	}
 
-	// 父组件处理选择事件
-	function handleBrandSelect(brandId, brandName) {
-		console.log('收到品牌ID:', brandId);
-		console.log('收到品牌Name:', brandName);
-		chooseBrandId.value = parseInt(brandId, 10)
-		chooseBrandName.value = brandName
-		// 可以在此处更新表单数据等操作
-		getGoods(brandId)
-	};
 
-	// Goods选择事件
-	function handleGoodsSelect(id, name) {
-		console.log('选中的 id:', id);
-		console.log('选中的 name:', name);
-		chooseGoodsId.value = parseInt(id, 10)
-		chooseGoodsName.value = name
-	}
-	// Type选择事件
-	function handleTypeSelect(value) {
-
-		console.log('选中的值:', value)
-		chooseType.value = value
-		//显示弹窗
-		showSelectTab.value = true
-	}
 	// 获取goods列表
 	function getGoods(id) {
 		// 请求 /goods-name-list 并赋值goodsList
@@ -514,5 +510,26 @@
 		width: calc(100vw - 50px);
 		margin: 0px 25px;
 		box-sizing: border-box;
+	}
+	
+	// 关联娃物
+	.relation-trigger {
+	  display: flex;
+	  align-items: center;
+	  padding: 20rpx 30rpx;
+	  background: #f8f8f8;
+	  border-radius: 12rpx;
+	  margin: 20rpx;
+	  
+	  .placeholder {
+	    flex: 1;
+	    color: #999;
+	    font-size: 28rpx;
+	  }
+	  
+	  .arrow-icon {
+	    width: 30rpx;
+	    height: 30rpx;
+	  }
 	}
 </style>
