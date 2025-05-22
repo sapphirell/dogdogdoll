@@ -20,13 +20,19 @@
 
 			<!-- 名称 -->
 			<view class="form-item">
-				<text class="form-label">名称</text>
-				<input 
-					class="form-input" 
-					type="text" 
-					placeholder="请输入名称"
-					placeholder-class="placeholder-style"
-					v-model="name" />
+			  <text class="form-label">名称</text>
+			  <view class="form-input" style="padding: 0;">
+				<goods-search 
+				:font-size="'24rpx'"
+				  mode="fill" 
+				  @select="handleGoodsSelect" 
+				  v-model="name"
+				  :background="'#fff'" 
+				  :width="'640rpx'"
+				  :show-icon="false"
+				  class="custom-search"
+				/>
+			  </view>
 			</view>
 
 			<!-- 价值 -->
@@ -141,6 +147,7 @@
 	const accountImage = ref("");
 
 
+
 	// 切换账本选择类型
 	function updateSelectedType(e) {
 		selectedType.value = e.detail.value
@@ -171,6 +178,35 @@
 			}
 		});
 	}
+	
+	// 在script中添加商品选择处理
+	const handleGoodsSelect = async (goods) => {
+	  try {
+	    const res = await uni.request({
+	      url: websiteUrl + `/goods?id=${goods.id}`,
+	      method: 'GET'
+	    });
+	    
+	    if (res.data.status === "success") {
+	      const detail = res.data.data;
+	      // 自动填充信息
+	      name.value = detail.name;
+	      price.value = detail.fin_amount + detail.sub_amount;
+	      if (detail.goods_images?.[0]) {
+	        accountImage.value = detail.goods_images[0];
+	      }
+		  
+	    }
+	  } catch (error) {
+	    console.error('获取商品详情失败:', error);
+	    uni.showToast({
+	      title: '获取商品信息失败',
+	      icon: 'none'
+	    });
+	  }
+	};
+
+	
 	// 删除账本 /delete-account-book
 	function handleDelete() {
 		uni.showModal({
@@ -487,5 +523,21 @@
 			transform: translateY(2rpx);
 			box-shadow: 0 4rpx 12rpx rgba(255,77,79,0.3);
 		}
+	}
+	
+	.form-input {
+	  // 原有样式保持不变
+	  // padding: 0 !important;  // 移除内边距让搜索组件填满
+	  
+	  .custom-search {
+	    border: none !important; // 移除组件自身边框
+	    height: 80rpx;
+	    
+	    .search_tab {
+	      border: 2rpx solid $border-color;
+	      border-radius: $radius;
+	      height: 100%;
+	    }
+	  }
 	}
 </style>

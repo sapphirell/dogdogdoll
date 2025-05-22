@@ -29,6 +29,8 @@
   border-radius: 12rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
   max-height: 60vh;
+  position: absolute;
+  z-index: 10;
 }
 .search_results .result_item {
   display: flex;

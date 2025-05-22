@@ -3,6 +3,14 @@ const common_vendor = require("../../../common/vendor.js");
 const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
 const common_image = require("../../../common/image.js");
+if (!Array) {
+  const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
+  _easycom_goods_search2();
+}
+const _easycom_goods_search = () => "../../../components/goods-search/goods-search.js";
+if (!Math) {
+  _easycom_goods_search();
+}
 const _sfc_main = {
   __name: "account_book_form",
   props: ["account_book_id"],
@@ -33,17 +41,40 @@ const _sfc_main = {
           id
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:163", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:170", res.data.data);
           name.value = res.data.data.name;
           price.value = res.data.data.price;
           selectedType.value = accountBookTypeList.value.indexOf(res.data.data.type);
           accountImage.value = res.data.data.image_url;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:170", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:177", err);
         }
       });
     }
+    const handleGoodsSelect = async (goods) => {
+      var _a;
+      try {
+        const res = await common_vendor.index.request({
+          url: common_config.websiteUrl + `/goods?id=${goods.id}`,
+          method: "GET"
+        });
+        if (res.data.status === "success") {
+          const detail = res.data.data;
+          name.value = detail.name;
+          price.value = detail.fin_amount + detail.sub_amount;
+          if ((_a = detail.goods_images) == null ? void 0 : _a[0]) {
+            accountImage.value = detail.goods_images[0];
+          }
+        }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:201", "获取商品详情失败:", error);
+        common_vendor.index.showToast({
+          title: "获取商品信息失败",
+          icon: "none"
+        });
+      }
+    };
     function handleDelete() {
       common_vendor.index.showModal({
         title: "提示",
@@ -57,7 +88,7 @@ const _sfc_main = {
                 "Authorization": common_vendor.index.getStorageSync("token")
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:188", res2.data);
+                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:224", res2.data);
                 if (res2.data.status == "success") {
                   common_vendor.index.showToast({
                     title: "删除成功",
@@ -81,7 +112,7 @@ const _sfc_main = {
     function selectImage() {
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:215", tokenData);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:251", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -89,7 +120,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:224", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:260", common_config.image1Url + tokenData.path);
             accountImage.value = common_config.image1Url + tokenData.path;
             common_vendor.index.showToast({
               title: "上传成功",
@@ -125,7 +156,7 @@ const _sfc_main = {
         type: accountBookTypeList.value[selectedType.value],
         image_url: accountImage.value
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:274", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:310", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -134,7 +165,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:284", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:320", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -168,7 +199,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:322", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:358", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -192,23 +223,31 @@ const _sfc_main = {
         b: selectedType.value,
         c: accountBookTypeList.value,
         d: common_vendor.o(updateSelectedType),
-        e: common_vendor.unref(name),
-        f: common_vendor.o(($event) => common_vendor.isRef(name) ? name.value = $event.detail.value : name = $event.detail.value),
-        g: common_vendor.unref(price),
-        h: common_vendor.o(($event) => common_vendor.isRef(price) ? price.value = $event.detail.value : price = $event.detail.value),
-        i: accountImage.value
-      }, accountImage.value ? {
+        e: common_vendor.o(handleGoodsSelect),
+        f: common_vendor.o(($event) => common_vendor.isRef(name) ? name.value = $event : name = $event),
+        g: common_vendor.p({
+          ["font-size"]: "24rpx",
+          mode: "fill",
+          background: "#fff",
+          width: "640rpx",
+          ["show-icon"]: false,
+          modelValue: common_vendor.unref(name)
+        }),
+        h: common_vendor.unref(price),
+        i: common_vendor.o(($event) => common_vendor.isRef(price) ? price.value = $event.detail.value : price = $event.detail.value),
         j: accountImage.value
+      }, accountImage.value ? {
+        k: accountImage.value
       } : {
-        k: common_vendor.o(selectImage)
+        l: common_vendor.o(selectImage)
       }, {
-        l: common_assets._imports_0$4,
-        m: common_vendor.unref(isEdit)
+        m: common_assets._imports_0$4,
+        n: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        n: common_vendor.o(handleDelete)
+        o: common_vendor.o(handleDelete)
       } : {}, {
-        o: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
-        p: common_vendor.o(postSubmit)
+        p: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        q: common_vendor.o(postSubmit)
       });
     };
   }

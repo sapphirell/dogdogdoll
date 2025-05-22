@@ -8,21 +8,20 @@
 		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
-		align-items: center;
 		z-index: 999;
-		pointer-events: auto;
-		/* 关键属性 */
 }
 .modal-container.data-v-d7656854 {
+		position: absolute;
 		background-color: #fff;
 		border-radius: 8px;
-		width: 80%;
-		max-width: 600px;
 		padding: 20px;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
-		pointer-events: auto;
-		position: absolute;
-		top: 20%;
-		/* 确保弹窗内容可交互 */
-		padding-top: 0rpx;
+		min-width: 200px;
+		min-height: 100px;
+		max-width: 100vw;
+		left: 50%;
+		transform: translateX(-50%);
+}
+.modal-content.data-v-d7656854 {
+		position: relative;
 }

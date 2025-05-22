@@ -5,6 +5,10 @@ const common_config = require("../../common/config.js");
 const _sfc_main = {
   __name: "goods-search",
   props: {
+    modelValue: {
+      type: String,
+      default: ""
+    },
     width: {
       type: String,
       default: "100%"
@@ -26,28 +30,37 @@ const _sfc_main = {
       type: String,
       default: "jump",
       validator: (value) => ["jump", "fill"].includes(value)
+    },
+    hiddenIcon: {
+      type: Boolean,
+      default: true
     }
   },
-  emits: ["select"],
+  emits: ["select", "update:modelValue"],
   setup(__props, { emit: __emit }) {
     const props = __props;
     const emit = __emit;
-    const searchTerm = common_vendor.ref("");
     const results = common_vendor.ref([]);
-    const onSearchInput = async () => {
+    const inputValue = common_vendor.computed({
+      get: () => props.modelValue,
+      set: (val) => emit("update:modelValue", val)
+    });
+    const onSearchInput = async (e) => {
       var _a;
-      if (!searchTerm.value.trim()) {
+      inputValue.value = e.detail.value;
+      const searchValue = e.detail.value.trim();
+      if (!searchValue) {
         results.value = [];
         return;
       }
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + `/search-goods?search=${encodeURIComponent(searchTerm.value)}`,
+          url: common_config.websiteUrl + `/search-goods?search=${encodeURIComponent(searchValue)}`,
           method: "GET"
         });
         results.value = ((_a = res.data) == null ? void 0 : _a.status) === "success" ? res.data.data || [] : [];
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:85", "搜索失败:", error);
+        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:89", "搜索失败:", error);
         results.value = [];
       }
     };
@@ -56,32 +69,35 @@ const _sfc_main = {
         common_vendor.index.navigateTo({
           url: `/pages/goods/goods?goods_id=${goods.id}`
         });
-      } else if (props.mode === "fill") {
+      }
+      if (props.mode === "fill") {
         emit("select", goods);
-        searchTerm.value = "";
+        inputValue.value = goods.name;
         results.value = [];
       }
     };
     const cancel = () => {
-      searchTerm.value = "";
       results.value = [];
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_assets._imports_0$6,
-        b: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
-        c: __props.fontSize || "22rpx",
-        d: searchTerm.value,
-        e: results.value.length > 0
-      }, results.value.length > 0 ? {
-        f: common_assets._imports_1$6,
-        g: common_vendor.o(cancel)
+        a: !__props.hiddenIcon
+      }, !__props.hiddenIcon ? {
+        b: common_assets._imports_0$6
       } : {}, {
-        h: common_vendor.n(_ctx.$attrs.class),
-        i: __props.background || "#fff",
-        j: results.value.length > 0
+        c: inputValue.value,
+        d: common_vendor.o(onSearchInput),
+        e: __props.fontSize || "22rpx",
+        f: results.value.length > 0
       }, results.value.length > 0 ? {
-        k: common_vendor.f(results.value, (item, k0, i0) => {
+        g: common_assets._imports_1$6,
+        h: common_vendor.o(cancel)
+      } : {}, {
+        i: common_vendor.n(_ctx.$attrs.class),
+        j: __props.background || "#fff",
+        k: results.value.length > 0
+      }, results.value.length > 0 ? {
+        l: common_vendor.f(results.value, (item, k0, i0) => {
           return common_vendor.e({
             a: item.brand_name
           }, item.brand_name ? {
@@ -92,7 +108,7 @@ const _sfc_main = {
             e: common_vendor.o(($event) => onTap(item), item.id)
           });
         }),
-        l: __props.width
+        m: __props.width
       } : {});
     };
   }

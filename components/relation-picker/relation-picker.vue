@@ -131,7 +131,7 @@
 			selectedData.value.goods = {
 				id: goodsId,
 				name: goodsName,
-				image: detail.goods_images?.[0] || ''
+				image: detail?.goods_images?.[0] || ''
 			}
 		} catch (error) {
 			console.error('商品选择失败', error)
@@ -169,7 +169,7 @@
 			// 构建完整数据对象
 			const resultData = {
 				...selectedData.value,
-				goods_image: goodsDetail.goods_images?.[0] || '',
+				goods_image: goodsDetail?.goods_images?.[0] || '',
 				goods_id: selectedData.value.goods.id,
 				brand_id: selectedData.value.brand.id,
 				brand_name: selectedData.value.brand.name,
@@ -179,6 +179,7 @@
 			emit('confirm', resultData)
 			closePicker()
 		} catch (error) {
+			console.error('商品信息获取失败', error)
 			uni.showToast({
 				title: '商品信息获取失败',
 				icon: 'none'

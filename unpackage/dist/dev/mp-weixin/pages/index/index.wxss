@@ -228,6 +228,17 @@
   border-radius: 10rpx;
   overflow: hidden;
   height: 250rpx;
+  position: relative;
+}
+.banner_swiper.data-v-1cf27b2a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60rpx;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.2));
+  z-index: 1;
 }
 .banner_swiper .banner_swiper_item.data-v-1cf27b2a {
   background: #fff;

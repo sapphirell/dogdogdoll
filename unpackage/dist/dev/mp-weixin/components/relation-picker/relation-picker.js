@@ -91,7 +91,7 @@ const _sfc_main = {
         selectedData.value.goods = {
           id: goodsId,
           name: goodsName,
-          image: ((_a = detail.goods_images) == null ? void 0 : _a[0]) || ""
+          image: ((_a = detail == null ? void 0 : detail.goods_images) == null ? void 0 : _a[0]) || ""
         };
       } catch (error) {
         common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:137", "商品选择失败", error);
@@ -122,7 +122,7 @@ const _sfc_main = {
         const goodsDetail = await getGoodsInfo(selectedData.value.goods.id);
         const resultData = {
           ...selectedData.value,
-          goods_image: ((_a = goodsDetail.goods_images) == null ? void 0 : _a[0]) || "",
+          goods_image: ((_a = goodsDetail == null ? void 0 : goodsDetail.goods_images) == null ? void 0 : _a[0]) || "",
           goods_id: selectedData.value.goods.id,
           brand_id: selectedData.value.brand.id,
           brand_name: selectedData.value.brand.name,
@@ -131,6 +131,7 @@ const _sfc_main = {
         emit("confirm", resultData);
         closePicker();
       } catch (error) {
+        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:182", "商品信息获取失败", error);
         common_vendor.index.showToast({
           title: "商品信息获取失败",
           icon: "none"

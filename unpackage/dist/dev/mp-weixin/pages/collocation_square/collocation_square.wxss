@@ -96,7 +96,7 @@ text.data-v-e981f8ca {
 .card-list .card .card-content .title.data-v-e981f8ca {
   font-size: 26rpx;
   font-weight: 500;
-  color: #333;
+  color: #515151;
   margin-bottom: 16rpx;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -133,6 +133,47 @@ text.data-v-e981f8ca {
   display: inline-block;
   white-space: nowrap;
   overflow: hidden;
+}
+.card-list .card .user-info.data-v-e981f8ca {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx 0;
+  margin-bottom: 16rpx;
+}
+.card-list .card .user-info .avatar.data-v-e981f8ca {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+}
+.card-list .card .user-info .user-meta.data-v-e981f8ca {
+  flex: 1;
+}
+.card-list .card .user-info .user-meta .username.data-v-e981f8ca {
+  font-size: 24rpx;
+  color: #515151;
+  display: block;
+  max-width: 150rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-list .card .user-info .user-meta .like-count.data-v-e981f8ca {
+  font-size: 20rpx;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+.card-list .card .user-info .user-meta .like-count .icon.data-v-e981f8ca {
+  color: #ff4c4c;
+  margin-right: 8rpx;
+}
+.card-list .card .card-image.data-v-e981f8ca {
+  height: 360rpx;
+  width: calc(100% - 40rpx);
+  overflow: hidden;
+  border-radius: 15rpx;
+  margin: 0 20rpx;
 }
 .modal-container.data-v-e981f8ca {
   padding-top: 0rpx;
@@ -171,6 +212,18 @@ text.data-v-e981f8ca {
   padding: 40rpx;
   background: white;
   border-radius: 24rpx;
+  position: relative;
+  z-index: 1001;
+  /* 添加遮罩层样式 */
+}
+.filter-modal .modal-mask.data-v-e981f8ca {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
 }
 .filter-modal .modal-header.data-v-e981f8ca {
   display: flex;

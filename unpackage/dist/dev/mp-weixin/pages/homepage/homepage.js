@@ -61,5 +61,6 @@ const _sfc_main = {
     };
   }
 };
+_sfc_main.__runtimeHooks = 2;
 wx.createPage(_sfc_main);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/homepage/homepage.js.map

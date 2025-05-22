@@ -146,3 +146,12 @@
   transform: translateY(2rpx);
   box-shadow: 0 4rpx 12rpx rgba(255, 77, 79, 0.3);
 }
+.form-input .custom-search.data-v-0299c5b6 {
+  border: none !important;
+  height: 80rpx;
+}
+.form-input .custom-search .search_tab.data-v-0299c5b6 {
+  border: 2rpx solid #e6e6e6;
+  border-radius: 8px;
+  height: 100%;
+}

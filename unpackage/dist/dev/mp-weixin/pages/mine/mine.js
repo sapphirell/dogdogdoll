@@ -328,7 +328,7 @@ const _sfc_main = {
         r: common_assets._imports_5$1,
         s: common_assets._imports_0$3,
         t: common_vendor.o(jumpSetting),
-        v: common_assets._imports_6,
+        v: common_assets._imports_6$1,
         w: common_assets._imports_0$3,
         x: common_vendor.o(logout)
       } : {

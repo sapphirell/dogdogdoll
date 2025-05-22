@@ -34,6 +34,10 @@ const _sfc_main = {
       6: {
         name: "展示柜",
         class: "collocation"
+      },
+      7: {
+        name: "文章",
+        class: "collocation"
       }
     };
     common_vendor.onMounted(() => {

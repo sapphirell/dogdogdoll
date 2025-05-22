@@ -11,7 +11,6 @@
 					<view style="display: inline-block;">
 						<text class="font-alimamashuhei logo"
 							style="color: #4cbbd0;width: 250rpx;padding-top: 10rpx; vertical-align: top;position: relative;">娃圈狗狗助手</text>
-						<!-- <text style="display: inline-block;font-size: 20rpx;font-weight: 1000;color: #888;">新鲜事早知道</text> -->
 					</view>
 
 				</view>
@@ -22,14 +21,23 @@
 				</view>
 				<view style="position: relative;height: 250rpx;">
 					<!-- 轮播图部分 -->
-					<swiper :interval="3000" :duration="200" @change="onChange" class="banner_swiper">
-						<block v-for="(item) in data" :key="item">
-							<swiper-item class="banner_swiper_item">
-								<view class="swiper-item">
-									<image :src="item" mode="aspectFill" style="width: 100%;"></image>
-								</view>
-							</swiper-item>
-						</block>
+					<swiper :interval="3000" :duration="200" class="banner_swiper" indicator-active-color="#4cbbd0"
+						indicator-color="rgba(255,255,255,0.5)">
+						<swiper-item v-for="item in data" :key="item.id" class="banner_swiper_item">
+							<!-- <view>{{item}}</view> -->
+							<view class="swiper-item">
+								<image :src="item.banner" mode="aspectFill" style="width: 100%;height: 250rpx;"
+									@click="handleBannerClick(item)" />
+							</view>
+						</swiper-item>
+
+						<!-- 空状态 -->
+						<swiper-item v-if="data.length === 0">
+							<view class="empty-banner">
+								<image src="/static/default-banner.jpg" mode="aspectFill"
+									style="width: 100%;height: 250rpx;" />
+							</view>
+						</swiper-item>
 					</swiper>
 
 
@@ -103,10 +111,8 @@
 							</view>
 						</view>
 						<view class="brand_type_description" style="display: block;width: 100%;">
-							<text
-								v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
-							<text
-								v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
+							<text v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
+							<text v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
 							<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
 						</view>
 						<view v-for="(item, index) in brandsList" :key="item.id">
@@ -250,12 +256,7 @@
 	//轮播图组件
 	import sdp from '@/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue';
 	let brandsList = ref([]);
-	let data = ref([
-		'https://images1.fantuanpu.com/spd/log/2025_04_21/234a245d0f8963b1b9b022efe3653cfb.jpg',
-		'https://images1.fantuanpu.com/box/100024/16524d8c1583feacbeebc37d37ee02a4',
-		'https://images1.fantuanpu.com/spd/log/2025_04_21/d34dfe99334e9f5a82a9f63708fcfefe.jpg',
-		'https://images1.fantuanpu.com/box/100024/16524d8c1583feacbeebc37d37ee02a4',
-	])
+	let data = ref({})
 
 	// 筛选相关代码
 	const tabs = ref([{
@@ -340,9 +341,37 @@
 		})
 	}
 
+	const handleBannerClick = (item) => {
+		// console.log(item)
+		uni.navigateTo({
+			url: `/pages/article_detail/article_detail?id=${item.id}`
+		})
+	}
+
 	function jump2saleNews(item) {
 		uni.navigateTo({
 			url: "/pages/sale_news/sale_news?id=" + item.id + "&brand_id=" + item.brand_id
+		})
+	}
+	// 新增获取文章列表方法
+	const getArticles = () => {
+		uni.request({
+			url: websiteUrl + '/articles',
+			data: {
+				page: 1,
+				page_size: 10,
+				status: 1 // 只获取已发布文章
+			},
+			success: (res) => {
+				if (res.data.status === 'success') {
+					// 过滤有效banner并更新数据
+					data.value = res.data.data.list
+				}
+			},
+			fail: (err) => {
+				console.error('获取Banner失败:', err)
+				data.value = {}
+			}
 		})
 	}
 
@@ -641,6 +670,8 @@
 		getHotCollocations()
 		//加载树洞
 		getTreeholeList()
+		//获取轮播图
+		getArticles()
 	})
 
 
@@ -909,6 +940,19 @@
 		border-radius: 10rpx;
 		overflow: hidden;
 		height: 250rpx;
+		position: relative;
+
+
+		&::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 60rpx;
+			background: linear-gradient(transparent, rgba(0, 0, 0, 0.2));
+			z-index: 1;
+		}
 
 		.banner_swiper_item {
 			background: #fff;
@@ -1285,49 +1329,49 @@
 			padding: 10rpx 30rpx;
 		}
 	}
-	
-	
+
+
 	.brand_type_description {
-	    background: rgba(76, 187, 208, 0.05);
-	    border-radius: 12rpx;
-	    padding: 24rpx;
-	    margin: 20rpx 0;
-	    position: relative;
-	    overflow: hidden;
-	    
-	    &::before {
-	        content: "";
-	        position: absolute;
-	        left: 0;
-	        top: 50%;
-	        transform: translateY(-50%);
-	        width: 4rpx;
-	        height: 70%;
-	        background: #4cbbd0;
-	        border-radius: 4rpx;
-	    }
-	
-	    text {
-	        font-size: 24rpx;
-	        color: #7f8c8d;
-	        line-height: 1.6;
-	        display: block;
-	        padding-left: 16rpx;
-	        position: relative;
-	        text-align: justify;
-	        
-	        &::after {
-	            content: " 🐻 ";
-	            color: rgba(76, 187, 208, 0.2);
-	            position: absolute;
-	            font-size: 40rpx;
-	            right: -10rpx;
-	            bottom: -20rpx;
-	            transform: rotate(15deg);
-	        }
-	    }
-	
-	   
-	    
+		background: rgba(76, 187, 208, 0.05);
+		border-radius: 12rpx;
+		padding: 24rpx;
+		margin: 20rpx 0;
+		position: relative;
+		overflow: hidden;
+
+		&::before {
+			content: "";
+			position: absolute;
+			left: 0;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 4rpx;
+			height: 70%;
+			background: #4cbbd0;
+			border-radius: 4rpx;
+		}
+
+		text {
+			font-size: 24rpx;
+			color: #7f8c8d;
+			line-height: 1.6;
+			display: block;
+			padding-left: 16rpx;
+			position: relative;
+			text-align: justify;
+
+			&::after {
+				content: " 🐻 ";
+				color: rgba(76, 187, 208, 0.2);
+				position: absolute;
+				font-size: 40rpx;
+				right: -10rpx;
+				bottom: -20rpx;
+				transform: rotate(15deg);
+			}
+		}
+
+
+
 	}
 </style>

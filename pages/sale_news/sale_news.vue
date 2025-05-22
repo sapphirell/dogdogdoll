@@ -142,6 +142,20 @@
 			url: '/pages/brand/brand?brand_id=' + id
 		})
 	}
+	
+	const onShareAppMessage = () => ({
+		title: 'BJD娃圈你想知道的这里都有~',
+		path: '/pages/news/news',
+		success(res) {
+			console.log('分享成功', res)
+		},
+		fail(err) {
+			console.log('分享失败', err)
+		},
+		mp: {
+			wxpath: '/pages/index/index.html'
+		}
+	})
 
 	//跳转到用户页面
 	const jump2user = (uid) => {

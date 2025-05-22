@@ -184,7 +184,9 @@
 
 	// 获取系统信息
 	const systemInfo = uni.getSystemInfoSync()
-
+	const loading = ref(false)       // 加载状态
+	const error = ref(false)         // 错误状态
+	const errorMsg = ref('')         // 错误信息
 	
 	// 回复
 	const commentListRef = ref(null)  // 必须与模板中的ref名称一致
@@ -250,7 +252,7 @@
 		const requestData = {
 			content,
 			origin,
-			target_id: parseInt(pageId.value),
+			target_id: parseInt(props.goods_id),
 			type: 2,
 			...(replyInfo.id && {
 				reply_id: replyInfo.id,
@@ -298,6 +300,21 @@
 			}
 		});
 	}
+	
+	
+	const onShareAppMessage = () => ({
+		title: 'BJD娃圈你想知道的这里都有~',
+		path: '/pages/news/news',
+		success(res) {
+			console.log('分享成功', res)
+		},
+		fail(err) {
+			console.log('分享失败', err)
+		},
+		mp: {
+			wxpath: '/pages/index/index.html'
+		}
+	})
 	
 
 	// 图片加载完成回调

@@ -84,6 +84,10 @@
 			name: '展示柜',
 			class: 'collocation'
 		},
+		7: {
+			name: '文章',
+			class: 'collocation'
+		}
 	}
 
 	// 生命周期

@@ -25,7 +25,19 @@
 					<view v-for="(item, index) in collocationList" :key="item.collocation_id" class="card"
 						:id="'card-' + index" :style="cardStyle(index)"
 						@tap="jump2collectionDetail(item.collocation_id, item.origin )">
-						<image :src="item.image_urls[0]" mode="aspectFill" class="card-image" lazy-load />
+						
+						  <view class="user-info" @tap.stop="jumpToUserPage(item.uid)">
+						    <image :src="item.avatar || '/default_avatar.jpg'" class="avatar" mode="aspectFill" />
+						    <view class="user-meta">
+						      <text class="username">{{ getUserName(item.username) }}</text>
+						      <view class="like-count">
+						        <uni-icons type="hand-up" size="18" color="#5f85a3"></uni-icons>
+						        <text style="margin: 0 5rpx;color: #5f85a3;"> {{ item.like_count }}</text>
+						      </view>
+						    </view>
+						  </view>
+						  
+						<image v-if="item.image_urls?.length > 0" :src="item.image_urls[0]" mode="aspectFill" class="card-image" lazy-load />
 						<view class="card-content">
 							<text class="title">{{ item.title }}</text>
 							<text class="desc">{{ item.content }}</text>
@@ -49,15 +61,16 @@
 			</scroll-view>
 
 			<!-- 筛选弹窗 -->
-			<common-modal v-model:visible="showFilterModal">
+			<common-modal v-model:visible="showFilterModal" top="0" width="100%" height="100%">
+				<view class="modal-mask" @tap.stop="closeFilter"></view>
 				<view class="filter-modal">
-					<view class="modal-header">
+					<view class="modal-header" :style="miniProgram ? 'margin-top:60rpx' : 'margin-top:0rpx'">
 						<text class="title">筛选看想要的娃物搭配吧！</text>
 						<text class="close" @tap="closeFilter">×</text>
 					</view>
 
 					<!-- 商品搜索组件 -->
-					<goods-search mode="fill" @select="handleGoodsSelect" :background="'#f8f8f8'" :width="'90%'" />
+					<goods-search mode="fill" @select="handleGoodsSelect" :background="'#f8f8f8'" :width="'100%'" />
 
 					<!-- 已选商品展示 -->
 					<view class="selected-goods">
@@ -340,6 +353,20 @@
 		// await nextTick(); 
 
 	};
+	
+	const onShareAppMessage = () => ({
+		title: 'BJD娃圈你想知道的这里都有~',
+		path: '/pages/news/news',
+		success(res) {
+			console.log('分享成功', res)
+		},
+		fail(err) {
+			console.log('分享失败', err)
+		},
+		mp: {
+			wxpath: '/pages/index/index.html'
+		}
+	})
 
 	// 应用筛选
 	const applyFilter = async () => {
@@ -396,6 +423,19 @@
 			url: `/pages/collocation_share/collocation_share?collocation_id=${item.collocation_id}&origin=${item.origin}`
 		})
 	}
+	
+	const jumpToUserPage = (uid) => {
+	  uni.navigateTo({
+	    url: `/pages/user_page/user_page?uid=${uid}`
+	  })
+	}
+	
+	// 临时用户名缓存（实际应通过接口获取）
+	const getUserName = (name) => {
+	  // 这里可以替换为真实的用户名获取逻辑
+	  return name.length > 10 ? `${name.toString().slice(-8)}...` : name
+	}
+	
 
 	// 初始化加载
 	onMounted(fetchCollocations)
@@ -494,7 +534,7 @@
 				.title {
 					font-size: 26rpx;
 					font-weight: 500;
-					color: #333;
+					color: #515151;
 					margin-bottom: 16rpx;
 					display: -webkit-box;
 					-webkit-box-orient: vertical;
@@ -540,6 +580,54 @@
 
 				}
 			}
+			// 用户信息
+			.user-info {
+			    display: flex;
+			    align-items: center;
+			    padding: 20rpx 24rpx 0;
+			    margin-bottom: 16rpx;
+			    
+			    .avatar {
+			      width: 64rpx;
+			      height: 64rpx;
+			      border-radius: 50%;
+			      margin-right: 16rpx;
+			    }
+			    
+			    .user-meta {
+			      flex: 1;
+			      
+			      .username {
+			        font-size: 24rpx;
+			        color: #515151;
+			        display: block;
+			        max-width: 150rpx;
+			        overflow: hidden;
+			        text-overflow: ellipsis;
+			        white-space: nowrap;
+			      }
+			      
+			      .like-count {
+			        font-size: 20rpx;
+			        color: #666;
+			        display: flex;
+			        align-items: center;
+			        
+			        .icon {
+			          color: #ff4c4c;
+			          margin-right: 8rpx;
+			        }
+			      }
+			    }
+			  }
+			  
+			  .card-image {
+			    height: 360rpx; // 调整图片高度
+				width: calc(100% - 40rpx);
+				overflow: hidden;
+				border-radius: 15rpx;
+				margin: 0 20rpx ;
+			  }
 		}
 	}
 
@@ -588,6 +676,20 @@
 		padding: 40rpx;
 		background: white;
 		border-radius: 24rpx;
+		  position: relative;
+		  z-index: 1001;
+		  
+		  /* 添加遮罩层样式 */
+		  .modal-mask {
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    right: 0;
+		    bottom: 0;
+		    background: rgba(0, 0, 0, 0.5);
+		    z-index: 1000;
+		  }
+
 
 		.modal-header {
 			display: flex;
@@ -595,6 +697,7 @@
 			align-items: center;
 			margin-bottom: 40rpx;
 			padding-left: 20rpx;
+		
 
 			.title {
 				font-size: 28rpx;

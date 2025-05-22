@@ -301,7 +301,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:480", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:494", "reply_info", replyInfo);
       const requestData = {
         content,
         origin: origin2,
@@ -360,7 +360,7 @@ const _sfc_main = {
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
     common_vendor.onShow(() => {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:554", "注册键盘弹出事件");
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:568", "注册键盘弹出事件");
       common_vendor.index.onKeyboardHeightChange(keyboardHeightChangeHandler);
     });
     common_vendor.onLoad((options) => {
@@ -379,11 +379,11 @@ const _sfc_main = {
         origin.value = options.origin;
         fetchData(options.collocation_id, options.origin);
         common_config.asyncGetUserInfo().then((userInfo) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:577", userInfo);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:591", userInfo);
           getHasLike(options.collocation_id);
         });
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:583", "onLoad Error:", err);
+        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:597", "onLoad Error:", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -471,5 +471,6 @@ const _sfc_main = {
   }
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-38d96b75"]]);
+_sfc_main.__runtimeHooks = 2;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/collocation_share/collocation_share.js.map

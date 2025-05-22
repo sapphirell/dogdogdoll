@@ -134,7 +134,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:241", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:255", res.data.data);
           brand.value = res.data.data;
           common_vendor.index.setNavigationBarTitle({
             title: res.data.data.brand_name
@@ -142,7 +142,7 @@ const _sfc_main = {
           getHasLikeBrand();
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:251", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:265", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -179,7 +179,7 @@ const _sfc_main = {
           common_vendor.index.showToast({ title: res.data.msg, icon: "none" });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:292", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:306", err);
         common_vendor.index.showToast({ title: "操作失败", icon: "none" });
       }
     };
@@ -193,7 +193,7 @@ const _sfc_main = {
         });
         hasLikeBrand.value = ((_a = res.data.data) == null ? void 0 : _a.id) > 0;
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:309", "获取关注状态失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:323", "获取关注状态失败:", err);
       }
     };
     function getBrandGoods() {
@@ -202,7 +202,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:333", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:347", res.data.data);
           goods.value.page_index = res.data.data.page_index;
           goods.value.total = res.data.data.total;
           goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
@@ -217,7 +217,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:350", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:364", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -248,7 +248,7 @@ const _sfc_main = {
           type
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:452", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:466", res.data.data);
           if (res.data.status == "success") {
             rateValue.value = res.data.data.score;
             return res.data.data.score;
@@ -261,7 +261,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:465", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:479", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -348,5 +348,6 @@ const _sfc_main = {
   }
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-1a297a1d"]]);
+_sfc_main.__runtimeHooks = 2;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/brand/brand.js.map

@@ -231,6 +231,20 @@
 		voteScore(1, rateValue.value, props.brand_id)
 	
 	}
+	
+	const onShareAppMessage = () => ({
+		title: 'BJD娃圈你想知道的这里都有~',
+		path: '/pages/news/news',
+		success(res) {
+			console.log('分享成功', res)
+		},
+		fail(err) {
+			console.log('分享失败', err)
+		},
+		mp: {
+			wxpath: '/pages/index/index.html'
+		}
+	})
 
 	function getBrandsInfo() {
 		uni.request({

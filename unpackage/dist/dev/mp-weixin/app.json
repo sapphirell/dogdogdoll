@@ -29,7 +29,8 @@
     "pages/reset_password/reset_password",
     "pages/setting/username/username",
     "pages/my_comment/my_comment",
-    "pages/my_collocation/my_collocation"
+    "pages/my_collocation/my_collocation",
+    "pages/article_detail/article_detail"
   ],
   "window": {
     "navigationBarTextStyle": "black",

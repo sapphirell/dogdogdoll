@@ -103,7 +103,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:191", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:205", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -279,5 +279,6 @@ const _sfc_main = {
   }
 };
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-c9c53f1c"]]);
+_sfc_main.__runtimeHooks = 2;
 wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/pages/sale_news/sale_news.js.map

@@ -7,25 +7,52 @@ if (!Array) {
 const _sfc_main = {
   __name: "common-modal",
   props: {
-    visible: Boolean
+    visible: Boolean,
+    // 新增参数
+    top: {
+      type: [String, Number],
+      default: "20%"
+    },
+    width: {
+      type: [String, Number],
+      default: "80%"
+    },
+    height: {
+      type: [String, Number],
+      default: "auto"
+    }
   },
   emits: ["update:visible"],
   setup(__props, { emit: __emit }) {
     const props = __props;
     const emit = __emit;
+    const containerStyle = common_vendor.computed(() => ({
+      top: formatValue(props.top),
+      width: formatValue(props.width),
+      height: formatValue(props.height)
+    }));
+    const formatValue = (val) => {
+      if (typeof val === "number") {
+        return `${val}px`;
+      }
+      if (/\d$/.test(val)) {
+        return `${val}px`;
+      }
+      return val;
+    };
     const closeModal = () => {
-      common_vendor.index.__f__("log", "at components/common-modal/common-modal.vue:27", props.visible);
       emit("update:visible", false);
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: __props.visible
       }, __props.visible ? {
-        b: common_vendor.o(() => {
+        b: common_vendor.s(containerStyle.value),
+        c: common_vendor.o(() => {
         }),
-        c: common_vendor.o(closeModal)
+        d: common_vendor.o(closeModal)
       } : {}, {
-        d: common_vendor.p({
+        e: common_vendor.p({
           name: "modal-fade"
         })
       });

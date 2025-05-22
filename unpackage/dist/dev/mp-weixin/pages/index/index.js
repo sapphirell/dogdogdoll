@@ -21,12 +21,7 @@ const _sfc_main = {
   __name: "index",
   setup(__props) {
     let brandsList = common_vendor.ref([]);
-    let data = common_vendor.ref([
-      "https://images1.fantuanpu.com/spd/log/2025_04_21/234a245d0f8963b1b9b022efe3653cfb.jpg",
-      "https://images1.fantuanpu.com/box/100024/16524d8c1583feacbeebc37d37ee02a4",
-      "https://images1.fantuanpu.com/spd/log/2025_04_21/d34dfe99334e9f5a82a9f63708fcfefe.jpg",
-      "https://images1.fantuanpu.com/box/100024/16524d8c1583feacbeebc37d37ee02a4"
-    ]);
+    let data = common_vendor.ref({});
     const tabs = common_vendor.ref([
       {
         label: "中国娃社",
@@ -68,14 +63,36 @@ const _sfc_main = {
     const switchTab = (tab) => {
       activeTab.value = tab;
     };
+    const handleBannerClick = (item) => {
+      common_vendor.index.navigateTo({
+        url: `/pages/article_detail/article_detail?id=${item.id}`
+      });
+    };
     function jump2saleNews(item) {
       common_vendor.index.navigateTo({
         url: "/pages/sale_news/sale_news?id=" + item.id + "&brand_id=" + item.brand_id
       });
     }
-    function onChange(e) {
-      this.swiperIndex.value = e.detail.current;
-    }
+    const getArticles = () => {
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/articles",
+        data: {
+          page: 1,
+          page_size: 10,
+          status: 1
+          // 只获取已发布文章
+        },
+        success: (res) => {
+          if (res.data.status === "success") {
+            data.value = res.data.data.list;
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("error", "at pages/index/index.vue:372", "获取Banner失败:", err);
+          data.value = {};
+        }
+      });
+    };
     const handleTabClick = (value) => {
       if (activeSearchType.value === value) {
         activeSearchType.value = null;
@@ -129,7 +146,7 @@ const _sfc_main = {
           newsPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:411", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:440", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -170,7 +187,7 @@ const _sfc_main = {
           hotPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:456", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:485", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -213,7 +230,7 @@ const _sfc_main = {
           page.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:506", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:535", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -332,6 +349,7 @@ const _sfc_main = {
       getNews();
       getHotCollocations();
       getTreeholeList();
+      getArticles();
     });
     common_vendor.onReachBottom(() => {
       if (activeTab.value === "brands") {
@@ -350,26 +368,30 @@ const _sfc_main = {
         }),
         c: common_vendor.f(common_vendor.unref(data), (item, k0, i0) => {
           return {
-            a: item,
-            b: item
+            a: item.banner,
+            b: common_vendor.o(($event) => handleBannerClick(item), item.id),
+            c: item.id
           };
         }),
-        d: common_vendor.o(onChange),
-        e: common_assets._imports_1,
-        f: activeTab.value === "news" ? 1 : "",
-        g: common_vendor.o(($event) => switchTab("news")),
-        h: common_assets._imports_2,
-        i: activeTab.value === "brands" ? 1 : "",
-        j: common_vendor.o(($event) => switchTab("brands")),
-        k: common_assets._imports_3,
-        l: activeTab.value === "hot" ? 1 : "",
-        m: common_vendor.o(($event) => switchTab("hot")),
-        n: common_assets._imports_4,
-        o: activeTab.value === "second" ? 1 : "",
-        p: common_vendor.o(($event) => switchTab("second")),
-        q: activeTab.value === "news"
+        d: common_vendor.unref(data).length === 0
+      }, common_vendor.unref(data).length === 0 ? {
+        e: common_assets._imports_1
+      } : {}, {
+        f: common_assets._imports_2,
+        g: activeTab.value === "news" ? 1 : "",
+        h: common_vendor.o(($event) => switchTab("news")),
+        i: common_assets._imports_3,
+        j: activeTab.value === "brands" ? 1 : "",
+        k: common_vendor.o(($event) => switchTab("brands")),
+        l: common_assets._imports_4,
+        m: activeTab.value === "hot" ? 1 : "",
+        n: common_vendor.o(($event) => switchTab("hot")),
+        o: common_assets._imports_5,
+        p: activeTab.value === "second" ? 1 : "",
+        q: common_vendor.o(($event) => switchTab("second")),
+        r: activeTab.value === "news"
       }, activeTab.value === "news" ? common_vendor.e({
-        r: common_vendor.f(common_vendor.unref(newsList), (item, k0, i0) => {
+        s: common_vendor.f(common_vendor.unref(newsList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.image_list.length > 0
           }, item.image_list.length > 0 ? {
@@ -388,17 +410,17 @@ const _sfc_main = {
             h: common_vendor.o(($event) => jump2saleNews(item), item.id)
           });
         }),
-        s: newsLoading.value
+        t: newsLoading.value
       }, newsLoading.value ? {} : {}, {
-        t: !newsHasMore.value
+        v: !newsHasMore.value
       }, !newsHasMore.value ? {} : {}) : {}, {
-        v: common_vendor.p({
+        w: common_vendor.p({
           name: "fade",
           mode: "out-in"
         }),
-        w: activeTab.value === "brands"
+        x: activeTab.value === "brands"
       }, activeTab.value === "brands" ? common_vendor.e({
-        x: common_vendor.f(tabs.value, (tab, index, i0) => {
+        y: common_vendor.f(tabs.value, (tab, index, i0) => {
           return {
             a: common_vendor.t(tab.label),
             b: index,
@@ -406,13 +428,13 @@ const _sfc_main = {
             d: common_vendor.o(($event) => handleTabClick(tab.value), index)
           };
         }),
-        y: activeSearchType.value == 1
+        z: activeSearchType.value == 1
       }, activeSearchType.value == 1 ? {} : {}, {
-        z: activeSearchType.value == 2
+        A: activeSearchType.value == 2
       }, activeSearchType.value == 2 ? {} : {}, {
-        A: activeSearchType.value == 3
+        B: activeSearchType.value == 3
       }, activeSearchType.value == 3 ? {} : {}, {
-        B: common_vendor.f(common_vendor.unref(brandsList), (item, index, i0) => {
+        C: common_vendor.f(common_vendor.unref(brandsList), (item, index, i0) => {
           return {
             a: "1cf27b2a-4-" + i0 + ",1cf27b2a-3",
             b: common_vendor.p({
@@ -421,17 +443,17 @@ const _sfc_main = {
             c: item.id
           };
         }),
-        C: loading.value
+        D: loading.value
       }, loading.value ? {} : {}, {
-        D: !hasMore.value
+        E: !hasMore.value
       }, !hasMore.value ? {} : {}) : {}, {
-        E: common_vendor.p({
+        F: common_vendor.p({
           name: "fade",
           mode: "out-in"
         }),
-        F: activeTab.value === "hot"
+        G: activeTab.value === "hot"
       }, activeTab.value === "hot" ? common_vendor.e({
-        G: common_vendor.f(common_vendor.unref(hotList), (item, k0, i0) => {
+        H: common_vendor.f(common_vendor.unref(hotList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.image_urls.length > 0
           }, item.image_urls.length > 0 ? {
@@ -460,34 +482,34 @@ const _sfc_main = {
             l: common_vendor.o(($event) => jumpToCollocationDetail(item), item.collocation_id)
           });
         }),
-        H: common_vendor.p({
+        I: common_vendor.p({
           type: "heart",
           size: "18",
           color: "#ff4d4f"
         }),
-        I: hotLoading.value
+        J: hotLoading.value
       }, hotLoading.value ? {} : {}, {
-        J: !hotHasMore.value
+        K: !hotHasMore.value
       }, !hotHasMore.value ? {} : {}) : {}, {
-        K: common_vendor.p({
+        L: common_vendor.p({
           name: "fade",
           mode: "out-in"
         }),
-        L: activeTab.value === "second"
+        M: activeTab.value === "second"
       }, activeTab.value === "second" ? common_vendor.e({
-        M: common_vendor.p({
+        N: common_vendor.p({
           type: "plusempty",
           size: "30",
           color: "#fff"
         }),
-        N: common_vendor.o(handlePublish),
-        O: common_vendor.f(common_vendor.unref(treeholeList), (item, k0, i0) => {
+        O: common_vendor.o(handlePublish),
+        P: common_vendor.f(common_vendor.unref(treeholeList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.avatar !== ""
           }, item.avatar !== "" ? {
             b: item.avatar
           } : {
-            c: common_assets._imports_5
+            c: common_assets._imports_6
           }, {
             d: common_vendor.t(item.is_anonymous ? "匿名用户" : item.author_name),
             e: common_vendor.t(formatTime(item.created_at)),
@@ -520,25 +542,25 @@ const _sfc_main = {
             t: common_vendor.o(($event) => jump2treeholeDetail(item), item.id)
           });
         }),
-        P: common_vendor.p({
+        Q: common_vendor.p({
           type: "chat",
           size: "18",
           color: "#666"
         }),
-        Q: common_vendor.p({
+        R: common_vendor.p({
           type: "redo",
           size: "18",
           color: "#666"
         }),
-        R: treeholeLoading.value
+        S: treeholeLoading.value
       }, treeholeLoading.value ? {} : {}, {
-        S: !treeholeHasMore.value
+        T: !treeholeHasMore.value
       }, !treeholeHasMore.value ? {} : {}) : {}, {
-        T: common_vendor.p({
+        U: common_vendor.p({
           name: "fade",
           mode: "out-in"
         }),
-        U: common_vendor.p({
+        V: common_vendor.p({
           head_color: "rgb(255 230 215) "
         })
       });

@@ -32,6 +32,7 @@ if (!Math) {
   "./pages/setting/username/username.js";
   "./pages/my_comment/my_comment.js";
   "./pages/my_collocation/my_collocation.js";
+  "./pages/article_detail/article_detail.js";
 }
 const _sfc_main = {
   __name: "App",
