@@ -1,3 +1,4 @@
+<!-- custom-picker -->
 <template>
 	<view class="custom-select">
 		<input v-model="inputValue" @click="toggleOpen" @input="callbackValue" placeholder="请选择或输入" class="select-input"

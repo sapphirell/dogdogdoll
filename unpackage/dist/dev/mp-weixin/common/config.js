@@ -1,6 +1,6 @@
 "use strict";
 const common_vendor = require("./vendor.js");
-const websiteUrl = "http://localhost:8080";
+const websiteUrl = "https://api.fantuanpu.com";
 const image1Url = "https://images1.fantuanpu.com/";
 let global = common_vendor.reactive({
   isLogin: false,

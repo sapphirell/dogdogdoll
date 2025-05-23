@@ -1,3 +1,4 @@
+<!-- common-search -->
 <template>
 	<view class="search_tab" :class="$attrs.class" :style="{
 			background: background || '#fff'

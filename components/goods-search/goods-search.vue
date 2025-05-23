@@ -1,4 +1,7 @@
+<!-- goods-search -->
 <template>
+	<!-- 新增遮罩层 -->
+	<view v-if="showResults" class="mask-layer" @tap="closeResults"></view>
 	<view class="search_tab" :class="$attrs.class" :style="{ background: background || '#fff' }">
 		<image v-if="!hiddenIcon" class="icon_image" src="../../static/search.png"></image>
 		<input class="common_search_input" placeholder="请输入商品名称..." :value="inputValue" @input="onSearchInput"
@@ -7,7 +10,12 @@
 	</view>
 
 	<!-- 商品搜索结果 -->
-	<scroll-view v-if="results.length > 0" class="search_results" :style="{ width: width }" scroll-y>
+	 <scroll-view 
+	    v-if="results.length > 0" 
+	    class="search_results" 
+	    :style="{ width: width }" 
+	    scroll-y
+	  >
 		<view v-for="item in results" :key="item.id" class="result_item" @tap="onTap(item)">
 			<view class="brand-tag" v-if="item.brand_name">{{ item.brand_name }}</view>
 			<text class="goods-name">{{ item.name }}</text>
@@ -17,11 +25,16 @@
 
 <script setup>
 	import {
-		ref,computed
+		ref,
+		computed,
+		watch,
 	} from 'vue';
 	import {
 		websiteUrl
 	} from "../../common/config.js";
+
+	// 新增显示状态
+	const showResults = ref(false);
 
 	const props = defineProps({
 		modelValue: {
@@ -67,29 +80,41 @@
 	});
 
 
+	// 监听results变化控制遮罩层
+	watch(results, (newVal) => {
+		showResults.value = newVal.length > 0;
+	});
 
-// 修改onSearchInput方法
-const onSearchInput = async (e) => {
-  inputValue.value = e.detail.value; // 更新双向绑定值
-  const searchValue = e.detail.value.trim();
-  
-  if (!searchValue) {
-    results.value = [];
-    return;
-  }
+	// 新增关闭方法
+	const closeResults = () => {
+		results.value = [];
+		showResults.value = false;
+	};
 
-  try {
-    const res = await uni.request({
-      url: websiteUrl + `/search-goods?search=${encodeURIComponent(searchValue)}`,
-      method: 'GET'
-    });
 
-    results.value = res.data?.status === "success" ? res.data.data || [] : [];
-  } catch (error) {
-    console.error('搜索失败:', error);
-    results.value = [];
-  }
-};
+
+	// 修改onSearchInput方法
+	const onSearchInput = async (e) => {
+		inputValue.value = e.detail.value; // 更新双向绑定值
+		const searchValue = e.detail.value.trim();
+		showResults.value = true; // 新增显示控制
+		if (!searchValue) {
+			results.value = [];
+			return;
+		}
+
+		try {
+			const res = await uni.request({
+				url: websiteUrl + `/search-goods?search=${encodeURIComponent(searchValue)}`,
+				method: 'GET'
+			});
+
+			results.value = res.data?.status === "success" ? res.data.data || [] : [];
+		} catch (error) {
+			console.error('搜索失败:', error);
+			results.value = [];
+		}
+	};
 
 
 	const onTap = (goods) => {
@@ -97,16 +122,17 @@ const onSearchInput = async (e) => {
 			uni.navigateTo({
 				url: `/pages/goods/goods?goods_id=${goods.id}`
 			});
-		}  if (props.mode === 'fill') {
+		}
+		if (props.mode === 'fill') {
 			emit('select', goods);
 			inputValue.value = goods.name; // 直接更新双向绑定值
 			results.value = [];
-		  }
+		}
+		closeResults(); // 新增关闭
 	};
 
 	const cancel = () => {
-		// searchTerm.value = '';
-		results.value = [];
+		closeResults(); // 替换原有清空逻辑
 	};
 </script>
 
@@ -148,7 +174,7 @@ const onSearchInput = async (e) => {
 		box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
 		max-height: 60vh;
 		position: absolute;
-		z-index: 10;
+		z-index: 1001;
 
 		.result_item {
 			display: flex;
@@ -187,5 +213,16 @@ const onSearchInput = async (e) => {
 				white-space: nowrap;
 			}
 		}
+	}
+
+	.mask-layer {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0);
+		z-index: 1000;
+		/* 确保在搜索结果下方 */
 	}
 </style>

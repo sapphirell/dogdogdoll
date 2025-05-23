@@ -2,18 +2,22 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_common_name_picker2 = common_vendor.resolveComponent("common-name-picker");
   const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
   const _easycom_custom_picker2 = common_vendor.resolveComponent("custom-picker");
+  const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
   const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
-  (_easycom_common_name_picker2 + _easycom_common_search2 + _easycom_custom_picker2 + _easycom_common_modal2)();
+  (_easycom_uni_icons2 + _easycom_common_name_picker2 + _easycom_common_search2 + _easycom_custom_picker2 + _easycom_goods_search2 + _easycom_common_modal2)();
 }
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_common_name_picker = () => "../common-name-picker/common-name-picker.js";
 const _easycom_common_search = () => "../common-search/common-search.js";
 const _easycom_custom_picker = () => "../custom-picker/custom-picker.js";
+const _easycom_goods_search = () => "../goods-search/goods-search.js";
 const _easycom_common_modal = () => "../common-modal/common-modal.js";
 if (!Math) {
-  (_easycom_common_name_picker + _easycom_common_search + _easycom_custom_picker + _easycom_common_modal)();
+  (_easycom_uni_icons + _easycom_common_name_picker + _easycom_common_search + _easycom_custom_picker + _easycom_goods_search + _easycom_common_modal)();
 }
 const _sfc_main = {
   __name: "relation-picker",
@@ -37,6 +41,52 @@ const _sfc_main = {
     const emit = __emit;
     const goodsList = common_vendor.ref([]);
     const internalVisible = common_vendor.ref(false);
+    const searchKeyword = common_vendor.ref("");
+    const isFuzzyMode = common_vendor.ref(false);
+    const switchMode = (isFuzzy) => {
+      common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:104", isFuzzy);
+      isFuzzyMode.value = isFuzzy;
+      searchKeyword.value = "";
+      selectedData.value = {
+        type: null,
+        brand: null,
+        goods: null
+      };
+      goodsList.value = [];
+    };
+    const handleFuzzySelect = async (goods) => {
+      var _a;
+      try {
+        const detail = await getGoodsInfo(goods.id);
+        selectedData.value = {
+          type: detail.type || "其他",
+          brand: {
+            id: detail.brand_id,
+            name: detail.brand_name
+          },
+          goods: {
+            id: goods.id,
+            name: goods.name,
+            image: ((_a = detail == null ? void 0 : detail.goods_images) == null ? void 0 : _a[0]) || ""
+          }
+        };
+      } catch (error) {
+        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:133", "商品信息获取失败", error);
+        common_vendor.index.showToast({
+          title: "商品信息获取失败",
+          icon: "none"
+        });
+      }
+    };
+    const closePicker = () => {
+      internalVisible.value = false;
+      searchKeyword.value = "";
+      selectedData.value = {
+        type: null,
+        brand: null,
+        goods: null
+      };
+    };
     common_vendor.watch(() => props.visible, (val) => {
       internalVisible.value = val;
     });
@@ -67,7 +117,7 @@ const _sfc_main = {
             resolve(res.data.data);
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:106", "商品详情获取失败", err);
+            common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:190", "商品详情获取失败", err);
             reject(err);
           }
         });
@@ -81,20 +131,28 @@ const _sfc_main = {
       try {
         getGoods(brandId);
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:123", "获取商品失败", error);
+        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:207", "获取商品失败", error);
       }
     };
     const handleGoodsSelect = async (goodsId, goodsName) => {
       var _a;
       try {
+        selectedData.value.goods = null;
         const detail = await getGoodsInfo(goodsId);
+        if (!detail) {
+          throw new Error("未找到商品信息");
+        }
         selectedData.value.goods = {
           id: goodsId,
           name: goodsName,
           image: ((_a = detail == null ? void 0 : detail.goods_images) == null ? void 0 : _a[0]) || ""
         };
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:137", "商品选择失败", error);
+        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:226", "商品选择失败", error);
+        common_vendor.index.showToast({
+          title: "商品信息获取失败，请重新选择",
+          icon: "none"
+        });
       }
     };
     function getGoods(id) {
@@ -103,12 +161,12 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:148", res.data.data);
+          common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:241", res.data.data);
           goodsList.value = res.data.data;
-          common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:150", goodsList.value);
+          common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:243", goodsList.value);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:154", err);
+          common_vendor.index.__f__("log", "at components/relation-picker/relation-picker.vue:247", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -131,7 +189,7 @@ const _sfc_main = {
         emit("confirm", resultData);
         closePicker();
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:182", "商品信息获取失败", error);
+        common_vendor.index.__f__("error", "at components/relation-picker/relation-picker.vue:275", "商品信息获取失败", error);
         common_vendor.index.showToast({
           title: "商品信息获取失败",
           icon: "none"
@@ -142,38 +200,62 @@ const _sfc_main = {
       emit("cancel");
       closePicker();
     };
-    const closePicker = () => {
-      internalVisible.value = false;
-      selectedData.value = {
-        type: null,
-        brand: null,
-        goods: null
-      };
-    };
     return (_ctx, _cache) => {
-      return {
-        a: common_vendor.o(handleTypeSelect),
+      return common_vendor.e({
+        a: !isFuzzyMode.value
+      }, !isFuzzyMode.value ? {
         b: common_vendor.p({
+          type: "search",
+          size: "18",
+          color: "#fff"
+        }),
+        c: common_vendor.o(($event) => switchMode(true))
+      } : {}, {
+        d: isFuzzyMode.value
+      }, isFuzzyMode.value ? {
+        e: common_vendor.p({
+          type: "list",
+          size: "18",
+          color: "#fff"
+        }),
+        f: common_vendor.o(($event) => switchMode(false))
+      } : {}, {
+        g: isFuzzyMode.value
+      }, isFuzzyMode.value ? {
+        h: common_vendor.o(handleTypeSelect),
+        i: common_vendor.p({
           dataList: __props.typeList,
           placeholder: "选择类型"
         }),
-        c: common_vendor.o(handleBrandSelect),
-        d: common_vendor.p({
+        j: common_vendor.o(handleBrandSelect),
+        k: common_vendor.p({
           mode: "fill",
           width: "520rpx",
           background: "#f8f8f8"
         }),
-        e: common_vendor.o(handleGoodsSelect),
-        f: common_vendor.p({
+        l: common_vendor.o(handleGoodsSelect),
+        m: common_vendor.p({
           dataList: goodsList.value
-        }),
-        g: common_vendor.o(handleCancel),
-        h: common_vendor.o(handleConfirm),
-        i: common_vendor.o(handleModalVisibilityChange),
-        j: common_vendor.p({
-          visible: internalVisible.value
         })
-      };
+      } : {
+        n: common_vendor.o(handleFuzzySelect),
+        o: common_vendor.o(($event) => searchKeyword.value = $event),
+        p: common_vendor.p({
+          mode: "fill",
+          width: "520rpx",
+          background: "#f8f8f8",
+          ["show-icon"]: false,
+          modelValue: searchKeyword.value
+        })
+      }, {
+        q: common_vendor.o(handleCancel),
+        r: common_vendor.o(handleConfirm),
+        s: common_vendor.o(handleModalVisibilityChange),
+        t: common_vendor.p({
+          visible: internalVisible.value,
+          top: "3%"
+        })
+      });
     };
   }
 };

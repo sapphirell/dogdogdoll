@@ -3,13 +3,17 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
   const _component_transition = common_vendor.resolveComponent("transition");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_component_transition + _easycom_common_page2)();
+  (_easycom_uni_icons2 + _easycom_common_modal2 + _component_transition + _easycom_common_page2)();
 }
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
+const _easycom_common_modal = () => "../../components/common-modal/common-modal.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  _easycom_common_page();
+  (_easycom_uni_icons + _easycom_common_modal + _easycom_common_page)();
 }
 const _sfc_main = {
   __name: "stock",
@@ -24,7 +28,7 @@ const _sfc_main = {
     function switch_tab(index) {
       previousTab.value = activeTab.value;
       activeTab.value = index;
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:180", `切换到 tab ${index}`);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:205", `切换到 tab ${index}`);
       switch (index) {
         case 1:
           getAccountBookData();
@@ -44,16 +48,121 @@ const _sfc_main = {
       return bills.filter((bill) => bill.status === 1).length;
     }
     const selectedType = common_vendor.ref(0);
-    const accountBookTypeList = common_vendor.ref(["全部", "娃头", "娃衣", "眼珠", "假发", "娃鞋"]);
+    const typeModalVisible = common_vendor.ref(false);
+    const newTypeName = common_vendor.ref("");
+    const customTypes = common_vendor.ref([]);
+    const defaultTypes = ["全部", "娃头", "娃衣", "素体", "眼珠", "假发", "娃鞋"];
+    const typeOptions = common_vendor.computed(() => [
+      ...defaultTypes,
+      ...customTypes.value.map((t) => t.name)
+    ]);
+    const showTypeModal = () => {
+      typeModalVisible.value = true;
+    };
+    const getAccountTypes = async () => {
+      const token = common_vendor.index.getStorageSync("token");
+      try {
+        const res = await common_vendor.index.request({
+          url: common_config.websiteUrl + "/with-state/account-types",
+          method: "GET",
+          header: {
+            "Authorization": token
+          }
+        });
+        customTypes.value = res.data.data || [];
+      } catch (err) {
+        common_vendor.index.__f__("error", "at pages/stock/stock.vue:259", "获取分类失败:", err);
+      }
+    };
+    const addNewType = async () => {
+      if (!newTypeName.value.trim()) {
+        common_vendor.index.showToast({
+          title: "请输入分类名称",
+          icon: "none"
+        });
+        return;
+      }
+      const token = common_vendor.index.getStorageSync("token");
+      try {
+        await common_vendor.index.request({
+          url: common_config.websiteUrl + "/with-state/add-account-type",
+          method: "POST",
+          header: {
+            "Authorization": token
+          },
+          data: {
+            name: newTypeName.value.trim()
+          }
+        });
+        await getAccountTypes();
+        newTypeName.value = "";
+        common_vendor.index.showToast({
+          title: "添加成功"
+        });
+      } catch (err) {
+        common_vendor.index.showToast({
+          title: "添加失败",
+          icon: "none"
+        });
+      }
+    };
+    const deleteType = async (id) => {
+      common_vendor.index.showModal({
+        title: "确认删除",
+        // content: '如果该分类下存在物品，则不可以直接删除分类',
+        success: async (res) => {
+          if (res.confirm) {
+            const token = common_vendor.index.getStorageSync("token");
+            try {
+              const response = await common_vendor.index.request({
+                url: common_config.websiteUrl + "/with-state/delete-account-type",
+                method: "POST",
+                header: {
+                  "Authorization": token,
+                  "Content-Type": "application/json"
+                  // 添加Content-Type
+                },
+                data: { id }
+                // 使用JSON格式传参
+              });
+              const resData = response.data;
+              if (resData.status === "success") {
+                await getAccountTypes();
+                common_vendor.index.showToast({ title: "删除成功" });
+              } else {
+                common_vendor.index.showToast({
+                  title: resData.msg || "删除失败",
+                  icon: "none"
+                });
+              }
+            } catch (err) {
+              common_vendor.index.__f__("error", "at pages/stock/stock.vue:330", "删除失败:", err);
+              common_vendor.index.showToast({
+                title: err.errMsg || "请求失败",
+                icon: "none"
+              });
+            }
+          }
+        }
+      });
+    };
     const accountBookData = common_vendor.ref({});
     const showcaseData = common_vendor.ref({});
     const billData = common_vendor.ref({});
+    const totalPrice = common_vendor.computed(() => {
+      if (!accountBookData.value.account_books)
+        return 0;
+      return accountBookData.value.account_books.reduce((sum, item) => {
+        return sum + (parseFloat(item.price) || 0);
+      }, 0).toFixed(2);
+    });
     function updateSelectedType(e) {
       selectedType.value = e.detail.value;
-      getAccountBookData(accountBookTypeList.value[selectedType.value]);
+      const selectedTypeName = typeOptions.value[selectedType.value];
+      getAccountBookData(selectedTypeName === "全部" ? "" : selectedTypeName);
     }
     function getAccountBookData(type) {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:222", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:368", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -70,16 +179,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:241", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:387", res.data.data);
           accountBookData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:245", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:391", err);
         }
       });
     }
     function getShowcaseData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:252", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:398", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -92,16 +201,16 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:266", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:412", res.data.data);
           showcaseData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:270", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:416", err);
         }
       });
     }
     function getBillData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:277", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:423", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -114,11 +223,11 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:291", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:437", res.data.data);
           billData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:295", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:441", err);
         }
       });
     }
@@ -163,6 +272,7 @@ const _sfc_main = {
     }
     common_vendor.onShow(() => {
       common_config.asyncGetUserInfo().then((userInfo) => {
+        getAccountTypes();
         getAccountBookData();
         getShowcaseData();
         getBillData();
@@ -179,13 +289,37 @@ const _sfc_main = {
         f: activeTab.value === 3 ? 1 : "",
         g: activeTab.value === 1
       }, activeTab.value === 1 ? common_vendor.e({
-        h: common_vendor.t(accountBookTypeList.value[selectedType.value]),
+        h: common_vendor.t(typeOptions.value[selectedType.value]),
         i: selectedType.value,
-        j: accountBookTypeList.value,
+        j: typeOptions.value,
         k: common_vendor.o(updateSelectedType),
-        l: ((_a = accountBookData.value.account_books) == null ? void 0 : _a.length) > 0
+        l: common_vendor.o(showTypeModal),
+        m: common_vendor.t(totalPrice.value),
+        n: common_vendor.f(customTypes.value, (type, index, i0) => {
+          return {
+            a: common_vendor.t(type.name),
+            b: common_vendor.o(($event) => deleteType(type.id), type.id),
+            c: "5e8dbbcd-3-" + i0 + ",5e8dbbcd-2",
+            d: type.id
+          };
+        }),
+        o: common_vendor.p({
+          type: "trash",
+          size: "22",
+          color: "#ff6666"
+        }),
+        p: newTypeName.value,
+        q: common_vendor.o(($event) => newTypeName.value = $event.detail.value),
+        r: common_vendor.o(addNewType),
+        s: common_vendor.o((val) => typeModalVisible.value = val),
+        t: common_vendor.p({
+          visible: typeModalVisible.value,
+          top: "5%",
+          height: "60%"
+        }),
+        v: ((_a = accountBookData.value.account_books) == null ? void 0 : _a.length) > 0
       }, ((_b = accountBookData.value.account_books) == null ? void 0 : _b.length) > 0 ? {
-        m: common_vendor.f(accountBookData.value.account_books, (item, index, i0) => {
+        w: common_vendor.f(accountBookData.value.account_books, (item, index, i0) => {
           return {
             a: item.image_url,
             b: common_vendor.t(item.type),
@@ -196,19 +330,19 @@ const _sfc_main = {
           };
         })
       } : {
-        n: common_assets._imports_0$1
+        x: common_assets._imports_0$1
       }, {
-        o: common_vendor.o(go2addAccountBook),
-        p: activeTab.value !== 1 ? 1 : ""
+        y: common_vendor.o(go2addAccountBook),
+        z: activeTab.value !== 1 ? 1 : ""
       }) : {}, {
-        q: common_vendor.p({
+        A: common_vendor.p({
           name: transitionName()
         }),
-        r: activeTab.value === 2
+        B: activeTab.value === 2
       }, activeTab.value === 2 ? common_vendor.e({
-        s: showcaseData.value.showcases && showcaseData.value.showcases.length > 0
+        C: showcaseData.value.showcases && showcaseData.value.showcases.length > 0
       }, showcaseData.value.showcases && showcaseData.value.showcases.length > 0 ? {
-        t: common_vendor.f(showcaseData.value.showcases, (item, index, i0) => {
+        D: common_vendor.f(showcaseData.value.showcases, (item, index, i0) => {
           return common_vendor.e({
             a: item.display !== 1
           }, item.display !== 1 ? {
@@ -224,22 +358,22 @@ const _sfc_main = {
             j: common_vendor.o(($event) => go2editorShowCase(item.id), index)
           });
         }),
-        v: common_assets._imports_1$2,
-        w: common_assets._imports_2$1
+        E: common_assets._imports_1$2,
+        F: common_assets._imports_2$1
       } : {
-        x: common_assets._imports_0$1
+        G: common_assets._imports_0$1
       }, {
-        y: common_vendor.o(go2addShowCase),
-        z: activeTab.value !== 2 ? 1 : ""
+        H: common_vendor.o(go2addShowCase),
+        I: activeTab.value !== 2 ? 1 : ""
       }) : {}, {
-        A: common_vendor.p({
+        J: common_vendor.p({
           name: transitionName()
         }),
-        B: activeTab.value === 3
+        K: activeTab.value === 3
       }, activeTab.value === 3 ? common_vendor.e({
-        C: Object.keys(billData.value).length > 0
+        L: Object.keys(billData.value).length > 0
       }, Object.keys(billData.value).length > 0 ? {
-        D: common_vendor.f(billData.value, (bills, month, i0) => {
+        M: common_vendor.f(billData.value, (bills, month, i0) => {
           return {
             a: common_vendor.t(month),
             b: common_vendor.t(countPaid(bills)),
@@ -259,15 +393,15 @@ const _sfc_main = {
           };
         })
       } : {
-        E: common_assets._imports_0$1
+        N: common_assets._imports_0$1
       }, {
-        F: common_vendor.o(($event) => go2addBill(false)),
-        G: activeTab.value !== 3 ? 1 : ""
+        O: common_vendor.o(($event) => go2addBill(false)),
+        P: activeTab.value !== 3 ? 1 : ""
       }) : {}, {
-        H: common_vendor.p({
+        Q: common_vendor.p({
           name: transitionName()
         }),
-        I: common_vendor.p({
+        R: common_vendor.p({
           head_color: "rgb(185 195 253)"
         })
       });

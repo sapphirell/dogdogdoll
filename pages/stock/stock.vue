@@ -21,10 +21,34 @@
 			<view class="data_body">
 				<transition :name="transitionName()">
 					<view class="tab_body_1st" v-if="activeTab === 1" :class="{ none: activeTab !== 1 }">
-						<picker class="type-picker" mode="selector" :value="selectedType" :range="accountBookTypeList"
-							@change="updateSelectedType">
-							<view class="uni-input">{{ accountBookTypeList[selectedType] }}</view>
-						</picker>
+						<view class="type-header">
+							<picker class="type-picker" mode="selector" :value="selectedType" :range="typeOptions"
+								@change="updateSelectedType">
+								<view class="uni-input">{{ typeOptions[selectedType] }}</view>
+							</picker>
+							<text class="manage-btn" @tap="showTypeModal">管理分类</text>
+						</view>
+						<view class="summary-container">
+							<text class="total-text">当前分类合计：¥{{ totalPrice }}</text>
+						</view>
+
+						<!-- 新增分类管理弹窗 -->
+						<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val"
+							top="5%" height="60%">
+							<view class="type-modal">
+								<view class="type-list">
+									<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
+										<text>{{ type.name }}</text>
+										<uni-icons type="trash" size="22" color="#ff6666"
+											@tap="deleteType(type.id)"></uni-icons>
+									</view>
+								</view>
+								<view class="add-type-form">
+									<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
+									<button class="add-btn" @tap="addNewType">添加分类</button>
+								</view>
+							</view>
+						</common-modal>
 
 						<view class="content" v-if="accountBookData.account_books?.length > 0">
 							<view class="content-grid">
@@ -85,9 +109,9 @@
 							</view>
 						</view>
 						<view class="empty-state" v-else>
-						  <image class="empty-icon" src="/static/empty.png"></image>
-						  <text class="empty-text">展示柜空空如也</text>
-						  <text class="empty-tip">快来创建你的展示空间吧！</text>
+							<image class="empty-icon" src="/static/empty.png"></image>
+							<text class="empty-text">展示柜空空如也</text>
+							<text class="empty-tip">快来创建你的展示空间吧！</text>
 						</view>
 						<!-- 添加展示柜数据 -->
 						<view>
@@ -97,7 +121,7 @@
 				</transition>
 				<transition :name="transitionName()">
 					<view class="tab_body_3th" v-if="activeTab === 3" :class="{ none: activeTab !== 3 }">
-						<view class="calendar-container"  v-if="Object.keys(billData).length > 0">
+						<view class="calendar-container" v-if="Object.keys(billData).length > 0">
 							<view v-for="(bills, month) in billData" :key="month">
 								<view class="month-header-container">
 									<text class="month-header font-alimamashuhei">{{ month }} 账单</text>
@@ -130,11 +154,11 @@
 								</view>
 							</view>
 						</view>
-						
+
 						<view class="empty-state" v-else>
-						  <image class="empty-icon" src="/static/empty.png"></image>
-						  <text class="empty-text">暂无待补尾款</text>
-						  <text class="empty-tip">增加添加一个到账本试试吧～</text>
+							<image class="empty-icon" src="/static/empty.png"></image>
+							<text class="empty-text">暂无待补尾款</text>
+							<text class="empty-tip">增加添加一个到账本试试吧～</text>
 						</view>
 						<view>
 							<button class="jump2addButton" @tap="go2addBill(false)">+</button>
@@ -149,7 +173,8 @@
 
 <script setup>
 	import {
-		ref
+		ref,
+		computed
 	} from 'vue';
 	import {
 		onShow
@@ -200,8 +225,120 @@
 	// 账本下选择的下拉菜单按钮
 	const selectedType = ref(0);
 
+	const typeModalVisible = ref(false);
+	const newTypeName = ref('');
+	const customTypes = ref([]); // 用户自定义分类
+
 	// 账本下选择的下拉菜单按钮
-	const accountBookTypeList = ref(['全部', '娃头', '娃衣', '眼珠', '假发', '娃鞋']);
+	const defaultTypes = ['全部', '娃头', '娃衣', '素体', '眼珠', '假发', '娃鞋'];
+
+	// 组合分类选项
+	const typeOptions = computed(() => [
+		...defaultTypes,
+		...customTypes.value.map(t => t.name)
+	]);
+	// 在script setup部分添加
+	const showTypeModal = () => {
+		typeModalVisible.value = true;
+	};
+
+
+	// 获取分类数据
+	const getAccountTypes = async () => {
+		const token = uni.getStorageSync('token');
+		try {
+			const res = await uni.request({
+				url: websiteUrl + '/with-state/account-types',
+				method: 'GET',
+				header: {
+					'Authorization': token
+				}
+			});
+			customTypes.value = res.data.data || [];
+		} catch (err) {
+			console.error('获取分类失败:', err);
+		}
+	};
+
+	// 添加分类
+	const addNewType = async () => {
+		if (!newTypeName.value.trim()) {
+			uni.showToast({
+				title: '请输入分类名称',
+				icon: 'none'
+			});
+			return;
+		}
+
+		const token = uni.getStorageSync('token');
+		try {
+			await uni.request({
+				url: websiteUrl + '/with-state/add-account-type',
+				method: 'POST',
+				header: {
+					'Authorization': token
+				},
+				data: {
+					name: newTypeName.value.trim()
+				}
+			});
+			await getAccountTypes();
+			newTypeName.value = '';
+			uni.showToast({
+				title: '添加成功'
+			});
+		} catch (err) {
+			uni.showToast({
+				title: '添加失败',
+				icon: 'none'
+			});
+		}
+	};
+
+
+	// 删除分类
+	const deleteType = async (id) => {
+	  uni.showModal({
+	    title: '确认删除',
+	    // content: '如果该分类下存在物品，则不可以直接删除分类',
+	    success: async (res) => {
+	      if (res.confirm) {
+	        const token = uni.getStorageSync('token');
+	        try {
+	          const response = await uni.request({
+	            url: websiteUrl + '/with-state/delete-account-type',
+	            method: 'POST',
+	            header: {
+	              'Authorization': token,
+	              'Content-Type': 'application/json' // 添加Content-Type
+	            },
+	            data: { id }, // 使用JSON格式传参
+	          });
+	
+	          const resData = response.data;
+	          
+	          if (resData.status === "success") { // 严格判断状态
+	            await getAccountTypes();
+	            uni.showToast({ title: '删除成功' });
+	          } else {
+	            uni.showToast({
+	              title: resData.msg || '删除失败',
+	              icon: 'none'
+	            });
+	          }
+	        } catch (err) {
+	          console.error('删除失败:', err);
+	          uni.showToast({
+	            title: err.errMsg || '请求失败',
+	            icon: 'none'
+	          });
+	        }
+	      }
+	    }
+	  });
+	};
+
+
 
 	// 账本数据
 	const accountBookData = ref({});
@@ -212,10 +349,19 @@
 	// 账单数据
 	const billData = ref({});
 
+
+	// 添加计算属性
+	const totalPrice = computed(() => {
+		if (!accountBookData.value.account_books) return 0;
+		return accountBookData.value.account_books.reduce((sum, item) => {
+			return sum + (parseFloat(item.price) || 0);
+		}, 0).toFixed(2);
+	});
 	// 切换账本选择类型
 	function updateSelectedType(e) {
-		selectedType.value = e.detail.value
-		getAccountBookData(accountBookTypeList.value[selectedType.value])
+		selectedType.value = e.detail.value;
+		const selectedTypeName = typeOptions.value[selectedType.value];
+		getAccountBookData(selectedTypeName === "全部" ? "" : selectedTypeName);
 	}
 	//获取账本数据
 	function getAccountBookData(type) {
@@ -356,6 +502,8 @@
 	onShow(() => {
 		// 加载用户信息
 		asyncGetUserInfo().then((userInfo) => {
+			// 获取用户自定义分类
+			getAccountTypes();
 			// 获取我的娃物
 			getAccountBookData();
 			// 获取我的展示柜
@@ -554,11 +702,21 @@
 	// 1st下的
 	/* 新增样式 */
 	.type-picker {
-		padding-left: 25rpx;
-		font-size: 35rpx;
-		color: #585858;
-		font-weight: 1000;
-		margin-top: 10rpx;
+		flex: 1;
+		font-size: 22rpx;
+		color: #e9b6d7;
+		padding: 15rpx 25rpx;
+		border-radius: 10rpx;
+		background: white;
+
+		.uni-input {
+			&::before {
+				content: '▼ ';
+				margin-left: 15rpx;
+				font-size: 20rpx;
+				color: #e9b6d7;
+			}
+		}
 	}
 
 	.content-grid {
@@ -616,6 +774,119 @@
 					text-shadow: 0 0 3rpx #fff;
 				}
 			}
+		}
+	}
+
+	.type-header {
+		display: flex;
+		align-items: center;
+		padding: 25rpx 30rpx;
+		background: linear-gradient(135deg, rgb(255 124 124 / 10%) 0%, white 100%);
+		border-radius: 16rpx;
+		margin: 20rpx 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+	}
+
+
+	.manage-btn {
+		font-size: 22rpx;
+		color: white;
+	    background: #ffbcbc;
+		margin-left: 20rpx;
+		padding: 10rpx 25rpx;
+		border-radius: 50rpx;
+		display: flex;
+		align-items: center;
+		transition: all 0.3s;
+
+		&::before {
+			content: '✎';
+			margin-right: 8rpx;
+		}
+
+		&:active {
+			transform: scale(0.95);
+			opacity: 0.9;
+		}
+	}
+
+	.type-modal {
+		padding: 30rpx;
+
+		.type-list {
+			max-height: 500rpx;
+			overflow-y: auto;
+			margin-bottom: 40rpx;
+		}
+
+		.type-item {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 25rpx;
+			border-bottom: 1rpx solid #eee;
+
+			text {
+				font-size: 26rpx;
+				color: #333;
+			}
+		}
+
+		.add-type-form {
+			display: flex;
+			gap: 20rpx;
+
+			.type-input {
+				flex: 1;
+				border: 1rpx solid #ddd;
+				border-radius: 8rpx;
+				padding: 15rpx;
+				font-size: 26rpx;
+			}
+
+			.add-btn {
+				background: #74c9e5;
+				color: white;
+				font-size: 26rpx;
+				padding: 0 30rpx;
+				border-radius: 8rpx;
+			}
+		}
+	}
+	
+	
+
+	/* 补款提醒表单样式 */
+	.remind-form {
+		margin-top: 40rpx;
+		padding: 30rpx;
+		background: #f8f8f8;
+		border-radius: 16rpx;
+
+		.form-item {
+			margin-bottom: 30rpx;
+
+			label {
+				display: block;
+				font-size: 26rpx;
+				color: #666;
+				margin-bottom: 15rpx;
+			}
+
+			input,
+			picker {
+				width: 100%;
+				padding: 20rpx;
+				border: 1rpx solid #ddd;
+				border-radius: 8rpx;
+				font-size: 28rpx;
+			}
+		}
+
+		.hint-text {
+			font-size: 24rpx;
+			color: #999;
+			margin-top: 20rpx;
 		}
 	}
 
@@ -844,58 +1115,71 @@
 			}
 		}
 	}
-	
+
 	// 空数据样式
 	.empty-state {
-	  display: flex;
-	  flex-direction: column;
-	  align-items: center;
-	  justify-content: center;
-	  min-height: 60vh;
-	  padding: 40rpx;
-	  text-align: center;
-	  
-	  .empty-icon {
-	    width: 240rpx;
-	    height: 240rpx;
-	    opacity: 0.8;
-	    margin-bottom: 40rpx;
-	  }
-	
-	  .empty-text {
-	    font-size: 32rpx;
-	    color: #888;
-	    margin-bottom: 20rpx;
-	    font-weight: 500;
-	  }
-	
-	  .empty-tip {
-	    font-size: 26rpx;
-	    color: #aaa;
-	    line-height: 1.6;
-	  }
-	}
-	
-	/* 针对展示柜的特殊调整 */
-	.tab_body_sec .empty-state {
-	  padding-top: 100rpx;
-	  
-	  .empty-icon {
-	    width: 280rpx;
-	    height: 280rpx;
-	  }
-	}
-	
-	/* 尾款日历特殊样式 */
-	.tab_body_3th .empty-state {
-	  .empty-icon {
-	    width: 260rpx;
-	    height: 260rpx;
-	  }
-	  
-	  // .empty-text {
-	  //   color: #74c9e5;
-	  // }
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 60vh;
+		padding: 40rpx;
+		text-align: center;
+
+		.empty-icon {
+			width: 240rpx;
+			height: 240rpx;
+			opacity: 0.8;
+			margin-bottom: 40rpx;
+		}
+
+		.empty-text {
+			font-size: 32rpx;
+			color: #888;
+			margin-bottom: 20rpx;
+			font-weight: 500;
+		}
+
+		.empty-tip {
+			font-size: 26rpx;
+			color: #aaa;
+			line-height: 1.6;
+		}
 	}
 
+	/* 针对展示柜的特殊调整 */
+	.tab_body_sec .empty-state {
+		padding-top: 100rpx;
+
+		.empty-icon {
+			width: 280rpx;
+			height: 280rpx;
+		}
+	}
+
+	/* 尾款日历特殊样式 */
+	.tab_body_3th .empty-state {
+		.empty-icon {
+			width: 260rpx;
+			height: 260rpx;
+		}
+
+	}
+
+	// 价格合计
+	.summary-container {
+		padding: 20rpx 30rpx;
+		border-radius: 12rpx;
+		margin: 20rpx 5rpx;
+
+		.total-text {
+			font-size: 24rpx;
+			color: #74c9e5;
+			font-weight: bold;
+
+			&::before {
+				content: '💰 ';
+			}
+		}
+	}
 </style>

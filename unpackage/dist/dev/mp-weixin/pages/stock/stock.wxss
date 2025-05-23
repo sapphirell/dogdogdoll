@@ -154,11 +154,18 @@
 
 /* 新增样式 */
 .type-picker {
-  padding-left: 25rpx;
-  font-size: 35rpx;
-  color: #585858;
-  font-weight: 1000;
-  margin-top: 10rpx;
+  flex: 1;
+  font-size: 22rpx;
+  color: #e9b6d7;
+  padding: 15rpx 25rpx;
+  border-radius: 10rpx;
+  background: white;
+}
+.type-picker .uni-input::before {
+  content: "▼ ";
+  margin-left: 15rpx;
+  font-size: 20rpx;
+  color: #e9b6d7;
 }
 .content-grid {
   display: flex;
@@ -210,6 +217,101 @@
   font-size: 22rpx;
   flex-grow: 1;
   text-shadow: 0 0 3rpx #fff;
+}
+.type-header {
+  display: flex;
+  align-items: center;
+  padding: 25rpx 30rpx;
+  background: linear-gradient(135deg, rgba(255, 124, 124, 0.1) 0%, white 100%);
+  border-radius: 16rpx;
+  margin: 20rpx 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+.manage-btn {
+  font-size: 22rpx;
+  color: white;
+  background: #ffbcbc;
+  margin-left: 20rpx;
+  padding: 10rpx 25rpx;
+  border-radius: 50rpx;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s;
+}
+.manage-btn::before {
+  content: "✎";
+  margin-right: 8rpx;
+}
+.manage-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+.type-modal {
+  padding: 30rpx;
+}
+.type-modal .type-list {
+  max-height: 500rpx;
+  overflow-y: auto;
+  margin-bottom: 40rpx;
+}
+.type-modal .type-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25rpx;
+  border-bottom: 1rpx solid #eee;
+}
+.type-modal .type-item text {
+  font-size: 26rpx;
+  color: #333;
+}
+.type-modal .add-type-form {
+  display: flex;
+  gap: 20rpx;
+}
+.type-modal .add-type-form .type-input {
+  flex: 1;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 15rpx;
+  font-size: 26rpx;
+}
+.type-modal .add-type-form .add-btn {
+  background: #74c9e5;
+  color: white;
+  font-size: 26rpx;
+  padding: 0 30rpx;
+  border-radius: 8rpx;
+}
+
+/* 补款提醒表单样式 */
+.remind-form {
+  margin-top: 40rpx;
+  padding: 30rpx;
+  background: #f8f8f8;
+  border-radius: 16rpx;
+}
+.remind-form .form-item {
+  margin-bottom: 30rpx;
+}
+.remind-form .form-item label {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+.remind-form .form-item input,
+.remind-form .form-item picker {
+  width: 100%;
+  padding: 20rpx;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+.remind-form .hint-text {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 20rpx;
 }
 .tab_body_3th .calendar-container {
   padding: 20rpx;
@@ -435,4 +537,17 @@ to {
 .tab_body_3th .empty-state .empty-icon {
   width: 260rpx;
   height: 260rpx;
+}
+.summary-container {
+  padding: 20rpx 30rpx;
+  border-radius: 12rpx;
+  margin: 20rpx 5rpx;
+}
+.summary-container .total-text {
+  font-size: 24rpx;
+  color: #74c9e5;
+  font-weight: bold;
+}
+.summary-container .total-text::before {
+  content: "💰 ";
 }

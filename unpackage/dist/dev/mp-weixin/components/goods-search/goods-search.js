@@ -38,6 +38,7 @@ const _sfc_main = {
   },
   emits: ["select", "update:modelValue"],
   setup(__props, { emit: __emit }) {
+    const showResults = common_vendor.ref(false);
     const props = __props;
     const emit = __emit;
     const results = common_vendor.ref([]);
@@ -45,10 +46,18 @@ const _sfc_main = {
       get: () => props.modelValue,
       set: (val) => emit("update:modelValue", val)
     });
+    common_vendor.watch(results, (newVal) => {
+      showResults.value = newVal.length > 0;
+    });
+    const closeResults = () => {
+      results.value = [];
+      showResults.value = false;
+    };
     const onSearchInput = async (e) => {
       var _a;
       inputValue.value = e.detail.value;
       const searchValue = e.detail.value.trim();
+      showResults.value = true;
       if (!searchValue) {
         results.value = [];
         return;
@@ -60,7 +69,7 @@ const _sfc_main = {
         });
         results.value = ((_a = res.data) == null ? void 0 : _a.status) === "success" ? res.data.data || [] : [];
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:89", "搜索失败:", error);
+        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:113", "搜索失败:", error);
         results.value = [];
       }
     };
@@ -75,29 +84,34 @@ const _sfc_main = {
         inputValue.value = goods.name;
         results.value = [];
       }
+      closeResults();
     };
     const cancel = () => {
-      results.value = [];
+      closeResults();
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: !__props.hiddenIcon
+        a: showResults.value
+      }, showResults.value ? {
+        b: common_vendor.o(closeResults)
+      } : {}, {
+        c: !__props.hiddenIcon
       }, !__props.hiddenIcon ? {
-        b: common_assets._imports_0$6
+        d: common_assets._imports_0$6
       } : {}, {
-        c: inputValue.value,
-        d: common_vendor.o(onSearchInput),
-        e: __props.fontSize || "22rpx",
-        f: results.value.length > 0
+        e: inputValue.value,
+        f: common_vendor.o(onSearchInput),
+        g: __props.fontSize || "22rpx",
+        h: results.value.length > 0
       }, results.value.length > 0 ? {
-        g: common_assets._imports_1$6,
-        h: common_vendor.o(cancel)
+        i: common_assets._imports_1$6,
+        j: common_vendor.o(cancel)
       } : {}, {
-        i: common_vendor.n(_ctx.$attrs.class),
-        j: __props.background || "#fff",
-        k: results.value.length > 0
+        k: common_vendor.n(_ctx.$attrs.class),
+        l: __props.background || "#fff",
+        m: results.value.length > 0
       }, results.value.length > 0 ? {
-        l: common_vendor.f(results.value, (item, k0, i0) => {
+        n: common_vendor.f(results.value, (item, k0, i0) => {
           return common_vendor.e({
             a: item.brand_name
           }, item.brand_name ? {
@@ -108,7 +122,7 @@ const _sfc_main = {
             e: common_vendor.o(($event) => onTap(item), item.id)
           });
         }),
-        m: __props.width
+        o: __props.width
       } : {});
     };
   }

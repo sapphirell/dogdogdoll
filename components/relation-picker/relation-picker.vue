@@ -1,21 +1,54 @@
 <!-- components/relation-picker/relation-picker.vue -->
 <template>
-	<common-modal :visible="internalVisible" @update:visible="handleModalVisibilityChange">
+	<common-modal :visible="internalVisible" @update:visible="handleModalVisibilityChange" top="3%">
 		<view class="relation-picker-container">
 			<view class="picker-header">
-				<text class="title">关联娃物</text>
+				 <view class="mode-switch">
+				    <!-- 精确模式按钮 -->
+				    <view 
+				      v-if="!isFuzzyMode"
+				      class="switch-btn precision-mode"
+				      @tap="switchMode(true)"
+				    >
+				      <uni-icons type="search" size="18" color="#fff"></uni-icons>
+				      <text>切换到精确关联</text>
+				    </view>
+				
+				    <!-- 模糊模式按钮 -->
+				    <view
+				      v-if="isFuzzyMode"
+				      class="switch-btn fuzzy-mode"
+				      @tap="switchMode(false)"
+				    >
+				      <uni-icons type="list" size="18" color="#fff"></uni-icons>
+				      <text>切换到模糊关联</text>
+				    </view>
+				  </view>
+				<!-- <text class="title">关联娃物</text> -->
 			</view>
 
 			<view class="picker-body">
-				<!-- 类型选择 -->
-				<common-name-picker :dataList="typeList" placeholder="选择类型" @select="handleTypeSelect"
-					class="type-picker" />
+				<!-- 精确模式 -->
+				<template v-if="isFuzzyMode">
+					<common-name-picker :dataList="typeList" placeholder="选择类型" @select="handleTypeSelect"
+						class="type-picker" />
+					<common-search mode="fill" @select="handleBrandSelect" width="520rpx" background="#f8f8f8"
+						class="brand-search" />
+					<custom-picker :dataList="goodsList" @select="handleGoodsSelect" class="goods-picker" />
+				</template>
 
-				<!-- 品牌搜索 -->
-				<common-search mode="fill" @select="handleBrandSelect" width="520rpx" background="#f8f8f8" class="brand-search" />
-
-				<!-- 商品选择 -->
-				<custom-picker :dataList="goodsList" @select="handleGoodsSelect" class="goods-picker" />
+				<!-- 模糊模式 -->
+				<template v-else>
+					  <goods-search 
+					    mode="fill" 
+					    @select="handleFuzzySelect" 
+					    v-model="searchKeyword" 
+					    width="520rpx" 
+					    background="#f8f8f8"
+					    :show-icon="false"
+					    class="fuzzy-search"
+					  />
+				</template>
 			</view>
 
 			<view class="picker-footer">
@@ -53,17 +86,68 @@
 			default: false
 		}
 	})
-
 	const emit = defineEmits([
 		'update:visible',
 		'confirm',
 		'cancel'
 	])
-
 	const goodsList = ref([])
 
 	// 使用内部状态管理可见性
 	const internalVisible = ref(false)
+	// 搜索关键词
+	const searchKeyword = ref('')
+
+	// 模式切换
+	const isFuzzyMode = ref(false)
+	const switchMode = (isFuzzy) => {
+		console.log(isFuzzy)
+	  isFuzzyMode.value = isFuzzy
+	  // 切换时重置所有状态
+	  searchKeyword.value = ''
+	  selectedData.value = {
+	    type: null,
+	    brand: null,
+	    goods: null
+	  }
+	  goodsList.value = []
+	}
+
+	// 模糊搜索选择处理
+	const handleFuzzySelect = async (goods) => {
+	  try {
+	    const detail = await getGoodsInfo(goods.id)
+	    selectedData.value = {
+	      type: detail.type || '其他',
+	      brand: {
+	        id: detail.brand_id,
+	        name: detail.brand_name
+	      },
+	      goods: {
+	        id: goods.id,
+	        name: goods.name,
+	        image: detail?.goods_images?.[0] || ''
+	      }
+	    }
+	  } catch (error) {
+	    console.error('商品信息获取失败', error)
+	    uni.showToast({
+	      title: '商品信息获取失败',
+	      icon: 'none'
+	    })
+	  }
+	}
+	// 在关闭弹窗时重置搜索关键词
+	const closePicker = () => {
+	  internalVisible.value = false
+	  searchKeyword.value = ''
+	  selectedData.value = {
+	    type: null,
+	    brand: null,
+	    goods: null
+	  }
+	}
+
 
 	// 监听父组件传来的 visible 变化
 	watch(() => props.visible, (val) => {
@@ -127,7 +211,12 @@
 	// 商品选择
 	const handleGoodsSelect = async (goodsId, goodsName) => {
 		try {
+			// 先清空旧数据避免残留
+			selectedData.value.goods = null
 			const detail = await getGoodsInfo(goodsId)
+			if (!detail) {
+				throw new Error('未找到商品信息')
+			}
 			selectedData.value.goods = {
 				id: goodsId,
 				name: goodsName,
@@ -135,6 +224,10 @@
 			}
 		} catch (error) {
 			console.error('商品选择失败', error)
+			uni.showToast({
+				title: '商品信息获取失败，请重新选择',
+				icon: 'none'
+			})
 		}
 	}
 
@@ -194,16 +287,7 @@
 		closePicker()
 	}
 
-	// 关闭弹窗
-	const closePicker = () => {
-		internalVisible.value = false
-		// 重置选择数据
-		selectedData.value = {
-			type: null,
-			brand: null,
-			goods: null
-		}
-	}
+
 </script>
 
 <style lang="less" scoped>
@@ -233,6 +317,7 @@
 
 			/deep/ .type-picker {
 				margin-bottom: 40rpx;
+
 				.select-input {
 					background: #f8f8f8;
 					border-radius: 12rpx;
@@ -286,7 +371,7 @@
 					line-height: 64rpx !important;
 					font-size: 22rpx !important;
 					padding: 0 24rpx !important;
-					
+
 				}
 			}
 
@@ -344,7 +429,7 @@
 
 	/* 品牌搜索样式加强 */
 	/deep/ .brand-search {
-	
+
 
 		background: #f8f8f8 !important;
 		border-radius: 12rpx !important;
@@ -357,7 +442,7 @@
 			font-size: 22rpx !important;
 			color: #333 !important;
 			background: #f8f8f8 !important;
-			// padding: 0 16rpx !important;
+			padding: 0rpx !important;
 			flex: 1;
 		}
 
@@ -369,7 +454,7 @@
 
 
 		.search_results {
-			margin-top: 0rpx!important;
+			margin-top: 0rpx !important;
 			background: #fff !important;
 			border: 1rpx solid #eee !important;
 			box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.08) !important;
@@ -395,7 +480,52 @@
 			padding: 0 24rpx !important;
 		}
 	}
+
 	.search_tab {
 		background: #f8f8f8 !important;
+	}
+	
+	.mode-switch {
+	  position: relative;
+	  height: 72rpx;
+	  margin-bottom: 24rpx;
+	
+	  .switch-btn {
+	    position: absolute;
+	    width: 100%;
+	    height: 100%;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    gap: 12rpx;
+	    border-radius: 36rpx;
+	    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	    box-shadow: 0 4rpx 16rpx rgba(120, 208, 221, 0.2);
+	    
+	    text {
+	      color: #fff;
+	      font-size: 26rpx;
+	      font-weight: 500;
+	    }
+	
+	    &.precision-mode {
+	      background: linear-gradient(135deg, #78d0dd, #94a5f3);
+	    }
+	
+	    &.fuzzy-mode {
+	      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+	    }
+	
+	    // 入场动画
+	    &-enter-active,
+	    &-leave-active {
+	      transition: all 0.3s ease;
+	    }
+	    &-enter-from,
+	    &-leave-to {
+	      opacity: 0;
+	      transform: scale(0.9);
+	    }
+	  }
 	}
 </style>
