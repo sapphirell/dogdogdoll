@@ -29,19 +29,37 @@ const _sfc_main = {
     common_vendor.ref("");
     common_vendor.ref(0);
     common_vendor.ref("");
-    const handleRelationConfirm = (selectedData) => {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:97", "收到选择数据:", selectedData);
-      saveCollocationDataList.value.push({
-        brand_id: selectedData.brand_id,
-        goods_id: selectedData.goods.id,
-        brand_name: selectedData.brand.name,
-        goods_name: selectedData.goods.name,
-        goods_image: selectedData.goods.image,
-        type: selectedData.type
-      });
+    const handleRelationConfirm = (data) => {
+      try {
+        const relationData = {
+          goods_id: data.goods.id || 0,
+          goods_name: data.goods.name,
+          goods_image: data.goods.image || "",
+          brand_id: data.brand.id || 0,
+          brand_name: data.brand.name || (data.isFuzzy ? "" : "未知品牌"),
+          type: data.type || (data.isFuzzy ? "未知类型" : "")
+        };
+        const isExist = saveCollocationDataList.value.some(
+          (item) => item.goods_id !== 0 && item.goods_id === relationData.goods_id || item.goods_name === relationData.goods_name
+        );
+        if (!isExist) {
+          saveCollocationDataList.value.push(relationData);
+        } else {
+          common_vendor.index.showToast({
+            title: "已存在相同关联项",
+            icon: "none"
+          });
+        }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:121", "保存关联数据失败:", error);
+        common_vendor.index.showToast({
+          title: "保存关联信息失败",
+          icon: "none"
+        });
+      }
     };
     const handleRelationCancel = () => {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:110", "用户取消选择");
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:130", "用户取消选择");
     };
     const showRelationPicker = () => {
       showSelectTab.value = true;
@@ -53,11 +71,11 @@ const _sfc_main = {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:125", res.data.data);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:145", res.data.data);
             resolve(res.data);
           },
           fail: (err) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:129", err);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:149", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -81,7 +99,7 @@ const _sfc_main = {
           "goods_image": res.data.goods_images[0],
           "type": props.type
         };
-        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:156", data);
+        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:176", data);
         saveCollocationDataList.value.push(data);
       });
     }
@@ -103,7 +121,7 @@ const _sfc_main = {
         }
         common_vendor.index.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:194", "上传出错:", error);
+        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:214", "上传出错:", error);
         common_vendor.index.showToast({ title: "部分图片上传失败", icon: "none" });
       }
     }
@@ -136,15 +154,17 @@ const _sfc_main = {
         content: content.value,
         image_url_list: uploadList.value,
         scene,
-        relation_data_list: saveCollocationDataList.value.map((item) => ({
-          goods_id: item.goods_id,
-          goods_name: item.goods_name,
-          brand_id: item.brand_id,
-          brand_name: item.brand_name,
-          type: item.type
+        relations: saveCollocationDataList.value.map((item) => ({
+          relation_goods_id: item.goods_id,
+          relation_goods_name: item.goods_name,
+          relation_brand_id: item.brand_id,
+          relation_brand_name: item.brand_name,
+          type: item.type,
+          relation_origin: 1
+          // 标识关联的是collocation
         }))
       };
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:245", postData);
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:266", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-collocation",
         method: "POST",
@@ -172,7 +192,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:276", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:297", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -186,11 +206,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:322", res.data.data);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:343", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:326", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:347", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"

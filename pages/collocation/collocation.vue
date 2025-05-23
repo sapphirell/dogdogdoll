@@ -92,18 +92,38 @@
 	const chooseType = ref("")
 	
 	// 处理确认事件
-	const handleRelationConfirm = (selectedData) => {
-	  // 这里处理选择后的数据保存逻辑
-	  console.log('收到选择数据:', selectedData)
-	  // 将数据添加到 saveCollocationDataList
-	  saveCollocationDataList.value.push({
-		brand_id: selectedData.brand_id,
-		goods_id: selectedData.goods.id,
-		brand_name: selectedData.brand.name,
-		goods_name: selectedData.goods.name,
-		goods_image: selectedData.goods.image,
-		type: selectedData.type
-	  })
+	const handleRelationConfirm = (data) => {
+	  try {
+	    const relationData = {
+	      goods_id: data.goods.id || 0,
+	      goods_name: data.goods.name,
+	      goods_image: data.goods.image || '',
+	      brand_id: data.brand.id || 0,
+	      brand_name: data.brand.name || (data.isFuzzy ? '' : '未知品牌'),
+	      type: data.type || (data.isFuzzy ? '未知类型' : '')
+	    }
+	
+	    // 去重检查（同时匹配ID和名称）
+	    const isExist = saveCollocationDataList.value.some(item => 
+	      (item.goods_id !== 0 && item.goods_id === relationData.goods_id) ||
+	      item.goods_name === relationData.goods_name
+	    )
+	
+	    if (!isExist) {
+	      saveCollocationDataList.value.push(relationData)
+	    } else {
+	      uni.showToast({
+	        title: '已存在相同关联项',
+	        icon: 'none'
+	      })
+	    }
+	  } catch (error) {
+	    console.error('保存关联数据失败:', error)
+	    uni.showToast({
+	      title: '保存关联信息失败',
+	      icon: 'none'
+	    })
+	  }
 	}
 	// 处理取消事件
 	const handleRelationCancel = () => {
@@ -229,19 +249,20 @@
 		let scene = getScene()		
 
 		// 构造请求数据
-		const postData = {
-			title: title.value,
-			content: content.value,
-			image_url_list: uploadList.value,
-			scene: scene,
-			relation_data_list: saveCollocationDataList.value.map(item => ({
-				goods_id: item.goods_id,
-				goods_name: item.goods_name,
-				brand_id: item.brand_id,
-				brand_name: item.brand_name,
-				type: item.type
-			}))
-		};
+		  const postData = {
+		    title: title.value,
+		    content: content.value,
+		    image_url_list: uploadList.value,
+		    scene: scene,
+		    relations: saveCollocationDataList.value.map(item => ({
+		      relation_goods_id: item.goods_id,
+		      relation_goods_name: item.goods_name,
+		      relation_brand_id: item.brand_id,
+		      relation_brand_name: item.brand_name,
+		      type: item.type,
+		      relation_origin: 1 // 标识关联的是collocation
+		    }))
+		  };
 		console.log(postData)
 
 		uni.request({

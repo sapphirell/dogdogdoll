@@ -109,6 +109,7 @@
 .data-v-0488033a .brand-search {
   background: #f8f8f8 !important;
   border-radius: 12rpx !important;
+  padding: 16rpx 24rpx !important;
   min-height: 72rpx;
   margin-bottom: 20rpx;
   display: block;

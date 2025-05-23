@@ -4,7 +4,8 @@
 			"path": "pages/index/index",
 			"style": {
 				"navigationBarTitleText": "首页",
-				"navigationStyle": "custom" //自定义导航栏
+				"navigationStyle": "custom", //自定义导航栏
+				"enablePullDownRefresh": true
 			}
 		},
 		{

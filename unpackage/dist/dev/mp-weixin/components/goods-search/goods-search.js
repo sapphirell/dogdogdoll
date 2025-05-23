@@ -69,7 +69,7 @@ const _sfc_main = {
         });
         results.value = ((_a = res.data) == null ? void 0 : _a.status) === "success" ? res.data.data || [] : [];
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:113", "搜索失败:", error);
+        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:114", "搜索失败:", error);
         results.value = [];
       }
     };

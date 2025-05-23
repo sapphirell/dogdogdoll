@@ -27,19 +27,37 @@ const _sfc_main = {
     common_vendor.ref("");
     common_vendor.ref(0);
     common_vendor.ref("");
-    const handleRelationConfirm = (selectedData) => {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:111", "收到选择数据:", selectedData);
-      saveCollocationDataList.value.push({
-        brand_id: selectedData.brand_id,
-        goods_id: selectedData.goods.id,
-        brand_name: selectedData.brand.name,
-        goods_name: selectedData.goods.name,
-        goods_image: selectedData.goods.image,
-        type: selectedData.type
-      });
+    const handleRelationConfirm = (data) => {
+      try {
+        const relationData = {
+          goods_id: data.goods.id || 0,
+          goods_name: data.goods.name,
+          goods_image: data.goods.image || "",
+          brand_id: data.brand.id || 0,
+          brand_name: data.brand.name || (data.isFuzzy ? "" : "未知品牌"),
+          type: data.type || (data.isFuzzy ? "未知类型" : "")
+        };
+        const isExist = saveCollocationDataList.value.some(
+          (item) => item.goods_id !== 0 && item.goods_id === relationData.goods_id || item.goods_name === relationData.goods_name
+        );
+        if (!isExist) {
+          saveCollocationDataList.value.push(relationData);
+        } else {
+          common_vendor.index.showToast({
+            title: "已存在相同关联项",
+            icon: "none"
+          });
+        }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:148", "保存关联数据失败:", error);
+        common_vendor.index.showToast({
+          title: "保存关联信息失败",
+          icon: "none"
+        });
+      }
     };
     const handleRelationCancel = () => {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:125", "用户取消选择");
+      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:157", "用户取消选择");
     };
     const showRelationPicker = () => {
       showSelectTab.value = true;
@@ -72,7 +90,7 @@ const _sfc_main = {
         description.value = data.description;
         display.value = data.display;
         uploadList.value = ((_a = data.image_urls) == null ? void 0 : _a.split(",")) || [];
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:198", data);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:230", data);
         if (data.relations) {
           saveCollocationDataList.value = data.relations.map((r) => ({
             goods_id: r.relation_goods_id,
@@ -106,7 +124,7 @@ const _sfc_main = {
         }
         common_vendor.index.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:245", "上传出错:", error);
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:277", "上传出错:", error);
         common_vendor.index.showToast({ title: "部分图片上传失败", icon: "none" });
       }
     }
@@ -211,7 +229,7 @@ const _sfc_main = {
           return;
         }
       } catch (err) {
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:360", err);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:392", err);
         common_vendor.index.showToast({
           title: "提交失败",
           icon: "none"
@@ -224,11 +242,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:380", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:412", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:384", err);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:416", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
