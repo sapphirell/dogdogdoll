@@ -583,3 +583,38 @@
   bottom: -20rpx;
   transform: rotate(15deg);
 }
+
+/* 自定义下拉刷新样式 */
+.data-v-1cf27b2a .uni-scroll-view-refresh .uni-scroll-view-refresh-inner {
+  transform: none !important;
+  flex-direction: column;
+}
+.data-v-1cf27b2a .uni-scroll-view-refresh .uni-scroll-view-refresh-inner .uni-load-more {
+  display: none !important;
+}
+.data-v-1cf27b2a .uni-scroll-view-refresh .uni-scroll-view-refresh-inner::before {
+  content: "↓ 下拉刷新";
+  font-size: 26rpx;
+  color: #4cbbd0;
+  transition: all 0.3s;
+}
+.data-v-1cf27b2a .uni-scroll-view-refresh .uni-scroll-view-refresh-inner[refreshing]::before {
+  content: "正在刷新...";
+  color: #4cbbd0;
+}
+.data-v-1cf27b2a .uni-scroll-view-refresh .uni-scroll-view-refresh-inner[refreshing]::after {
+  content: "";
+  display: block;
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #4cbbd0;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin-1cf27b2a 0.8s linear infinite;
+  margin-top: 10rpx;
+}
+@keyframes spin-1cf27b2a {
+to {
+    transform: rotate(360deg);
+}
+}

@@ -16,7 +16,8 @@
 				</view>
 
 				<view>
-					<common-search width="680rpx"></common-search>
+					<!-- <common-search width="680rpx"></common-search> -->
+					<goods-search width="720rpx"></goods-search>
 					<div style="clear: both;"></div>
 				</view>
 				<view style="position: relative;height: 250rpx;">
@@ -242,6 +243,7 @@
 	import {
 		onLoad,
 		onReachBottom,
+		onPullDownRefresh,
 	} from "@dcloudio/uni-app"
 	import {
 		ref
@@ -335,6 +337,58 @@
 		}
 	})
 
+	// 下拉刷新处理
+	onPullDownRefresh(async () => {
+		try {
+			await refreshData();
+			uni.stopPullDownRefresh();
+		} catch (error) {
+			uni.stopPullDownRefresh();
+			uni.showToast({
+				title: '刷新失败',
+				icon: 'none'
+			});
+		}
+	});
+
+	// 统一刷新方法
+	const refreshData = async () => {
+		// 根据当前选项卡刷新对应数据
+		const refreshActions = {
+			'brands': () => {
+				page.value = 1;
+				brandsList.value = [];
+				hasMore.value = true;
+				getBrands(true)
+
+			},
+			'news': () => {
+				newsPage.value = 1;
+				newsList.value = [];
+				newsHasMore.value = true;
+				getNews(true)
+
+			},
+			'hot': () => {
+
+				hotPage.value = 1;
+				hotList.value = [];
+				hotHasMore.value = true;
+				getHotCollocations(true)
+			},
+			'second': () => {
+				treeholePage.value = 1;
+				treeholeList.value = [];
+				treeholeHasMore.value = true;
+				getTreeholeList(true)
+			}
+		};
+
+		await refreshActions[activeTab.value]();
+		getArticles(); // 始终刷新轮播图
+	};
+
+
 	function jump2collocationSquare() {
 		uni.navigateTo({
 			url: "/pages/collocation_square/collocation_square"
@@ -415,7 +469,8 @@
 		});
 	}
 
-	function getNews() {
+	const getNews = async (isRefresh = false) => {
+		if (isRefresh) newsPage.value = 1;
 		if (!newsHasMore.value || newsLoading.value) return
 
 		newsLoading.value = true
@@ -433,7 +488,7 @@
 					return
 				}
 				newsList.value = [...newsList.value, ...newData]
-				newsHasMore.value = newsList.value.length < res.data.data.total
+				newsHasMore.value = res.data.data.news_list.length === newsPageSize.value
 				newsPage.value++
 			},
 			fail: (err) => {
@@ -458,7 +513,8 @@
 	}
 
 	// 获取热门搭配数据
-	function getHotCollocations() {
+	const getHotCollocations = async (isRefresh = false) => {
+		if (isRefresh) hotPage.value = 1;
 		if (!hotHasMore.value || hotLoading.value) return
 
 		hotLoading.value = true
@@ -503,7 +559,8 @@
 	}
 
 
-	function getBrands() {
+	const getBrands = async (isRefresh = false) => {
+		if (isRefresh) page.value = 1; // 强制重置为第一页
 		if (!hasMore.value || loading.value) {
 			return
 		}
@@ -547,7 +604,8 @@
 
 
 	// 获取树洞列表
-	function getTreeholeList() {
+	const getTreeholeList = async (isRefresh = false) => {
+		if (isRefresh) treeholePage.value = 1;
 		if (!treeholeHasMore.value || treeholeLoading.value) return
 
 		treeholeLoading.value = true
@@ -1370,8 +1428,47 @@
 				transform: rotate(15deg);
 			}
 		}
+	}
 
+	/* 自定义下拉刷新样式 */
+	::v-deep .uni-scroll-view-refresh {
+		.uni-scroll-view-refresh-inner {
+			transform: none !important;
+			flex-direction: column;
 
+			.uni-load-more {
+				display: none !important;
+			}
 
+			&::before {
+				content: "↓ 下拉刷新";
+				font-size: 26rpx;
+				color: #4cbbd0;
+				transition: all 0.3s;
+			}
+
+			&[refreshing]::before {
+				content: "正在刷新...";
+				color: #4cbbd0;
+			}
+
+			&[refreshing]::after {
+				content: "";
+				display: block;
+				width: 40rpx;
+				height: 40rpx;
+				border: 4rpx solid #4cbbd0;
+				border-top-color: transparent;
+				border-radius: 50%;
+				animation: spin 0.8s linear infinite;
+				margin-top: 10rpx;
+			}
+		}
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

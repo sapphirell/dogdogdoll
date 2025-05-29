@@ -1,6 +1,7 @@
 {
   "component": true,
   "usingComponents": {
+    "attitude-widget": "../attitude-widget/attitude-widget",
     "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons"
   }
 }

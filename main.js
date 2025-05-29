@@ -14,16 +14,16 @@ app.$mount()
 // #endif
 
 // 加载alimama数黑体
-uni.loadFontFace({
-  family: 'alimamamshuhei',
-  source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
-  success() {
-	  console.log('load font success')
-  },
-  fail(e) {
-	  console.log('load font fail', e)
-  }
-})
+// uni.loadFontFace({
+//   family: 'alimamamshuhei',
+//   source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
+//   success() {
+// 	  console.log('load font success')
+//   },
+//   fail(e) {
+// 	  console.log('load font fail', e)
+//   }
+// })
 
 
 // #ifdef VUE3

@@ -3,19 +3,19 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
-  const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
+  const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
   const _component_transition = common_vendor.resolveComponent("transition");
   const _easycom_index_brand2 = common_vendor.resolveComponent("index-brand");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_common_search2 + _component_transition + _easycom_index_brand2 + _easycom_uni_icons2 + _easycom_common_page2)();
+  (_easycom_goods_search2 + _component_transition + _easycom_index_brand2 + _easycom_uni_icons2 + _easycom_common_page2)();
 }
-const _easycom_common_search = () => "../../components/common-search/common-search.js";
+const _easycom_goods_search = () => "../../components/goods-search/goods-search.js";
 const _easycom_index_brand = () => "../../components/index-brand/index-brand.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_common_search + _easycom_index_brand + _easycom_uni_icons + _easycom_common_page)();
+  (_easycom_goods_search + _easycom_index_brand + _easycom_uni_icons + _easycom_common_page)();
 }
 const _sfc_main = {
   __name: "index",
@@ -63,6 +63,48 @@ const _sfc_main = {
     const switchTab = (tab) => {
       activeTab.value = tab;
     };
+    common_vendor.onPullDownRefresh(async () => {
+      try {
+        await refreshData();
+        common_vendor.index.stopPullDownRefresh();
+      } catch (error) {
+        common_vendor.index.stopPullDownRefresh();
+        common_vendor.index.showToast({
+          title: "刷新失败",
+          icon: "none"
+        });
+      }
+    });
+    const refreshData = async () => {
+      const refreshActions = {
+        "brands": () => {
+          page.value = 1;
+          brandsList.value = [];
+          hasMore.value = true;
+          getBrands(true);
+        },
+        "news": () => {
+          newsPage.value = 1;
+          newsList.value = [];
+          newsHasMore.value = true;
+          getNews(true);
+        },
+        "hot": () => {
+          hotPage.value = 1;
+          hotList.value = [];
+          hotHasMore.value = true;
+          getHotCollocations(true);
+        },
+        "second": () => {
+          treeholePage.value = 1;
+          treeholeList.value = [];
+          treeholeHasMore.value = true;
+          getTreeholeList(true);
+        }
+      };
+      await refreshActions[activeTab.value]();
+      getArticles();
+    };
     const handleBannerClick = (item) => {
       common_vendor.index.navigateTo({
         url: `/pages/article_detail/article_detail?id=${item.id}`
@@ -88,7 +130,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("error", "at pages/index/index.vue:372", "获取Banner失败:", err);
+          common_vendor.index.__f__("error", "at pages/index/index.vue:426", "获取Banner失败:", err);
           data.value = {};
         }
       });
@@ -124,7 +166,9 @@ const _sfc_main = {
         }
       });
     }
-    function getNews() {
+    const getNews = async (isRefresh = false) => {
+      if (isRefresh)
+        newsPage.value = 1;
       if (!newsHasMore.value || newsLoading.value)
         return;
       newsLoading.value = true;
@@ -142,11 +186,11 @@ const _sfc_main = {
             return;
           }
           newsList.value = [...newsList.value, ...newData];
-          newsHasMore.value = newsList.value.length < res.data.data.total;
+          newsHasMore.value = res.data.data.news_list.length === newsPageSize.value;
           newsPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:440", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:495", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -157,13 +201,15 @@ const _sfc_main = {
           common_vendor.index.hideLoading();
         }
       });
-    }
+    };
     function jump2treeholeDetail(item) {
       common_vendor.index.navigateTo({
         url: "/pages/treehole_detail/treehole_detail?id=" + item.id
       });
     }
-    function getHotCollocations() {
+    const getHotCollocations = async (isRefresh = false) => {
+      if (isRefresh)
+        hotPage.value = 1;
       if (!hotHasMore.value || hotLoading.value)
         return;
       hotLoading.value = true;
@@ -187,7 +233,7 @@ const _sfc_main = {
           hotPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:485", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:541", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -198,13 +244,15 @@ const _sfc_main = {
           common_vendor.index.hideLoading();
         }
       });
-    }
+    };
     function jumpToCollocationDetail(item) {
       common_vendor.index.navigateTo({
         url: `/pages/collocation_share/collocation_share?collocation_id=${item.collocation_id}&origin=${item.origin}`
       });
     }
-    function getBrands() {
+    const getBrands = async (isRefresh = false) => {
+      if (isRefresh)
+        page.value = 1;
       if (!hasMore.value || loading.value) {
         return;
       }
@@ -230,7 +278,7 @@ const _sfc_main = {
           page.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:535", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:592", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -241,8 +289,10 @@ const _sfc_main = {
           common_vendor.index.hideLoading();
         }
       });
-    }
-    function getTreeholeList() {
+    };
+    const getTreeholeList = async (isRefresh = false) => {
+      if (isRefresh)
+        treeholePage.value = 1;
       if (!treeholeHasMore.value || treeholeLoading.value)
         return;
       treeholeLoading.value = true;
@@ -277,7 +327,7 @@ const _sfc_main = {
           common_vendor.index.hideLoading();
         }
       });
-    }
+    };
     function handlePublish() {
       if (!common_config.global.isLogin) {
         common_vendor.index.showModal({
@@ -364,7 +414,7 @@ const _sfc_main = {
       return common_vendor.e({
         a: common_assets._imports_7,
         b: common_vendor.p({
-          width: "680rpx"
+          width: "720rpx"
         }),
         c: common_vendor.f(common_vendor.unref(data), (item, k0, i0) => {
           return {

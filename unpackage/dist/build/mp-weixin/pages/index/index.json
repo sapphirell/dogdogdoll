@@ -1,8 +1,9 @@
 {
   "navigationBarTitleText": "首页",
   "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
   "usingComponents": {
-    "common-search": "../../components/common-search/common-search",
+    "goods-search": "../../components/goods-search/goods-search",
     "index-brand": "../../components/index-brand/index-brand",
     "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "common-page": "../../components/common-page/common-page"

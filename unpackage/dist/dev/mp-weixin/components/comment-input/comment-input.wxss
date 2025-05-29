@@ -37,19 +37,20 @@
   margin-right: 8px;
 }
 .bottom_tab .comment_input.data-v-88f35a0c {
+  flex: 1;
   /* 占据剩余空间 */
   min-width: 0;
   /* 允许缩小 */
-  flex: 1;
-  margin-right: 8px;
+  margin-right: 15rpx;
   background: #f2f2f2;
-  border-radius: 5px;
-  padding: 8px 8px 8px 10px;
+  border-radius: 10rpx;
+  padding: 15rpx;
   line-height: normal;
-  font-size: 26rpx;
   color: #373838;
   height: 40rpx;
   transition: height 0.3s ease;
+  font-size: 24rpx;
+  box-sizing: content-box;
 }
 .bottom_tab .comment_input.expanded.data-v-88f35a0c {
   height: 80rpx !important;

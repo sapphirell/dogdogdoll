@@ -2,12 +2,14 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_attitude_widget2 = common_vendor.resolveComponent("attitude-widget");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  _easycom_uni_icons2();
+  (_easycom_attitude_widget2 + _easycom_uni_icons2)();
 }
+const _easycom_attitude_widget = () => "../attitude-widget/attitude-widget.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_uni_icons();
+  (_easycom_attitude_widget + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "comment-list",
@@ -31,6 +33,10 @@ const _sfc_main = {
     common_vendor.reactive({});
     const emit = __emit;
     const loading = common_vendor.ref(false);
+    const handleAttitudeChange = (comment, { status, counts }) => {
+      comment.attitudeStatus = status;
+      comment.attitudeCounts = counts;
+    };
     __expose({
       // 添加主评论
       addNewComment: (comment) => {
@@ -95,6 +101,7 @@ const _sfc_main = {
     const loadMainComments = async () => {
       try {
         loading.value = true;
+        let token = common_vendor.index.getStorageSync("token");
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/get-comments`,
           data: {
@@ -103,6 +110,9 @@ const _sfc_main = {
             page: currentPage.value,
             page_size: 10
             // 添加分页大小
+          },
+          header: {
+            "Authorization": token
           }
         });
         if (res.data.status === "success") {
@@ -111,17 +121,27 @@ const _sfc_main = {
             ...c,
             showAll: false,
             localChildren: c.children || [],
-            childTotal: c.childTotal || (c.children ? c.children.length : 0)
+            childTotal: c.childTotal || (c.children ? c.children.length : 0),
+            // 新增表态相关字段
+            attitudeStatus: c.user_attitude || 0,
+            // 当前用户表态状态
+            attitudeCounts: c.attitude_counts || {
+              1: c.count_1 || 0,
+              2: c.count_2 || 0,
+              3: c.count_3 || 0,
+              4: c.count_4 || 0,
+              5: c.count_5 || 0
+            }
           }));
           if (currentPage.value === 1) {
             commentList.value = newComments;
           } else {
             commentList.value.push(...newComments);
           }
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:224", "total", data.total);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:263", "total", data.total);
           hasMore.value = data.total > commentList.value.length;
           mainCommentsTotal.value = data.total;
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:228", "是否还有更多?", hasMore.value);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:267", "是否还有更多?", hasMore.value);
         }
       } catch (err) {
         common_vendor.index.showToast({
@@ -192,10 +212,18 @@ const _sfc_main = {
             f: common_vendor.t(comment.comment),
             g: common_vendor.o(($event) => handleReply(comment), comment.id),
             h: common_vendor.t(formatTime(comment.created_at)),
-            i: common_vendor.o(($event) => handleReply(comment), comment.id),
-            j: comment.localChildren && comment.localChildren.length
+            i: common_vendor.o(($event) => handleAttitudeChange(comment, $event), comment.id),
+            j: "779bedea-0-" + i0,
+            k: common_vendor.p({
+              ["target-id"]: comment.id,
+              type: 6,
+              ["attitude-status"]: comment.attitudeStatus,
+              ["attitude-counts"]: comment.attitudeCounts
+            }),
+            l: common_vendor.o(($event) => handleReply(comment), comment.id),
+            m: comment.localChildren && comment.localChildren.length
           }, comment.localChildren && comment.localChildren.length ? common_vendor.e({
-            k: common_vendor.f(visibleChildren(comment), (child, index, i1) => {
+            n: common_vendor.f(visibleChildren(comment), (child, index, i1) => {
               return common_vendor.e({
                 a: common_vendor.o(($event) => jump2user(child.uid), child.id),
                 b: child.avatar,
@@ -208,22 +236,30 @@ const _sfc_main = {
                 g: common_vendor.t(child.comment),
                 h: common_vendor.o(($event) => handleReply(comment), child.id),
                 i: common_vendor.t(formatTime(child.created_at)),
-                j: common_vendor.o(($event) => handleReply(comment, child), child.id),
-                k: child.id
+                j: common_vendor.o(($event) => handleAttitudeChange(comment, $event), child.id),
+                k: "779bedea-1-" + i0 + "-" + i1,
+                l: common_vendor.p({
+                  ["target-id"]: child.id,
+                  type: 6,
+                  ["attitude-status"]: comment.attitudeStatus,
+                  ["attitude-counts"]: comment.attitudeCounts
+                }),
+                m: common_vendor.o(($event) => handleReply(comment, child), child.id),
+                n: child.id
               });
             }),
-            l: shouldShowMore(comment)
+            o: shouldShowMore(comment)
           }, shouldShowMore(comment) ? {
-            m: common_vendor.t(remainingCount(comment)),
-            n: "779bedea-0-" + i0,
-            o: common_vendor.p({
+            p: common_vendor.t(remainingCount(comment)),
+            q: "779bedea-2-" + i0,
+            r: common_vendor.p({
               type: "arrow-down",
               size: "18",
               color: "#007AFF"
             }),
-            p: common_vendor.o(($event) => loadMore(comment), comment.id)
+            s: common_vendor.o(($event) => loadMore(comment), comment.id)
           } : {}) : {}, {
-            q: comment.id
+            t: comment.id
           });
         }),
         d: commentList.value.length > 0

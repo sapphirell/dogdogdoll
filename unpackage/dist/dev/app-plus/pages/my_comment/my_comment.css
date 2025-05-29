@@ -1,0 +1,128 @@
+.page-container[data-v-7fd39f53] {
+  padding: 0.625rem 0.9375rem;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+.comment-list[data-v-7fd39f53] {
+  height: calc(100vh - 1.25rem);
+}
+.comment-item[data-v-7fd39f53] {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+}
+.user-info[data-v-7fd39f53] {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.625rem;
+}
+.user-info .avatar[data-v-7fd39f53] {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  margin-right: 0.625rem;
+}
+.user-info .user-meta[data-v-7fd39f53] {
+  display: flex;
+  flex-direction: column;
+}
+.user-info .username[data-v-7fd39f53] {
+  font-size: 0.75rem;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 0.1875rem;
+  max-width: 12.5rem;
+  /* 根据设计调整 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-info .time[data-v-7fd39f53] {
+  font-size: 0.625rem;
+  color: #999;
+}
+.content-box[data-v-7fd39f53] {
+  margin-bottom: 0.75rem;
+}
+.content-box .content[data-v-7fd39f53] {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #333;
+}
+.target-box[data-v-7fd39f53] {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background: #f5f5f5;
+  border-radius: 0.375rem;
+}
+.target-box .target-image[data-v-7fd39f53] {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.25rem;
+  margin-right: 0.625rem;
+}
+.target-box .target-info[data-v-7fd39f53] {
+  flex: 1;
+  overflow: hidden;
+}
+.target-box .type-tag[data-v-7fd39f53] {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.1875rem;
+  font-size: 0.625rem;
+  margin-bottom: 0.25rem;
+}
+.target-box .type-tag.brand[data-v-7fd39f53] {
+  background: #ffeaea;
+  color: #ff4444;
+}
+.target-box .type-tag.goods[data-v-7fd39f53] {
+  background: #e8f4ff;
+  color: #409eff;
+}
+.target-box .type-tag.collocation[data-v-7fd39f53] {
+  background: #fff6e6;
+  color: #ff9900;
+}
+.target-box .type-tag.news[data-v-7fd39f53] {
+  background: #e6f8f0;
+  color: #67c23a;
+}
+.target-box .type-tag.treehole[data-v-7fd39f53] {
+  background: #f0e6ff;
+  color: #9254de;
+}
+.target-box .target-name[data-v-7fd39f53] {
+  max-width: 12.5rem;
+  /* 根据设计调整 */
+  font-size: 0.75rem;
+  color: #666;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.loading-status[data-v-7fd39f53] {
+  text-align: center;
+  padding: 0.9375rem;
+  font-size: 0.75rem;
+  color: #999;
+}
+.loading-status .loading-text[data-v-7fd39f53]::after {
+  content: '...';
+  animation: loading-7fd39f53 1s infinite;
+}
+@keyframes loading-7fd39f53 {
+0% {
+    content: '.';
+}
+33% {
+    content: '..';
+}
+66% {
+    content: '...';
+}
+}

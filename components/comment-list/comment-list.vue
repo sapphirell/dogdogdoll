@@ -14,63 +14,86 @@
 				<image @tap="jump2user(comment.uid)" :src="comment.avatar" class="avatar" mode="aspectFill" />
 				<view class="content">
 					<view class="header">
-						<text class="username" @tap="jump2user(comment.uid)">{{ formatUsername(comment.username) }}</text>
+						<text class="username"
+							@tap="jump2user(comment.uid)">{{ formatUsername(comment.username) }}</text>
 						<text class="floor">#{{ comment.floor }}</text>
 					</view>
 					<text class="comment-text" @click="handleReply(comment)">{{ comment.comment }}</text>
+					<!-- 新增表态按钮组 -->
+					<attitude-widget
+						:target-id="comment.id"
+						:type="6"
+						:attitude-status="comment.attitudeStatus"
+						:attitude-counts="comment.attitudeCounts"
+						@change="handleAttitudeChange(comment, $event)"
+						/>
 					<view class="footer">
 						<text class="time">{{ formatTime(comment.created_at) }}</text>
+						
 						<view class="actions">
 							<text class="reply-btn" @click="handleReply(comment)">回复</text>
 						</view>
-					</view>
-				</view>
-			</view>
-
-			<!-- 子评论 -->
-			<view v-if="comment.localChildren && comment.localChildren.length" class="sub-comments">
-				<view v-for="(child, index) in visibleChildren(comment)" :key="child.id" class="sub-comment">
-					<image @tap="jump2user(child.uid)" :src="child.avatar" class="avatar" mode="aspectFill" />
-					<view class="content">
-						<view class="header">
-							<text @tap="jump2user(child.uid)" class="username">{{ formatUsername(child.username) }}</text>
-							<text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text>
-						</view>
-						<text class="comment-text" @click="handleReply(comment)">{{ child.comment }}</text>
-						<view class="footer">
-							<text class="time">{{ formatTime(child.created_at) }}</text>
-							<view class="actions">
-								<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
-							</view>
-						</view>
-					</view>
-				</view>
-
-				<!-- 加载更多 -->
-				<view v-if="shouldShowMore(comment)" class="load-more" @click="loadMore(comment)">
-					<text>展开{{ remainingCount(comment) }}条回复</text>
-					<uni-icons type="arrow-down" size="18" color="#007AFF" />
-				</view>
-			</view>
-		</view>
-
-
-		<!-- 加载更多按钮 -->
-		<view class="load-more-box" v-if="commentList.length > 0">
-			<view v-if="hasMore" class="load-more-btn" @click="loadMoreMainComments" :class="{loading: loading}">
-				<view v-if="!loading">
-					<text>  加载更多 </text>
-					<uni-icons type="arrow-down" size="18" color="#007AFF" />
-				</view>
-				<view v-else>
-					<uni-icons  type="spinner-cycle" size="16" color="#888" />
-				</view>
 				
-			</view>
-			<view v-else class="no-more">
-				<text>-- 没有更多了 --</text>
+				</view>
 			</view>
 		</view>
+
+		<!-- 子评论 -->
+		<view v-if="comment.localChildren && comment.localChildren.length" class="sub-comments">
+			<view v-for="(child, index) in visibleChildren(comment)" :key="child.id" class="sub-comment">
+				<image @tap="jump2user(child.uid)" :src="child.avatar" class="avatar" mode="aspectFill" />
+				<view class="content">
+					<view class="header">
+						<text @tap="jump2user(child.uid)" class="username">{{ formatUsername(child.username) }}</text>
+						<text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text>
+					</view>
+					
+					<text class="comment-text" @click="handleReply(comment)">{{ child.comment }}</text>
+					
+					<!-- 新增表态按钮组 -->
+					 <attitude-widget
+					        :target-id="child.id"
+					        :type="6"
+					        :attitude-status="comment.attitudeStatus"
+					        :attitude-counts="comment.attitudeCounts"
+					        @change="handleAttitudeChange(comment, $event)"
+					      />
+					<view class="footer">
+						<text class="time">{{ formatTime(child.created_at) }}</text>
+						
+						<view class="actions">
+							
+							<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<!-- 加载更多 -->
+			<view v-if="shouldShowMore(comment)" class="load-more" @click="loadMore(comment)">
+				<text>展开{{ remainingCount(comment) }}条回复</text>
+				<uni-icons type="arrow-down" size="18" color="#007AFF" />
+			</view>
+		</view>
+	</view>
+
+
+	<!-- 加载更多按钮 -->
+	<view class="load-more-box" v-if="commentList.length > 0">
+		<view v-if="hasMore" class="load-more-btn" @click="loadMoreMainComments" :class="{loading: loading}">
+			<view v-if="!loading">
+				<text> 加载更多 </text>
+				<uni-icons type="arrow-down" size="18" color="#007AFF" />
+			</view>
+			<view v-else>
+				<uni-icons type="spinner-cycle" size="16" color="#888" />
+			</view>
+
+		</view>
+		<view v-else class="no-more">
+			<text>-- 没有更多了 --</text>
+		</view>
+	</view>
 
 
 	</view>
@@ -112,6 +135,12 @@
 	const emit = defineEmits(['reply'])
 
 	const loading = ref(false)
+	
+	// 处理状态变化
+	const handleAttitudeChange = (comment, { status, counts }) => {
+	  comment.attitudeStatus = status
+	  comment.attitudeCounts = counts
+	}
 
 
 	// 暴露给父组件的方法
@@ -127,27 +156,27 @@
 		},
 
 		// 添加子评论
-		 addReplyComment: (reply) => {
-		    const parent = commentList.value.find(c => c.id === reply.parent_id)
-		    if (parent) {
-		      // 确保 localChildren 数组存在
-		      if (!parent.localChildren) {
-		        parent.localChildren = []
-		      }
-		      // 确保 childTotal 存在
-		      if (typeof parent.childTotal !== 'number') {
-		        parent.childTotal = 0
-		      }
-		      
-		      parent.localChildren.unshift(reply)
-		      parent.childTotal += 1
-		      
-		      // 自动展开子评论列表
-		      if (!parent.showAll && parent.childTotal <= 5) {
-		        parent.showAll = true
-		      }
-		    }
-		  },
+		addReplyComment: (reply) => {
+			const parent = commentList.value.find(c => c.id === reply.parent_id)
+			if (parent) {
+				// 确保 localChildren 数组存在
+				if (!parent.localChildren) {
+					parent.localChildren = []
+				}
+				// 确保 childTotal 存在
+				if (typeof parent.childTotal !== 'number') {
+					parent.childTotal = 0
+				}
+
+				parent.localChildren.unshift(reply)
+				parent.childTotal += 1
+
+				// 自动展开子评论列表
+				if (!parent.showAll && parent.childTotal <= 5) {
+					parent.showAll = true
+				}
+			}
+		},
 
 
 
@@ -196,6 +225,7 @@
 	const loadMainComments = async () => {
 		try {
 			loading.value = true
+				let token = uni.getStorageSync('token');
 			const res = await uni.request({
 				url: `${websiteUrl}/get-comments`,
 				data: {
@@ -203,7 +233,10 @@
 					type: props.type,
 					page: currentPage.value,
 					page_size: 10 // 添加分页大小
-				}
+				},
+				header: {
+					'Authorization': token
+				},
 			})
 
 			if (res.data.status === 'success') {
@@ -212,7 +245,16 @@
 					...c,
 					showAll: false,
 					localChildren: c.children || [],
-					childTotal: c.childTotal || (c.children ? c.children.length : 0)
+					childTotal: c.childTotal || (c.children ? c.children.length : 0),
+					// 新增表态相关字段
+					attitudeStatus: c.user_attitude || 0, // 当前用户表态状态
+					attitudeCounts: c.attitude_counts || {
+					  1: c.count_1 || 0,
+					  2: c.count_2 || 0,
+					  3: c.count_3 || 0,
+					  4: c.count_4 || 0,
+					  5: c.count_5 || 0
+					},
 				}))
 
 				// 第一页替换，后续追加
@@ -537,9 +579,11 @@
 	.load-more-box {
 		padding: 30rpx 0;
 		text-align: center;
+
 		text {
-						font-size: 22rpx;
-					}
+			font-size: 22rpx;
+		}
+
 		.load-more-btn {
 			display: inline-flex;
 			align-items: center;
@@ -549,8 +593,8 @@
 			font-size: 26rpx;
 			border-radius: 64rpx;
 			transition: all 0.3s;
-			
-			
+
+
 
 			&.loading {
 				color: #494b4b;
@@ -580,5 +624,64 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+	
+	
+	// 新增表态按钮样式
+	.attitude-actions {
+	  display: flex;
+	  align-items: center;
+	  margin-right: 20rpx;
+	  
+	  .attitude-btn {
+	    display: flex;
+	    align-items: center;
+	    padding: 6rpx 12rpx;
+	    margin-right: 10rpx;
+	    border-radius: 20rpx;
+	    background: #f5f5f5;
+	    transition: all 0.3s;
+	    
+	    &.active {
+	      background: #e0f0ff;
+	      
+	      .emoji, .count {
+	        color: #007AFF;
+	      }
+	    }
+	    
+	    .emoji {
+	      font-size: 28rpx;
+	      margin-right: 4rpx;
+	    }
+	    
+	    .count {
+	      font-size: 22rpx;
+	      color: #666;
+	    }
+	  }
+	}
+	
+	// 调整原有回复按钮位置
+	.reply-btn {
+	  margin-left: auto;
+	}
+	
+	// 移动端适配
+	@media (max-width: 480px) {
+	  .attitude-actions {
+	    .attitude-btn {
+	      padding: 4rpx 8rpx;
+	      margin-right: 6rpx;
+	      
+	      .emoji {
+	        font-size: 24rpx;
+	      }
+	      
+	      .count {
+	        font-size: 18rpx;
+	      }
+	    }
+	  }
 	}
 </style>

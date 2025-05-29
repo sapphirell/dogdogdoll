@@ -8012,6 +8012,7 @@ const createHook = (lifecycle) => (hook, target = getCurrentInstance()) => {
 const onShow = /* @__PURE__ */ createHook(ON_SHOW);
 const onLoad = /* @__PURE__ */ createHook(ON_LOAD);
 const onReachBottom = /* @__PURE__ */ createHook(ON_REACH_BOTTOM);
+const onPullDownRefresh = /* @__PURE__ */ createHook(ON_PULL_DOWN_REFRESH);
 exports._export_sfc = _export_sfc;
 exports.computed = computed;
 exports.createSSRApp = createSSRApp;
@@ -8025,6 +8026,7 @@ exports.nextTick$1 = nextTick$1;
 exports.o = o;
 exports.onLoad = onLoad;
 exports.onMounted = onMounted;
+exports.onPullDownRefresh = onPullDownRefresh;
 exports.onReachBottom = onReachBottom;
 exports.onShow = onShow;
 exports.p = p;

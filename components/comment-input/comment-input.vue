@@ -6,7 +6,7 @@
 	<!-- 评论框 -->
 	<view class="bottom_tab" :adjust-position="false" :style="{ paddingBottom: footerBottomHeight }">
 		<!-- 输入框 -->
-		<textarea :focus="isFocused" class="comment_input unified-textarea" :class="{ expanded: isFocused }" ref="inputRef"
+		<textarea  :disable-default-padding=true :focus="isFocused" class="comment_input unified-textarea" :class="{ expanded: isFocused }" ref="inputRef"
 			v-model="commentText" @focus="handleFocus" @blur="handleBlur" :adjust-position="false"
 			:placeholder="replyInfo.username ? '回复@' + replyInfo.username + ' ' : '写评论...'"></textarea>
 
@@ -174,18 +174,20 @@
 			/* 占据剩余空间 */
 			min-width: 0;
 			/* 允许缩小 */
-			flex: 1;
-			margin-right: 8px;
+			// flex: 1;
+			margin-right: 15rpx;
 			// min-height: 56rpx;
 			background: #f2f2f2;
-			border-radius: 5px;
-			padding: 8px 8px 8px 10px;
+			border-radius: 10rpx;
+			padding: 15rpx;
 			line-height: normal;
-			font-size: 26rpx;
+			font-size: 24rpx;
 			color: #373838;
 			// 聚焦时高度2倍
 			height: 40rpx;
 			transition: height 0.3s ease;
+			font-size: 24rpx;
+			box-sizing: content-box;
 
 		}
 
