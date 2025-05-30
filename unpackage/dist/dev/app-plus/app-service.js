@@ -54,7 +54,7 @@ if (uni.restoreGlobal) {
   const onLoad = /* @__PURE__ */ createHook(ON_LOAD);
   const onReachBottom = /* @__PURE__ */ createHook(ON_REACH_BOTTOM);
   const onPullDownRefresh = /* @__PURE__ */ createHook(ON_PULL_DOWN_REFRESH);
-  const websiteUrl = "https://api.fantuanpu.com";
+  const websiteUrl = "http://localhost:8080";
   const image1Url = "https://images1.fantuanpu.com/";
   let global = vue.reactive({
     isLogin: false,
@@ -1247,7 +1247,8 @@ if (uni.restoreGlobal) {
       });
       const props = __props;
       const headerHeight = vue.computed(() => {
-        return `calc(constant(safe-area-inset-top) + 20px)`;
+        const statusBarHeight = systemInfo2.statusBarHeight || 0;
+        return `${statusBarHeight}px`;
       });
       const footerHeight = vue.computed(() => {
         var _a;
@@ -1418,10 +1419,10 @@ if (uni.restoreGlobal) {
         path: "/pages/news/news",
         imageUrl: "/static/share",
         success(res) {
-          formatAppLog("log", "at pages/index/index.vue:330", "分享成功", res);
+          formatAppLog("log", "at pages/index/index.vue:338", "分享成功", res);
         },
         fail(err) {
-          formatAppLog("log", "at pages/index/index.vue:333", "分享失败", err);
+          formatAppLog("log", "at pages/index/index.vue:341", "分享失败", err);
         },
         mp: {
           wxpath: "/pages/index/index.html"
@@ -1499,7 +1500,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("error", "at pages/index/index.vue:426", "获取Banner失败:", err);
+            formatAppLog("error", "at pages/index/index.vue:434", "获取Banner失败:", err);
             data.value = {};
           }
         });
@@ -1562,7 +1563,7 @@ if (uni.restoreGlobal) {
             newsPage.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:495", err);
+            formatAppLog("log", "at pages/index/index.vue:503", err);
             uni.showToast({
               title: "加载失败",
               icon: "none"
@@ -1605,7 +1606,7 @@ if (uni.restoreGlobal) {
             hotPage.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:541", err);
+            formatAppLog("log", "at pages/index/index.vue:549", err);
             uni.showToast({
               title: "加载失败",
               icon: "none"
@@ -1650,7 +1651,7 @@ if (uni.restoreGlobal) {
             page.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:592", err);
+            formatAppLog("log", "at pages/index/index.vue:600", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -1831,6 +1832,7 @@ if (uni.restoreGlobal) {
   };
   function _sfc_render$J(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$6);
+    const _component_uni_transition = vue.resolveComponent("uni-transition");
     const _component_index_brand = resolveEasycom(vue.resolveDynamicComponent("index-brand"), __easycom_1$5);
     const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$6);
     const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_1$4);
@@ -1978,11 +1980,13 @@ if (uni.restoreGlobal) {
                 ])
               ]),
               vue.createElementVNode("view", { class: "body_container" }, [
-                vue.createVNode(vue.Transition, {
-                  name: "fade",
-                  mode: "out-in"
+                vue.createCommentVNode(' <transition name="fade" mode="out-in"> '),
+                vue.createVNode(_component_uni_transition, {
+                  "mode-class": ["fade"],
+                  show: $setup.activeTab === "news"
                 }, {
                   default: vue.withCtx(() => [
+                    vue.createCommentVNode(" 品牌图透 "),
                     $setup.activeTab === "news" ? (vue.openBlock(), vue.createElementBlock("view", {
                       key: 0,
                       class: "body_list news-box"
@@ -2062,15 +2066,17 @@ if (uni.restoreGlobal) {
                         $setup.newsLoading ? (vue.openBlock(), vue.createElementBlock("text", { key: 0 }, "加载中...")) : vue.createCommentVNode("v-if", true),
                         !$setup.newsHasMore ? (vue.openBlock(), vue.createElementBlock("text", { key: 1 }, "没有更多了~")) : vue.createCommentVNode("v-if", true)
                       ])
-                    ])) : vue.createCommentVNode("v-if", true)
+                    ])) : vue.createCommentVNode("v-if", true),
+                    vue.createCommentVNode(" </transition> ")
                   ]),
                   _: 1
                   /* STABLE */
-                }),
+                }, 8, ["show"]),
                 vue.createCommentVNode(" 品牌图鉴 "),
-                vue.createVNode(vue.Transition, {
-                  name: "fade",
-                  mode: "out-in"
+                vue.createCommentVNode(' <transition name="fade" mode="out-in"> '),
+                vue.createVNode(_component_uni_transition, {
+                  "mode-class": ["fade"],
+                  show: $setup.activeTab === "brands"
                 }, {
                   default: vue.withCtx(() => [
                     $setup.activeTab === "brands" ? (vue.openBlock(), vue.createElementBlock("view", {
@@ -2123,11 +2129,13 @@ if (uni.restoreGlobal) {
                   ]),
                   _: 1
                   /* STABLE */
-                }),
+                }, 8, ["show"]),
+                vue.createCommentVNode(" </transition> "),
                 vue.createCommentVNode(" 热门搭配 "),
-                vue.createVNode(vue.Transition, {
-                  name: "fade",
-                  mode: "out-in"
+                vue.createCommentVNode(' <transition name="fade" mode="out-in"> '),
+                vue.createVNode(_component_uni_transition, {
+                  "mode-class": ["fade"],
+                  show: $setup.activeTab === "hot"
                 }, {
                   default: vue.withCtx(() => [
                     $setup.activeTab === "hot" ? (vue.openBlock(), vue.createElementBlock("view", {
@@ -2252,15 +2260,17 @@ if (uni.restoreGlobal) {
                         $setup.hotLoading ? (vue.openBlock(), vue.createElementBlock("text", { key: 0 }, "加载中...")) : vue.createCommentVNode("v-if", true),
                         !$setup.hotHasMore ? (vue.openBlock(), vue.createElementBlock("text", { key: 1 }, "没有更多了~")) : vue.createCommentVNode("v-if", true)
                       ])
-                    ])) : vue.createCommentVNode("v-if", true)
+                    ])) : vue.createCommentVNode("v-if", true),
+                    vue.createCommentVNode(" </transition> ")
                   ]),
                   _: 1
                   /* STABLE */
-                }),
+                }, 8, ["show"]),
                 vue.createCommentVNode(" 说给树洞 "),
-                vue.createVNode(vue.Transition, {
-                  name: "fade",
-                  mode: "out-in"
+                vue.createCommentVNode(' <transition name="fade" mode="out-in"> '),
+                vue.createVNode(_component_uni_transition, {
+                  "mode-class": ["fade"],
+                  show: $setup.activeTab === "second"
                 }, {
                   default: vue.withCtx(() => [
                     $setup.activeTab === "second" ? (vue.openBlock(), vue.createElementBlock("view", {
@@ -2422,7 +2432,8 @@ if (uni.restoreGlobal) {
                   ]),
                   _: 1
                   /* STABLE */
-                })
+                }, 8, ["show"]),
+                vue.createCommentVNode(" </transition> ")
               ])
             ])
           ]),
@@ -4543,7 +4554,10 @@ if (uni.restoreGlobal) {
       const subCommentPages = vue.reactive({});
       const emit = __emit;
       const loading = vue.ref(false);
-      const handleAttitudeChange = (comment2, { status, counts }) => {
+      const handleAttitudeChange = (comment2, {
+        status,
+        counts
+      }) => {
         comment2.attitudeStatus = status;
         comment2.attitudeCounts = counts;
       };
@@ -4594,6 +4608,54 @@ if (uni.restoreGlobal) {
           await loadMainComments();
         } finally {
           loading.value = false;
+        }
+      };
+      const handleLike = async (comment2) => {
+        if (!global.isLogin) {
+          uni.showToast({
+            title: "请先登录",
+            icon: "none"
+          });
+          return;
+        }
+        try {
+          const token = uni.getStorageSync("token");
+          const url = `${websiteUrl}/with-state/${comment2.user_like ? "unlike" : "add-like"}`;
+          const res = await uni.request({
+            url,
+            method: "POST",
+            header: {
+              Authorization: token
+            },
+            data: {
+              id: comment2.id,
+              type: 6
+              // 评论类型
+            }
+          });
+          if (res.data.status === "success") {
+            comment2.user_like = !comment2.user_like;
+            if (comment2.user_like) {
+              comment2.like_count = (comment2.like_count || 0) + 1;
+            } else {
+              comment2.like_count = Math.max(0, (comment2.like_count || 0) - 1);
+            }
+            uni.showToast({
+              title: comment2.user_like ? "点赞成功" : "已取消点赞",
+              icon: "none"
+            });
+          } else {
+            uni.showToast({
+              title: res.data.msg || "操作失败",
+              icon: "none"
+            });
+          }
+        } catch (err) {
+          formatAppLog("error", "at components/comment-list/comment-list.vue:277", "点赞失败:", err);
+          uni.showToast({
+            title: "操作失败",
+            icon: "none"
+          });
         }
       };
       const jump2user = (uid) => {
@@ -4648,10 +4710,10 @@ if (uni.restoreGlobal) {
             } else {
               commentList.value.push(...newComments);
             }
-            formatAppLog("log", "at components/comment-list/comment-list.vue:266", "total", data.total);
+            formatAppLog("log", "at components/comment-list/comment-list.vue:342", "total", data.total);
             hasMore.value = data.total > commentList.value.length;
             mainCommentsTotal.value = data.total;
-            formatAppLog("log", "at components/comment-list/comment-list.vue:270", "是否还有更多?", hasMore.value);
+            formatAppLog("log", "at components/comment-list/comment-list.vue:346", "是否还有更多?", hasMore.value);
           }
         } catch (err) {
           uni.showToast({
@@ -4706,7 +4768,7 @@ if (uni.restoreGlobal) {
           comment2.showAll = !comment2.showAll;
         }
       };
-      const __returned__ = { props, commentList, currentPage, mainCommentsTotal, hasMore, subCommentPages, emit, loading, handleAttitudeChange, visibleChildren, loadMoreMainComments, jump2user, formatTime, formatUsername, loadMainComments, handleReply, shouldShowMore, remainingCount, loadMore, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, reactive: vue.reactive, get websiteUrl() {
+      const __returned__ = { props, commentList, currentPage, mainCommentsTotal, hasMore, subCommentPages, emit, loading, handleAttitudeChange, visibleChildren, loadMoreMainComments, handleLike, jump2user, formatTime, formatUsername, loadMainComments, handleReply, shouldShowMore, remainingCount, loadMore, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, reactive: vue.reactive, get websiteUrl() {
         return websiteUrl;
       }, get asyncGetUserInfo() {
         return asyncGetUserInfo;
@@ -4714,6 +4776,8 @@ if (uni.restoreGlobal) {
         return wechatSignLogin;
       }, get getScene() {
         return getScene;
+      }, get global() {
+        return global;
       } };
       Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
       return __returned__;
@@ -4782,14 +4846,37 @@ if (uni.restoreGlobal) {
                   onChange: ($event) => $setup.handleAttitudeChange(comment2, $event)
                 }, null, 8, ["target-id", "attitude-status", "attitude-counts", "onChange"]),
                 vue.createElementVNode("view", { class: "footer" }, [
-                  vue.createElementVNode(
-                    "text",
-                    { class: "time" },
-                    vue.toDisplayString($setup.formatTime(comment2.created_at)),
-                    1
-                    /* TEXT */
-                  ),
-                  vue.createElementVNode("view", { class: "actions" }, [
+                  vue.createElementVNode("view", { class: "left-actions" }, [
+                    vue.createElementVNode(
+                      "text",
+                      { class: "time" },
+                      vue.toDisplayString($setup.formatTime(comment2.created_at)),
+                      1
+                      /* TEXT */
+                    ),
+                    vue.createElementVNode("view", { class: "like-container" }, [
+                      vue.createElementVNode("view", {
+                        class: "like-btn",
+                        onClick: ($event) => $setup.handleLike(comment2)
+                      }, [
+                        vue.createVNode(_component_uni_icons, {
+                          type: comment2.user_like ? "hand-up-filled" : "hand-up",
+                          size: "18",
+                          color: comment2.user_like ? "rgb(100 198 220)" : "#999"
+                        }, null, 8, ["type", "color"]),
+                        vue.createElementVNode(
+                          "text",
+                          {
+                            class: vue.normalizeClass(["like-count", { liked: comment2.user_like }])
+                          },
+                          vue.toDisplayString(comment2.like_count || 0),
+                          3
+                          /* TEXT, CLASS */
+                        )
+                      ], 8, ["onClick"])
+                    ])
+                  ]),
+                  vue.createElementVNode("view", { class: "right-actions" }, [
                     vue.createElementVNode("text", {
                       class: "reply-btn",
                       onClick: ($event) => $setup.handleReply(comment2)
@@ -4847,14 +4934,37 @@ if (uni.restoreGlobal) {
                         onChange: ($event) => $setup.handleAttitudeChange(comment2, $event)
                       }, null, 8, ["target-id", "attitude-status", "attitude-counts", "onChange"]),
                       vue.createElementVNode("view", { class: "footer" }, [
-                        vue.createElementVNode(
-                          "text",
-                          { class: "time" },
-                          vue.toDisplayString($setup.formatTime(child.created_at)),
-                          1
-                          /* TEXT */
-                        ),
-                        vue.createElementVNode("view", { class: "actions" }, [
+                        vue.createElementVNode("view", { class: "left-actions" }, [
+                          vue.createElementVNode(
+                            "text",
+                            { class: "time" },
+                            vue.toDisplayString($setup.formatTime(child.created_at)),
+                            1
+                            /* TEXT */
+                          ),
+                          vue.createElementVNode("view", { class: "like-container" }, [
+                            vue.createElementVNode("view", {
+                              class: "like-btn",
+                              onClick: ($event) => $setup.handleLike(child)
+                            }, [
+                              vue.createVNode(_component_uni_icons, {
+                                type: child.user_like ? "hand-up-filled" : "hand-up",
+                                size: "18",
+                                color: child.user_like ? "rgb(100 198 220)" : "#999"
+                              }, null, 8, ["type", "color"]),
+                              vue.createElementVNode(
+                                "text",
+                                {
+                                  class: vue.normalizeClass(["like-count", { liked: child.user_like }])
+                                },
+                                vue.toDisplayString(child.like_count || 0),
+                                3
+                                /* TEXT, CLASS */
+                              )
+                            ], 8, ["onClick"])
+                          ])
+                        ]),
+                        vue.createElementVNode("view", { class: "right-actions" }, [
                           vue.createElementVNode("text", {
                             class: "reply-btn",
                             onClick: ($event) => $setup.handleReply(comment2, child)

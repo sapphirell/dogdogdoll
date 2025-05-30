@@ -70,7 +70,8 @@
 				</view>
 			</view>
 			<view class="body_container">
-				<transition name="fade" mode="out-in">
+				<!-- <transition name="fade" mode="out-in"> -->
+				<uni-transition :mode-class="['fade']" :show="activeTab === 'news'">
 					<!-- 品牌图透 -->
 					<view class="body_list news-box" v-if="activeTab === 'news'">
 						<view v-for="item in newsList" :key="item.id" class="news-item" @tap="jump2saleNews(item)">
@@ -98,11 +99,12 @@
 							<text v-if="!newsHasMore">没有更多了~</text>
 						</view>
 					</view>
-				</transition>
-
+					<!-- </transition> -->
+				</uni-transition>
 
 				<!-- 品牌图鉴 -->
-				<transition name="fade" mode="out-in">
+				<!-- <transition name="fade" mode="out-in"> -->
+				<uni-transition :mode-class="['fade']" :show="activeTab === 'brands'">
 					<view class="body_list brand_box" style="position: relative;" v-if="activeTab === 'brands'">
 						<view class="filter-tabs">
 							<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
@@ -126,9 +128,11 @@
 						</view>
 
 					</view>
-				</transition>
+				</uni-transition>
+				<!-- </transition> -->
 				<!-- 热门搭配 -->
-				<transition name="fade" mode="out-in">
+				<!-- <transition name="fade" mode="out-in"> -->
+				<uni-transition :mode-class="['fade']" :show="activeTab === 'hot'">
 					<view class="body_list hot-box" v-if="activeTab === 'hot'">
 						<view v-for="item in hotList" :key="item.collocation_id" class="hot-item"
 							@tap="jumpToCollocationDetail(item)">
@@ -169,9 +173,11 @@
 							<text v-if="!hotHasMore">没有更多了~</text>
 						</view>
 					</view>
-				</transition>
+					<!-- </transition> -->
+				</uni-transition>
 				<!-- 说给树洞 -->
-				<transition name="fade" mode="out-in">
+				<!-- <transition name="fade" mode="out-in"> -->
+				<uni-transition :mode-class="['fade']" :show="activeTab === 'second'">
 					<view class="body_list treehole-box" v-if="activeTab === 'second'">
 						<!-- 发布按钮 -->
 						<view class="publish-btn" @click="handlePublish">
@@ -229,7 +235,8 @@
 							<text v-if="!treeholeHasMore">没有更多了~</text>
 						</view>
 					</view>
-				</transition>
+				</uni-transition>
+				<!-- </transition> -->
 			</view>
 
 
@@ -320,6 +327,7 @@
 	const switchTab = (tab) => {
 		activeTab.value = tab
 		// 这里可以添加切换时加载对应数据的逻辑
+
 	}
 
 	const onShareAppMessage = () => ({

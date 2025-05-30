@@ -858,26 +858,6 @@
   margin-bottom: 0.3125rem;
   min-height: 1.875rem;
 }
-.main-comment .content .footer[data-v-ea2f609f],
-.sub-comment .content .footer[data-v-ea2f609f] {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-}
-.main-comment .content .footer .time[data-v-ea2f609f],
-.sub-comment .content .footer .time[data-v-ea2f609f] {
-  font-size: 0.625rem;
-  color: #999;
-}
-.main-comment .content .footer .reply-btn[data-v-ea2f609f],
-.sub-comment .content .footer .reply-btn[data-v-ea2f609f] {
-  font-size: 0.6875rem;
-  color: #888;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.625rem;
-  background: none;
-}
 .sub-comments[data-v-ea2f609f] {
   margin-left: 2.25rem;
   padding-left: 0.75rem;
@@ -958,27 +938,6 @@
   color: #666 !important;
   line-height: 1.5;
 }
-.sub-comment .footer .time[data-v-ea2f609f] {
-  font-size: 0.625rem !important;
-  color: #999 !important;
-}
-.footer[data-v-ea2f609f] {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.footer .actions[data-v-ea2f609f] {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.footer .actions .reply-btn[data-v-ea2f609f] {
-  font-size: 0.6875rem;
-  color: #007AFF;
-  padding: 0.1875rem 0.625rem;
-  border-radius: 0.75rem;
-  background: rgba(0, 122, 255, 0.1);
-}
 .load-more[data-v-ea2f609f] {
   margin-top: 0.75rem !important;
   border-radius: 0.25rem !important;
@@ -1042,7 +1001,7 @@ to {
 }
 .attitude-actions .attitude-btn.active .emoji[data-v-ea2f609f],
 .attitude-actions .attitude-btn.active .count[data-v-ea2f609f] {
-  color: #007AFF;
+  color: #fff;
 }
 .attitude-actions .attitude-btn .emoji[data-v-ea2f609f] {
   font-size: 0.875rem;
@@ -1066,6 +1025,48 @@ to {
 .attitude-actions .attitude-btn .count[data-v-ea2f609f] {
     font-size: 0.5625rem;
 }
+}
+.footer[data-v-ea2f609f] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+.footer .left-actions[data-v-ea2f609f] {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.footer .left-actions .time[data-v-ea2f609f] {
+  font-size: 0.625rem;
+  color: #999;
+}
+.footer .left-actions .like-container .like-btn[data-v-ea2f609f] {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 0.625rem;
+}
+.footer .left-actions .like-container .like-btn .like-count[data-v-ea2f609f] {
+  font-size: 0.625rem;
+  color: #999;
+}
+.footer .left-actions .like-container .like-btn .like-count.liked[data-v-ea2f609f] {
+  color: rgb(100 198 220);
+}
+.footer .right-actions .reply-btn[data-v-ea2f609f] {
+  font-size: 0.6875rem;
+  color: #97b7df;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 0.75rem;
+}
+/* 子评论操作栏微调 */
+.sub-comment .footer[data-v-ea2f609f] {
+  margin-top: 0.3125rem;
+}
+.sub-comment .footer .like-btn[data-v-ea2f609f] {
+  padding: 0.125rem 0.375rem;
 }
 
 /* 保持原样式不变 */

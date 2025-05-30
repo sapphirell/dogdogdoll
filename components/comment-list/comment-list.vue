@@ -20,80 +20,98 @@
 					</view>
 					<text class="comment-text" @click="handleReply(comment)">{{ comment.comment }}</text>
 					<!-- 新增表态按钮组 -->
-					<attitude-widget
-						:target-id="comment.id"
-						:type="6"
-						:attitude-status="comment.attitudeStatus"
-						:attitude-counts="comment.attitudeCounts"
-						@change="handleAttitudeChange(comment, $event)"
-						/>
+					<attitude-widget :target-id="comment.id" :type="6" :attitude-status="comment.attitudeStatus"
+						:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
+
+
+
 					<view class="footer">
-						<text class="time">{{ formatTime(comment.created_at) }}</text>
-						
-						<view class="actions">
+						<view class="left-actions">
+							<text class="time">{{ formatTime(comment.created_at) }}</text>
+							<view class="like-container">
+								<view class="like-btn" @click="handleLike(comment)">
+									<uni-icons :type="comment.user_like ? 'hand-up-filled' : 'hand-up'" size="18"
+										:color="comment.user_like ? 'rgb(100 198 220)' : '#999'" />
+									<text class="like-count" :class="{ liked: comment.user_like }">
+										{{ comment.like_count || 0 }}
+									</text>
+								</view>
+							</view>
+						</view>
+
+						<view class="right-actions">
 							<text class="reply-btn" @click="handleReply(comment)">回复</text>
 						</view>
-				
+
+					</view>
 				</view>
 			</view>
-		</view>
 
-		<!-- 子评论 -->
-		<view v-if="comment.localChildren && comment.localChildren.length" class="sub-comments">
-			<view v-for="(child, index) in visibleChildren(comment)" :key="child.id" class="sub-comment">
-				<image @tap="jump2user(child.uid)" :src="child.avatar" class="avatar" mode="aspectFill" />
-				<view class="content">
-					<view class="header">
-						<text @tap="jump2user(child.uid)" class="username">{{ formatUsername(child.username) }}</text>
-						<text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text>
-					</view>
-					
-					<text class="comment-text" @click="handleReply(comment)">{{ child.comment }}</text>
-					
-					<!-- 新增表态按钮组 -->
-					 <attitude-widget
-					        :target-id="child.id"
-					        :type="6"
-					        :attitude-status="comment.attitudeStatus"
-					        :attitude-counts="comment.attitudeCounts"
-					        @change="handleAttitudeChange(comment, $event)"
-					      />
-					<view class="footer">
-						<text class="time">{{ formatTime(child.created_at) }}</text>
-						
-						<view class="actions">
-							
-							<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
+			<!-- 子评论 -->
+			<view v-if="comment.localChildren && comment.localChildren.length" class="sub-comments">
+				<view v-for="(child, index) in visibleChildren(comment)" :key="child.id" class="sub-comment">
+					<image @tap="jump2user(child.uid)" :src="child.avatar" class="avatar" mode="aspectFill" />
+					<view class="content">
+						<view class="header">
+							<text @tap="jump2user(child.uid)"
+								class="username">{{ formatUsername(child.username) }}</text>
+							<text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text>
+						</view>
+
+						<text class="comment-text" @click="handleReply(comment)">{{ child.comment }}</text>
+
+						<!-- 新增表态按钮组 -->
+						<attitude-widget :target-id="child.id" :type="6" :attitude-status="comment.attitudeStatus"
+							:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
+
+
+
+						<view class="footer">
+							<view class="left-actions">
+								<text class="time">{{ formatTime(child.created_at) }}</text>
+								<view class="like-container">
+									<view class="like-btn" @click="handleLike(child)">
+										<uni-icons :type="child.user_like ? 'hand-up-filled' : 'hand-up'" size="18"
+											:color="child.user_like ? 'rgb(100 198 220)' : '#999'" />
+										<text class="like-count" :class="{ liked: child.user_like }">
+											{{ child.like_count || 0 }}
+										</text>
+									</view>
+								</view>
+							</view>
+
+							<view class="right-actions">
+								<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
+							</view>
 						</view>
 					</view>
 				</view>
-			</view>
 
-			<!-- 加载更多 -->
-			<view v-if="shouldShowMore(comment)" class="load-more" @click="loadMore(comment)">
-				<text>展开{{ remainingCount(comment) }}条回复</text>
-				<uni-icons type="arrow-down" size="18" color="#007AFF" />
+				<!-- 加载更多 -->
+				<view v-if="shouldShowMore(comment)" class="load-more" @click="loadMore(comment)">
+					<text>展开{{ remainingCount(comment) }}条回复</text>
+					<uni-icons type="arrow-down" size="18" color="#007AFF" />
+				</view>
 			</view>
 		</view>
-	</view>
 
 
-	<!-- 加载更多按钮 -->
-	<view class="load-more-box" v-if="commentList.length > 0">
-		<view v-if="hasMore" class="load-more-btn" @click="loadMoreMainComments" :class="{loading: loading}">
-			<view v-if="!loading">
-				<text> 加载更多 </text>
-				<uni-icons type="arrow-down" size="18" color="#007AFF" />
+		<!-- 加载更多按钮 -->
+		<view class="load-more-box" v-if="commentList.length > 0">
+			<view v-if="hasMore" class="load-more-btn" @click="loadMoreMainComments" :class="{loading: loading}">
+				<view v-if="!loading">
+					<text> 加载更多 </text>
+					<uni-icons type="arrow-down" size="18" color="#007AFF" />
+				</view>
+				<view v-else>
+					<uni-icons type="spinner-cycle" size="16" color="#888" />
+				</view>
+
 			</view>
-			<view v-else>
-				<uni-icons type="spinner-cycle" size="16" color="#888" />
+			<view v-else class="no-more">
+				<text>-- 没有更多了 --</text>
 			</view>
-
 		</view>
-		<view v-else class="no-more">
-			<text>-- 没有更多了 --</text>
-		</view>
-	</view>
 
 
 	</view>
@@ -110,7 +128,8 @@
 		websiteUrl,
 		asyncGetUserInfo,
 		wechatSignLogin,
-		getScene
+		getScene,
+		global,
 	} from '../../common/config.js'
 
 
@@ -135,11 +154,14 @@
 	const emit = defineEmits(['reply'])
 
 	const loading = ref(false)
-	
+
 	// 处理状态变化
-	const handleAttitudeChange = (comment, { status, counts }) => {
-	  comment.attitudeStatus = status
-	  comment.attitudeCounts = counts
+	const handleAttitudeChange = (comment, {
+		status,
+		counts
+	}) => {
+		comment.attitudeStatus = status
+		comment.attitudeCounts = counts
 	}
 
 
@@ -206,6 +228,60 @@
 			loading.value = false
 		}
 	}
+
+	// 处理点赞
+	const handleLike = async (comment) => {
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+
+		try {
+			const token = uni.getStorageSync('token')
+			const url = `${websiteUrl}/with-state/${comment.user_like ? 'unlike' : 'add-like'}`
+			const res = await uni.request({
+				url,
+				method: 'POST',
+				header: {
+					Authorization: token
+				},
+				data: {
+					id: comment.id,
+					type: 6 // 评论类型
+				}
+			})
+
+			if (res.data.status === "success") {
+				// 更新点赞状态和数量
+				comment.user_like = !comment.user_like
+				if (comment.user_like) {
+					comment.like_count = (comment.like_count || 0) + 1
+				} else {
+					comment.like_count = Math.max(0, (comment.like_count || 0) - 1)
+				}
+
+				uni.showToast({
+					title: comment.user_like ? '点赞成功' : '已取消点赞',
+					icon: 'none'
+				})
+			} else {
+				uni.showToast({
+					title: res.data.msg || '操作失败',
+					icon: 'none'
+				})
+			}
+		} catch (err) {
+			console.error('点赞失败:', err)
+			uni.showToast({
+				title: '操作失败',
+				icon: 'none'
+			})
+		}
+	}
+
 	const jump2user = (uid) => {
 		uni.navigateTo({
 			url: '/pages/user_page/user_page?uid=' + uid
@@ -225,7 +301,7 @@
 	const loadMainComments = async () => {
 		try {
 			loading.value = true
-				let token = uni.getStorageSync('token');
+			let token = uni.getStorageSync('token');
 			const res = await uni.request({
 				url: `${websiteUrl}/get-comments`,
 				data: {
@@ -249,11 +325,11 @@
 					// 新增表态相关字段
 					attitudeStatus: c.user_attitude || 0, // 当前用户表态状态
 					attitudeCounts: c.attitude_counts || {
-					  1: c.count_1 || 0,
-					  2: c.count_2 || 0,
-					  3: c.count_3 || 0,
-					  4: c.count_4 || 0,
-					  5: c.count_5 || 0
+						1: c.count_1 || 0,
+						2: c.count_2 || 0,
+						3: c.count_3 || 0,
+						4: c.count_4 || 0,
+						5: c.count_5 || 0
 					},
 				}))
 
@@ -417,25 +493,7 @@
 				min-height: 60rpx; // 内容最小高度
 			}
 
-			.footer {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				margin-top: auto; // 贴底对齐
 
-				.time {
-					font-size: 20rpx;
-					color: #999;
-				}
-
-				.reply-btn {
-					font-size: 22rpx;
-					color: #888;
-					padding: 8rpx 16rpx;
-					border-radius: 20rpx;
-					background: none;
-				}
-			}
 		}
 	}
 
@@ -540,35 +598,9 @@
 			line-height: 1.5;
 		}
 
-		.footer {
-			.time {
-				font-size: 20rpx !important;
-				color: #999 !important;
-			}
-		}
 	}
 
-	// 统一底部按钮样式
-	.footer {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-
-		.actions {
-			display: flex;
-			align-items: center;
-			gap: 24rpx; // 按钮间距
-
-			.reply-btn {
-				font-size: 22rpx;
-				color: #007AFF;
-				padding: 6rpx 20rpx;
-				border-radius: 24rpx;
-				background: rgba(0, 122, 255, 0.1);
-			}
-		}
-	}
-
+	
 	// 加载更多样式优化
 	.load-more {
 		margin-top: 24rpx !important;
@@ -625,63 +657,122 @@
 			transform: rotate(360deg);
 		}
 	}
-	
-	
+
+
 	// 新增表态按钮样式
 	.attitude-actions {
-	  display: flex;
-	  align-items: center;
-	  margin-right: 20rpx;
-	  
-	  .attitude-btn {
-	    display: flex;
-	    align-items: center;
-	    padding: 6rpx 12rpx;
-	    margin-right: 10rpx;
-	    border-radius: 20rpx;
-	    background: #f5f5f5;
-	    transition: all 0.3s;
-	    
-	    &.active {
-	      background: #e0f0ff;
-	      
-	      .emoji, .count {
-	        color: #007AFF;
-	      }
-	    }
-	    
-	    .emoji {
-	      font-size: 28rpx;
-	      margin-right: 4rpx;
-	    }
-	    
-	    .count {
-	      font-size: 22rpx;
-	      color: #666;
-	    }
-	  }
+		display: flex;
+		align-items: center;
+		margin-right: 20rpx;
+
+		.attitude-btn {
+			display: flex;
+			align-items: center;
+			padding: 6rpx 12rpx;
+			margin-right: 10rpx;
+			border-radius: 20rpx;
+			background: #f5f5f5;
+			transition: all 0.3s;
+
+			&.active {
+				background: #e0f0ff;
+
+				.emoji,
+				.count {
+					color: #fff;
+				}
+			}
+
+			.emoji {
+				font-size: 28rpx;
+				margin-right: 4rpx;
+			}
+
+			.count {
+				font-size: 22rpx;
+				color: #666;
+			}
+		}
 	}
-	
+
 	// 调整原有回复按钮位置
 	.reply-btn {
-	  margin-left: auto;
+		margin-left: auto;
 	}
-	
+
 	// 移动端适配
 	@media (max-width: 480px) {
-	  .attitude-actions {
-	    .attitude-btn {
-	      padding: 4rpx 8rpx;
-	      margin-right: 6rpx;
-	      
-	      .emoji {
-	        font-size: 24rpx;
-	      }
-	      
-	      .count {
-	        font-size: 18rpx;
-	      }
-	    }
-	  }
+		.attitude-actions {
+			.attitude-btn {
+				padding: 4rpx 8rpx;
+				margin-right: 6rpx;
+
+				.emoji {
+					font-size: 24rpx;
+				}
+
+				.count {
+					font-size: 18rpx;
+				}
+			}
+		}
 	}
+
+
+	.footer {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-top: 16rpx;
+			
+			.left-actions {
+				display: flex;
+				align-items: center;
+				gap: 20rpx;
+				
+				.time {
+					font-size: 20rpx;
+					color: #999;
+				}
+				
+				.like-container {
+					.like-btn {
+						display: flex;
+						align-items: center;
+						gap: 8rpx;
+						padding: 6rpx 16rpx;
+						border-radius: 20rpx;
+		
+						
+						.like-count {
+							font-size: 20rpx;
+							color: #999;
+							
+							&.liked {
+								color: rgb(100 198 220);
+							}
+						}
+					}
+				}
+			}
+			
+			.right-actions {
+				.reply-btn {
+					font-size: 22rpx;
+					color: #97b7df;
+					padding: 6rpx 20rpx;
+					border-radius: 24rpx;
+					// background: rgba(0, 122, 255, 0.1);
+				}
+			}
+		}
+		
+		/* 子评论操作栏微调 */
+		.sub-comment .footer {
+			margin-top: 10rpx;
+			
+			.like-btn {
+				padding: 4rpx 12rpx;
+			}
+		}
 </style>

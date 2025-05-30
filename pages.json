@@ -9,10 +9,9 @@
 			}
 		},
 		{
-			"path" : "pages/homepage/homepage",
-			"style" : 
-			{
-				"navigationBarTitleText" : "home",
+			"path": "pages/homepage/homepage",
+			"style": {
+				"navigationBarTitleText": "home",
 				"navigationStyle": "custom" //自定义导航栏
 			}
 		},
@@ -31,196 +30,170 @@
 			}
 		},
 		{
-			"path" : "pages/watch_demo/watch_demo",
-			"style" : 
-			{
-				"navigationBarTitleText" : "watch_demo"
+			"path": "pages/watch_demo/watch_demo",
+			"style": {
+				"navigationBarTitleText": "watch_demo"
 			}
 		},
 		{
-			"path" : "pages/goods/goods",
-			"style" : 
-			{
-				"navigationBarTitleText" : "商品页面",
+			"path": "pages/goods/goods",
+			"style": {
+				"navigationBarTitleText": "商品页面",
 				"app-plus": {
 					"softinputmode": "adjustResize"
 				}
 			}
 		},
 		{
-			"path" : "pages/brand/brand",
-			"style" : 
-			{
-				"navigationBarTitleText" : "品牌页面"
+			"path": "pages/brand/brand",
+			"style": {
+				"navigationBarTitleText": "品牌页面"
 			}
 		},
 		{
-			"path" : "pages/calendar/calendar",
-			"style" : 
-			{
+			"path": "pages/calendar/calendar",
+			"style": {
 				"navigationBarTitleText": "上新",
 				"navigationStyle": "custom" //自定义导航栏
 			}
 		},
 		{
-			"path" : "pages/pop_croper/pop_croper",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/pop_croper/pop_croper",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/setting/setting",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/setting/setting",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/setting/password/password",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/setting/password/password",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/setting/tel_phone/tel_phone",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/setting/tel_phone/tel_phone",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/stock/account_book_form/account_book_form",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/stock/account_book_form/account_book_form",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/stock/showcase_form/showcase_form",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/stock/showcase_form/showcase_form",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/stock/bill_form/bill_form",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/stock/bill_form/bill_form",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/collocation/collocation",
-			"style" : 
-			{
-				"navigationBarTitleText" : "分享搭配"
+			"path": "pages/collocation/collocation",
+			"style": {
+				"navigationBarTitleText": "分享搭配"
 			}
 		},
 		{
-			"path" : "pages/collocation_share/collocation_share",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/collocation_share/collocation_share",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/user_page/user_page",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user_page/user_page",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/message_list/message_list",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/message_list/message_list",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/message_info/message_info",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/message_info/message_info",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/register/register",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/register/register",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/user_like/user_like",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/user_like/user_like",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/collocation_square/collocation_square",
+			"path": "pages/collocation_square/collocation_square",
 			"style": {
 				"navigationBarTitleText": "",
 				"navigationStyle": "custom" //自定义导航栏
 			}
 		},
 		{
-			"path" : "pages/sale_news/sale_news",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/sale_news/sale_news",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/treehole_publish/treehole_publish",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/treehole_publish/treehole_publish",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/treehole_detail/treehole_detail",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/treehole_detail/treehole_detail",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/reset_password/reset_password",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/reset_password/reset_password",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/setting/username/username",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/setting/username/username",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/my_comment/my_comment",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/my_comment/my_comment",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/my_collocation/my_collocation",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/my_collocation/my_collocation",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{
-			"path" : "pages/article_detail/article_detail",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"path": "pages/article_detail/article_detail",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		}
 
@@ -236,8 +209,7 @@
 		"selectedColor": "#7cc1d2",
 		"backgroundColor": "#fefefe",
 		"borderStyle": "white",
-		"list": [
-			{
+		"list": [{
 				"pagePath": "pages/index/index",
 				"text": "百科",
 				"iconPath": "static/new-icon/home-w.png",
@@ -249,7 +221,7 @@
 				"iconPath": "static/new-icon/home-w.png",
 				"selectedIconPath": "static/new-icon/home-b.png"
 			},
-			
+
 			{
 				"pagePath": "pages/calendar/calendar",
 				"text": "上新",
@@ -271,5 +243,4 @@
 		]
 	},
 	"uniIdRouter": {}
-	
 }
