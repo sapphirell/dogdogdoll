@@ -2,7 +2,10 @@
 	<view class="brand-card" :key="key">
 		<!-- 品牌信息卡片 -->
 		<view class="brand-header" @tap="jumpBrand">
-			<image class="brand-logo" :src="brand.logo_image" mode="aspectFit"></image>
+			<image class="brand-logo" v-if="brand.logo_image" :src="brand.logo_image" mode="aspectFit"></image>
+			<view class="brand-logo" style="background: linear-gradient(180deg, #d8c1b3 0%, #d3f5ff 100%);align-items: center;" v-else>
+				<text style="color: rgb(255, 255, 255);font-size: 100rpx;    display: block; text-align: center;">?</text>
+			</view>
 			<view class="brand-meta">
 				<view class="title-row">
 					<text class="brand-title">{{brand.brand_name}}</text>
@@ -63,8 +66,8 @@ function jumpGoods(id) {
 	
 	.brand-logo {
 		flex-shrink: 0;
-		width: 140rpx;
-		height: 140rpx;
+		width: 180rpx;
+		height: 180rpx;
 		border-radius: 8rpx;
 		background: #f8f9fa;
 	}

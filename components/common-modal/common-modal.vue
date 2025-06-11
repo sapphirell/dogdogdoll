@@ -1,14 +1,14 @@
 <!-- components/MyModal.vue -->
 <template>
-	<transition name="modal-fade">
-		<view class="modal-mask" v-if="visible" @tap="closeModal">
-			<view class="modal-container" :style="containerStyle" @tap.stop>
-				<view class="modal-content">
-					<slot></slot>
-				</view>
+
+	<view class="modal-mask" v-if="visible" @tap="closeModal">
+		<view class="modal-container" :style="containerStyle" @tap.stop>
+			<view class="modal-content">
+				<slot></slot>
 			</view>
 		</view>
-	</transition>
+	</view>
+
 </template>
 
 <script setup>

@@ -3,13 +3,13 @@
 	<view class="custom-select">
 		<input v-model="inputValue" @click="toggleOpen" @input="callbackValue" placeholder="请选择或输入" class="select-input"
 			:style="{ margin: margin }" />
-		<transition name="slide-fade">
+	
 			<view v-if="isOpen" class="dropdown">
 				<view v-for="item in filteredList" :key="item.id" @click="selectOption(item)" class="dropdown-item">
 					{{ item.name }}
 				</view>
 			</view>
-		</transition>
+		
 	</view>
 </template>
 

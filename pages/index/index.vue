@@ -113,6 +113,7 @@
 								{{ tab.label }}
 							</view>
 						</view>
+						
 						<view class="brand_type_description" style="display: block;width: 100%;">
 							<text v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
 							<text v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
@@ -266,6 +267,9 @@
 	import sdp from '@/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue';
 	let brandsList = ref([]);
 	let data = ref({})
+	
+	// 定义游标变量
+	let cursor = ref('') // 存储分页游标
 
 	// 筛选相关代码
 	const tabs = ref([{
@@ -451,6 +455,7 @@
 		page.value = 1;
 		hasMore.value = true;
 		brandsList.value = [];
+		  cursor.value = ''; // 重置游标
 		getBrands();
 	}
 
@@ -567,47 +572,111 @@
 	}
 
 
+	// const getBrands = async (isRefresh = false) => {
+	// 	if (isRefresh) page.value = 1; // 强制重置为第一页
+	// 	if (!hasMore.value || loading.value) {
+	// 		return
+	// 	}
+
+	// 	loading.value = true;
+	// 	uni.showLoading();
+	// 	uni.request({
+	// 		url: websiteUrl + '/brands',
+	// 		data: {
+	// 			page: page.value,
+	// 			pageSize: pageSize.value,
+	// 			...(activeSearchType.value && {
+	// 				searchType: activeSearchType.value
+	// 			})
+	// 		},
+	// 		success: (res) => {
+	// 			const newData = res.data.data.brands_list;
+	// 			if (newData.length === 0) {
+	// 				hasMore.value = false;
+	// 				return;
+	// 			}
+
+	// 			brandsList.value = [...brandsList.value, ...newData];
+	// 			//是否还有更多数据
+	// 			hasMore.value = brandsList.value.length < res.data.data.total;
+	// 			page.value++;
+	// 		},
+	// 		fail: (err) => {
+	// 			console.log(err);
+	// 			uni.showToast({
+	// 				title: '网络请求失败',
+	// 				icon: 'none'
+	// 			})
+	// 		},
+	// 		complete: () => {
+	// 			loading.value = false
+	// 			uni.hideLoading()
+	// 		}
+	// 	})
+	// }
 	const getBrands = async (isRefresh = false) => {
-		if (isRefresh) page.value = 1; // 强制重置为第一页
-		if (!hasMore.value || loading.value) {
-			return
-		}
-
-		loading.value = true;
-		uni.showLoading();
-		uni.request({
-			url: websiteUrl + '/brands',
-			data: {
-				page: page.value,
-				pageSize: pageSize.value,
-				...(activeSearchType.value && {
-					searchType: activeSearchType.value
-				})
-			},
-			success: (res) => {
-				const newData = res.data.data.brands_list;
-				if (newData.length === 0) {
-					hasMore.value = false;
-					return;
-				}
-
-				brandsList.value = [...brandsList.value, ...newData];
-				//是否还有更多数据
-				hasMore.value = brandsList.value.length < res.data.data.total;
-				page.value++;
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			},
-			complete: () => {
-				loading.value = false
-				uni.hideLoading()
-			}
-		})
+	  if (isRefresh) {
+	    page.value = 1;
+	    brandsList.value = [];
+	    hasMore.value = true;
+	    cursor.value = ''; // 重置游标
+	  }
+	  
+	  if (!hasMore.value || loading.value) return;
+	
+	  loading.value = true;
+	  uni.showLoading();
+	  
+	  // 构造请求参数
+	  const params = {
+	    pageSize: pageSize.value
+	  };
+	  
+	  // 添加游标或搜索类型参数
+	  if (cursor.value) {
+	    params.cursor = cursor.value;
+	  } else if (activeSearchType.value) {
+	    params.searchType = activeSearchType.value;
+	  }
+	  
+	  uni.request({
+	    url: websiteUrl + '/brands-info-list',
+	    data: params,
+	    success: (res) => {
+	      if (res.data.status !== 'success') {
+	        uni.showToast({
+	          title: '加载失败: ' + res.data.message,
+	          icon: 'none'
+	        });
+	        return;
+	      }
+	      
+	      const response = res.data.data;
+	      const newData = response.data;
+	      console.log("newData:", newData)
+	      // 更新游标
+	      cursor.value = response.next_cursor || '';
+	      
+	      if (newData.length === 0) {
+	        hasMore.value = false;
+	        return;
+	      }
+	      
+	      brandsList.value = [...brandsList.value, ...newData];
+	      hasMore.value = response.has_more;
+	    },
+	    fail: (err) => {
+	      console.log(err);
+	      uni.showToast({
+	        title: '网络请求失败',
+	        icon: 'none'
+	      });
+	    },
+	    complete: () => {
+	      loading.value = false;
+	      uni.hideLoading();
+	    }
+	  });
 	}
 
 
@@ -744,13 +813,13 @@
 
 	// 上拉加载更多
 	onReachBottom(() => {
-		if (activeTab.value === 'brands') {
-			getBrands()
-		} else if (activeTab.value === 'news') {
-			getNews()
-		} else if (activeTab.value === 'second') {
-			getTreeholeList()
-		}
+		  if (activeTab.value === 'brands' && hasMore.value) {
+			getBrands();
+		  } else if (activeTab.value === 'news' && newsHasMore.value) {
+			getNews();
+		  } else if (activeTab.value === 'second' && treeholeHasMore.value) {
+			getTreeholeList();
+		  }
 	})
 </script>
 

@@ -6,17 +6,20 @@
 		</view>
 
 		<!-- 上传图片列表 -->
-		<scroll-view scroll-x="true" class="upload_box" ll-with-animation="true" :show-scrollbar="false">
-			<view class="upload_item" v-for="(item, index) in uploadList" :key="index">
-				<image :src="item" class="uploaded_image" @tap="viewFullImage" mode="aspectFill" />
-				<image v-if="isEditable" src="/static/cancel.png" class="close_icon" @tap="deleteImage(index)" />
-			</view>
-			<view class="uploadImageBox" style="background: #f8f8f8;" v-if="isEditable">
-				<image src="/static/add2.png" class="upload_img" @tap="selectImage(index)"
-					style="width: 50px;height: 50px;margin: 25px;" />
-			</view>
+		<view style="width: 100%;overflow: hidden;">
 
-		</scroll-view>
+			<scroll-view scroll-x="true" class="upload_box" ll-with-animation="true" :show-scrollbar="false">
+				<view class="upload_item" v-for="(item, index) in uploadList" :key="index">
+					<image :src="item" class="uploaded_image" @tap="viewFullImage" mode="aspectFill" />
+					<image v-if="isEditable" src="/static/cancel.png" class="close_icon" @tap="deleteImage(index)" />
+				</view>
+				<view class="uploadImageBox" style="background: #f8f8f8;" v-if="isEditable">
+					<image src="/static/add2.png" class="upload_img" @tap="selectImage(index)"
+						style="width: 50px;height: 50px;margin: 25px;" />
+				</view>
+
+			</scroll-view>
+		</view>
 		<!-- 标题 -->
 		<input v-model="name" type="text" :disabled="!isEditable" placeholder="请输入标题"
 			style="padding: 10px;margin: 20px 15px 5px 15px;display: block;">
@@ -30,7 +33,10 @@
 			  <image src="/static/right2.png" class="arrow-icon" />
 			</view>
 		</view>
-
+		<view class="publish-detail">
+			<text>* 展示您的宝宝们 🩵。</text>
+			<text>* 不关联商品的展示柜不会出现在广场中。</text>
+		</view>
 		<!-- 相关 -->
 		<view class="saveCollocationDataList">
 			<view v-for="(item, index) in saveCollocationDataList" :key="index">
@@ -743,5 +749,13 @@
 	    width: 30rpx;
 	    height: 30rpx;
 	  }
+	}
+	
+	.publish-detail {
+		text {
+			display: block;
+			color: #888;
+			margin: 20rpx 40rpx;
+		}
 	}
 </style>

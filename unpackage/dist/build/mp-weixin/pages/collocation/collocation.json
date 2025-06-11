@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "分享搭配",
   "usingComponents": {
-    "relation-picker": "../../components/relation-picker/relation-picker",
-    "common-page": "../../components/common-page/common-page"
+    "relation-picker": "../../components/relation-picker/relation-picker"
   }
 }

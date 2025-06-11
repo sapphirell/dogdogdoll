@@ -59,7 +59,7 @@
 						<image :src="good.goods_image" mode="aspectFill" style="width: 30vw; height: auto;height: auto;
 						aspect-ratio: 1; "></image>
 						<text
-							style="left: 0px;position: absolute;top: 5px;width: 100px;background: rgb(82 104 138);color: #fff;text-align: center;opacity: 0.8;font-size: 13px;padding: 5rpx;">{{good.sale_type}}</text>
+							style="left: 0px;position: absolute;top: 5px;width: 100px;    background: linear-gradient(86deg, rgb(52 68 160 / 57%) 0%, rgb(163 163 163) 100%);color: #fff;text-align: center;opacity: 0.8;font-size: 13px;padding: 5rpx;">{{good.sale_type}}</text>
 					</navigator>
 
 				</view>

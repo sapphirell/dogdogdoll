@@ -9,7 +9,8 @@
 			<view class="filter-bar" :style="miniProgram ? 'width:500rpx' : ''">
 				<view class="filter-tags" @tap="showFilter">
 					<view class="selected-goods">
-						<view v-for="goods in filterGoods" :key="goods.goods_id" class="tag" @tap.stop="(e) => removeGood(goods.goods_id, e)">
+						<view v-for="goods in filterGoods" :key="goods.goods_id" class="tag"
+							@tap.stop="(e) => removeGood(goods.goods_id, e)">
 							{{ goods.goods_name }}
 							<text class="remove">×</text>
 						</view>
@@ -20,24 +21,25 @@
 			</view>
 
 			<!-- 搭配列表 -->
-			<scroll-view class="card-list" scroll-y @scrolltolower="loadMore" :show-scrollbar="false" >
+			<scroll-view class="card-list" scroll-y @scrolltolower="loadMore" :show-scrollbar="false">
 				<view class="cards-container" :style="{ height: containerHeight + 'px' }">
 					<view v-for="(item, index) in collocationList" :key="item.collocation_id" class="card"
 						:id="'card-' + index" :style="cardStyle(index)"
 						@tap="jump2collectionDetail(item.collocation_id, item.origin )">
-						
-						  <view class="user-info" @tap.stop="jumpToUserPage(item.uid)">
-						    <image :src="item.avatar || '/default_avatar.jpg'" class="avatar" mode="aspectFill" />
-						    <view class="user-meta">
-						      <text class="username">{{ getUserName(item.username) }}</text>
-						      <view class="like-count">
-						        <uni-icons type="hand-up" size="18" color="#5f85a3"></uni-icons>
-						        <text style="margin: 0 5rpx;color: #5f85a3;"> {{ item.like_count }}</text>
-						      </view>
-						    </view>
-						  </view>
-						  
-						<image v-if="item.image_urls?.length > 0" :src="item.image_urls[0]" mode="aspectFill" class="card-image" lazy-load />
+
+						<view class="user-info" @tap.stop="jumpToUserPage(item.uid)">
+							<image :src="item.avatar || '/default_avatar.jpg'" class="avatar" mode="aspectFill" />
+							<view class="user-meta">
+								<text class="username">{{ getUserName(item.username) }}</text>
+								<view class="like-count">
+									<uni-icons type="hand-up" size="18" color="#5f85a3"></uni-icons>
+									<text style="margin: 0 5rpx;color: #5f85a3;"> {{ item.like_count }}</text>
+								</view>
+							</view>
+						</view>
+
+						<image v-if="item.image_urls?.length > 0" :src="item.image_urls[0]" mode="aspectFill"
+							class="card-image" lazy-load />
 						<view class="card-content">
 							<text class="title">{{ item.title }}</text>
 							<text class="desc">{{ item.content }}</text>
@@ -60,6 +62,26 @@
 				</view>
 			</scroll-view>
 
+			<!-- 悬浮发帖按钮 -->
+			<view class="floating-button" @tap="togglePostMenu">
+				<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+			</view>
+
+			<!-- 发帖菜单 -->
+			<uni-transition  name="fade" mode="out-in" :duration="300">
+				<view v-if="showPostMenu" class="post-menu-mask" @tap="closePostMenu"></view>
+			</uni-transition>
+			<view class="post-menu" :class="{ show: showPostMenu }">
+				<view class="menu-item" @tap="goToCollocation">
+					<uni-icons style="margin-right: 10rpx;" type="color" size="24" color="#5f85a3"></uni-icons>
+					<text>发搭配分享</text>
+				</view>
+				<view class="menu-item" @tap="goToShowcase">
+					<uni-icons style="margin-right: 10rpx;" type="compose" size="24" color="#5f85a3"></uni-icons>
+					<text>发展示柜</text>
+				</view>
+			</view>
+
 			<!-- 筛选弹窗 -->
 			<common-modal v-model:visible="showFilterModal" top="0" width="100%" height="100%">
 				<view class="modal-mask" @tap.stop="closeFilter"></view>
@@ -74,9 +96,10 @@
 
 					<!-- 已选商品展示 -->
 					<view class="selected-goods">
-						<view v-for="goods in filterGoods" :key="goods.goods_id" class="goods-tag"  @tap.stop="(e) => removeGood(goods.goods_id, e)">
+						<view v-for="goods in filterGoods" :key="goods.goods_id" class="goods-tag"
+							@tap.stop="(e) => removeGood(goods.goods_id, e)">
 							{{ goods.goods_name }}
-							<text class="remove" >×</text>
+							<text class="remove">×</text>
 						</view>
 					</view>
 
@@ -126,7 +149,34 @@
 
 	// 是否小程序
 	const miniProgram = process.env.VUE_APP_PLATFORM === 'mp-weixin'
+	// 新增发帖按钮相关状态
+	const showPostMenu = ref(false);
 
+	// 切换发帖菜单显示状态
+	const togglePostMenu = () => {
+		showPostMenu.value = !showPostMenu.value;
+	};
+
+	// 关闭发帖菜单
+	const closePostMenu = () => {
+		showPostMenu.value = false;
+	};
+
+	// 跳转到搭配分享页面
+	const goToCollocation = () => {
+		closePostMenu();
+		uni.navigateTo({
+			url: '/pages/collocation/collocation'
+		});
+	};
+
+	// 跳转到展示柜页面
+	const goToShowcase = () => {
+		closePostMenu();
+		uni.navigateTo({
+			url: '/pages/stock/showcase_form/showcase_form'
+		});
+	};
 
 	// 计算卡片样式
 	const cardStyle = (index) => {
@@ -252,28 +302,28 @@
 			console.log('接口响应:', res);
 
 			if (res.data.status === 'success') {
-				  // 添加安全解构
-				  const data = res.data.data || {}
-				  const newItems = Array.isArray(data.collocation_relation_list) 
-				    ? data.collocation_relation_list 
-				    : []
-				
-				  collocationList.value = reset 
-				    ? newItems 
-				    : [...collocationList.value, ...newItems]
-				
-				  noMore.value = newItems.length < pageSize
-				  currentPage.value++
-				
-				  // 添加空数据提示
-				  if (reset && newItems.length === 0) {
-				    uni.showToast({
-				      title: '暂无相关搭配',
-				      icon: 'none'
-				    })
-				  }
-				
-				
+				// 添加安全解构
+				const data = res.data.data || {}
+				const newItems = Array.isArray(data.collocation_relation_list) ?
+					data.collocation_relation_list :
+					[]
+
+				collocationList.value = reset ?
+					newItems :
+					[...collocationList.value, ...newItems]
+
+				noMore.value = newItems.length < pageSize
+				currentPage.value++
+
+				// 添加空数据提示
+				if (reset && newItems.length === 0) {
+					uni.showToast({
+						title: '暂无相关搭配',
+						icon: 'none'
+					})
+				}
+
+
 				console.log("等待next tick")
 				await nextTick()
 				console.log("等待完成")
@@ -353,7 +403,7 @@
 		// await nextTick(); 
 
 	};
-	
+
 	const onShareAppMessage = () => ({
 		title: 'BJD娃圈你想知道的这里都有~',
 		path: '/pages/news/news',
@@ -381,12 +431,12 @@
 
 
 	// 移除单个商品
-	const removeGood = (goodsId,event) => {
+	const removeGood = (goodsId, event) => {
 		// 阻止事件冒泡
-	  event?.stopPropagation?.()  // 安全调用
-	  filterGoods.value = filterGoods.value.filter(g => g.goods_id !== goodsId)
-	  noMore.value = false
-	  fetchCollocations(true)
+		event?.stopPropagation?.() // 安全调用
+		filterGoods.value = filterGoods.value.filter(g => g.goods_id !== goodsId)
+		noMore.value = false
+		fetchCollocations(true)
 	}
 	// 重置筛选
 	const resetFilter = () => {
@@ -423,19 +473,19 @@
 			url: `/pages/collocation_share/collocation_share?collocation_id=${item.collocation_id}&origin=${item.origin}`
 		})
 	}
-	
+
 	const jumpToUserPage = (uid) => {
-	  uni.navigateTo({
-	    url: `/pages/user_page/user_page?uid=${uid}`
-	  })
+		uni.navigateTo({
+			url: `/pages/user_page/user_page?uid=${uid}`
+		})
 	}
-	
+
 	// 临时用户名缓存（实际应通过接口获取）
 	const getUserName = (name) => {
-	  // 这里可以替换为真实的用户名获取逻辑
-	  return name.length > 10 ? `${name.toString().slice(-8)}...` : name
+		// 这里可以替换为真实的用户名获取逻辑
+		return name.length > 10 ? `${name.toString().slice(-8)}...` : name
 	}
-	
+
 
 	// 初始化加载
 	onMounted(fetchCollocations)
@@ -580,54 +630,55 @@
 
 				}
 			}
+
 			// 用户信息
 			.user-info {
-			    display: flex;
-			    align-items: center;
-			    padding: 20rpx 24rpx 0;
-			    margin-bottom: 16rpx;
-			    
-			    .avatar {
-			      width: 64rpx;
-			      height: 64rpx;
-			      border-radius: 50%;
-			      margin-right: 16rpx;
-			    }
-			    
-			    .user-meta {
-			      flex: 1;
-			      
-			      .username {
-			        font-size: 24rpx;
-			        color: #515151;
-			        display: block;
-			        max-width: 150rpx;
-			        overflow: hidden;
-			        text-overflow: ellipsis;
-			        white-space: nowrap;
-			      }
-			      
-			      .like-count {
-			        font-size: 20rpx;
-			        color: #666;
-			        display: flex;
-			        align-items: center;
-			        
-			        .icon {
-			          color: #ff4c4c;
-			          margin-right: 8rpx;
-			        }
-			      }
-			    }
-			  }
-			  
-			  .card-image {
-			    height: 360rpx; // 调整图片高度
+				display: flex;
+				align-items: center;
+				padding: 20rpx 24rpx 0;
+				margin-bottom: 16rpx;
+
+				.avatar {
+					width: 64rpx;
+					height: 64rpx;
+					border-radius: 50%;
+					margin-right: 16rpx;
+				}
+
+				.user-meta {
+					flex: 1;
+
+					.username {
+						font-size: 24rpx;
+						color: #515151;
+						display: block;
+						max-width: 150rpx;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+					}
+
+					.like-count {
+						font-size: 20rpx;
+						color: #666;
+						display: flex;
+						align-items: center;
+
+						.icon {
+							color: #ff4c4c;
+							margin-right: 8rpx;
+						}
+					}
+				}
+			}
+
+			.card-image {
+				height: 360rpx; // 调整图片高度
 				width: calc(100% - 40rpx);
 				overflow: hidden;
 				border-radius: 15rpx;
-				margin: 0 20rpx ;
-			  }
+				margin: 0 20rpx;
+			}
 		}
 	}
 
@@ -676,19 +727,19 @@
 		padding: 40rpx;
 		background: white;
 		border-radius: 24rpx;
-		  position: relative;
-		  z-index: 1001;
-		  
-		  /* 添加遮罩层样式 */
-		  .modal-mask {
-		    position: fixed;
-		    top: 0;
-		    left: 0;
-		    right: 0;
-		    bottom: 0;
-		    background: rgba(0, 0, 0, 0.5);
-		    z-index: 1000;
-		  }
+		position: relative;
+		z-index: 1001;
+
+		/* 添加遮罩层样式 */
+		.modal-mask {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 1000;
+		}
 
 
 		.modal-header {
@@ -697,7 +748,7 @@
 			align-items: center;
 			margin-bottom: 40rpx;
 			padding-left: 20rpx;
-		
+
 
 			.title {
 				font-size: 28rpx;
@@ -791,4 +842,87 @@
 			display: block;
 		}
 	}
+	
+	 /* 新增样式 */
+	  .floating-button {
+	    position: fixed;
+	    right: 40rpx;
+	    bottom: 120rpx;
+	    width: 90rpx;
+	    height: 90rpx;
+	    background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
+	    border-radius: 50%;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    box-shadow: 0 6rpx 20rpx rgba(30, 209, 225, 0.4);
+	    z-index: 99;
+	    transition: all 0.3s ease;
+	    
+	    &:active {
+	      transform: scale(0.95);
+	      box-shadow: 0 4rpx 12rpx rgba(30, 209, 225, 0.3);
+	    }
+	  }
+	  
+	  .post-menu-mask {
+	    position: fixed;
+	    top: 0;
+	    left: 0;
+	    right: 0;
+	    bottom: 0;
+	    background: rgba(0, 0, 0, 0.3);
+	    z-index: 100;
+	    backdrop-filter: blur(5rpx);
+	  }
+	  
+	  .post-menu {
+	    position: fixed;
+	    right: 40rpx;
+	    bottom: 240rpx;
+	    background: white;
+	    border-radius: 16rpx;
+	    box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.15);
+	    padding: 20rpx 0;
+	    z-index: 101;
+	    transform: translateY(30rpx);
+	    opacity: 0;
+	    pointer-events: none;
+	    transition: all 0.3s ease;
+	    
+	    &.show {
+	      transform: translateY(0);
+	      opacity: 1;
+	      pointer-events: auto;
+	    }
+	    
+	    &::before {
+	      content: '';
+	      position: absolute;
+	      bottom: -12rpx;
+	      right: 35rpx;
+	      width: 0;
+	      height: 0;
+	      border-left: 12rpx solid transparent;
+	      border-right: 12rpx solid transparent;
+	      border-top: 12rpx solid white;
+	    }
+	    
+	    .menu-item {
+	      display: flex;
+	      align-items: center;
+	      padding: 20rpx 40rpx;
+	      font-size: 26rpx;
+	      color: #333;
+	      transition: background 0.2s;
+	      
+	      &:active {
+	        background: #f5f5f5;
+	      }
+	      
+	      uni-icons {
+	        margin-right: 15rpx;
+	      }
+	    }
+	  }
 </style>

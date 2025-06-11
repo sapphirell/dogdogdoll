@@ -84,7 +84,6 @@
 		<comment-input ref="commentInputRef" :reply-info="replyForItem" :target-id="pageId"
 			@submit="handleCommentSubmit" @update:reply-info="val => replyForItem = val" />
 
-
 		<view style="width: 100%;height: 120rpx;"></view>
 
 

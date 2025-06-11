@@ -138,6 +138,7 @@
 		let url = ''
 		const id = item.relation_id
 
+
 		// 根据类型跳转不同页面（路径需要您根据实际路由补全）
 		switch (item.type) {
 			case 1: // BrandComment
@@ -150,7 +151,7 @@
 				url = `/pages/collocation_share/collocation_share?collocation_id=${id}&origin=1` // 搭配详情页
 				break
 			case 4: // SaleNewsComment
-				url = `/pages/sale_news/sale_news?newsId=${id}` // 资讯详情页
+				url = `/pages/sale_news/sale_news?id=${id}&brand_id=0` // 资讯详情页
 				break
 			case 5: // TreeholeComment
 				url = `/pages/treehole_detail/treehole_detail?id=${id}` // 树洞详情页

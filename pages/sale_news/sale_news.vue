@@ -177,11 +177,14 @@
 					...res.data.data,
 					image_list: res.data.data.image_list || []
 				}
+	
+				brandId.value = res.data.data.brand_id
 				getBrandsInfo()
 			} else {
 				handleError(res.data.msg || '数据加载失败')
 			}
 		} catch (err) {
+			console.error('请求失败:', err)
 			handleError('网络请求失败')
 		} finally {
 			loading.value = false
@@ -336,12 +339,14 @@
 
 	// 初始化加载
 	onLoad((options) => {
-		if (!options.id || !options.brand_id) {
+		if (!options.id) {
 			handleError('缺少必要参数')
 			return
 		}
+		
 		pageId.value = options.id
-		brandId.value = options.brand_id
+
+		
 		fetchNewsDetail(options.id)
 		// getCollocationComments()
 		asyncGetUserInfo().then(getHasLikeBrand)

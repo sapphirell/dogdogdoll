@@ -80,6 +80,7 @@
 			  </view>
 			  <button class="submit-btn" @click="login">立即登录</button>
 			  <button class="submit-btn" @click="wechatSignLogin">微信登录</button>
+			  <button class="submit-btn" @click="jump2index" style="background: linear-gradient(135deg, #cdcdcd, #b1b1b1);">随便看看→</button>
 			</view>
 
 		</view>
@@ -144,6 +145,13 @@
 	function jump2like() {
 		uni.navigateTo({
 			url: `/pages/user_like/user_like`
+		})
+	}
+	// jump2index
+	function jump2index() {
+		uni.showTabBar({ animation: false })
+		uni.switchTab({
+			url: `/pages/index/index`
 		})
 	}
 	

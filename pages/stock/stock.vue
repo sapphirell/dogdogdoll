@@ -1,7 +1,7 @@
 <template>
-	<meta name="theme-color" content="rgb(185 195 253)">
+	<meta name="theme-color" content="#d8deff">
 	</meta>
-	<common-page head_color="rgb(185 195 253)">
+	<common-page head_color="#d8deff">
 		<view class="container" style="overflow: hidden;">
 			<view class="head_container">
 				<view class="switch_tab">
@@ -17,10 +17,11 @@
 				</view>
 			</view>
 
-
 			<view class="data_body">
-				<transition :name="transitionName()">
-					<view class="tab_body_1st" v-if="activeTab === 1" :class="{ none: activeTab !== 1 }">
+				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-left']" :duration="300"
+					:show="activeTab === 1">
+
+					<view class="tab_body_1st">
 						<view class="type-header">
 							<picker class="type-picker" mode="selector" :value="selectedType" :range="typeOptions"
 								@change="updateSelectedType">
@@ -76,9 +77,11 @@
 							<button class="jump2addButton" @tap="go2addAccountBook">+</button>
 						</view>
 					</view>
-				</transition>
-				<transition :name="transitionName()">
-					<view class="tab_body_sec" v-if="activeTab === 2" :class="{ none: activeTab !== 2 }">
+				</uni-transition>
+				<uni-transition :name="transitionName()" :mode-class="transitionName()" :duration="300"
+					:show="activeTab === 2">
+
+					<view class="tab_body_sec">
 						<!-- 展示柜 -->
 						<view v-if="showcaseData.showcases && showcaseData.showcases.length > 0"
 							class="showcase-container">
@@ -118,9 +121,11 @@
 							<button class="jump2addButton" @tap="go2addShowCase">+</button>
 						</view>
 					</view>
-				</transition>
-				<transition :name="transitionName()">
-					<view class="tab_body_3th" v-if="activeTab === 3" :class="{ none: activeTab !== 3 }">
+				</uni-transition>
+				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
+					:show="activeTab === 3">
+
+					<view class="tab_body_3th">
 						<view class="calendar-container" v-if="Object.keys(billData).length > 0">
 							<view v-for="(bills, month) in billData" :key="month">
 								<view class="month-header-container">
@@ -164,7 +169,7 @@
 							<button class="jump2addButton" @tap="go2addBill(false)">+</button>
 						</view>
 					</view>
-				</transition>
+				</uni-transition>
 			</view>
 		</view>
 
@@ -196,24 +201,29 @@
 	const previousTab = ref(1); // 记录上一次的 tab
 	// 切换动画名称
 	function transitionName() {
-		return activeTab.value > previousTab.value ? 'slide_left' : 'slide_right';
+		if (activeTab.value > 1) {
+			return ['fade', 'slide-left'];
+		} else {
+			return ['fade', 'slide-right'];
+		}
+
 	};
 
 	function switch_tab(index) {
-		previousTab.value = activeTab.value; // 更新上一次的 tab
-		activeTab.value = index; // 切换激活 tab
-		console.log(`切换到 tab ${index}`);
+		const oldIndex = activeTab.value;
+		previousTab.value = oldIndex; // 记录上一次的 tab
+		activeTab.value = index; // 设置新的激活 tab
+
+		console.log(`从 tab ${oldIndex} 切换到 tab ${index}，方向: ${transitionName()}`);
+
 		switch (index) {
 			case 1:
 				getAccountBookData();
-				activeTab.value = 1;
 				break;
 			case 2:
-				activeTab.value = 2;
 				getShowcaseData();
 				break;
 			case 3:
-				activeTab.value = 3;
 				getBillData();
 				break;
 		}
@@ -298,44 +308,48 @@
 
 	// 删除分类
 	const deleteType = async (id) => {
-	  uni.showModal({
-	    title: '确认删除',
-	    // content: '如果该分类下存在物品，则不可以直接删除分类',
-	    success: async (res) => {
-	      if (res.confirm) {
-	        const token = uni.getStorageSync('token');
-	        try {
-	          const response = await uni.request({
-	            url: websiteUrl + '/with-state/delete-account-type',
-	            method: 'POST',
-	            header: {
-	              'Authorization': token,
-	              'Content-Type': 'application/json' // 添加Content-Type
-	            },
-	            data: { id }, // 使用JSON格式传参
-	          });
-	
-	          const resData = response.data;
-	          
-	          if (resData.status === "success") { // 严格判断状态
-	            await getAccountTypes();
-	            uni.showToast({ title: '删除成功' });
-	          } else {
-	            uni.showToast({
-	              title: resData.msg || '删除失败',
-	              icon: 'none'
-	            });
-	          }
-	        } catch (err) {
-	          console.error('删除失败:', err);
-	          uni.showToast({
-	            title: err.errMsg || '请求失败',
-	            icon: 'none'
-	          });
-	        }
-	      }
-	    }
-	  });
+		uni.showModal({
+			title: '确认删除',
+			// content: '如果该分类下存在物品，则不可以直接删除分类',
+			success: async (res) => {
+				if (res.confirm) {
+					const token = uni.getStorageSync('token');
+					try {
+						const response = await uni.request({
+							url: websiteUrl + '/with-state/delete-account-type',
+							method: 'POST',
+							header: {
+								'Authorization': token,
+								'Content-Type': 'application/json' // 添加Content-Type
+							},
+							data: {
+								id
+							}, // 使用JSON格式传参
+						});
+
+						const resData = response.data;
+
+						if (resData.status === "success") { // 严格判断状态
+							await getAccountTypes();
+							uni.showToast({
+								title: '删除成功'
+							});
+						} else {
+							uni.showToast({
+								title: resData.msg || '删除失败',
+								icon: 'none'
+							});
+						}
+					} catch (err) {
+						console.error('删除失败:', err);
+						uni.showToast({
+							title: err.errMsg || '请求失败',
+							icon: 'none'
+						});
+					}
+				}
+			}
+		});
 	};
 
 
@@ -374,7 +388,6 @@
 		if (type && type !== "全部") {
 			url = websiteUrl + '/with-state/account-book?type=' + type;
 		}
-		accountBookData.value = {}
 
 		// 获取账本数据 /with-state//account-book
 		uni.request({
@@ -400,7 +413,7 @@
 			return
 		}
 		let token = uni.getStorageSync('token');
-		showcaseData.value = {}
+
 		// 获取展示柜数据
 		uni.request({
 			url: websiteUrl + '/with-state/showcase',
@@ -425,7 +438,7 @@
 			return
 		}
 		let token = uni.getStorageSync('token');
-		billData.value = {}
+
 		// 获取账单数据
 		uni.request({
 			url: websiteUrl + '/with-state/tail-bill',
@@ -514,7 +527,7 @@
 	})
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 	.container {
 		background-color: #fff;
 		// background: linear-gradient(180deg, #daeeff 0%, white 100%);
@@ -526,9 +539,8 @@
 	}
 
 	.head_container {
-		background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
+		background: linear-gradient(180deg, #d8deff 0%, #d3f5ff 100%);
 		overflow: hidden;
-		padding-bottom: 60rpx;
 	}
 
 	.switch_tab {
@@ -603,15 +615,23 @@
 
 	.data_body {
 		min-height: 80vh;
+
 		/* 根据实际内容设置合理高度，避免父容器塌陷 */
 		position: relative;
-		top: -80rpx;
+
 	}
 
 	.tab_body_1st,
 	.tab_body_sec,
 	.tab_body_3th {
-		border-radius: 50rpx 50rpx 0 0;
+		/* 添加以下内容确保显示 */
+		display: block !important;
+		opacity: 1 !important;
+		visibility: visible !important;
+		transform: none !important;
+
+
+		// border-radius: 50rpx 50rpx 0 0;
 		overflow: hidden;
 		background-color: #fff;
 		padding: 20rpx 20rpx;
@@ -621,13 +641,12 @@
 		// box-shadow: 0 0 5rpx #dadada;
 		overflow: hidden;
 		width: calc(100%);
-		min-height: 80vh;
+		// min-height: 80vh;
+		min-height: 1200rpx;
 		/* 根据实际内容设置合理高度，避免父容器塌陷 */
 	}
 
-	.none {
-		display: none;
-	}
+
 
 	.light_button {
 		color: #fff;
@@ -651,53 +670,6 @@
 		margin: 40rpx 0rpx;
 	}
 
-	/* 切换动画 */
-	.slide_left-enter-active,
-	.slide_right-enter-active {
-		// transition: transform 0.5s ease;
-		// position: absolute;
-		/* 注意运动时候的边距和宽度要保持和元素的一致，不然会导致动画抖动 */
-		// margin-top: 10rpx;
-		// width: calc(100vw - 20rpx);
-	}
-
-	.slide_left-leave-active,
-	.slide_right-leave-active {
-		// transition: none;
-		/* 离开无动画 */
-		// position: absolute;
-		// width: 100%;
-		// margin: 20rpx 10rpx 10rpx 10rpx;
-	}
-
-	.slide_right-enter-from,
-	.-leave-to {
-		// opacity: 0;
-	}
-
-	.slide_left-enter-from,
-	.slide_left-leave-to,
-	.slide_right-enter-from,
-	.slide_right-leave-to {
-		// margin: 20rpx 10rpx 10rpx 10rpx;
-		/* 关键：确保动画始终使用正确宽度 */
-	}
-
-	.slide_left-enter-from {
-		// transform: translateX(100%);
-	}
-
-	.slide_left-leave-to {
-		// transform: translateX(-100%);
-	}
-
-	.slide_right-enter-from {
-		// transform: translateX(-100%);
-	}
-
-	.slide_right-leave-to {
-		// transform: translateX(100%);
-	}
 
 	// 1st下的
 	/* 新增样式 */
@@ -781,7 +753,7 @@
 		display: flex;
 		align-items: center;
 		padding: 25rpx 30rpx;
-		background: linear-gradient(135deg, rgb(255 124 124 / 10%) 0%, white 100%);
+		// background: linear-gradient(135deg, rgb(255 124 124 / 10%) 0%, white 100%);
 		border-radius: 16rpx;
 		margin: 20rpx 30rpx;
 		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
@@ -791,7 +763,7 @@
 	.manage-btn {
 		font-size: 22rpx;
 		color: white;
-	    background: #ffbcbc;
+		background: #ffbcd4;
 		margin-left: 20rpx;
 		padding: 10rpx 25rpx;
 		border-radius: 50rpx;
@@ -853,8 +825,8 @@
 			}
 		}
 	}
-	
-	
+
+
 
 	/* 补款提醒表单样式 */
 	.remind-form {
@@ -1114,8 +1086,30 @@
 				transform: rotate(360deg);
 			}
 		}
-	}
 
+		/* 针对展示柜的特殊调整 */
+		.tab_body_sec .empty-state {
+			padding-top: 100rpx;
+
+			.empty-icon {
+				width: 280rpx;
+				height: 280rpx;
+			}
+		}
+
+		/* 尾款日历特殊样式 */
+		.tab_body_3th .empty-state {
+			.empty-icon {
+				width: 260rpx;
+				height: 260rpx;
+			}
+
+		}
+
+
+
+	}
+	
 	// 空数据样式
 	.empty-state {
 		display: flex;
@@ -1125,58 +1119,38 @@
 		min-height: 60vh;
 		padding: 40rpx;
 		text-align: center;
-
+	
 		.empty-icon {
 			width: 240rpx;
 			height: 240rpx;
 			opacity: 0.8;
 			margin-bottom: 40rpx;
 		}
-
+	
 		.empty-text {
 			font-size: 32rpx;
 			color: #888;
 			margin-bottom: 20rpx;
 			font-weight: 500;
 		}
-
+	
 		.empty-tip {
 			font-size: 26rpx;
 			color: #aaa;
 			line-height: 1.6;
 		}
 	}
-
-	/* 针对展示柜的特殊调整 */
-	.tab_body_sec .empty-state {
-		padding-top: 100rpx;
-
-		.empty-icon {
-			width: 280rpx;
-			height: 280rpx;
-		}
-	}
-
-	/* 尾款日历特殊样式 */
-	.tab_body_3th .empty-state {
-		.empty-icon {
-			width: 260rpx;
-			height: 260rpx;
-		}
-
-	}
-
 	// 价格合计
 	.summary-container {
 		padding: 20rpx 30rpx;
 		border-radius: 12rpx;
 		margin: 20rpx 5rpx;
-
+	
 		.total-text {
 			font-size: 24rpx;
 			color: #74c9e5;
 			font-weight: bold;
-
+	
 			&::before {
 				content: '💰 ';
 			}

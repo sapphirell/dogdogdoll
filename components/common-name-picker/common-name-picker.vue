@@ -1,121 +1,173 @@
-<!-- components/common-name-picker.vue -->
 <template>
 	<view class="select-container" ref="containerRef">
 		<view class="select-input" @click="toggleOpen">
-			{{ selectedValue || placeholder }}
+			<text class="selected-value">{{ selectedValue || placeholder }}</text>
+			<view class="arrow-icon" :class="{ 'rotate': isOpen }">
+				<uni-icons type="arrowdown" size="16" color="#666"></uni-icons>
+			</view>
+		</view>
+		<!-- <text>{{ isOpen}}</text> -->
+
+		<view class="popup-container">
+			<!-- 遮罩层 -->
+			<view class="mask" v-if="isOpen" @click="toggleOpen()"></view>
+			<!-- 选项列表 -->
+			<!-- <uni-transition mode-class="fade" :show="isOpen"> -->
+				<view class="options-wrapper" v-if="isOpen">
+					<scroll-view scroll-y="true" class="select-options">
+						<view v-for="(item, index) in dataList" :key="index" class="option-item"
+							:class="{ 'selected': selectedValue === item }" @click.stop="selectItem(item)">
+							{{ item }}
+							<uni-icons v-if="selectedValue === item" type="checkmarkempty" size="18" color="#007AFF"
+								class="check-icon"></uni-icons>
+						</view>
+					</scroll-view>
+				</view>
+			<!-- </uni-transition> -->
 		</view>
 
-		<transition name="slide-fade">
-			<view v-if="isOpen">
-				<!-- 添加遮罩层 -->
-				<view class="mask" @click="isOpen = false"></view>
-				<view class="options-wrapper">
-					<ul class="select-options">
-						<li v-for="(item, index) in dataList" :key="index" class="option-item" @click="selectItem(item)">
-							{{ item }}
-						</li>
-					</ul>
-				</view>
-			</view>
-		</transition>
 	</view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+	import {
+		ref,
+		onMounted,
+	} from 'vue'
 
-const props = defineProps({
-	dataList: {
-		type: Array,
-		default: () => []
-	},
-	placeholder: {
-		type: String,
-		default: '请选择'
+	const props = defineProps({
+		dataList: {
+			type: Array,
+			default: () => []
+		},
+		placeholder: {
+			type: String,
+			default: '请选择'
+		},
+		defaultValue: {
+			type: String,
+			default: ''
+		}
+	})
+
+	const emit = defineEmits(['select'])
+
+	const isOpen = ref(false)
+	const selectedValue = ref(props.defaultValue)
+
+	const toggleOpen = () => {
+		isOpen.value = !isOpen.value
 	}
-})
 
-const emit = defineEmits(['select'])
+	const selectItem = (item) => {
+		selectedValue.value = item
+		isOpen.value = false
+		emit('select', item)
+	}
 
-const isOpen = ref(false)
-const selectedValue = ref('')
-
-const toggleOpen = () => {
-	isOpen.value = !isOpen.value
-}
-
-const selectItem = (item) => {
-	selectedValue.value = item
-	isOpen.value = false
-	emit('select', item)
-}
+	onMounted(() => {
+		console.log("初始值", isOpen.value)
+		isOpen.value = false
+	})
 </script>
+
 <style scoped>
-	.select-container,.select-input {
-		background: #f8f8f8;
-		font-size: 22rpx;
-		color: #393a3b;
-	}
 	.select-container {
 		position: relative;
-		display: inline-block;
-		font-family: Arial, sans-serif;
 		width: 100%;
+		font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
 	}
 
 	.select-input {
-		padding: 8px 16px;
-		
-		/* border: 1px solid #dcdfe6; */
-		border-radius: 4px;
-		cursor: pointer;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px 16px;
 		background-color: #fff;
-		transition: border-color 0.3s;
-		box-sizing: border-box;
-		margin: 0rpx;
+		border-radius: 8px;
+		font-size: 14px;
+		color: #333;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 	}
 
-	.select-input:hover {
-		/* border-color: #409eff; */
+	.selected-value {
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.arrow-icon {
+		transition: transform 0.3s ease;
+		margin-left: 8px;
+	}
+
+	.arrow-icon.rotate {
+		transform: rotate(180deg);
+	}
+
+	.mask {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.3);
+		z-index: 99;
+	}
+
+	.popup-container {
+		position: relative;
+		z-index: 100;
+	}
+
+	.options-wrapper {
+		position: absolute;
+		top: 8px;
+		left: 0;
+		right: 0;
+		z-index: 10000;
+		background: #fff;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		max-height: 250px;
+		overflow: hidden;
 	}
 
 	.select-options {
-		position: absolute;
-		left: 0;
-		right: 0;
-		max-height: 200px;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		background: #fff;
-		border-radius: 4px;
-		box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-		overflow-y: auto;
-		z-index: 1000;
+		max-height: 250px;
+		padding: 8px 0;
 	}
 
 	.option-item {
-		padding: 8px 12px;
-		cursor: pointer;
-		transition: background-color 0.3s;
+		position: relative;
+		padding: 12px 16px;
+		font-size: 14px;
+		color: #333;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+
 	}
 
-	.option-item:hover {
-		background-color: #f5f7fa;
+	.option-item:active {
+		background-color: #f5f5f5;
 	}
 
-	/* 进入和离开动画 */
-	.slide-fade-enter-active {
-		transition: all 0.1s ease-out;
+	.option-item.selected {
+		color: #007AFF;
+		font-weight: 500;
+		background-color: #f0f7ff;
 	}
 
-	.slide-fade-leave-active {
-		transition: all 0.1s cubic-bezier(1, 0.5, 0.8, 1);
+	.check-icon {
+		margin-left: 8px;
 	}
 
-	.slide-fade-enter-from,
-	.slide-fade-leave-to {
-		transform: translateY(-10px);
-		opacity: 0;
+	/* 动画优化 */
+
+	.options-wrapper {
+		position: absolute;
+		z-index: 10000;
 	}
 </style>

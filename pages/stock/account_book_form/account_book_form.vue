@@ -63,6 +63,61 @@
 					</button>
 				</view>
 			</view>
+
+			<!-- 尺寸选择器 -->
+			<view class="form-item">
+			    <text class="form-label">尺寸</text>
+			    <uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" 
+			        :value="selectedSizePath" @change="onSizeChange" class="size-picker">
+			    </uni-data-picker>
+			</view>
+
+			<!-- 更多信息折叠区域 -->
+			<view class="form-item">
+				<label class="remind-label" @tap="toggleMoreInfo()">
+					<uni-icons type="right" size="20" v-if="!showMoreInfo" color="#888"></uni-icons>
+					<uni-icons type="down" size="20" color="#888" v-else></uni-icons>
+					<text>更多信息</text>
+				</label>
+			</view>
+
+			<view v-if="showMoreInfo" class="more-info-form">
+				<!-- 尺寸详情 -->
+				<view class="form-item size_detail">
+					<text class="form-label">尺寸详情</text>
+					<input v-model="moreInfo.sizeDetail" placeholder="请输入尺寸详情" class="form-input" />
+				</view>
+
+				<!-- 颜色 -->
+				<view class="form-item">
+					<text class="form-label">颜色</text>
+					<input v-model="moreInfo.color" placeholder="请输入颜色" class="form-input" />
+				</view>
+
+				<!-- 备注 -->
+				<view class="form-item">
+					<text class="form-label">备注</text>
+					<input v-model="moreInfo.remark" placeholder="请输入备注" class="form-input" />
+				</view>
+
+				<!-- 购入时间 -->
+				<view class="form-item">
+					<text class="form-label">购入时间</text>
+					<picker mode="date" :value="moreInfo.buyDate" @change="(e) => moreInfo.buyDate = e.detail.value"
+						class="form-input">
+						<view class="picker-content">
+							{{ moreInfo.buyDate || '选择购入日期' }}
+						</view>
+					</picker>
+				</view>
+
+				<!-- 存放位置 -->
+				<view class="form-item">
+					<text class="form-label">存放位置</text>
+					<input v-model="moreInfo.position" placeholder="请输入存放位置" class="form-input" />
+				</view>
+			</view>
+
 			<!-- 补款提醒 -->
 			<view class="form-item">
 				<label class="remind-label" @tap="toggleRemind()">
@@ -174,6 +229,83 @@
 		finalTime: ''
 	});
 
+	// 更多信息折叠状态
+	const showMoreInfo = ref(false);
+
+	// 尺寸选择器数据
+	const sizeOptions = ref([]);
+	const selectedSize = ref([]);
+	// 存储用户选择的尺寸路径 [大分类, 小分类]
+	const selectedSizePath = ref([]);
+
+	// 更多信息数据
+	const moreInfo = ref({
+		sizeDetail: '',
+		color: '',
+		remark: '',
+		buyDate: '',
+		position: ''
+	});
+
+	// 获取尺寸数据
+	const fetchSizes = async () => {
+	  try {
+	    const res = await uni.request({
+	      url: websiteUrl + '/sizes',
+	      method: 'GET'
+	    });
+	
+	    if (res.data.status === "success") {
+	      const sizesData = res.data.data;
+	      const formattedSizes = [];
+	
+	      // 转换为正确的层级结构
+	      for (const [category, items] of Object.entries(sizesData)) {
+	        formattedSizes.push({
+	          text: category,   // 大分类名称 (如"二分")
+	          value: category,  // 大分类值
+	          children: items.map(item => ({
+	            text: item,     // 小分类名称 (如"普通二分")
+	            value: item     // 小分类值
+	          }))
+	        });
+	      }
+	
+	      sizeOptions.value = formattedSizes;
+	    }
+	  } catch (err) {
+	    console.error('获取尺寸数据失败:', err);
+	    uni.showToast({
+	      title: '获取尺寸数据失败',
+	      icon: 'none'
+	    });
+	  }
+	};
+
+// 尺寸选择变化 - 修复处理逻辑
+const onSizeChange = (e) => {
+  const nodes = e.detail.value;
+  
+  // 确保选择了完整路径 [大分类, 小分类]
+  if (nodes.length === 2) {
+    selectedSizePath.value = [
+      nodes[0].value, // 大分类值
+      nodes[1].value  // 小分类值
+    ];
+    
+    // 自动填充尺寸详情
+    moreInfo.value.sizeDetail = nodes[1].value;
+  } else {
+    selectedSizePath.value = [];
+    moreInfo.value.sizeDetail = '';
+  }
+};
+
+	// 切换更多信息折叠
+	const toggleMoreInfo = () => {
+		showMoreInfo.value = !showMoreInfo.value;
+	};
+
 	// 获取分类数据
 	const getAccountTypes = async () => {
 		const token = uni.getStorageSync('token');
@@ -228,44 +360,48 @@
 
 	// 删除分类
 	const deleteType = async (id) => {
-	  uni.showModal({
-	    title: '确认删除',
-	    // content: '如果该分类下存在物品，则不可以直接删除分类',
-	    success: async (res) => {
-	      if (res.confirm) {
-	        const token = uni.getStorageSync('token');
-	        try {
-	          const response = await uni.request({
-	            url: websiteUrl + '/with-state/delete-account-type',
-	            method: 'POST',
-	            header: {
-	              'Authorization': token,
-	              'Content-Type': 'application/json' // 添加Content-Type
-	            },
-	            data: { id }, // 使用JSON格式传参
-	          });
-	
-	          const resData = response.data;
-	          
-	          if (resData.status === "success") { // 严格判断状态
-	            await getAccountTypes();
-	            uni.showToast({ title: '删除成功' });
-	          } else {
-	            uni.showToast({
-	              title: resData.msg || '删除失败',
-	              icon: 'none'
-	            });
-	          }
-	        } catch (err) {
-	          console.error('删除失败:', err);
-	          uni.showToast({
-	            title: err.errMsg || '请求失败',
-	            icon: 'none'
-	          });
-	        }
-	      }
-	    }
-	  });
+		uni.showModal({
+			title: '确认删除',
+			// content: '如果该分类下存在物品，则不可以直接删除分类',
+			success: async (res) => {
+				if (res.confirm) {
+					const token = uni.getStorageSync('token');
+					try {
+						const response = await uni.request({
+							url: websiteUrl + '/with-state/delete-account-type',
+							method: 'POST',
+							header: {
+								'Authorization': token,
+								'Content-Type': 'application/json' // 添加Content-Type
+							},
+							data: {
+								id
+							}, // 使用JSON格式传参
+						});
+
+						const resData = response.data;
+
+						if (resData.status === "success") { // 严格判断状态
+							await getAccountTypes();
+							uni.showToast({
+								title: '删除成功'
+							});
+						} else {
+							uni.showToast({
+								title: resData.msg || '删除失败',
+								icon: 'none'
+							});
+						}
+					} catch (err) {
+						console.error('删除失败:', err);
+						uni.showToast({
+							title: err.errMsg || '请求失败',
+							icon: 'none'
+						});
+					}
+				}
+			}
+		});
 	};
 
 	// 切换补款提醒
@@ -315,12 +451,30 @@
 				price.value = parseInt(res.data.data.price);
 				selectedType.value = typeOptions.value.indexOf(res.data.data.type);
 				accountImage.value = res.data.data.image_url;
-				 form.value = {
-						isRemind: res.data.data.is_remind,
-						finalPrice: res.data.data.final_price,
-						finalTime: res.data.data.final_time
-					}
-			    
+				form.value = {
+					isRemind: res.data.data.is_remind,
+					finalPrice: res.data.data.final_price,
+					finalTime: res.data.data.final_time
+				}
+
+				// 设置更多信息字段
+				moreInfo.value = {
+					sizeDetail: res.data.data.size_detail || '',
+					color: res.data.data.color || '',
+					remark: res.data.data.remark || '',
+					buyDate: res.data.data.buy_date ? new Date(res.data.data.buy_date).toISOString().split(
+						'T')[0] : '',
+					position: res.data.data.position || ''
+				};
+
+				// 设置尺寸选择器
+				  if (res.data.data.size) {
+					// 正确设置尺寸路径 [大分类, 小分类]
+					selectedSizePath.value = [
+					  res.data.data.size, 
+					  res.data.data.size_detail || ''
+					];
+				  }
 				console.log("f:", form)
 			},
 			fail: (err) => {
@@ -359,47 +513,58 @@
 
 	// 删除账本 /delete-account-book
 	function handleDelete() {
-	  uni.showModal({
-	    title: '提示',
-	    content: '确定删除该账本吗？',
-	    success: (res) => {
-	      if (res.confirm) {
-	        // 参数校验
-	        const id = Number(props.account_book_id);
-	        if (isNaN(id) || id <= 0) {
-	          uni.showToast({ title: '参数错误', icon: 'none' });
-	          return;
-	        }
-	
-	        uni.request({
-	          url: websiteUrl + '/with-state/delete-account-book',
-	          method: 'POST',
-	          header: {
-	            'Authorization': uni.getStorageSync('token'),
-	            'Content-Type': 'application/json' // 添加Content-Type
-	          },
-	          data: { id }, // 改为JSON格式传参
-	          success: (res) => {
-	            // 严格判断响应状态
-				console.log(res.data.status)
-	            if (res.data.status === "success") {
-	              uni.showToast({ title: '删除成功', icon: 'success' });
-	              setTimeout(() => uni.navigateBack(), 500);
-	            } else {
-	              uni.showToast({ 
-	                title: res.data.msg || '删除失败',
-	                icon: 'none'
-	              });
-	            }
-	          },
-	          fail: (err) => {
-	            console.error('请求失败:', err);
-	            uni.showToast({ title: '网络错误', icon: 'none' });
-	          }
-	        });
-	      }
-	    }
-	  });
+		uni.showModal({
+			title: '提示',
+			content: '确定删除该账本吗？',
+			success: (res) => {
+				if (res.confirm) {
+					// 参数校验
+					const id = Number(props.account_book_id);
+					if (isNaN(id) || id <= 0) {
+						uni.showToast({
+							title: '参数错误',
+							icon: 'none'
+						});
+						return;
+					}
+
+					uni.request({
+						url: websiteUrl + '/with-state/delete-account-book',
+						method: 'POST',
+						header: {
+							'Authorization': uni.getStorageSync('token'),
+							'Content-Type': 'application/json' // 添加Content-Type
+						},
+						data: {
+							id
+						}, // 改为JSON格式传参
+						success: (res) => {
+							// 严格判断响应状态
+							console.log(res.data.status)
+							if (res.data.status === "success") {
+								uni.showToast({
+									title: '删除成功',
+									icon: 'success'
+								});
+								setTimeout(() => uni.navigateBack(), 500);
+							} else {
+								uni.showToast({
+									title: res.data.msg || '删除失败',
+									icon: 'none'
+								});
+							}
+						},
+						fail: (err) => {
+							console.error('请求失败:', err);
+							uni.showToast({
+								title: '网络错误',
+								icon: 'none'
+							});
+						}
+					});
+				}
+			}
+		});
 	}
 	//选择图片
 	function selectImage() {
@@ -487,7 +652,14 @@
 			image_url: accountImage.value,
 			is_remind: form.value.isRemind,
 			final_price: parseInt(form.value.finalPrice, 10),
-			final_time: form.value.finalTime
+			final_time: form.value.finalTime,
+			// 新增更多信息字段
+			size: selectedSizePath.value[0] || '', // 大分类
+			size_detail: moreInfo.value.sizeDetail || '', // 小分类/尺寸详情
+			color: moreInfo.value.color,
+			remark: moreInfo.value.remark,
+			buy_date: moreInfo.value.buyDate,
+			position: moreInfo.value.position
 		}
 
 		console.log('提交数据:', postData)
@@ -530,7 +702,14 @@
 			id: parseInt(props.account_book_id, 10),
 			is_remind: form.value.isRemind, // 转换为数据库需要的格式
 			final_price: parseInt(form.value.finalPrice, 10),
-			final_time: form.value.finalTime
+			final_time: form.value.finalTime,
+			// 新增更多信息字段
+			size: selectedSizePath.value[0] || '', // 大分类
+			size_detail: moreInfo.value.sizeDetail || '', // 小分类/尺寸详情
+			color: moreInfo.value.color,
+			remark: moreInfo.value.remark,
+			buy_date: moreInfo.value.buyDate,
+			position: moreInfo.value.position
 		}
 
 		uni.request({
@@ -566,7 +745,8 @@
 	onShow(() => {
 		asyncGetUserInfo().then(() => {
 			getAccountTypes();
-			// 原有其他逻辑...
+			// 获取尺寸数据
+			fetchSizes();
 		});
 	});
 </script>
@@ -811,6 +991,14 @@
 		margin-top: 20rpx;
 	}
 
+	.more-info-form {
+		background: #f8f8f8;
+		border-radius: 16rpx;
+		padding: 20rpx;
+		margin-top: 20rpx;
+		margin-bottom: 20rpx;
+	}
+
 	.remind-label {
 		position: relative; // 添加相对定位
 		display: flex;
@@ -831,5 +1019,12 @@
 			border-radius: 50%;
 			box-shadow: 0 2rpx 8rpx rgba(255, 68, 68, 0.2);
 		}
+	}
+
+	.size-picker {
+		padding: 20rpx 0;
+	}
+	.size_detail {
+		display: none;
 	}
 </style>
