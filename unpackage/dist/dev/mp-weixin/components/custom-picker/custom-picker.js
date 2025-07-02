@@ -1,9 +1,5 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
-if (!Array) {
-  const _component_transition = common_vendor.resolveComponent("transition");
-  _component_transition();
-}
 const _sfc_main = {
   __name: "custom-picker",
   props: {
@@ -53,11 +49,7 @@ const _sfc_main = {
             c: common_vendor.o(($event) => selectOption(item), item.id)
           };
         })
-      } : {}, {
-        g: common_vendor.p({
-          name: "slide-fade"
-        })
-      });
+      } : {});
     };
   }
 };

@@ -374,6 +374,7 @@ const _sfc_main = {
         m: common_vendor.o(handleBrandSelect),
         n: common_vendor.o(($event) => handleComponentToggle("brand")),
         o: common_vendor.p({
+          background: "#f8f8f8",
           mode: "fill"
         }),
         p: common_vendor.sr(goodsPicker, "0488033a-5,0488033a-0", {
@@ -382,6 +383,7 @@ const _sfc_main = {
         q: common_vendor.o(handleGoodsSelect),
         r: common_vendor.o(($event) => handleComponentToggle("goods")),
         s: common_vendor.p({
+          background: "#f8f8f8",
           dataList: goodsList.value
         })
       } : {
@@ -393,6 +395,7 @@ const _sfc_main = {
         x: common_vendor.o(($event) => searchKeyword.value = $event),
         y: common_vendor.p({
           mode: "fill",
+          width: "550rpx",
           modelValue: searchKeyword.value
         })
       }, {
@@ -401,7 +404,7 @@ const _sfc_main = {
         B: common_vendor.o(handleModalVisibilityChange),
         C: common_vendor.p({
           visible: internalVisible.value,
-          top: "3%"
+          top: "200rpx"
         })
       });
     };

@@ -9,7 +9,9 @@
 }
 .header-placeholder {
   height: var(--9d29b882);
-  background-color: var(--20ceeea2);
+  background: var(--20ceeea2);
+  background-size: cover;
+  background-position: 0px 50rpx;
 }
 .content-container {
   flex: 1;

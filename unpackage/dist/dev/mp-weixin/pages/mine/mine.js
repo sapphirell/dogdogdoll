@@ -3,23 +3,42 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
-  const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  _easycom_common_page2();
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
 }
-const _easycom_common_page = () => "../../components/common-page/common-page.js";
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_common_page();
+  _easycom_uni_icons();
 }
 const _sfc_main = {
   __name: "mine",
   setup(__props) {
-    common_vendor.index.__f__("log", "at pages/mine/mine.vue:105", common_config.global.isLogin);
-    common_vendor.index.__f__("log", "at pages/mine/mine.vue:106", common_config.global.userInfo);
+    common_vendor.useCssVars((_ctx) => ({
+      "cb11d27e": headerHeight.value
+    }));
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:153", common_config.global.isLogin);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:154", common_config.global.userInfo);
     let inputPhone = common_vendor.ref("");
     let inputPassword = common_vendor.ref("");
     let unreadCount = common_vendor.ref(0);
     let likeCount = common_vendor.ref(0);
     let myCollocationCount = common_vendor.ref(0);
+    common_vendor.ref(false);
+    let scene = common_config.getScene();
+    let agree = common_vendor.ref(false);
+    function handleAgreeChange(e) {
+      agree.value = e.detail.value.length > 0;
+    }
+    function goToPrivacy() {
+      common_vendor.index.navigateTo({
+        url: "/pages/private/private"
+      });
+    }
+    function goToPermissions() {
+      common_vendor.index.navigateTo({
+        url: "/pages/permission/permission"
+      });
+    }
     function chooseImage() {
       return new Promise((resolve) => {
         common_vendor.index.chooseImage({
@@ -43,6 +62,14 @@ const _sfc_main = {
     function jump2like() {
       common_vendor.index.navigateTo({
         url: `/pages/user_like/user_like`
+      });
+    }
+    function jump2index() {
+      common_vendor.index.showTabBar({
+        animation: false
+      });
+      common_vendor.index.switchTab({
+        url: `/pages/index/index`
       });
     }
     function jump2myComment() {
@@ -84,7 +111,7 @@ const _sfc_main = {
           unreadCount.value = res.data.data.count;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:199", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:279", error);
         common_vendor.index.showToast({
           title: "未读数获取失败",
           icon: "none"
@@ -103,7 +130,7 @@ const _sfc_main = {
           likeCount.value = res.data.data.count;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:220", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:300", error);
         common_vendor.index.showToast({
           title: "关注数获取失败",
           icon: "none"
@@ -122,7 +149,7 @@ const _sfc_main = {
           myCollocationCount.value = res.data.data;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:242", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:322", error);
         common_vendor.index.showToast({
           title: "搭配数获取失败",
           icon: "none"
@@ -130,7 +157,7 @@ const _sfc_main = {
       }
     };
     function selectAvatar(croperPath) {
-      common_vendor.index.__f__("log", "at pages/mine/mine.vue:251", "croperPath:" + croperPath);
+      common_vendor.index.__f__("log", "at pages/mine/mine.vue:331", "croperPath:" + croperPath);
       let token = common_vendor.index.getStorageSync("token");
       let qnToken = "";
       common_vendor.index.request(
@@ -149,11 +176,11 @@ const _sfc_main = {
               return;
             }
             qnToken = res.data.data.token;
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:271", "获取到的七牛token：" + res.data.data.token);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:351", "获取到的七牛token：" + res.data.data.token);
             let userInfo = common_vendor.index.getStorageSync("userInfo");
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:273", userInfo);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:353", userInfo);
             let fileName = res.data.data.path;
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:276", "fileName:" + fileName);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:356", "fileName:" + fileName);
             common_vendor.index.uploadFile({
               url: "https://up-cn-east-2.qiniup.com",
               name: "file",
@@ -168,11 +195,11 @@ const _sfc_main = {
                 scope: "hobby-box:" + fileName
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/mine/mine.vue:291", "上传成功");
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:371", "上传成功");
                 updateUserInfo("avatar", "https://images1.fantuanpu.com/" + fileName);
               },
               fail: (res2) => {
-                common_vendor.index.__f__("log", "at pages/mine/mine.vue:298", res2);
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:378", res2);
                 common_vendor.index.showToast({
                   title: "上传失败",
                   icon: "none"
@@ -203,7 +230,7 @@ const _sfc_main = {
           "avatar": value
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:331", "更新成功");
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:411", "更新成功");
           common_config.getUserInfo();
         },
         fail: (res) => {
@@ -215,6 +242,13 @@ const _sfc_main = {
       });
     }
     function login() {
+      if (!agree.value) {
+        common_vendor.index.showToast({
+          title: "请先阅读并同意协议",
+          icon: "none"
+        });
+        return;
+      }
       if (inputPassword.value == "" || inputPhone.value == "") {
         common_vendor.index.showToast({
           title: "请输入手机号和密码",
@@ -246,7 +280,7 @@ const _sfc_main = {
           password
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:383", res);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:471", res);
           let data = res.data.data;
           let status = res.data.status;
           if (status != "success") {
@@ -259,7 +293,7 @@ const _sfc_main = {
           common_vendor.index.setStorageSync("token", data.jwt_token);
           common_vendor.index.setStorageSync("openid", data.open_id);
           common_vendor.index.setStorageSync("session_key", data.session_key);
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:398", "jwt:" + data.jwt_token);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:486", "jwt:" + data.jwt_token);
           if (data.jwt_token != null && data.jwt_token != "") {
             common_config.getUserInfo();
           }
@@ -277,24 +311,41 @@ const _sfc_main = {
         url: "/pages/setting/setting"
       });
     }
+    const systemInfo = common_vendor.index.getSystemInfoSync();
+    const navBarHeight = common_vendor.computed(() => {
+      const menuButtonInfo = common_vendor.index.getMenuButtonBoundingClientRect();
+      const statusBarHeight = systemInfo.statusBarHeight || 32;
+      return menuButtonInfo.bottom + menuButtonInfo.top - 2 * statusBarHeight;
+    });
+    const headerHeight = common_vendor.computed(() => {
+      return navBarHeight.value + "px";
+    });
     common_vendor.watch(
       () => common_config.global.isLogin,
       // 使用函数返回要监听的值
       (newVal) => {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:422", "watch", newVal);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:543", "watch", newVal);
         if (newVal) {
-          common_vendor.index.showTabBar({ animation: false });
+          common_vendor.index.showTabBar({
+            animation: false
+          });
         } else {
-          common_vendor.index.hideTabBar({ animation: false });
+          common_vendor.index.hideTabBar({
+            animation: false
+          });
         }
       }
     );
     common_vendor.onShow(() => {
       common_config.getUserInfo();
       if (common_config.global.isLogin) {
-        common_vendor.index.showTabBar({ animation: false });
+        common_vendor.index.showTabBar({
+          animation: false
+        });
       } else {
-        common_vendor.index.hideTabBar({ animation: false });
+        common_vendor.index.hideTabBar({
+          animation: false
+        });
       }
       fetchUnreadCount();
       fetchLikeCount();
@@ -307,46 +358,76 @@ const _sfc_main = {
     });
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.unref(common_config.global).isLogin
+        a: common_vendor.s(_ctx.__cssVars()),
+        b: common_vendor.unref(common_config.global).isLogin
       }, common_vendor.unref(common_config.global).isLogin ? {
-        b: common_vendor.unref(common_config.global).userInfo.avatar,
-        c: common_vendor.o(jumpToCroper),
-        d: common_vendor.t(common_vendor.unref(common_config.global).userInfo.username),
-        e: common_vendor.t(common_vendor.unref(common_config.global).userInfo.id),
-        f: common_assets._imports_0$2,
-        g: common_vendor.t(common_vendor.unref(likeCount)),
-        h: common_vendor.o(jump2like),
-        i: common_assets._imports_1$3,
-        j: common_vendor.t(common_vendor.unref(unreadCount)),
-        k: common_vendor.o(jump2message),
-        l: common_assets._imports_2$2,
-        m: common_vendor.t(common_vendor.unref(myCollocationCount)),
-        n: common_vendor.o(jump2collocation),
-        o: common_assets._imports_3$1,
-        p: common_assets._imports_0$3,
-        q: common_vendor.o(jump2myComment),
-        r: common_assets._imports_5$1,
-        s: common_assets._imports_0$3,
-        t: common_vendor.o(jumpSetting),
-        v: common_assets._imports_6$1,
-        w: common_assets._imports_0$3,
-        x: common_vendor.o(logout)
-      } : {
-        y: common_assets._imports_7,
-        z: common_assets._imports_8,
+        c: common_vendor.unref(common_config.global).userInfo.avatar,
+        d: common_vendor.o(jumpToCroper),
+        e: common_vendor.t(common_vendor.unref(common_config.global).userInfo.username),
+        f: common_vendor.t(common_vendor.unref(common_config.global).userInfo.id),
+        g: common_assets._imports_0$4,
+        h: common_vendor.t(common_vendor.unref(likeCount)),
+        i: common_vendor.o(jump2like),
+        j: common_assets._imports_1$3,
+        k: common_vendor.t(common_vendor.unref(unreadCount)),
+        l: common_vendor.o(jump2message),
+        m: common_assets._imports_2$2,
+        n: common_vendor.t(common_vendor.unref(myCollocationCount)),
+        o: common_vendor.o(jump2collocation),
+        p: common_vendor.p({
+          type: "chatboxes",
+          size: "24",
+          color: "#606060"
+        }),
+        q: common_vendor.p({
+          type: "right",
+          size: "24",
+          color: "#c0c0c0"
+        }),
+        r: common_vendor.o(jump2myComment),
+        s: common_vendor.p({
+          type: "gear",
+          size: "24",
+          color: "#606060"
+        }),
+        t: common_vendor.p({
+          type: "right",
+          size: "24",
+          color: "#c0c0c0"
+        }),
+        v: common_vendor.o(jumpSetting),
+        w: common_vendor.p({
+          type: "arrow-right",
+          size: "24",
+          color: "#606060"
+        }),
+        x: common_vendor.p({
+          type: "right",
+          size: "24",
+          color: "#c0c0c0"
+        }),
+        y: common_vendor.o(logout)
+      } : common_vendor.e({
+        z: common_assets._imports_3,
         A: common_vendor.unref(inputPhone),
         B: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
-        C: common_assets._imports_9,
+        C: common_assets._imports_4$1,
         D: common_vendor.unref(inputPassword),
         E: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
         F: common_vendor.o(jump2register),
         G: common_vendor.o(jump2forgetPassword),
         H: common_vendor.o(login),
-        I: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
-      }, {
-        J: common_vendor.p({
-          head_color: "#e0f3ff"
-        })
+        I: common_vendor.unref(scene) == 4
+      }, common_vendor.unref(scene) == 4 ? {
+        J: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
+      } : {}, {
+        K: common_vendor.o(jump2index),
+        L: common_vendor.unref(agree),
+        M: common_vendor.o(handleAgreeChange),
+        N: common_vendor.o(goToPrivacy),
+        O: common_vendor.o(goToPermissions)
+      }), {
+        P: common_vendor.s(_ctx.__cssVars())
       });
     };
   }

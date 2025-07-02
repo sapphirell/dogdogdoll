@@ -4,7 +4,7 @@
 	<view v-if="showResults" class="mask-layer" @tap="closeResults"></view>
 	<view class="search_tab" :class="$attrs.class" :style="{ background: background || '#fff' }">
 		<image v-if="!hiddenIcon" class="icon_image" src="../../static/search.png"></image>
-		<input class="common_search_input" placeholder="请输入商品名称..." :value="inputValue" @input="onSearchInput"
+		<input class="common_search_input" placeholder="请输入娃物名称 (ㅇㅅㅇ❀)..." :value="inputValue" @input="onSearchInput"
 			:style="{ fontSize: fontSize || '22rpx' }" />
 		<image class="icon_image" src="../../static/cancel.png" @tap="cancel" v-if="results.length > 0"></image>
 	</view>
@@ -136,7 +136,7 @@
 	};
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 	.search_tab {
 		display: flex;
 		align-items: center;
@@ -144,6 +144,7 @@
 		border-radius: 12rpx;
 		background: #fff;
 		height: 72rpx;
+		width: 95%;
 
 		.icon_image {
 			width: 36rpx;
@@ -168,7 +169,7 @@
 	}
 
 	.search_results {
-		margin-top: 16rpx;
+		// margin-top: 100rpx;
 		background: #fff;
 		border-radius: 12rpx;
 		box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);

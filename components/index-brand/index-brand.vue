@@ -8,7 +8,8 @@
 			</view>
 			<view class="brand-meta">
 				<view class="title-row">
-					<text class="brand-title">{{brand.brand_name}}</text>
+					<!-- <text class="brand-title">{{brand.brand_name}}</text> -->
+					<image :src="brand.brand_name_image" mode="heightFix" style="height: 40rpx;"></image>
 					<text class="brand-tag">{{brand.country_name}}·{{brand.type}}</text>
 					<text class="goods-count">收录{{brand.total_goods}}款</text>
 				</view>
@@ -25,7 +26,7 @@
 					:key="doll.id"
 					@tap="jumpGoods(doll.id)"
 				>
-					<image class="goods-image" :src="doll.goods_images[0]" mode="aspectFill"></image>
+					<image class="goods-image" :src="doll.goods_images && doll.goods_images[0]" mode="aspectFill"></image>
 					<text class="goods-name">{{doll.name}}</text>
 				</view>
 			</view>
@@ -107,7 +108,7 @@ function jumpGoods(id) {
 	
 	.goods-count {
 		font-size: 20rpx;
-		color: #3498db;
+		color: #5dc1f3;
 		margin-left: auto;
 		flex-shrink: 0;
 	}

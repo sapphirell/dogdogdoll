@@ -23,6 +23,7 @@
 }
 .relation-picker-container .picker-body.data-v-0488033a .type-picker {
   margin-bottom: 40rpx;
+  display: block;
 }
 .relation-picker-container .picker-body.data-v-0488033a .type-picker .select-input {
   background: #f8f8f8;
@@ -34,6 +35,7 @@
 .relation-picker-container .picker-body.data-v-0488033a .brand-search {
   background: #f8f8f8 !important;
   border-radius: 12rpx !important;
+  padding: 16rpx 24rpx !important;
   min-height: 72rpx;
 }
 .relation-picker-container .picker-body.data-v-0488033a .brand-search .common_search_input {

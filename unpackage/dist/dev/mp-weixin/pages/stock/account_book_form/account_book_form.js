@@ -7,13 +7,15 @@ if (!Array) {
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
   const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
-  (_easycom_uni_icons2 + _easycom_common_modal2 + _easycom_goods_search2)();
+  const _easycom_uni_data_picker2 = common_vendor.resolveComponent("uni-data-picker");
+  (_easycom_uni_icons2 + _easycom_common_modal2 + _easycom_goods_search2 + _easycom_uni_data_picker2)();
 }
 const _easycom_uni_icons = () => "../../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_common_modal = () => "../../../components/common-modal/common-modal.js";
 const _easycom_goods_search = () => "../../../components/goods-search/goods-search.js";
+const _easycom_uni_data_picker = () => "../../../uni_modules/uni-data-picker/components/uni-data-picker/uni-data-picker.js";
 if (!Math) {
-  (_easycom_uni_icons + _easycom_common_modal + _easycom_goods_search)();
+  (_easycom_uni_icons + _easycom_common_modal + _easycom_goods_search + _easycom_uni_data_picker)();
 }
 const _sfc_main = {
   __name: "account_book_form",
@@ -39,6 +41,68 @@ const _sfc_main = {
       finalPrice: 0,
       finalTime: ""
     });
+    const showMoreInfo = common_vendor.ref(false);
+    const sizeOptions = common_vendor.ref([]);
+    common_vendor.ref([]);
+    const selectedSizePath = common_vendor.ref([]);
+    const moreInfo = common_vendor.ref({
+      sizeDetail: "",
+      color: "",
+      remark: "",
+      buyDate: "",
+      position: ""
+    });
+    const fetchSizes = async () => {
+      try {
+        const res = await common_vendor.index.request({
+          url: common_config.websiteUrl + "/sizes",
+          method: "GET"
+        });
+        if (res.data.status === "success") {
+          const sizesData = res.data.data;
+          const formattedSizes = [];
+          for (const [category, items] of Object.entries(sizesData)) {
+            formattedSizes.push({
+              text: category,
+              // 大分类名称 (如"二分")
+              value: category,
+              // 大分类值
+              children: items.map((item) => ({
+                text: item,
+                // 小分类名称 (如"普通二分")
+                value: item
+                // 小分类值
+              }))
+            });
+          }
+          sizeOptions.value = formattedSizes;
+        }
+      } catch (err) {
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:277", "获取尺寸数据失败:", err);
+        common_vendor.index.showToast({
+          title: "获取尺寸数据失败",
+          icon: "none"
+        });
+      }
+    };
+    const onSizeChange = (e) => {
+      const nodes = e.detail.value;
+      if (nodes.length === 2) {
+        selectedSizePath.value = [
+          nodes[0].value,
+          // 大分类值
+          nodes[1].value
+          // 小分类值
+        ];
+        moreInfo.value.sizeDetail = nodes[1].value;
+      } else {
+        selectedSizePath.value = [];
+        moreInfo.value.sizeDetail = "";
+      }
+    };
+    const toggleMoreInfo = () => {
+      showMoreInfo.value = !showMoreInfo.value;
+    };
     const getAccountTypes = async () => {
       const token = common_vendor.index.getStorageSync("token");
       try {
@@ -51,7 +115,7 @@ const _sfc_main = {
         });
         customTypes.value = res.data.data || [];
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:190", "获取分类失败:", err);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:322", "获取分类失败:", err);
       }
     };
     const addNewType = async () => {
@@ -102,13 +166,17 @@ const _sfc_main = {
                   "Content-Type": "application/json"
                   // 添加Content-Type
                 },
-                data: { id }
+                data: {
+                  id
+                }
                 // 使用JSON格式传参
               });
               const resData = response.data;
               if (resData.status === "success") {
                 await getAccountTypes();
-                common_vendor.index.showToast({ title: "删除成功" });
+                common_vendor.index.showToast({
+                  title: "删除成功"
+                });
               } else {
                 common_vendor.index.showToast({
                   title: resData.msg || "删除失败",
@@ -116,7 +184,7 @@ const _sfc_main = {
                 });
               }
             } catch (err) {
-              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:260", "删除失败:", err);
+              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:396", "删除失败:", err);
               common_vendor.index.showToast({
                 title: err.errMsg || "请求失败",
                 icon: "none"
@@ -152,7 +220,7 @@ const _sfc_main = {
           id
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:313", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:449", res.data.data);
           name.value = res.data.data.name;
           price.value = parseInt(res.data.data.price);
           selectedType.value = typeOptions.value.indexOf(res.data.data.type);
@@ -162,10 +230,25 @@ const _sfc_main = {
             finalPrice: res.data.data.final_price,
             finalTime: res.data.data.final_time
           };
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:324", "f:", form);
+          moreInfo.value = {
+            sizeDetail: res.data.data.size_detail || "",
+            color: res.data.data.color || "",
+            remark: res.data.data.remark || "",
+            buyDate: res.data.data.buy_date ? new Date(res.data.data.buy_date).toISOString().split(
+              "T"
+            )[0] : "",
+            position: res.data.data.position || ""
+          };
+          if (res.data.data.size) {
+            selectedSizePath.value = [
+              res.data.data.size,
+              res.data.data.size_detail || ""
+            ];
+          }
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:478", "f:", form);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:327", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:481", err);
         }
       });
     }
@@ -185,7 +268,7 @@ const _sfc_main = {
           }
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:351", "获取商品详情失败:", error);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:505", "获取商品详情失败:", error);
         common_vendor.index.showToast({
           title: "获取商品信息失败",
           icon: "none"
@@ -200,7 +283,10 @@ const _sfc_main = {
           if (res.confirm) {
             const id = Number(props.account_book_id);
             if (isNaN(id) || id <= 0) {
-              common_vendor.index.showToast({ title: "参数错误", icon: "none" });
+              common_vendor.index.showToast({
+                title: "参数错误",
+                icon: "none"
+              });
               return;
             }
             common_vendor.index.request({
@@ -211,12 +297,17 @@ const _sfc_main = {
                 "Content-Type": "application/json"
                 // 添加Content-Type
               },
-              data: { id },
+              data: {
+                id
+              },
               // 改为JSON格式传参
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:384", res2.data.status);
+                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:543", res2.data.status);
                 if (res2.data.status === "success") {
-                  common_vendor.index.showToast({ title: "删除成功", icon: "success" });
+                  common_vendor.index.showToast({
+                    title: "删除成功",
+                    icon: "success"
+                  });
                   setTimeout(() => common_vendor.index.navigateBack(), 500);
                 } else {
                   common_vendor.index.showToast({
@@ -226,8 +317,11 @@ const _sfc_main = {
                 }
               },
               fail: (err) => {
-                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:396", "请求失败:", err);
-                common_vendor.index.showToast({ title: "网络错误", icon: "none" });
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:558", "请求失败:", err);
+                common_vendor.index.showToast({
+                  title: "网络错误",
+                  icon: "none"
+                });
               }
             });
           }
@@ -237,7 +331,7 @@ const _sfc_main = {
     function selectImage() {
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:408", tokenData);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:573", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -245,7 +339,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:417", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:582", common_config.image1Url + tokenData.path);
             accountImage.value = common_config.image1Url + tokenData.path;
             common_vendor.index.showToast({
               title: "上传成功",
@@ -285,13 +379,6 @@ const _sfc_main = {
           });
           return false;
         }
-        if (!form.value.finalTime || new Date(form.value.finalTime) < /* @__PURE__ */ new Date()) {
-          common_vendor.index.showToast({
-            title: "请选择未来的日期",
-            icon: "none"
-          });
-          return false;
-        }
       }
       return true;
     };
@@ -304,9 +391,18 @@ const _sfc_main = {
         image_url: accountImage.value,
         is_remind: form.value.isRemind,
         final_price: parseInt(form.value.finalPrice, 10),
-        final_time: form.value.finalTime
+        final_time: form.value.finalTime,
+        // 新增更多信息字段
+        size: selectedSizePath.value[0] || "",
+        // 大分类
+        size_detail: moreInfo.value.sizeDetail || "",
+        // 小分类/尺寸详情
+        color: moreInfo.value.color,
+        remark: moreInfo.value.remark,
+        buy_date: moreInfo.value.buyDate,
+        position: moreInfo.value.position
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:493", "提交数据:", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:665", "提交数据:", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -315,7 +411,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:503", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:675", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -344,7 +440,16 @@ const _sfc_main = {
         is_remind: form.value.isRemind,
         // 转换为数据库需要的格式
         final_price: parseInt(form.value.finalPrice, 10),
-        final_time: form.value.finalTime
+        final_time: form.value.finalTime,
+        // 新增更多信息字段
+        size: selectedSizePath.value[0] || "",
+        // 大分类
+        size_detail: moreInfo.value.sizeDetail || "",
+        // 小分类/尺寸详情
+        color: moreInfo.value.color,
+        remark: moreInfo.value.remark,
+        buy_date: moreInfo.value.buyDate,
+        position: moreInfo.value.position
       };
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/update-account-book",
@@ -354,7 +459,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:544", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:723", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -375,6 +480,7 @@ const _sfc_main = {
     common_vendor.onShow(() => {
       common_config.asyncGetUserInfo().then(() => {
         getAccountTypes();
+        fetchSizes();
       });
     });
     return (_ctx, _cache) => {
@@ -398,7 +504,7 @@ const _sfc_main = {
         f: common_vendor.o((val) => typeModalVisible.value = val),
         g: common_vendor.p({
           visible: typeModalVisible.value,
-          top: "5%",
+          top: "100rpx",
           height: "60%"
         }),
         h: common_vendor.t(typeOptions.value[selectedType.value] || "请选择分类"),
@@ -425,38 +531,73 @@ const _sfc_main = {
       } : {
         v: common_vendor.o(selectImage)
       }, {
-        w: !form.value.isRemind
-      }, !form.value.isRemind ? {
+        w: common_vendor.o(onSizeChange),
         x: common_vendor.p({
+          placeholder: "请选择尺寸",
+          localdata: sizeOptions.value,
+          value: selectedSizePath.value
+        }),
+        y: !showMoreInfo.value
+      }, !showMoreInfo.value ? {
+        z: common_vendor.p({
           type: "right",
           size: "20",
           color: "#888"
         })
       } : {
-        y: common_vendor.p({
+        A: common_vendor.p({
           type: "down",
           size: "20",
           color: "#888"
         })
       }, {
-        z: form.value.finalPrice > 0
+        B: common_vendor.o(($event) => toggleMoreInfo()),
+        C: showMoreInfo.value
+      }, showMoreInfo.value ? {
+        D: moreInfo.value.sizeDetail,
+        E: common_vendor.o(($event) => moreInfo.value.sizeDetail = $event.detail.value),
+        F: moreInfo.value.color,
+        G: common_vendor.o(($event) => moreInfo.value.color = $event.detail.value),
+        H: moreInfo.value.remark,
+        I: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
+        J: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
+        K: moreInfo.value.buyDate,
+        L: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
+        M: moreInfo.value.position,
+        N: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
+      } : {}, {
+        O: !form.value.isRemind
+      }, !form.value.isRemind ? {
+        P: common_vendor.p({
+          type: "right",
+          size: "20",
+          color: "#888"
+        })
+      } : {
+        Q: common_vendor.p({
+          type: "down",
+          size: "20",
+          color: "#888"
+        })
+      }, {
+        R: form.value.finalPrice > 0
       }, form.value.finalPrice > 0 ? {} : {}, {
-        A: common_vendor.o(($event) => toggleRemind()),
-        B: form.value.isRemind
+        S: common_vendor.o(($event) => toggleRemind()),
+        T: form.value.isRemind
       }, form.value.isRemind ? {
-        C: form.value.finalPrice,
-        D: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
-        E: common_vendor.t(form.value.finalTime || "选择截止日期"),
-        F: form.value.finalTime,
-        G: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
+        U: form.value.finalPrice,
+        V: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
+        W: common_vendor.t(form.value.finalTime || "选择截止日期"),
+        X: form.value.finalTime,
+        Y: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
       } : {}, {
-        H: common_assets._imports_0$4,
-        I: common_vendor.unref(isEdit)
+        Z: common_assets._imports_0$7,
+        aa: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        J: common_vendor.o(handleDelete)
+        ab: common_vendor.o(handleDelete)
       } : {}, {
-        K: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
-        L: common_vendor.o(postSubmit)
+        ac: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        ad: common_vendor.o(postSubmit)
       });
     };
   }

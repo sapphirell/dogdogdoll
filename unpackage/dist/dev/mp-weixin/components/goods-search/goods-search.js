@@ -97,7 +97,7 @@ const _sfc_main = {
       } : {}, {
         c: !__props.hiddenIcon
       }, !__props.hiddenIcon ? {
-        d: common_assets._imports_0$6
+        d: common_assets._imports_0$10
       } : {}, {
         e: inputValue.value,
         f: common_vendor.o(onSearchInput),
@@ -127,5 +127,6 @@ const _sfc_main = {
     };
   }
 };
-wx.createComponent(_sfc_main);
+const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-445b599f"]]);
+wx.createComponent(Component);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/components/goods-search/goods-search.js.map

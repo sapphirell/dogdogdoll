@@ -49,7 +49,7 @@ const _sfc_main = {
           });
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:148", "保存关联数据失败:", error);
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:154", "保存关联数据失败:", error);
         common_vendor.index.showToast({
           title: "保存关联信息失败",
           icon: "none"
@@ -57,7 +57,7 @@ const _sfc_main = {
       }
     };
     const handleRelationCancel = () => {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:157", "用户取消选择");
+      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:163", "用户取消选择");
     };
     const showRelationPicker = () => {
       showSelectTab.value = true;
@@ -90,7 +90,7 @@ const _sfc_main = {
         description.value = data.description;
         display.value = data.display;
         uploadList.value = ((_a = data.image_urls) == null ? void 0 : _a.split(",")) || [];
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:230", data);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:236", data);
         if (data.relations) {
           saveCollocationDataList.value = data.relations.map((r) => ({
             goods_id: r.relation_goods_id,
@@ -124,7 +124,7 @@ const _sfc_main = {
         }
         common_vendor.index.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:277", "上传出错:", error);
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:283", "上传出错:", error);
         common_vendor.index.showToast({ title: "部分图片上传失败", icon: "none" });
       }
     }
@@ -229,7 +229,7 @@ const _sfc_main = {
           return;
         }
       } catch (err) {
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:392", err);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:398", err);
         common_vendor.index.showToast({
           title: "提交失败",
           icon: "none"
@@ -242,11 +242,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:412", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:418", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:416", err);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:422", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"

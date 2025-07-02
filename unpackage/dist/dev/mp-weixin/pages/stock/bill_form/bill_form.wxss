@@ -102,3 +102,29 @@
   transform: translateY(2rpx);
   box-shadow: 0 4rpx 12rpx rgba(255, 77, 79, 0.3);
 }
+.picker-content.data-v-c24e185a {
+  height: 80rpx;
+  line-height: 80rpx;
+  color: #333;
+  /* 添加以下关键属性 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+/* 针对原生picker的特殊处理 */
+.data-v-c24e185a uni-picker .picker-view {
+  height: 80rpx !important;
+  line-height: 80rpx !important;
+}
+.data-v-c24e185a uni-picker .picker-view-column {
+  height: 80rpx !important;
+  line-height: 80rpx !important;
+}
+.data-v-c24e185a .picker-item {
+  height: 80rpx !important;
+  line-height: 80rpx !important;
+  font-size: 28rpx !important;
+}

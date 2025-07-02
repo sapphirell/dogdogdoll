@@ -19,7 +19,7 @@ const _sfc_main = {
     const content = common_vendor.ref("");
     const isAnonymous = common_vendor.ref(0);
     const uploadList = common_vendor.ref([]);
-    const categories = common_vendor.ref({});
+    const categories = common_vendor.ref([]);
     const selectedCategory = common_vendor.ref("");
     const selectedIndex = common_vendor.ref(-1);
     const selectedCategoryLabel = common_vendor.ref("");
@@ -124,7 +124,7 @@ const _sfc_main = {
         common_vendor.index.hideLoading();
         if (res.data.status == "success") {
           common_vendor.index.showToast({
-            title: "我们很快审核完成",
+            title: "已收到您的投稿",
             icon: "success"
           });
           setTimeout(() => {

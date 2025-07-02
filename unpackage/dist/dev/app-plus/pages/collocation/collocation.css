@@ -622,6 +622,8 @@
   align-items: center;
   background: #fff;
   border-radius: 10px;
+  width: 100%;
+  position: relative;
 }
 .search_tab uni-image[data-v-e5a069da] {
   position: relative;
@@ -636,11 +638,11 @@
   font-size: 0.6875rem;
 }
 .search_results[data-v-e5a069da] {
-  margin-top: 10px;
   padding: 10px;
   background-color: #f8f8f8;
   border-radius: 5px;
   position: absolute;
+  top: 0px;
   z-index: 12;
   box-shadow: 0 0 15px #0000002b;
   max-height: 12.5rem;
@@ -658,6 +660,23 @@
 }
 .search_results .result_item[data-v-e5a069da]:hover {
   color: #007aff;
+}
+.search-info-tap[data-v-e5a069da] {
+  position: absolute;
+  right: 0.3125rem;
+  vertical-align: middle;
+  bottom: 0px;
+}
+.search-info-tap uni-text[data-v-e5a069da] {
+  color: #fff;
+  background: linear-gradient(135deg, #a494b2, #fad0c4);
+  font-size: 0.625rem;
+  width: 260px;
+  padding: 3px 5px;
+  border-radius: 3px;
+  font-weight: 900;
+  position: relative;
+  bottom: 0.46875rem;
 }
 
 
@@ -741,6 +760,7 @@
   border-radius: 0.375rem;
   background: #fff;
   height: 2.25rem;
+  width: 95%;
 }
 .search_tab .icon_image[data-v-445b599f] {
   width: 1.125rem;
@@ -760,7 +780,6 @@
   font-size: inherit;
 }
 .search_results[data-v-445b599f] {
-  margin-top: 0.5rem;
   background: #fff;
   border-radius: 0.375rem;
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
@@ -822,7 +841,7 @@
 		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
-		z-index: 999;
+		z-index: 1001;
 }
 .modal-container[data-v-d7656854] {
 		position: absolute;
@@ -837,7 +856,7 @@
 		transform: translateX(-50%);
 }
 .modal-content[data-v-d7656854] {
-		position: relative;
+		/* position: relative; */
 }
 
 .relation-picker-container[data-v-0488033a] {
@@ -865,6 +884,7 @@
 }
 .relation-picker-container .picker-body[data-v-0488033a] .type-picker {
   margin-bottom: 1.25rem;
+  display: block;
 }
 .relation-picker-container .picker-body[data-v-0488033a] .type-picker .select-input {
   background: #f8f8f8;
@@ -876,6 +896,7 @@
 .relation-picker-container .picker-body[data-v-0488033a] .brand-search {
   background: #f8f8f8 !important;
   border-radius: 0.375rem !important;
+  padding: 0.5rem 0.75rem !important;
   min-height: 2.25rem;
 }
 .relation-picker-container .picker-body[data-v-0488033a] .brand-search .common_search_input {

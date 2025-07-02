@@ -42,6 +42,60 @@
   height: 1.125rem;
   opacity: 0.6;
 }
+/* 注销区域优化 */
+.logout-section[data-v-018cdf56] {
+  margin-top: 1.875rem;
+  padding: 0 0.375rem;
+}
+.logout-btn[data-v-018cdf56] {
+  padding: 0.875rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 0.25rem 0.625rem rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+.logout-btn uni-text[data-v-018cdf56] {
+  color: #fff;
+}
+.logout-btn[data-v-018cdf56]::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 1.25rem;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(25deg);
+  transition: all 0.6s;
+}
+.logout-btn[data-v-018cdf56]:active {
+  transform: scale(0.96);
+}
+.logout-btn[data-v-018cdf56]:active::after {
+  left: 120%;
+}
+.btn-text[data-v-018cdf56] {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.01563rem;
+  position: relative;
+  z-index: 1;
+}
+.deletion-notice[data-v-018cdf56] {
+  display: block;
+  margin-top: 0.9375rem;
+  padding: 0.75rem;
+  background: #fff8e6;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  color: #e6a23c;
+  line-height: 1.6;
+  border-left: 0.1875rem solid #ffd43b;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+}
 uni-button[data-v-018cdf56] {
   background: transparent;
   padding: 0;

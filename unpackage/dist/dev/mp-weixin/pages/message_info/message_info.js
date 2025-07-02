@@ -2,13 +2,14 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
-  const _component_uni_load_more = common_vendor.resolveComponent("uni-load-more");
+  const _easycom_uni_load_more2 = common_vendor.resolveComponent("uni-load-more");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  (_component_uni_load_more + _easycom_uni_icons2)();
+  (_easycom_uni_load_more2 + _easycom_uni_icons2)();
 }
+const _easycom_uni_load_more = () => "../../uni_modules/uni-load-more/components/uni-load-more/uni-load-more.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_uni_icons();
+  (_easycom_uni_load_more + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "message_info",

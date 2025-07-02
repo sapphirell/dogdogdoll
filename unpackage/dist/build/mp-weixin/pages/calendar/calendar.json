@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "上新",
   "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
   "usingComponents": {
     "common-search": "../../components/common-search/common-search",
     "common-page": "../../components/common-page/common-page"

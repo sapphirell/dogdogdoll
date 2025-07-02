@@ -80,11 +80,13 @@ const _sfc_main = {
             ...res.data.data,
             image_list: res.data.data.image_list || []
           };
+          brandId.value = res.data.data.brand_id;
           getBrandsInfo();
         } else {
           handleError(res.data.msg || "数据加载失败");
         }
       } catch (err) {
+        common_vendor.index.__f__("error", "at pages/sale_news/sale_news.vue:187", "请求失败:", err);
         handleError("网络请求失败");
       } finally {
         loading.value = false;
@@ -103,7 +105,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:205", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:208", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -223,12 +225,11 @@ const _sfc_main = {
       });
     };
     common_vendor.onLoad((options) => {
-      if (!options.id || !options.brand_id) {
+      if (!options.id) {
         handleError("缺少必要参数");
         return;
       }
       pageId.value = options.id;
-      brandId.value = options.brand_id;
       fetchNewsDetail(options.id);
       common_config.asyncGetUserInfo().then(getHasLikeBrand);
     });

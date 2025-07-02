@@ -3,10 +3,11 @@
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {
+    "privacy-permission-modal": "../../components/privacy-permission-modal/privacy-permission-modal",
     "goods-search": "../../components/goods-search/goods-search",
     "uni-transition": "../../uni_modules/uni-transition/components/uni-transition/uni-transition",
+    "common-search": "../../components/common-search/common-search",
     "index-brand": "../../components/index-brand/index-brand",
-    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
-    "common-page": "../../components/common-page/common-page"
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons"
   }
 }

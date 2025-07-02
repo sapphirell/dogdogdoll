@@ -8,7 +8,7 @@
 		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
-		z-index: 999;
+		z-index: 1001;
 }
 .modal-container.data-v-d7656854 {
 		position: absolute;
@@ -23,5 +23,5 @@
 		transform: translateX(-50%);
 }
 .modal-content.data-v-d7656854 {
-		position: relative;
+		/* position: relative; */
 }

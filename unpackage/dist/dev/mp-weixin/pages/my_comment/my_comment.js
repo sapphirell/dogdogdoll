@@ -88,7 +88,7 @@ const _sfc_main = {
           url = `/pages/collocation_share/collocation_share?collocation_id=${id}&origin=1`;
           break;
         case 4:
-          url = `/pages/sale_news/sale_news?newsId=${id}`;
+          url = `/pages/sale_news/sale_news?id=${id}&brand_id=0`;
           break;
         case 5:
           url = `/pages/treehole_detail/treehole_detail?id=${id}`;

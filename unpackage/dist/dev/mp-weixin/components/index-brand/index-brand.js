@@ -16,24 +16,27 @@ const _sfc_main = {
       });
     }
     return (_ctx, _cache) => {
-      return {
-        a: __props.brand.logo_image,
-        b: common_vendor.t(__props.brand.brand_name),
-        c: common_vendor.t(__props.brand.country_name),
-        d: common_vendor.t(__props.brand.type),
-        e: common_vendor.t(__props.brand.total_goods),
-        f: common_vendor.t(__props.brand.description),
-        g: common_vendor.o(jumpBrand),
-        h: common_vendor.f(__props.brand.goods, (doll, index, i0) => {
+      return common_vendor.e({
+        a: __props.brand.logo_image
+      }, __props.brand.logo_image ? {
+        b: __props.brand.logo_image
+      } : {}, {
+        c: __props.brand.brand_name_image,
+        d: common_vendor.t(__props.brand.country_name),
+        e: common_vendor.t(__props.brand.type),
+        f: common_vendor.t(__props.brand.total_goods),
+        g: common_vendor.t(__props.brand.description),
+        h: common_vendor.o(jumpBrand),
+        i: common_vendor.f(__props.brand.goods, (doll, index, i0) => {
           return {
-            a: doll.goods_images[0],
+            a: doll.goods_images && doll.goods_images[0],
             b: common_vendor.t(doll.name),
             c: doll.id,
             d: common_vendor.o(($event) => jumpGoods(doll.id), doll.id)
           };
         }),
-        i: __props.key
-      };
+        j: __props.key
+      });
     };
   }
 };

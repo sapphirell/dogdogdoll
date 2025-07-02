@@ -1,9 +1,11 @@
 {
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
   "usingComponents": {
-    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "goods-search": "../../components/goods-search/goods-search",
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
+    "uni-transition": "../../uni_modules/uni-transition/components/uni-transition/uni-transition",
     "common-modal": "../../components/common-modal/common-modal",
     "common-page": "../../components/common-page/common-page"
   }

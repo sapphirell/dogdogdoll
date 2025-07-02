@@ -29,8 +29,16 @@
 
 		<!-- 图文信息区域 -->
 		<view class="content-box">
-			<text class="title">{{ detailData.title }}</text>
+			<view style="display: flex;justify-content: space-between;">
+				<text class="title">{{ detailData.title }}</text>
+				<view class="report-container">
+					<report-button :report-type="origin === 1 ? 2 : 1" :relation-id="parseInt(pageId)" icon-type="flag"
+						icon-color="#999" />
+				</view>
+			</view>
+			
 			<text class="content">{{ detailData.content }}</text>
+			
 		</view>
 
 		<!-- 关联商品列表 -->
@@ -81,7 +89,7 @@
 
 
 		<!-- 输入框 -->
-		<comment-input ref="commentInputRef" :reply-info="replyForItem" :target-id="pageId"
+		<comment-input v-if="detailData.title" ref="commentInputRef" :reply-info="replyForItem" :target-id="pageId"
 			@submit="handleCommentSubmit" @update:reply-info="val => replyForItem = val" />
 
 		<view style="width: 100%;height: 120rpx;"></view>
@@ -463,7 +471,7 @@
 		// 聚焦输入框
 		commentInputRef.value?.focusInput()
 	}
-	
+
 	const onShareAppMessage = () => ({
 		title: 'BJD娃圈你想知道的这里都有~',
 		path: '/pages/news/news',
@@ -591,7 +599,7 @@
 				getHasLike(options.collocation_id)
 
 			})
-		
+
 		} catch (err) {
 			console.error('onLoad Error:', err)
 			uni.showToast({
@@ -649,7 +657,7 @@
 		}
 	}
 
-
+	
 	/* 页面主体 */
 
 	.content-box {
@@ -659,9 +667,16 @@
 	.title {
 		font-size: 28rpx;
 		font-weight: 800;
-		display: block;
 		margin-bottom: 20rpx;
 		padding: 30rpx 30rpx 0rpx 30rpx;
+	}
+	.report-container {
+		margin: 15rpx 0 0 0;
+		display: inline-block;
+		width: 120rpx;
+		background: #fcfcfc;
+		padding: 10rpx 20rpx;
+		border-radius: 10rpx;
 	}
 
 	.content {
@@ -923,5 +938,4 @@
 		width: 100vw;
 		height: 100vh;
 	}
-
 </style>

@@ -540,7 +540,7 @@
 		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
-		z-index: 999;
+		z-index: 1001;
 }
 .modal-container[data-v-d7656854] {
 		position: absolute;
@@ -555,7 +555,7 @@
 		transform: translateX(-50%);
 }
 .modal-content[data-v-d7656854] {
-		position: relative;
+		/* position: relative; */
 }
 
 .page-container[data-v-957ceee2] {
@@ -569,7 +569,9 @@
 }
 .header-placeholder[data-v-957ceee2] {
   height: var(--957ceee2-headerHeight);
-  background-color: var(--957ceee2-head_color);
+  background: var(--957ceee2-head_color);
+  background-size: cover;
+  background-position: 0px 1.5625rem;
 }
 .content-container[data-v-957ceee2] {
   flex: 1;
@@ -635,7 +637,7 @@
   background: #fff;
   width: 100%;
   height: 3.125rem;
-  margin: 1.25rem 0;
+  margin: 2.1875rem 0 0.9375rem 0;
   position: relative;
   background: transparent;
   /* 移除原渐变色背景 */
@@ -654,10 +656,10 @@
 .switch_tab uni-button[data-v-4829e7f4]::after {
   content: "";
   position: absolute;
-  bottom: 0;
+  top: 1.875rem;
   left: 50%;
   width: 0;
-  height: 0.125rem;
+  height: 0;
   background: #74c9e5;
   transition: all 0.3s ease;
   transform: translateX(-50%);
@@ -665,9 +667,11 @@
 .switch_tab uni-button uni-text[data-v-4829e7f4] {
   font-weight: 500;
   transition: all 0.3s ease;
+  z-index: 10;
+  position: relative;
 }
 .switch_tab uni-button.active uni-text[data-v-4829e7f4] {
-  color: #74c9e5;
+  color: #464646;
   font-weight: 800;
   font-size: 1rem;
   /* 选中时字体变大 */
@@ -675,25 +679,47 @@
 .switch_tab uni-button.active[data-v-4829e7f4]::after {
   width: 80%;
   /* 下划线宽度 */
-  background: #74c9e5;
+  background: #747ee5b0;
+  border: none;
+  height: 10px;
 }
-.jump2addButton[data-v-4829e7f4] {
-  background: #74c9e5;
-  color: #fff;
-  border-radius: 100%;
-  width: 3.4375rem;
-  height: 3.4375rem;
-  font-size: 1.25rem;
+
+/* 新增样式 */
+.unified-floating-button[data-v-4829e7f4] {
   position: fixed;
-  bottom: 5rem;
-  right: 1.25rem;
-  box-shadow: #dadada;
-  z-index: 10;
+  bottom: 3.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3.125rem;
+  height: 3.125rem;
+  background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0.1875rem 0.625rem rgba(30, 209, 225, 0.4);
+  z-index: 999;
+  transition: all 0.3s ease;
+  /* 按钮动画效果 */
+}
+.unified-floating-button[data-v-4829e7f4]::after {
+  content: "";
+  position: absolute;
+  top: 33px;
+  left: 50%;
+  width: 0;
+  height: 0.125rem;
+  background: #74c9e5;
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+.unified-floating-button[data-v-4829e7f4]:active {
+  transform: translateX(-50%) scale(0.95);
+  box-shadow: 0 0.125rem 0.375rem rgba(30, 209, 225, 0.3);
 }
 .data_body[data-v-4829e7f4] {
   min-height: 80vh;
   /* 根据实际内容设置合理高度，避免父容器塌陷 */
-  position: relative;
 }
 .tab_body_1st[data-v-4829e7f4],
 .tab_body_sec[data-v-4829e7f4],
@@ -710,7 +736,7 @@
   margin: 0.625rem 0 0.625rem 0;
   overflow: hidden;
   width: 100%;
-  min-height: 37.5rem;
+  min-height: 43.75rem;
   /* 根据实际内容设置合理高度，避免父容器塌陷 */
 }
 .light_button[data-v-4829e7f4] {
@@ -734,7 +760,7 @@
 /* 新增样式 */
 .type-picker[data-v-4829e7f4] {
   flex: 1;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: #e9b6d7;
   padding: 0.46875rem 0.78125rem;
   border-radius: 0.3125rem;
@@ -770,11 +796,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: rgba(255, 118, 105, 0.65);
+  background: rgba(122, 181, 255, 0.65);
   color: #fff;
   padding: 0.3125rem 0.625rem;
   border-radius: 0.3125rem 0 0.3125rem 0;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
+  font-weight: 900;
 }
 .content-grid .grid-item .item-info[data-v-4829e7f4] {
   padding: 0.15625rem 0.46875rem;
@@ -800,15 +827,13 @@
 .type-header[data-v-4829e7f4] {
   display: flex;
   align-items: center;
-  padding: 0.78125rem 0.9375rem;
   border-radius: 0.5rem;
   margin: 0.625rem 0.9375rem;
-  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
 }
 .manage-btn[data-v-4829e7f4] {
   font-size: 0.6875rem;
   color: white;
-  background: #ffbcd4;
+  background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
   margin-left: 0.625rem;
   padding: 0.3125rem 0.78125rem;
   border-radius: 1.5625rem;
@@ -826,6 +851,8 @@
 }
 .type-modal[data-v-4829e7f4] {
   padding: 0.9375rem;
+  box-sizing: border-box;
+  width: 80vw;
 }
 .type-modal .type-list[data-v-4829e7f4] {
   max-height: 15.625rem;

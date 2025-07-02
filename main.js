@@ -8,30 +8,30 @@ Vue.config.productionTip = false
 
 App.mpType = 'app'
 const app = new Vue({
-  ...App
+	...App
 })
 app.$mount()
 // #endif
 
-// 加载alimama数黑体
-// uni.loadFontFace({
-//   family: 'alimamamshuhei',
-//   source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
-//   success() {
-// 	  console.log('load font success')
-//   },
-//   fail(e) {
-// 	  console.log('load font fail', e)
-//   }
-// })
+
+uni.loadFontFace({
+	family: 'cutefont',
+	source: `url("https://images1.fantuanpu.com/font/ry-super-less-rokk.ttf")`
+})
+uni.loadFontFace({
+	family: 'alimamamshuhei',
+	source: `url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")`
+})
 
 
 // #ifdef VUE3
-import { createSSRApp } from 'vue'
+import {
+	createSSRApp
+} from 'vue'
 export function createApp() {
-  const app = createSSRApp(App)
-  return {
-    app
-  }
+	const app = createSSRApp(App)
+	return {
+		app
+	}
 }
 // #endif

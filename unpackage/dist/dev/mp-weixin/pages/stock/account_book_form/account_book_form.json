@@ -3,6 +3,7 @@
   "usingComponents": {
     "uni-icons": "../../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "common-modal": "../../../components/common-modal/common-modal",
-    "goods-search": "../../../components/goods-search/goods-search"
+    "goods-search": "../../../components/goods-search/goods-search",
+    "uni-data-picker": "../../../uni_modules/uni-data-picker/components/uni-data-picker/uni-data-picker"
   }
 }

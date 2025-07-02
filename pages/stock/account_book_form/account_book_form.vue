@@ -3,7 +3,8 @@
 		<meta name="theme-color" content="#F8F8F8">
 		</meta>
 		<!-- 分类管理弹窗 -->
-		<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="5%" height="60%">
+		<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="100rpx"
+			height="60%">
 			<view class="type-modal">
 				<view class="add-type-form">
 					<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
@@ -49,27 +50,43 @@
 					v-model="price" />
 			</view>
 
+			<!-- 个数 -->
+			<view class="form-item">
+				<text class="form-label">个数</text>
+				<input class="form-input" type="number" placeholder="请输入个数" placeholder-class="placeholder-style"
+					v-model="count" />
+			</view>
+
 			<!-- 图片上传 -->
 			<view class="form-item">
 				<text class="form-label">物品图片</text>
 				<view class="upload-wrapper">
-					<view v-if="accountImage" class="preview-image" @click.stop="selectImage">
-						<image mode="aspectFill" :src="accountImage" class="image-preview"></image>
-						<text class="image-tip">点击更换图片</text>
+					<view class="image-grid">
+						<!-- 已上传图片预览 -->
+						<view v-for="(img, index) in imageList" :key="index" class="preview-image">
+							<image mode="aspectFill" :src="img" class="image-preview" @tap="viewFullImage(index)">
+							</image>
+							<view class="image-actions">
+								<uni-icons type="close" size="22" color="#fff" @tap="(e) => removeImage(index, e)"
+									class="delete-icon"></uni-icons>
+							</view>
+						</view>
+
+						<!-- 添加图片按钮 -->
+						<view class="add-image-box" @click="selectImage">
+							<uni-icons type="plusempty" size="40" color="#ccc"></uni-icons>
+							<text class="add-text">添加图片</text>
+						</view>
 					</view>
-					<button class="upload-button" @click="selectImage" v-else>
-						<text class="iconfont icon-camera"></text>
-						选择图片
-					</button>
 				</view>
 			</view>
 
 			<!-- 尺寸选择器 -->
 			<view class="form-item">
-			    <text class="form-label">尺寸</text>
-			    <uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" 
-			        :value="selectedSizePath" @change="onSizeChange" class="size-picker">
-			    </uni-data-picker>
+				<text class="form-label">尺寸</text>
+				<uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" :value="selectedSizePath"
+					@change="onSizeChange" class="size-picker">
+				</uni-data-picker>
 			</view>
 
 			<!-- 更多信息折叠区域 -->
@@ -103,12 +120,14 @@
 				<!-- 购入时间 -->
 				<view class="form-item">
 					<text class="form-label">购入时间</text>
-					<picker mode="date" :value="moreInfo.buyDate" @change="(e) => moreInfo.buyDate = e.detail.value"
-						class="form-input">
-						<view class="picker-content">
-							{{ moreInfo.buyDate || '选择购入日期' }}
-						</view>
-					</picker>
+					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
+						<picker mode="date" :value="moreInfo.buyDate"
+							@change="(e) => moreInfo.buyDate = e.detail.value" >
+							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
+								{{ moreInfo.buyDate || '选择购入日期' }}
+							</view>
+						</picker>
+					</view>
 				</view>
 
 				<!-- 存放位置 -->
@@ -137,12 +156,13 @@
 
 				<view class="form-item">
 					<text class="form-label">补款日期</text>
-					<picker mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value"
-						class="form-input">
-						<view class="picker-content">
-							{{ form.finalTime || '选择截止日期' }}
-						</view>
-					</picker>
+					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
+						<picker  mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value">
+							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
+								{{ form.finalTime || '选择截止日期' }}
+							</view>
+						</picker>
+					</view>
 				</view>
 			</view>
 			<view style="overflow: hidden;">
@@ -195,6 +215,11 @@
 	//判断页面是否有参数，如果有代表编辑，如果没有代表新增
 	const isEdit = props.account_book_id ? true : false;
 
+	// 新增：个数字段
+	const count = ref(1);
+
+	// 修改：将accountImage改为imageList数组
+	const imageList = ref([]);
 
 	// 状态栏高度
 	const systemInfo = uni.getSystemInfoSync();
@@ -249,57 +274,57 @@
 
 	// 获取尺寸数据
 	const fetchSizes = async () => {
-	  try {
-	    const res = await uni.request({
-	      url: websiteUrl + '/sizes',
-	      method: 'GET'
-	    });
-	
-	    if (res.data.status === "success") {
-	      const sizesData = res.data.data;
-	      const formattedSizes = [];
-	
-	      // 转换为正确的层级结构
-	      for (const [category, items] of Object.entries(sizesData)) {
-	        formattedSizes.push({
-	          text: category,   // 大分类名称 (如"二分")
-	          value: category,  // 大分类值
-	          children: items.map(item => ({
-	            text: item,     // 小分类名称 (如"普通二分")
-	            value: item     // 小分类值
-	          }))
-	        });
-	      }
-	
-	      sizeOptions.value = formattedSizes;
-	    }
-	  } catch (err) {
-	    console.error('获取尺寸数据失败:', err);
-	    uni.showToast({
-	      title: '获取尺寸数据失败',
-	      icon: 'none'
-	    });
-	  }
+		try {
+			const res = await uni.request({
+				url: websiteUrl + '/sizes',
+				method: 'GET'
+			});
+
+			if (res.data.status === "success") {
+				const sizesData = res.data.data;
+				const formattedSizes = [];
+
+				// 转换为正确的层级结构
+				for (const [category, items] of Object.entries(sizesData)) {
+					formattedSizes.push({
+						text: category, // 大分类名称 (如"二分")
+						value: category, // 大分类值
+						children: items.map(item => ({
+							text: item, // 小分类名称 (如"普通二分")
+							value: item // 小分类值
+						}))
+					});
+				}
+
+				sizeOptions.value = formattedSizes;
+			}
+		} catch (err) {
+			console.error('获取尺寸数据失败:', err);
+			uni.showToast({
+				title: '获取尺寸数据失败',
+				icon: 'none'
+			});
+		}
 	};
 
-// 尺寸选择变化 - 修复处理逻辑
-const onSizeChange = (e) => {
-  const nodes = e.detail.value;
-  
-  // 确保选择了完整路径 [大分类, 小分类]
-  if (nodes.length === 2) {
-    selectedSizePath.value = [
-      nodes[0].value, // 大分类值
-      nodes[1].value  // 小分类值
-    ];
-    
-    // 自动填充尺寸详情
-    moreInfo.value.sizeDetail = nodes[1].value;
-  } else {
-    selectedSizePath.value = [];
-    moreInfo.value.sizeDetail = '';
-  }
-};
+	// 尺寸选择变化 - 修复处理逻辑
+	const onSizeChange = (e) => {
+		const nodes = e.detail.value;
+
+		// 确保选择了完整路径 [大分类, 小分类]
+		if (nodes.length === 2) {
+			selectedSizePath.value = [
+				nodes[0].value, // 大分类值
+				nodes[1].value // 小分类值
+			];
+
+			// 自动填充尺寸详情
+			moreInfo.value.sizeDetail = nodes[1].value;
+		} else {
+			selectedSizePath.value = [];
+			moreInfo.value.sizeDetail = '';
+		}
+	};
 
 	// 切换更多信息折叠
 	const toggleMoreInfo = () => {
@@ -422,11 +447,6 @@ const onSizeChange = (e) => {
 	// 账本数据
 	const accountBookData = ref({});
 
-	// 上传的图片数据
-	const accountImage = ref("");
-
-
-
 	// 切换账本选择类型
 	function updateSelectedType(e) {
 		selectedType.value = e.detail.value
@@ -449,8 +469,12 @@ const onSizeChange = (e) => {
 				console.log(res.data.data);
 				name.value = res.data.data.name;
 				price.value = parseInt(res.data.data.price);
+				count.value = res.data.data.count || 1; // 新增：设置个数
 				selectedType.value = typeOptions.value.indexOf(res.data.data.type);
-				accountImage.value = res.data.data.image_url;
+				// 修改：处理图片字符串为数组
+				if (res.data.data.image_url) {
+					imageList.value = res.data.data.image_url.split(',');
+				}
 				form.value = {
 					isRemind: res.data.data.is_remind,
 					finalPrice: res.data.data.final_price,
@@ -468,13 +492,13 @@ const onSizeChange = (e) => {
 				};
 
 				// 设置尺寸选择器
-				  if (res.data.data.size) {
+				if (res.data.data.size) {
 					// 正确设置尺寸路径 [大分类, 小分类]
 					selectedSizePath.value = [
-					  res.data.data.size, 
-					  res.data.data.size_detail || ''
+						res.data.data.size,
+						res.data.data.size_detail || ''
 					];
-				  }
+				}
 				console.log("f:", form)
 			},
 			fail: (err) => {
@@ -496,8 +520,12 @@ const onSizeChange = (e) => {
 				// 自动填充信息
 				name.value = detail.name;
 				price.value = detail.fin_amount + detail.sub_amount;
+				count.value = 1; // 默认个数为1
+
+				// 添加商品图片
 				if (detail.goods_images?.[0]) {
-					accountImage.value = detail.goods_images[0];
+					// 清空原有图片，只添加新商品的图片
+					imageList.value = [detail.goods_images[0]];
 				}
 
 			}
@@ -566,28 +594,56 @@ const onSizeChange = (e) => {
 			}
 		});
 	}
-	//选择图片
-	function selectImage() {
-		chooseImage().then((res) => {
-			getQiniuToken().then((tokenData) => {
-				console.log(tokenData)
 
-				uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
-					if (uploadRes.statusCode != 200) {
-						uni.showToast({
-							title: '上传失败',
-							icon: 'none'
-						})
+	// 选择图片（支持多选）
+	async function selectImage() {
+		uni.chooseImage({
+			count: 9,
+			success: async (res) => {
+				const tempFilePaths = res.tempFilePaths;
+
+				// 依次上传所有图片（每张图片使用独立的 token）
+				for (const filePath of tempFilePaths) {
+					try {
+						// 为每张图片获取独立的 token
+						const tokenData = await getQiniuToken();
+						const uploadRes = await uploadImageToQiniu(filePath, tokenData.token, tokenData
+							.path);
+						console.log("res:", uploadRes)
+						if (uploadRes.qiniuRes.statusCode === 200) {
+							const imageUrl = image1Url + tokenData.path;
+							imageList.value.push(imageUrl);
+						} else {
+							console.error('上传失败:', filePath);
+						}
+					} catch (error) {
+						console.error('上传错误:', error);
 					}
-					console.log(image1Url + tokenData.path)
-					accountImage.value = image1Url + tokenData.path;
-					uni.showToast({
-						title: '上传成功',
-						icon: 'success'
-					})
-				}) //uploadImageToQiniu
-			}) //getQiniuToken
-		}) //chooseImage
+				}
+
+				uni.showToast({
+					title: `上传了${tempFilePaths.length}张图片`,
+					icon: 'success'
+				});
+			}
+		});
+	}
+	// 删除图片
+
+	function removeImage(index, event) {
+		if (event && event.stopPropagation) {
+			event.stopPropagation();
+		}
+
+		uni.showModal({
+			title: '删除图片',
+			content: '确定删除这张图片吗？',
+			success: (res) => {
+				if (res.confirm) {
+					imageList.value.splice(index, 1);
+				}
+			}
+		});
 	}
 
 	// 加载用户信息
@@ -624,17 +680,19 @@ const onSizeChange = (e) => {
 
 	// 修改提交逻辑
 	const validateForm = () => {
+		// 新增：验证个数
+		if (count.value <= 0) {
+			uni.showToast({
+				title: '个数必须大于0',
+				icon: 'none'
+			});
+			return false;
+		}
+
 		if (form.value.isRemind) {
 			if (!form.value.finalPrice || form.value.finalPrice <= 0) {
 				uni.showToast({
 					title: '请输入正确的尾款金额',
-					icon: 'none'
-				});
-				return false;
-			}
-			if (!form.value.finalTime || new Date(form.value.finalTime) < new Date()) {
-				uni.showToast({
-					title: '请选择未来的日期',
 					icon: 'none'
 				});
 				return false;
@@ -648,8 +706,9 @@ const onSizeChange = (e) => {
 		let postData = {
 			name: name.value,
 			price: parseInt(price.value, 10),
+			count: parseInt(count.value, 10), // 新增：个数
 			type: typeOptions.value[selectedType.value], // 使用合并后的分类列表
-			image_url: accountImage.value,
+			image_url: imageList.value.join(','), // 修改：图片数组转逗号分隔字符串
 			is_remind: form.value.isRemind,
 			final_price: parseInt(form.value.finalPrice, 10),
 			final_time: form.value.finalTime,
@@ -697,8 +756,9 @@ const onSizeChange = (e) => {
 		let postData = {
 			name: name.value,
 			price: parseInt(price.value, 10),
+			count: parseInt(count.value, 10), // 新增：个数
 			type: typeOptions.value[selectedType.value], // 使用合并后的分类列表
-			image_url: accountImage.value,
+			image_url: imageList.value.join(','), // 修改：图片数组转逗号分隔字符串
 			id: parseInt(props.account_book_id, 10),
 			is_remind: form.value.isRemind, // 转换为数据库需要的格式
 			final_price: parseInt(form.value.finalPrice, 10),
@@ -740,6 +800,13 @@ const onSizeChange = (e) => {
 		})
 	}
 
+	//viewFullImage
+	function viewFullImage(index) {
+		uni.previewImage({
+			current: imageList.value['index'],
+			urls: imageList.value,
+		})
+	}
 
 	// 在原有onShow中添加
 	onShow(() => {
@@ -790,6 +857,7 @@ const onSizeChange = (e) => {
 		font-size: 28rpx;
 		transition: all 0.3s;
 		line-height: 80rpx;
+		overflow: hidden;
 
 		&:focus {
 			border-color: $primary-color;
@@ -810,48 +878,65 @@ const onSizeChange = (e) => {
 		text-align: center;
 	}
 
+	.image-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 20rpx;
+		margin-top: 20rpx;
+	}
+
 	.preview-image {
 		position: relative;
-		margin: 0 auto;
-		max-width: 400rpx;
+		width: 180rpx;
+		height: 180rpx;
+		border-radius: $radius;
+		overflow: hidden;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 
 		.image-preview {
 			width: 100%;
-			height: 300rpx;
-			border-radius: $radius;
+			height: 100%;
 		}
 
-		.image-tip {
+		.image-actions {
 			position: absolute;
-			bottom: 20rpx;
-			left: 50%;
-			transform: translateX(-50%);
-			color: white;
-			font-size: 24rpx;
-			background: rgba(0, 0, 0, 0.5);
-			padding: 8rpx 20rpx;
-			border-radius: 20rpx;
+			top: 0;
+			right: 0;
+			padding: 6rpx;
+			border-radius: 100%;
+		}
+
+		.delete-icon {
+			display: block;
+			background: rgba(255, 102, 102, 0.8);
+			border-radius: 50%;
+			height: 53rpx;
+			width: 53rpx;
+			box-sizing: border-box;
+			padding: 4rpx;
 		}
 	}
 
-	.upload-button {
-		background: rgba($primary-color, 0.1);
-		color: $primary-color;
-		border: none;
-		font-size: 28rpx;
-		height: auto;
-		line-height: 1.5;
-		padding: 20rpx;
+	.add-image-box {
+		width: 180rpx;
+		height: 180rpx;
+		border: 2rpx dashed #ddd;
 		border-radius: $radius;
-		transition: all 0.3s;
-
-		.iconfont {
-			margin-right: 12rpx;
-		}
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background: rgba($primary-color, 0.05);
+		color: #999;
+		font-size: 24rpx;
 
 		&:active {
-			background: rgba($primary-color, 0.2);
+			background: rgba($primary-color, 0.1);
 		}
+	}
+
+	.add-text {
+		margin-top: 10rpx;
 	}
 
 	.submit-button {
@@ -933,6 +1018,9 @@ const onSizeChange = (e) => {
 
 	.type-modal {
 		padding: 30rpx;
+		box-sizing: border-box;
+		width: 80vw;
+		// height: 50vh;
 
 		.type-list {
 			max-height: 500rpx;
@@ -1024,7 +1112,12 @@ const onSizeChange = (e) => {
 	.size-picker {
 		padding: 20rpx 0;
 	}
+
 	.size_detail {
 		display: none;
+	}
+
+	uni-button:after {
+		border: none;
 	}
 </style>

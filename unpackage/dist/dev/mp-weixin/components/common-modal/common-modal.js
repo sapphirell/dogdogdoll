@@ -1,8 +1,12 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 if (!Array) {
-  const _component_transition = common_vendor.resolveComponent("transition");
-  _component_transition();
+  const _easycom_uni_transition2 = common_vendor.resolveComponent("uni-transition");
+  _easycom_uni_transition2();
+}
+const _easycom_uni_transition = () => "../../uni_modules/uni-transition/components/uni-transition/uni-transition.js";
+if (!Math) {
+  _easycom_uni_transition();
 }
 const _sfc_main = {
   __name: "common-modal",
@@ -11,7 +15,7 @@ const _sfc_main = {
     // 新增参数
     top: {
       type: [String, Number],
-      default: "20%"
+      default: "30%"
     },
     width: {
       type: [String, Number],
@@ -20,15 +24,21 @@ const _sfc_main = {
     height: {
       type: [String, Number],
       default: "auto"
+    },
+    closeable: {
+      // 点击遮罩层是否可以关闭
+      type: Boolean,
+      default: true
     }
   },
   emits: ["update:visible"],
   setup(__props, { emit: __emit }) {
     const props = __props;
+    let modeClass = common_vendor.ref(["fade", "zoom-in"]);
     const emit = __emit;
     const containerStyle = common_vendor.computed(() => ({
       top: formatValue(props.top),
-      width: formatValue(props.width),
+      // width: formatValue(props.width),
       height: formatValue(props.height)
     }));
     const formatValue = (val) => {
@@ -41,7 +51,9 @@ const _sfc_main = {
       return val;
     };
     const closeModal = () => {
-      emit("update:visible", false);
+      if (props.closeable) {
+        emit("update:visible", false);
+      }
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
@@ -50,12 +62,12 @@ const _sfc_main = {
         b: common_vendor.s(containerStyle.value),
         c: common_vendor.o(() => {
         }),
-        d: common_vendor.o(closeModal)
-      } : {}, {
-        e: common_vendor.p({
-          name: "modal-fade"
-        })
-      });
+        d: common_vendor.p({
+          ["mode-class"]: common_vendor.unref(modeClass),
+          show: __props.visible
+        }),
+        e: common_vendor.o(closeModal)
+      } : {});
     };
   }
 };

@@ -33,6 +33,9 @@ if (!Math) {
   "./pages/my_comment/my_comment.js";
   "./pages/my_collocation/my_collocation.js";
   "./pages/article_detail/article_detail.js";
+  "./pages/loadding/loadding.js";
+  "./pages/private/private.js";
+  "./pages/permission/permission.js";
 }
 const _sfc_main = {
   __name: "App",
@@ -42,14 +45,12 @@ const _sfc_main = {
   }
 };
 common_vendor.index.loadFontFace({
+  family: "cutefont",
+  source: `url("https://images1.fantuanpu.com/font/ry-super-less-rokk.ttf")`
+});
+common_vendor.index.loadFontFace({
   family: "alimamamshuhei",
-  source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
-  success() {
-    common_vendor.index.__f__("log", "at main.js:21", "load font success");
-  },
-  fail(e) {
-    common_vendor.index.__f__("log", "at main.js:24", "load font fail", e);
-  }
+  source: `url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")`
 });
 function createApp() {
   const app = common_vendor.createSSRApp(_sfc_main);

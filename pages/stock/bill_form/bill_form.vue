@@ -28,31 +28,36 @@
 			<!-- 账单日期 -->
 			<view class="form-item">
 				<text class="form-label">账单日期</text>
-				<picker 
-					mode="date" 
-					class="form-input"
-					:value="formattedDate" 
-					@change="updateDate">
-					<view class="picker-content">
-						{{ formattedDate || '请选择日期' }}
-					</view>
-				</picker>
+				<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
+					<picker
+						mode="date" 
+						:value="formattedDate" 
+						@change="updateDate">
+						<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
+							{{ formattedDate || '请选择日期' }}
+						</view>
+					</picker>
+				</view>
+				
 			</view>
-
+			
 			<!-- 账单状态 -->
 			<view class="form-item">
 				<text class="form-label">账单状态</text>
-				<picker 
-					mode="selector" 
-					class="form-input"
-					:value="status" 
-					:range="statusList"
-					@change="updateStatus">
-					<view class="picker-content">
-						{{ statusList[status] || '请选择状态' }}
-					</view>
-				</picker>
+				<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
+					<picker 
+						mode="selector" 
+						:value="status" 
+						:range="statusList"
+						@change="updateStatus">
+						<view class="picker-content">
+							{{ statusList[status] || '请选择状态' }}
+						</view>
+					</picker>
+				</view>
 			</view>
+			
+			
 			
 			<view style="overflow: hidden;">
 				<image src="/static/info-circle.png" mode="aspectFill" style="width: 28rpx;height: 28rpx;margin-right: 10rpx; position: relative;top: 3rpx;"></image>
@@ -315,6 +320,7 @@
 		height: 80rpx;
 		line-height: 80rpx;
 		color: #333;
+		display: inline-block;
 	}
 
 	.submit-button {
@@ -362,5 +368,33 @@
 			transform: translateY(2rpx);
 			box-shadow: 0 4rpx 12rpx rgba(255,77,79,0.3);
 		}
+	}
+	.picker-content {
+		height: 80rpx;
+		line-height: 80rpx;
+		color: #333;
+		/* 添加以下关键属性 */
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		display: block;
+		width: 100%;
+	}
+	
+	/* 针对原生picker的特殊处理 */
+	::v-deep uni-picker .picker-view {
+		height: 80rpx !important;
+		line-height: 80rpx !important;
+	}
+	
+	::v-deep uni-picker .picker-view-column {
+		height: 80rpx !important;
+		line-height: 80rpx !important;
+	}
+	
+	::v-deep .picker-item {
+		height: 80rpx !important;
+		line-height: 80rpx !important;
+		font-size: 28rpx !important;
 	}
 </style>

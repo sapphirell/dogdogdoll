@@ -1,20 +1,30 @@
 <!-- common-search -->
 <template>
-	<view class="search_tab" :class="$attrs.class" :style="{
-			background: background || '#fff'
-		}">
-		<image class="icon_image" src="../../static/search.png" v-if="props.mode == 'jump'"></image>
-		<input class="common_search_input" placeholder="请输入品牌 …" v-model="searchTerm" @input="onSearchInput"
-			:ignoreCompositionEvent="false" />
-		<image class="icon_image" src="../../static/cancel.png" @tap="cancel" v-if="results.length > 0"></image>
+	<view style="width:100%">
+		<view class="search_tab" :class="$attrs.class" :style="{
+				background: background || '#fff'
+			}">
+			<image class="icon_image" src="../../static/search.png" v-if="props.mode == 'jump'"></image>
+			<input class="common_search_input" placeholder="可以模糊搜索娃社 o( ❛ᴗ❛ )o …" v-model="searchTerm"
+				@input="onSearchInput" :ignoreCompositionEvent="false" />
+			<view class="search-info-tap" v-if="results.length > 0">
+				<text v-if="results.length > 0 && searchTerm.length < 5">拼音、缩写、别名都可以搜</text>
+				<image class="icon_image" src="../../static/cancel.png" @tap="cancel" ></image>
+			</view>
+		
+		</view>
+		
+		<view style="position: relative;">
+			<!-- 显示搜索结果 -->
+			<scroll-view v-if="results.length > 0" class="search_results" :style="{width: width}" scroll-y>
+				<view v-for="item in results" :key="item.id" class="result_item" @tap="onTap(item.id, item.name)">
+					{{ item.name }}
+				</view>
+			</scroll-view>
+		</view>
+		
 	</view>
 
-	<!-- 显示搜索结果 -->
-	<scroll-view v-if="results.length > 0" class="search_results" :style="{width: width}" scroll-y>
-		<view v-for="item in results" :key="item.id" class="result_item" @tap="onTap(item.id, item.name)">
-			{{ item.name }}
-		</view>
-	</scroll-view>
 </template>
 
 <script setup>
@@ -114,20 +124,19 @@
 	}
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 	.search_tab {
-		// padding: 3px 10px;
 		box-sizing: border-box;
 		display: flex;
 		align-items: center;
 		background: #fff;
 		border-radius: 10px;
-		// padding: 5px 0px 7px 5px;
+		width: 100%;
+		position: relative;
 
 		image {
 			position: relative;
 			margin-left: 5px;
-			// top: 3px;
 		}
 
 		.common_search_input {
@@ -143,11 +152,11 @@
 	}
 
 	.search_results {
-		margin-top: 10px;
 		padding: 10px;
 		background-color: #f8f8f8;
 		border-radius: 5px;
 		position: absolute;
+		top: 0px;
 		z-index: 12;
 		box-shadow: 0 0 15px #0000002b;
 		max-height: 400rpx;
@@ -168,5 +177,24 @@
 				color: #007aff;
 			}
 		}
+	}
+
+	.search-info-tap {
+		position: absolute;
+		right: 10rpx;
+		vertical-align: middle;
+		bottom: 0px;
+		text {
+			color: #fff;
+			background: linear-gradient(135deg, #a494b2, #fad0c4);
+			font-size: 20rpx;
+			width: 260px;
+			padding: 3px 5px;
+			border-radius: 3px;
+			font-weight: 900;
+			position: relative;
+			bottom: 15rpx;
+		}
+	
 	}
 </style>

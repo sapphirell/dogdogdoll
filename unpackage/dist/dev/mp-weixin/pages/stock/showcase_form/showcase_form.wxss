@@ -123,3 +123,8 @@
   width: 30rpx;
   height: 30rpx;
 }
+.publish-detail text {
+  display: block;
+  color: #888;
+  margin: 20rpx 40rpx;
+}

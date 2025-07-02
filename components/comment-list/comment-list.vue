@@ -41,6 +41,8 @@
 
 						<view class="right-actions">
 							<text class="reply-btn" @click="handleReply(comment)">回复</text>
+							<report-button :report-type="5" :relation-id="comment.id" button-text="举报" 
+								icon-color="#999" theme-color="#64c6dc" icon-size="20" />
 						</view>
 
 					</view>
@@ -82,6 +84,14 @@
 
 							<view class="right-actions">
 								<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
+								 <report-button 
+									  :report-type="5" 
+									  :relation-id="child.id"
+									  button-text="举报"
+									  icon-color="#999"
+									  theme-color="#64c6dc"
+									  icon-size="20"
+									/>
 							</view>
 						</view>
 					</view>
@@ -600,7 +610,7 @@
 
 	}
 
-	
+
 	// 加载更多样式优化
 	.load-more {
 		margin-top: 24rpx !important;
@@ -720,59 +730,62 @@
 
 
 	.footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 16rpx;
+
+		.left-actions {
 			display: flex;
-			justify-content: space-between;
 			align-items: center;
-			margin-top: 16rpx;
-			
-			.left-actions {
-				display: flex;
-				align-items: center;
-				gap: 20rpx;
-				
-				.time {
-					font-size: 20rpx;
-					color: #999;
-				}
-				
-				.like-container {
-					.like-btn {
-						display: flex;
-						align-items: center;
-						gap: 8rpx;
-						padding: 6rpx 16rpx;
-						border-radius: 20rpx;
-		
-						
-						.like-count {
-							font-size: 20rpx;
-							color: #999;
-							
-							&.liked {
-								color: rgb(100 198 220);
-							}
+			gap: 20rpx;
+
+			.time {
+				font-size: 20rpx;
+				color: #999;
+			}
+
+			.like-container {
+				.like-btn {
+					display: flex;
+					align-items: center;
+					gap: 8rpx;
+					padding: 6rpx 16rpx;
+					border-radius: 20rpx;
+
+
+					.like-count {
+						font-size: 20rpx;
+						color: #999;
+
+						&.liked {
+							color: rgb(100 198 220);
 						}
 					}
 				}
 			}
-			
-			.right-actions {
-				.reply-btn {
-					font-size: 22rpx;
-					color: #97b7df;
-					padding: 6rpx 20rpx;
-					border-radius: 24rpx;
-					// background: rgba(0, 122, 255, 0.1);
-				}
-			}
 		}
+
+		.right-actions {
+		      display: flex;
+		      align-items: center; /* 添加这行确保垂直居中 */
+		      gap: 10rpx; /* 添加间距使两个按钮分开 */
 		
-		/* 子评论操作栏微调 */
-		.sub-comment .footer {
-			margin-top: 10rpx;
-			
-			.like-btn {
-				padding: 4rpx 12rpx;
-			}
+		      .reply-btn {
+		        font-size: 22rpx;
+		        color: #97b7df;
+		        padding: 6rpx 20rpx;
+		        border-radius: 24rpx;
+		      }
+		    }
+	}
+
+	/* 子评论操作栏微调 */
+	.sub-comment .footer {
+		margin-top: 10rpx;
+
+		.like-btn {
+			padding: 4rpx 12rpx;
 		}
+	}
 </style>

@@ -2,6 +2,6 @@
   "navigationBarTitleText": "个人信息",
   "navigationStyle": "custom",
   "usingComponents": {
-    "common-page": "../../components/common-page/common-page"
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons"
   }
 }

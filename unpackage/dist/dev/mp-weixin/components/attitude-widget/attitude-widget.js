@@ -12,14 +12,8 @@ if (!Math) {
 const _sfc_main = {
   __name: "attitude-widget",
   props: {
-    targetId: {
-      type: Number,
-      required: true
-    },
-    type: {
-      type: Number,
-      required: true
-    },
+    targetId: Number,
+    type: Number,
     attitudeStatus: {
       type: Number,
       default: 0
@@ -35,9 +29,7 @@ const _sfc_main = {
     const emit = __emit;
     const showPanel = common_vendor.ref(false);
     const currentStatus = common_vendor.ref(props.attitudeStatus);
-    const currentCounts = common_vendor.ref({
-      ...props.attitudeCounts
-    });
+    const currentCounts = common_vendor.ref({});
     const attitudeTypes = common_vendor.ref([
       {
         emoji: "😝",
@@ -65,12 +57,25 @@ const _sfc_main = {
         label: "谁的鼻子掉了?"
       }
     ]);
+    common_vendor.watch(() => props.attitudeCounts, (newVal) => {
+      attitudeTypes.value.forEach((t) => {
+        currentCounts.value[t.value] = Number(newVal[t.value] ?? 0);
+      });
+      currentCounts.value = {
+        ...currentCounts.value
+      };
+    }, {
+      immediate: true,
+      deep: true
+    });
+    const visibleGlobalCounts = common_vendor.computed(() => {
+      return attitudeTypes.value.map((t) => ({
+        ...t,
+        count: currentCounts.value[t.value] || 0
+      })).filter((t) => t.count > 0 || t.value === currentStatus.value).filter((t) => t.count > 0);
+    });
     const togglePanel = () => {
       showPanel.value = !showPanel.value;
-    };
-    const getEmoji = (value) => {
-      var _a;
-      return ((_a = attitudeTypes.value.find((t) => t.value === value)) == null ? void 0 : _a.emoji) || "";
     };
     const handleAction = async (actionType) => {
       try {
@@ -91,10 +96,9 @@ const _sfc_main = {
             target_id: props.targetId,
             type: props.type,
             action_type: actionType
-            // 这是关键修改
           },
           header: {
-            Authorization: common_vendor.index.getStorageSync("token")
+            Authorization: token
           }
         });
         if (res.data.status === "success") {
@@ -117,7 +121,7 @@ const _sfc_main = {
           showPanel.value = false;
         }
       } catch (err) {
-        common_vendor.index.__f__("log", "at components/attitude-widget/attitude-widget.vue:166", err);
+        common_vendor.index.__f__("log", "at components/attitude-widget/attitude-widget.vue:176", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -126,12 +130,21 @@ const _sfc_main = {
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: currentStatus.value > 0
-      }, currentStatus.value > 0 ? {
-        b: common_vendor.t(getEmoji(currentStatus.value)),
-        c: common_vendor.t(currentCounts.value[currentStatus.value]),
-        d: common_vendor.t(currentStatus.value)
+        a: showPanel.value
+      }, showPanel.value ? {
+        b: common_vendor.o(togglePanel),
+        c: common_vendor.o(() => {
+        })
       } : {}, {
+        d: common_vendor.f(visibleGlobalCounts.value, (action, k0, i0) => {
+          return {
+            a: common_vendor.t(action.emoji),
+            b: common_vendor.t(action.count),
+            c: action.value,
+            d: currentStatus.value === action.value ? 1 : "",
+            e: action.count > 0 ? 1 : ""
+          };
+        }),
         e: common_vendor.p({
           type: showPanel.value ? "arrowup" : "plus",
           size: "16",

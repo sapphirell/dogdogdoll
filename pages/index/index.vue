@@ -1,79 +1,80 @@
 <template>
-	<meta name="theme-color" content="#ffe6d7">
+	<meta name="theme-color" content="#def9ff">
 	</meta>
-	<common-page head_color="rgb(255 230 215) ">
+	<view>
+		<privacy-permission-modal></privacy-permission-modal>
 		<view class="body">
 			<view class="index_header">
+				<view class="header-placeholders"></view>
 				<view>
-					<image src="/static/main/2.png"
-						style="width: 100rpx;height: 100rpx;display: inline-block;  vertical-align: top; "
-						mode="aspectFill"></image>
-					<view style="display: inline-block;">
-						<text class="font-alimamashuhei logo"
-							style="color: #4cbbd0;width: 250rpx;padding-top: 10rpx; vertical-align: top;position: relative;">娃圈狗狗助手</text>
+					<!-- <image src="/static/new-icon/logo-with-img.jpg" style="width: 380rpx;height: 120rpx;"></image> -->
+					<!-- <image src="/static/main/2.png"
+						style="width: 170rpx;height: 170rpx;display: inline-block;  vertical-align: top; "
+						mode="aspectFill"></image> -->
+					<view style="display: inline-block;margin-left: 20rpx;">
+						<!-- <text class="font-alimamashuhei logo"
+							style="">娃圈狗狗助手</text> -->
+						<image src="https://images1.fantuanpu.com/home/title.gif" mode="widthFix" style="width: 400rpx;position: relative;left: -20rpx;margin-bottom: 10rpx;"></image>
 					</view>
+					<goods-search width="720rpx" :hiddenIcon="false"></goods-search>
 
 				</view>
-
-				<view>
-					<!-- <common-search width="680rpx"></common-search> -->
-					<goods-search width="720rpx"></goods-search>
-					<div style="clear: both;"></div>
-				</view>
-				<view style="position: relative;height: 250rpx;">
-					<!-- 轮播图部分 -->
-					<swiper :interval="3000" :duration="200" class="banner_swiper" indicator-active-color="#4cbbd0"
-						indicator-color="rgba(255,255,255,0.5)">
-						<swiper-item v-for="item in data" :key="item.id" class="banner_swiper_item">
-							<!-- <view>{{item}}</view> -->
-							<view class="swiper-item">
-								<image :src="item.banner" mode="aspectFill" style="width: 100%;height: 250rpx;"
-									@click="handleBannerClick(item)" />
-							</view>
-						</swiper-item>
-
-						<!-- 空状态 -->
-						<swiper-item v-if="data.length === 0">
-							<view class="empty-banner">
-								<image src="/static/default-banner.jpg" mode="aspectFill"
-									style="width: 100%;height: 250rpx;" />
-							</view>
-						</swiper-item>
-					</swiper>
-
-
-				</view>
-
-				<view style="margin: 40rpx 0rpx">
+				<view style="margin: 20rpx 0rpx 0rpx 0rpx; padding: 5px 10px 0px 10px;border-radius: 20px 20px 0 0;">
 					<!-- 四个小方块按钮 -->
 					<view class="index_page_article">
 						<view class="swich_box" :class="{ 'active': activeTab === 'news' }" @click="switchTab('news')">
-							<image src="../../static/cat-1.png" mode="aspectFill"></image>
-							<text>品牌图透</text>
+							<image src="/static/new-icon/telphone.png" mode="aspectFill"></image>
+							<text class="font-cute">新情报！</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'brands' }"
 							@click="switchTab('brands')">
-							<image src="../../static/cat-2.png" mode="aspectFill"></image>
-							<text>品牌图鉴</text>
+							<image src="/static/new-icon/read.png" mode="aspectFill"></image>
+							<text class="font-cute">娃物图鉴</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'hot' }" @click="switchTab('hot')">
-							<image src="../../static/cat-3.png" mode="aspectFill"></image>
-							<text>热门搭配</text>
+							<image src="/static/new-icon/collocation.png" mode="aspectFill" style="width: 90rpx;height: 90rpx;position: relative;bottom: 0rpx;"></image>
+							<text class="font-cute" style="position: relative;bottom: 5rpx;">热门搭配</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'second' }"
 							@click="switchTab('second')">
-							<image src="../../static/cat-10.png" mode="aspectFill"></image>
-							<text>树洞投稿</text>
+							<image src="/static/new-icon/write.png" mode="aspectFill"></image>
+							<text class="font-cute">匿名版</text>
 						</view>
 
 					</view>
 				</view>
+
+
+
 			</view>
 			<view class="body_container">
+				<view style="height: 40rpx;"></view>
 				<!-- <transition name="fade" mode="out-in"> -->
 				<uni-transition :mode-class="['fade']" :show="activeTab === 'news'">
 					<!-- 品牌图透 -->
 					<view class="body_list news-box" v-if="activeTab === 'news'">
+						
+						<view style="position: relative;height: 250rpx;margin-bottom: 20rpx; display: none;">
+							<!-- 轮播图部分 -->
+							<swiper :interval="3000" :duration="200" class="banner_swiper"
+								indicator-active-color="#4cbbd0" indicator-color="rgba(255,255,255,0.5)">
+								<swiper-item v-for="item in data" :key="item.id" class="banner_swiper_item">
+									<!-- <view>{{item}}</view> -->
+									<view class="swiper-item">
+										<image :src="item.banner" mode="aspectFill" style="width: 100%;height: 250rpx;"
+											@click="handleBannerClick(item)" />
+									</view>
+								</swiper-item>
+
+								<!-- 空状态 -->
+								<swiper-item v-if="data.length === 0">
+									<view class="empty-banner">
+										<image src="/static/default-banner.jpg" mode="aspectFill"
+											style="width: 100%;height: 250rpx;" />
+									</view>
+								</swiper-item>
+							</swiper>
+						</view>
 						<view v-for="item in newsList" :key="item.id" class="news-item" @tap="jump2saleNews(item)">
 							<view class="news-images">
 								<swiper v-if="item.image_list.length > 0" class="image-swiper" :autoplay="true"
@@ -105,20 +106,27 @@
 				<!-- 品牌图鉴 -->
 				<!-- <transition name="fade" mode="out-in"> -->
 				<uni-transition :mode-class="['fade']" :show="activeTab === 'brands'">
+					<view style="width: 700rpx;">
+						<common-search style="width: 100%;" width="720rpx"></common-search>
+					</view>
+					
+					
+					<view class="filter-tabs">
+						<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
+							:class="{ 'active': activeSearchType === tab.value }"
+							@click="handleTabClick(tab.value)">
+							{{ tab.label }}
+						</view>
+					</view>
+					<view class="brand_type_description" style="display: block;">
+						<text v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
+						<text v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
+						<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
+					</view>
 					<view class="body_list brand_box" style="position: relative;" v-if="activeTab === 'brands'">
-						<view class="filter-tabs">
-							<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
-								:class="{ 'active': activeSearchType === tab.value }"
-								@click="handleTabClick(tab.value)">
-								{{ tab.label }}
-							</view>
-						</view>
 						
-						<view class="brand_type_description" style="display: block;width: 100%;">
-							<text v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
-							<text v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
-							<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
-						</view>
+
+					
 						<view v-for="(item, index) in brandsList" :key="item.id">
 							<index-brand :brand="item"></index-brand>
 						</view>
@@ -239,10 +247,11 @@
 				</uni-transition>
 				<!-- </transition> -->
 			</view>
-
-
+			
+			<loading-toast :show="showLoadding"></loading-toast>
+			
 		</view>
-	</common-page>
+	</view>
 
 
 </template>
@@ -254,7 +263,8 @@
 		onPullDownRefresh,
 	} from "@dcloudio/uni-app"
 	import {
-		ref
+		ref,
+		computed
 	} from 'vue';
 	import {
 		websiteUrl,
@@ -267,9 +277,10 @@
 	import sdp from '@/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue';
 	let brandsList = ref([]);
 	let data = ref({})
-	
+
 	// 定义游标变量
 	let cursor = ref('') // 存储分页游标
+	let showLoadding = ref(false)
 
 	// 筛选相关代码
 	const tabs = ref([{
@@ -334,6 +345,32 @@
 
 	}
 
+	// 获取系统信息
+	const navBarHeight = computed(() => {
+		// #ifdef MP-WEIXIN
+		const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
+		// 确保状态栏高度存在（iOS可能为0）
+		const statusBarHeight = systemInfo.statusBarHeight || 32
+		return menuButtonInfo.bottom + menuButtonInfo.top - 2 * statusBarHeight
+		// #endif
+		return 0
+	})
+	// 计算顶部占位高度
+	const headerHeight = computed(() => {
+		// 小程序需要包含状态栏和导航栏高度
+		// #ifdef MP-WEIXIN
+		return navBarHeight.value + 'px'
+		// #endif
+
+		// // H5/App使用安全区域计算
+		// return `calc(constant(safe-area-inset-top) + 20px)` // 默认值20px作为fallback
+		// #ifdef H5 || APP
+		// 直接获取状态栏高度（iOS 安卓通用）
+		const statusBarHeight = systemInfo.statusBarHeight || 0
+		return `${statusBarHeight}px` // 44px 为 iOS 导航栏标准高度
+		// #endif
+	})
+
 	const onShareAppMessage = () => ({
 		title: 'BJD娃圈你想知道的这里都有~',
 		path: '/pages/news/news',
@@ -348,7 +385,6 @@
 			wxpath: '/pages/index/index.html'
 		}
 	})
-
 	// 下拉刷新处理
 	onPullDownRefresh(async () => {
 		try {
@@ -365,39 +401,45 @@
 
 	// 统一刷新方法
 	const refreshData = async () => {
-		// 根据当前选项卡刷新对应数据
-		const refreshActions = {
-			'brands': () => {
-				page.value = 1;
-				brandsList.value = [];
-				hasMore.value = true;
-				getBrands(true)
-
-			},
-			'news': () => {
-				newsPage.value = 1;
-				newsList.value = [];
-				newsHasMore.value = true;
-				getNews(true)
-
-			},
-			'hot': () => {
-
-				hotPage.value = 1;
-				hotList.value = [];
-				hotHasMore.value = true;
-				getHotCollocations(true)
-			},
-			'second': () => {
-				treeholePage.value = 1;
-				treeholeList.value = [];
-				treeholeHasMore.value = true;
-				getTreeholeList(true)
-			}
-		};
-
-		await refreshActions[activeTab.value]();
-		getArticles(); // 始终刷新轮播图
+		showLoadding.value = true
+		// 等待0.3s
+		setTimeout(async()=> {
+		
+			// 根据当前选项卡刷新对应数据
+			const refreshActions = {
+				'brands': () => {
+					page.value = 1;
+					brandsList.value = [];
+					hasMore.value = true;
+					getBrands(true)
+			
+				},
+				'news': () => {
+					newsPage.value = 1;
+					newsList.value = [];
+					newsHasMore.value = true;
+					getNews(true)
+			
+				},
+				'hot': () => {
+			
+					hotPage.value = 1;
+					hotList.value = [];
+					hotHasMore.value = true;
+					getHotCollocations(true)
+				},
+				'second': () => {
+					treeholePage.value = 1;
+					treeholeList.value = [];
+					treeholeHasMore.value = true;
+					getTreeholeList(true)
+				}
+			};
+			
+			await refreshActions[activeTab.value]();
+			// getArticles(); // 始终刷新轮播图
+		}, 800)
+		
 	};
 
 
@@ -455,7 +497,7 @@
 		page.value = 1;
 		hasMore.value = true;
 		brandsList.value = [];
-		  cursor.value = ''; // 重置游标
+		cursor.value = ''; // 重置游标
 		getBrands();
 	}
 
@@ -487,7 +529,7 @@
 		if (!newsHasMore.value || newsLoading.value) return
 
 		newsLoading.value = true
-		uni.showLoading()
+		showLoadding.value = true
 		uni.request({
 			url: websiteUrl + '/sale-news',
 			data: {
@@ -513,7 +555,7 @@
 			},
 			complete: () => {
 				newsLoading.value = false
-				uni.hideLoading()
+				showLoadding.value = false
 			}
 		})
 	}
@@ -531,7 +573,7 @@
 		if (!hotHasMore.value || hotLoading.value) return
 
 		hotLoading.value = true
-		uni.showLoading()
+		showLoadding.value = true
 		uni.request({
 			url: websiteUrl + '/hot-collocation',
 			data: {
@@ -559,7 +601,7 @@
 			},
 			complete: () => {
 				hotLoading.value = false
-				uni.hideLoading()
+				showLoadding.value = false
 			}
 		})
 	}
@@ -572,111 +614,70 @@
 	}
 
 
-	// const getBrands = async (isRefresh = false) => {
-	// 	if (isRefresh) page.value = 1; // 强制重置为第一页
-	// 	if (!hasMore.value || loading.value) {
-	// 		return
-	// 	}
 
-	// 	loading.value = true;
-	// 	uni.showLoading();
-	// 	uni.request({
-	// 		url: websiteUrl + '/brands',
-	// 		data: {
-	// 			page: page.value,
-	// 			pageSize: pageSize.value,
-	// 			...(activeSearchType.value && {
-	// 				searchType: activeSearchType.value
-	// 			})
-	// 		},
-	// 		success: (res) => {
-	// 			const newData = res.data.data.brands_list;
-	// 			if (newData.length === 0) {
-	// 				hasMore.value = false;
-	// 				return;
-	// 			}
-
-	// 			brandsList.value = [...brandsList.value, ...newData];
-	// 			//是否还有更多数据
-	// 			hasMore.value = brandsList.value.length < res.data.data.total;
-	// 			page.value++;
-	// 		},
-	// 		fail: (err) => {
-	// 			console.log(err);
-	// 			uni.showToast({
-	// 				title: '网络请求失败',
-	// 				icon: 'none'
-	// 			})
-	// 		},
-	// 		complete: () => {
-	// 			loading.value = false
-	// 			uni.hideLoading()
-	// 		}
-	// 	})
-	// }
 	const getBrands = async (isRefresh = false) => {
-	  if (isRefresh) {
-	    page.value = 1;
-	    brandsList.value = [];
-	    hasMore.value = true;
-	    cursor.value = ''; // 重置游标
-	  }
-	  
-	  if (!hasMore.value || loading.value) return;
-	
-	  loading.value = true;
-	  uni.showLoading();
-	  
-	  // 构造请求参数
-	  const params = {
-	    pageSize: pageSize.value
-	  };
-	  
-	  // 添加游标或搜索类型参数
-	  if (cursor.value) {
-	    params.cursor = cursor.value;
-	  } else if (activeSearchType.value) {
-	    params.searchType = activeSearchType.value;
-	  }
-	  
-	  uni.request({
-	    url: websiteUrl + '/brands-info-list',
-	    data: params,
-	    success: (res) => {
-	      if (res.data.status !== 'success') {
-	        uni.showToast({
-	          title: '加载失败: ' + res.data.message,
-	          icon: 'none'
-	        });
-	        return;
-	      }
-	      
-	      const response = res.data.data;
-	      const newData = response.data;
-	      console.log("newData:", newData)
-	      // 更新游标
-	      cursor.value = response.next_cursor || '';
-	      
-	      if (newData.length === 0) {
-	        hasMore.value = false;
-	        return;
-	      }
-	      
-	      brandsList.value = [...brandsList.value, ...newData];
-	      hasMore.value = response.has_more;
-	    },
-	    fail: (err) => {
-	      console.log(err);
-	      uni.showToast({
-	        title: '网络请求失败',
-	        icon: 'none'
-	      });
-	    },
-	    complete: () => {
-	      loading.value = false;
-	      uni.hideLoading();
-	    }
-	  });
+		if (isRefresh) {
+			page.value = 1;
+			brandsList.value = [];
+			hasMore.value = true;
+			cursor.value = ''; // 重置游标
+		}
+
+		if (!hasMore.value || loading.value) return;
+
+		loading.value = true;
+		showLoadding.value = true
+
+		// 构造请求参数
+		const params = {
+			pageSize: pageSize.value
+		};
+
+		// 添加游标或搜索类型参数
+		if (cursor.value) {
+			params.cursor = cursor.value;
+		} else if (activeSearchType.value) {
+			params.searchType = activeSearchType.value;
+		}
+
+		uni.request({
+			url: websiteUrl + '/brands-info-list',
+			data: params,
+			success: (res) => {
+				if (res.data.status !== 'success') {
+					uni.showToast({
+						title: '加载失败: ' + res.data.message,
+						icon: 'none'
+					});
+					return;
+				}
+
+				const response = res.data.data;
+				const newData = response.data;
+				console.log("newData:", newData)
+				// 更新游标
+				cursor.value = response.next_cursor || '';
+
+				if (newData.length === 0) {
+					hasMore.value = false;
+					return;
+				}
+
+				brandsList.value = [...brandsList.value, ...newData];
+				hasMore.value = response.has_more;
+			},
+			fail: (err) => {
+				console.log(err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				});
+			},
+			complete: () => {
+				loading.value = false;
+				showLoadding.value = false;
+			}
+		});
 	}
 
 
@@ -686,7 +687,7 @@
 		if (!treeholeHasMore.value || treeholeLoading.value) return
 
 		treeholeLoading.value = true
-		uni.showLoading()
+		showLoadding.value = true
 		uni.request({
 			url: websiteUrl + '/treehole-submissions',
 			data: {
@@ -716,7 +717,7 @@
 			},
 			complete: () => {
 				treeholeLoading.value = false
-				uni.hideLoading()
+				showLoadding.value = false
 			}
 		})
 	}
@@ -813,30 +814,53 @@
 
 	// 上拉加载更多
 	onReachBottom(() => {
-		  if (activeTab.value === 'brands' && hasMore.value) {
+		if (activeTab.value === 'brands' && hasMore.value) {
 			getBrands();
-		  } else if (activeTab.value === 'news' && newsHasMore.value) {
+		} else if (activeTab.value === 'news' && newsHasMore.value) {
 			getNews();
-		  } else if (activeTab.value === 'second' && treeholeHasMore.value) {
+		} else if (activeTab.value === 'second' && treeholeHasMore.value) {
 			getTreeholeList();
-		  }
+		}
 	})
 </script>
 
 <style lang="scss" scoped>
 	.body {
-		/* background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%); */
-		// background: #fff;
+		position: relative;
+		min-height: 100vh;
+		/* 确保有足够的高度 */
+		// background: #575568;
+		background: #d6e4f2;
+		
+	}
+	
+	// 适配区域
+	.header-placeholders {
+		height: v-bind(headerHeight);
 	}
 
 	.index_header {
 		// background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%);
-		background: linear-gradient(180deg, rgb(255 230 215) 0%, rgb(211 245 255) 100%);
+		// background: linear-gradient(180deg, rgb(255 230 215) 0%, #ffffff 100%);
+		// background: linear-gradient(180deg, #fbdfe8 0%, #ffffff 100%);
+		// background: url("/static/bg.jpg");
+		// background-size: cover;
+		// background: linear-gradient(180deg, rgb(218 238 255) 0%, rgb(255 255 255) 100%); 
+		// background-image: radial-gradient(#fff 20%, transparent 0);
+		// background-size: 20px 20px;
+
+		// background-image: url("https://images1.fantuanpu.com/bd/bg1.jpg");
+		// background-size:cover;
+
 		// background: transparent;
-		padding: 15rpx;
-		padding-bottom: 30rpx;
+		// background-image: radial-gradient(#dbdbdb 20%, #ffffff00 0);
+		// background-size: 6px 6px;
+		padding: 0.46875rem;
+		padding-bottom: 0.03125rem;
 		color: #4cbbd0;
 		display: block;
+		// background-color: #575568;
+		background: linear-gradient(180deg, #def9ff, #d6e4f2);
 
 		.logo {
 			margin: 20rpx 10rpx;
@@ -844,8 +868,11 @@
 			width: 100rpx;
 			font-size: 30rpx;
 			font-weight: 1000;
-			// position: relative;
-			// top: 10rpx;
+			color: #8fa0b5;
+			width: 250rpx;
+			padding-top: 10rpx; 
+			vertical-align: top;
+			position: relative;
 		}
 
 		.domain_text {
@@ -855,95 +882,61 @@
 
 		/* 四个小按钮 */
 		.index_page_article {
-			display: flex;
-			justify-content: space-around;
-			height: 100rpx;
-			width: 100%;
-
-			.swich_box {
-				background: #fff;
-				width: 130rpx;
-				height: 130rpx;
-				align-items: center;
-				border-radius: 10rpx;
-
-				/* 基础样式 */
-				position: relative;
-				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-				transform: scale(1);
-
-				/* 初始状态 */
-				background: rgba(255, 255, 255, 0.9);
-				box-shadow: 0 4rpx 12rpx rgba(76, 187, 208, 0.1);
-
-				&::after {
-					content: '';
-					position: absolute;
-					top: 0;
-					left: 0;
-					width: 100%;
-					height: 100%;
-					// background: linear-gradient(180deg, #f3ebff 0%, #9dc4cf 100%);
-					background: linear-gradient(180deg, #e0cbff 0%, #a5ceda 100%);
-					opacity: 0;
-					transition: opacity 0.3s ease;
-					border-radius: 100%;
-				}
-
-				/* 激活状态 */
-				&.active {
-					transform: scale(0.98);
-					border-radius: 100%;
-
-					&::after {
-						opacity: 1;
-					}
-
-					text {
-						transform: translateY(2rpx);
-						color: #fff;
-					}
-
-					image {
-						transform: scale(1.05) translateY(-4rpx);
-					}
-				}
-
-				text {
-					transition: all 0.3s ease;
-					position: relative;
-					z-index: 1;
-					text-align: center;
-					display: block;
-					color: #4cbbd0;
-					border-radius: 5rpx;
-					margin-right: 10rpx;
-					width: 100%;
-					font-size: 20rpx;
-					font-weight: 1000;
-				}
-
-				image {
-					transition: all 0.3s ease;
-					position: relative;
-					z-index: 1;
-					width: 40rpx;
-					height: 40rpx;
-					margin: auto;
-					margin-top: 20rpx;
-					display: block;
-					padding: 10rpx;
-					background: #fff;
-					border-radius: 100%;
-				}
-
-				/* 点击涟漪效果 */
-				&:active:not(.active) {
-					transform: scale(0.95);
-				}
-			}
-
-
+		    height: 180rpx; /* 增加高度以适应图片和文字 */
+		    width: 100%;
+		    display: flex;
+		    justify-content: space-around; /* 均匀分布四个按钮 */
+		    padding: 10rpx 0;
+			margin-bottom: 20rpx;
+		    .swich_box {
+		        width: 150rpx; /* 增加宽度 */
+		        height: 160rpx; /* 增加高度 */
+		        display: flex;
+		        flex-direction: column;
+		        align-items: center;
+		        justify-content: center;
+		        position: relative;
+		        transition: all 0.3s ease;
+		        border-radius: 30rpx;
+		        padding: 15rpx 0;
+		        
+		        image {
+		            width: 80rpx ; /* 统一图片大小 */
+		            height: 80rpx ;
+		            display: block;
+		            margin-bottom: 15rpx; /* 图片和文字间距 */
+		            transition: all 0.3s ease;
+		        }
+		        
+		        text {
+		            font-size: 23rpx;
+		            font-weight: bold;
+		            transition: all 0.3s ease;
+		            color: #fff;
+		            text-align: center;
+		            display: block;
+		            width: 100%;
+		        }
+		
+		        /* 激活状态样式 */
+		        &.active {
+		            position: relative;
+		            bottom: 20rpx;
+		            background: #fff;
+		            border-radius: 40rpx;
+		            // box-shadow: 0 -5rpx 10rpx rgba(0,0,0,0.05);
+		            box-shadow: 0 0 10px #0000001a;
+					
+		            // image {
+		            //     transform: translateY(-10rpx); /* 图片上移 */
+		            // }
+		            
+		            text {
+		                color: #7ab6c6;
+		                // transform: translateY(5rpx); /* 文字下移 */
+		            }
+		        }
+		    }
 		}
 	}
 
@@ -951,6 +944,8 @@
 		border-radius: 1.25rem 1.25rem 0 0;
 		overflow: hidden;
 		background: #fff;
+		width: calc(100vw - 20rpx);
+		margin: 0 auto;
 	}
 
 	.body_list {
@@ -962,16 +957,16 @@
 		transform-origin: top center;
 
 		// 保证初始状态样式
-		&::before {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			height: 30rpx;
-			background: inherit;
-			border-radius: 1.25rem 1.25rem 0 0;
-		}
+		// &::before {
+		// 	content: '';
+		// 	position: absolute;
+		// 	top: 0;
+		// 	left: 0;
+		// 	right: 0;
+		// 	height: 30rpx;
+		// 	background: inherit;
+		// 	border-radius: 1.25rem 1.25rem 0 0;
+		// }
 	}
 
 	// 选项卡
@@ -988,8 +983,8 @@
 	.tab-item {
 		padding: 10rpx 20rpx;
 		border-radius: 30rpx;
-		border: 1rpx solid #4cbbd0;
-		color: #4cbbd0;
+		// border: 1rpx solid #69def4;;
+		color: #aa9ab9;
 		font-size: 26rpx;
 		transition: all 0.3s;
 		margin: 0 20rpx;
@@ -997,7 +992,7 @@
 		line-height: 26rpx;
 
 		&.active {
-			background: #4cbbd0;
+			background: linear-gradient(135deg, #97e7f7, #d5acd6);
 			color: #fff;
 		}
 	}
@@ -1111,34 +1106,36 @@
 	.news-box {
 		padding: 20rpx;
 		position: relative;
-		padding-top: 50rpx;
+		padding-top: 0rpx;
 
 		.news-item {
 			margin-bottom: 30rpx;
-			margin: 0rpx 20rpx 30rpx 20rpx;
+			margin: 0rpx 0rpx 30rpx 00rpx;
 			border-radius: 16rpx;
 			overflow: hidden;
-			box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+			box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 			display: flex;
 
 			.news-images {
 				display: inline-block;
-				width: 200rpx;
+				// width: 280rpx;
 				min-height: 250rpx;
+				padding: 10rpx;
 
 			}
 
 			.image-swiper {
-
+				width: 200rpx;
 				.swiper-image {
 					width: 100%;
 					height: 100%;
+					border-radius: 15rpx;
 				}
 			}
 
 			.news-content {
 				padding: 10rpx 20rpx 20rpx 20rpx;
-				width: 400rpx;
+				width: 420rpx;
 				display: inline-block;
 				position: relative;
 
@@ -1174,7 +1171,7 @@
 					bottom: 20rpx;
 
 					.brand-tag {
-						background: #4cbbd0;
+						background: linear-gradient(135deg, #97e7f7, #d5acd6);;
 						color: #fff;
 						padding: 4rpx 12rpx;
 						border-radius: 6rpx;
@@ -1450,12 +1447,6 @@
 		transform: translateY(-20rpx) scale(0.98);
 	}
 
-	.body {
-		position: relative;
-		min-height: 100vh;
-		/* 确保有足够的高度 */
-		background: #d3f5ff;
-	}
 
 	.brand_type_description {
 		text {
@@ -1547,5 +1538,11 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+	::-webkit-scrollbar {
+		width: 0!important;
+		height: 0!important;
+		background-color: transparent!important;
+		display: none!important;
 	}
 </style>

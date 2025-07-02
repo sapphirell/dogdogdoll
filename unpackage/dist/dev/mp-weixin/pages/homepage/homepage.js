@@ -44,7 +44,7 @@ const _sfc_main = {
     }
     return (_ctx, _cache) => {
       return {
-        a: common_assets._imports_0,
+        a: common_assets._imports_0$2,
         b: common_vendor.t(common_vendor.unref(selectSizeArray)[common_vendor.unref(index)]),
         c: common_assets._imports_1$1,
         d: common_vendor.o(bindPickerChange),

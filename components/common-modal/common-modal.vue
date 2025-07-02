@@ -1,12 +1,13 @@
-<!-- components/MyModal.vue -->
+<!-- components/common-modal.vue -->
 <template>
-
 	<view class="modal-mask" v-if="visible" @tap="closeModal">
-		<view class="modal-container" :style="containerStyle" @tap.stop>
-			<view class="modal-content">
-				<slot></slot>
+		<uni-transition :mode-class="modeClass" :show="visible">
+			<view class="modal-container" :style="containerStyle" @tap.stop>
+				<view class="modal-content">
+					<slot></slot>
+				</view>
 			</view>
-		</view>
+		</uni-transition>
 	</view>
 
 </template>
@@ -15,14 +16,15 @@
 	import {
 		defineProps,
 		defineEmits,
-		computed
+		computed,
+		ref,
 	} from 'vue'
 	const props = defineProps({
 		visible: Boolean,
 		// 新增参数
 		top: {
 			type: [String, Number],
-			default: '20%'
+			default: '30%'
 		},
 		width: {
 			type: [String, Number],
@@ -31,16 +33,21 @@
 		height: {
 			type: [String, Number],
 			default: 'auto'
-		}
+		},
+		closeable: {
+			// 点击遮罩层是否可以关闭
+			type: Boolean,
+			default: true
+		},
 	})
-
+	let modeClass = ref(['fade', 'zoom-in'])
 
 	const emit = defineEmits(['update:visible'])
 
 	// 样式计算
 	const containerStyle = computed(() => ({
 		top: formatValue(props.top),
-		width: formatValue(props.width),
+		// width: formatValue(props.width),
 		height: formatValue(props.height)
 	}))
 
@@ -56,7 +63,9 @@
 	}
 
 	const closeModal = () => {
-		emit('update:visible', false)
+		if (props.closeable) {
+			emit('update:visible', false)
+		}
 	}
 </script>
 
@@ -70,7 +79,7 @@
 		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
-		z-index: 999;
+		z-index: 1001;
 	}
 
 	.modal-container {
@@ -87,6 +96,6 @@
 	}
 
 	.modal-content {
-		position: relative;
+		/* position: relative; */
 	}
 </style>

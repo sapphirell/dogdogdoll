@@ -3,6 +3,7 @@
 	<view class="page-container">
 		<!-- 顶部安全区域占位 -->
 		<view class="header-placeholder"></view>
+		
 
 		<!-- 页面内容区域 -->
 		<view class="content-container">
@@ -90,7 +91,9 @@
 
 	.header-placeholder {
 		height: v-bind(headerHeight);
-		background-color: v-bind('head_color');
+		background: v-bind('head_color');
+		background-size: cover;
+		background-position: 0px 50rpx;
 	}
 
 	.content-container {

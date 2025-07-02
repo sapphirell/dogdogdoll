@@ -20,10 +20,12 @@
 		ref,
 		computed,
 		getCurrentInstance,
+		onMounted,
 	} from 'vue'
 	import {
 		onLoad,
-		onShow
+		onShow,
+		
 	} from "@dcloudio/uni-app";
 
 	import {
@@ -58,7 +60,8 @@
 		let safeBottomVar = systemInfo.safeAreaInsets?.bottom || 10
 		console.log("底部安全距离1:", systemInfo.safeAreaInsets?.bottom, "=>", safeBottomVar)
 
-		const safeBottom = safeBottomVar + keyboardHeight.value
+		let safeBottom = safeBottomVar + keyboardHeight.value
+		console.log("底部最终距离2:", safeBottom)
 		return `${safeBottom}px`
 	})
 
@@ -115,8 +118,9 @@
 		focusInput
 	})
 
-	onShow(() => {
+	onMounted(() => {
 		if (process.env.VUE_APP_PLATFORM == "h5") {
+			console.log("不注册键盘弹出事件")
 			//h5不会弹出软键盘
 			return
 		}

@@ -39,9 +39,16 @@
 .title.data-v-38d96b75 {
   font-size: 28rpx;
   font-weight: 800;
-  display: block;
   margin-bottom: 20rpx;
   padding: 30rpx 30rpx 0rpx 30rpx;
+}
+.report-container.data-v-38d96b75 {
+  margin: 15rpx 0 0 0;
+  display: inline-block;
+  width: 110rpx;
+  background: #fcfcfc;
+  padding: 10rpx 20rpx;
+  border-radius: 10rpx;
 }
 .content.data-v-38d96b75 {
   display: inline-block;

@@ -33,29 +33,12 @@
 							<text class="total-text">当前分类合计：¥{{ totalPrice }}</text>
 						</view>
 
-						<!-- 新增分类管理弹窗 -->
-						<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val"
-							top="5%" height="60%">
-							<view class="type-modal">
-								<view class="type-list">
-									<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
-										<text>{{ type.name }}</text>
-										<uni-icons type="trash" size="22" color="#ff6666"
-											@tap="deleteType(type.id)"></uni-icons>
-									</view>
-								</view>
-								<view class="add-type-form">
-									<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
-									<button class="add-btn" @tap="addNewType">添加分类</button>
-								</view>
-							</view>
-						</common-modal>
 
 						<view class="content" v-if="accountBookData.account_books?.length > 0">
 							<view class="content-grid">
 								<view v-for="(item, index) in accountBookData.account_books" :key="index"
 									class="grid-item" @tap="go2editor(item.id)">
-									<image :src="item.image_url" mode="aspectFill" class="item-image"></image>
+									<image :src="getFirstImage(item.image_url)" mode="aspectFill" class="item-image"></image>
 									<text class="item-type">{{ item.type }}</text>
 									<view class="item-info">
 										<text class="item-price">{{ item.price }}￥</text>
@@ -73,9 +56,10 @@
 							<text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
 						</view>
 
-						<view>
-							<button class="jump2addButton" @tap="go2addAccountBook">+</button>
-						</view>
+						
+						<!-- <view class="floating-button" @tap="go2addAccountBook">
+							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+						</view> -->
 					</view>
 				</uni-transition>
 				<uni-transition :name="transitionName()" :mode-class="transitionName()" :duration="300"
@@ -117,9 +101,9 @@
 							<text class="empty-tip">快来创建你的展示空间吧！</text>
 						</view>
 						<!-- 添加展示柜数据 -->
-						<view>
-							<button class="jump2addButton" @tap="go2addShowCase">+</button>
-						</view>
+						<!-- <view class="floating-button" @tap="go2addShowCase">
+							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+						</view> -->
 					</view>
 				</uni-transition>
 				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
@@ -130,8 +114,10 @@
 							<view v-for="(bills, month) in billData" :key="month">
 								<view class="month-header-container">
 									<text class="month-header font-alimamashuhei">{{ month }} 账单</text>
+									<!-- 已补/总计：{{ countPaid(bills) }}/{{ bills.length }} -->
 									<text class="month-stats">
-										已补/总计：{{ countPaid(bills) }}/{{ bills.length }}
+										
+										{{ countPaid(bills) }}
 									</text>
 								</view>
 
@@ -165,14 +151,36 @@
 							<text class="empty-text">暂无待补尾款</text>
 							<text class="empty-tip">增加添加一个到账本试试吧～</text>
 						</view>
-						<view>
-							<button class="jump2addButton" @tap="go2addBill(false)">+</button>
-						</view>
+						
+	<!-- 					<view class="floating-button" @tap="go2addBill(false)">
+							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+						</view> -->
 					</view>
 				</uni-transition>
 			</view>
 		</view>
-
+		
+		<!-- 新增分类管理弹窗 -->
+		<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val"
+			top="300rpx" height="60%">
+			<view class="type-modal">
+				<view class="type-list">
+					<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
+						<text>{{ type.name }}</text>
+						<uni-icons type="trash" size="22" color="#ff6666"
+							@tap="deleteType(type.id)"></uni-icons>
+					</view>
+				</view>
+				<view class="add-type-form">
+					<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
+					<button class="add-btn" @tap="addNewType">添加分类</button>
+				</view>
+			</view>
+		</common-modal>
+		<!-- 统一的悬浮按钮 - 固定在底部中央 -->
+		<view class="unified-floating-button" @tap="handleFloatingButton">
+			<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+		</view>
 	</common-page>
 </template>
 
@@ -230,7 +238,25 @@
 	}
 	// 计算当月账单金额
 	function countPaid(bills) {
-		return bills.filter(bill => bill.status === 1).length;
+	  let totalAmount = 0; // 总金额
+	  let paidAmount = 0; // 已补款金额
+	  
+	  // 遍历所有账单项
+	  bills.forEach(bill => {
+	    // 将价格转换为数字（确保处理字符串类型）
+	    const price = parseFloat(bill.price) || 0;
+	    
+	    // 累加到总金额
+	    totalAmount += price;
+	    
+	    // 如果状态为已补款（1），累加到已补款金额
+	    if (bill.status === 1) {
+	      paidAmount += price;
+	    }
+	  });
+	  
+	  // 返回格式 "已补款金额/总金额"
+	  return `${paidAmount.toFixed(1)}/${totalAmount.toFixed(1)}`;
 	}
 	// 账本下选择的下拉菜单按钮
 	const selectedType = ref(0);
@@ -352,7 +378,20 @@
 		});
 	};
 
-
+	// 处理悬浮按钮点击事件
+	function handleFloatingButton() {
+		switch (activeTab.value) {
+			case 1:
+				go2addAccountBook();
+				break;
+			case 2:
+				go2addShowCase();
+				break;
+			case 3:
+				go2addBill(false);
+				break;
+		}
+	}
 
 	// 账本数据
 	const accountBookData = ref({});
@@ -429,6 +468,29 @@
 				console.log(err);
 			}
 		});
+	}
+	
+	// 获取第一张图片URL
+	function getFirstImage(imageUrls) {
+	  if (!imageUrls) return ''; // 无图片时
+	  
+	  // 分割URL字符串
+	  const urls = imageUrls.split(',');
+	  
+	  // 处理只有一张图片的情况
+	  if (urls.length === 1 && urls[0].trim() !== '') {
+	    return urls[0].trim();
+	  }
+	  
+	  // 返回第一张有效图片
+	  for (const url of urls) {
+	    if (url.trim() !== '') {
+	      return url.trim();
+	    }
+	  }
+	  
+
+	  return '';
 	}
 
 	//获取账单数据
@@ -541,6 +603,9 @@
 	.head_container {
 		background: linear-gradient(180deg, #d8deff 0%, #d3f5ff 100%);
 		overflow: hidden;
+		
+		// background-image: url("/static/bg/bg1.jpg");
+		// background-size:cover;
 	}
 
 	.switch_tab {
@@ -549,7 +614,7 @@
 		background: #fff;
 		width: 100%;
 		height: 100rpx;
-		margin: 40rpx 0;
+		margin: 70rpx 0 30rpx 0;
 		position: relative;
 		background: transparent;
 		/* 移除原渐变色背景 */
@@ -568,10 +633,10 @@
 			&::after {
 				content: '';
 				position: absolute;
-				bottom: 0;
+				top: 60rpx;
 				left: 50%;
 				width: 0;
-				height: 4rpx;
+				height: 0rpx;
 				background: #74c9e5;
 				transition: all 0.3s ease;
 				transform: translateX(-50%);
@@ -580,11 +645,13 @@
 			text {
 				font-weight: 500;
 				transition: all 0.3s ease;
+				    z-index: 10;
+				    position: relative;
 			}
 
 			&.active {
 				text {
-					color: #74c9e5;
+					color: #464646;
 					font-weight: 800;
 					font-size: 32rpx;
 					/* 选中时字体变大 */
@@ -593,31 +660,57 @@
 				&::after {
 					width: 80%;
 					/* 下划线宽度 */
-					background: #74c9e5;
+					background: #747ee5b0;
+					border: none;
+					height: 10px;
 				}
 			}
 		}
 	}
 
-	.jump2addButton {
-		background: #74c9e5;
-		color: #fff;
-		border-radius: 100%;
-		width: 110rpx;
-		height: 110rpx;
-		font-size: 40rpx;
-		position: fixed;
-		bottom: 160rpx;
-		right: 40rpx;
-		box-shadow: #dadada;
-		z-index: 10;
-	}
+	/* 新增样式 */
+	 
+	 .unified-floating-button {
+	 		position: fixed;
+	 		bottom: 120rpx;
+	 		left: 50%;
+	 		transform: translateX(-50%);
+	 		width: 100rpx;
+	 		height: 100rpx;
+	 		background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
+	 		border-radius: 50%;
+	 		display: flex;
+	 		align-items: center;
+	 		justify-content: center;
+	 		box-shadow: 0 6rpx 20rpx rgba(30, 209, 225, 0.4);
+	 		z-index: 999;
+	 		transition: all 0.3s ease;
+	 		
+	 		/* 按钮动画效果 */
+	 		&::after {
+	 			    content: "";
+				position: absolute;
+				top: 33px;
+				left: 50%;
+				width: 0;
+				height: 0.125rem;
+				background: #74c9e5;
+				transition: all 0.3s ease;
+				transform: translateX(-50%);
+	 		}
+	 		
+	 		&:active {
+	 			transform: translateX(-50%) scale(0.95);
+	 			box-shadow: 0 4rpx 12rpx rgba(30, 209, 225, 0.3);
+	 		}
+	 	}
+
 
 	.data_body {
 		min-height: 80vh;
 
 		/* 根据实际内容设置合理高度，避免父容器塌陷 */
-		position: relative;
+		// position: relative;
 
 	}
 
@@ -642,7 +735,7 @@
 		overflow: hidden;
 		width: calc(100%);
 		// min-height: 80vh;
-		min-height: 1200rpx;
+		min-height: 1400rpx;
 		/* 根据实际内容设置合理高度，避免父容器塌陷 */
 	}
 
@@ -675,7 +768,7 @@
 	/* 新增样式 */
 	.type-picker {
 		flex: 1;
-		font-size: 22rpx;
+		font-size: 24rpx;
 		color: #e9b6d7;
 		padding: 15rpx 25rpx;
 		border-radius: 10rpx;
@@ -716,11 +809,12 @@
 				position: absolute;
 				top: 0;
 				left: 0;
-				background: rgb(255 118 105 / 65%);
+				background: rgb(122 181 255 / 65%);
 				color: #fff;
 				padding: 10rpx 20rpx;
 				border-radius: 10rpx 0 10rpx 0;
-				font-size: 26rpx;
+				font-size: 22rpx;
+				font-weight: 900;
 			}
 
 			.item-info {
@@ -752,18 +846,18 @@
 	.type-header {
 		display: flex;
 		align-items: center;
-		padding: 25rpx 30rpx;
+		// padding: 25rpx 30rpx;
 		// background: linear-gradient(135deg, rgb(255 124 124 / 10%) 0%, white 100%);
 		border-radius: 16rpx;
 		margin: 20rpx 30rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		// box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 	}
 
 
 	.manage-btn {
 		font-size: 22rpx;
 		color: white;
-		background: #ffbcd4;
+		background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
 		margin-left: 20rpx;
 		padding: 10rpx 25rpx;
 		border-radius: 50rpx;
@@ -784,6 +878,9 @@
 
 	.type-modal {
 		padding: 30rpx;
+		box-sizing: border-box;
+		width: 80vw;
+		// height: 50vh;
 
 		.type-list {
 			max-height: 500rpx;

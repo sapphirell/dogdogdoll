@@ -75,6 +75,90 @@ export function wechatSignLogin() {
 	});
 }
 
+
+// 绑定微信
+export function bindWechat() {
+  // 检查是否在微信小程序环境中
+  if (process.env.VUE_APP_PLATFORM !== 'mp-weixin') {
+    uni.showToast({
+      title: '请在微信小程序中绑定',
+      icon: 'none',
+    });
+    return Promise.reject('请在微信小程序中绑定');
+  }
+
+  // 1. 获取微信登录凭证
+  return new Promise((resolve, reject) => {
+    uni.login({
+      provider: 'weixin',
+      onlyAuthorize: true,
+      success: (loginRes) => {
+        const { code } = loginRes;
+        if (!code) {
+          uni.showToast({
+            title: '微信授权失败，请重试',
+            icon: 'none',
+          });
+          reject('微信授权失败');
+          return;
+        }
+
+        // 2. 获取当前用户的token
+        const token = uni.getStorageSync('token');
+        if (!token) {
+          uni.showToast({
+            title: '请先登录',
+            icon: 'none',
+          });
+          reject('用户未登录');
+          return;
+        }
+
+        // 3. 调用后端绑定接口
+        uni.request({
+          url: `${websiteUrl}/with-state/bind-wechat`,
+          method: 'POST',
+          header: {
+            Authorization: token,
+          },
+          data: {
+            js_token: code,
+          },
+          success: (res) => {
+            if (res.data.status === 'success') {
+              // 4. 绑定成功，更新用户信息
+              getUserInfo();
+              uni.showToast({
+                title: '微信绑定成功',
+                icon: 'success',
+              });
+              resolve(true);
+            } else {
+              // 处理错误信息
+              const errorMsg = res.data.msg || '微信绑定失败';
+              uni.showToast({
+                title: errorMsg,
+                icon: 'none',
+              });
+              reject(errorMsg);
+            }
+          },
+          fail: (err) => {
+            handleRequestError(err, '绑定微信失败');
+            reject(err);
+          },
+        });
+      },
+      fail: (err) => {
+        handleRequestError(err, '微信授权失败');
+        reject(err);
+      },
+    });
+  });
+}
+
+
+
 // 获取用户信息
 export function getUserInfo() {
 	const token = uni.getStorageSync('token');
@@ -135,6 +219,7 @@ export function asyncGetUserInfo() {
 					clearUserInfo();
 					resolve(null); // 如果没有数据，清空用户信息并返回 null
 				}
+				return data;
 			},
 			fail: (err) => {
 				handleRequestError(err, '获取用户信息失败');

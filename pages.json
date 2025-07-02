@@ -54,7 +54,8 @@
 			"path": "pages/calendar/calendar",
 			"style": {
 				"navigationBarTitleText": "上新",
-				"navigationStyle": "custom" //自定义导航栏
+				"navigationStyle": "custom" ,//自定义导航栏
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -145,7 +146,8 @@
 			"path": "pages/collocation_square/collocation_square",
 			"style": {
 				"navigationBarTitleText": "",
-				"navigationStyle": "custom" //自定义导航栏
+				"navigationStyle": "custom", //自定义导航栏
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -195,6 +197,27 @@
 			"style": {
 				"navigationBarTitleText": ""
 			}
+		},
+		{
+			"path" : "pages/loadding/loadding",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/private/private",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/permission/permission",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
 		}
 
 	],
@@ -202,7 +225,11 @@
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "uni-app",
 		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
+		"backgroundColor": "#F8F8F8",
+		
+		"rpxCalcMaxDeviceWidth": 750,
+		"rpxCalcBaseDeviceWidth": 375, 
+		"rpxCalcIncludeWidth": 750
 		// "enablePullDownRefresh": true 是否开启下拉刷新
 	},
 	"tabBar": {
@@ -227,6 +254,7 @@
 				"text": "上新",
 				"iconPath": "static/new-icon/date-w.png",
 				"selectedIconPath": "static/new-icon/date-b.png"
+				
 			},
 			{
 				"pagePath": "pages/stock/stock",

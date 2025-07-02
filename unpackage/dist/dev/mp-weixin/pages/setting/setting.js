@@ -60,18 +60,30 @@ const _sfc_main = {
     }
     function jump2wechat() {
       if (common_config.global.userInfo.wechat_open_id) {
-        common_vendor.index.showToast({ title: "已绑定微信", icon: "none" });
+        common_vendor.index.showToast({
+          title: "已绑定微信",
+          icon: "none"
+        });
       } else {
-        common_config.wechatSignLogin().then((res) => {
-          common_vendor.index.showToast({ title: "绑定成功" });
-          common_config.getUserInfo();
+        common_config.bindWechat().then(() => {
+          common_vendor.index.__f__("log", "at pages/setting/setting.vue:99", "微信绑定成功");
+          common_vendor.index.showToast({
+            title: "微信绑定成功",
+            icon: "none"
+          });
+        }).catch((err) => {
+          common_vendor.index.__f__("error", "at pages/setting/setting.vue:106", "微信绑定失败:", err);
+          common_vendor.index.showToast({
+            title: "微信绑定失败",
+            icon: "none"
+          });
         });
       }
     }
     function checkUpdate() {
       if (common_vendor.index.getSystemInfoSync().platform === "app") {
         const version = plus.runtime.version;
-        common_vendor.index.__f__("log", "at pages/setting/setting.vue:108", "App version from manifest:", version);
+        common_vendor.index.__f__("log", "at pages/setting/setting.vue:119", "App version from manifest:", version);
       } else {
         common_vendor.index.showToast({
           title: "您所使用的平台无需更新",
@@ -91,7 +103,7 @@ const _sfc_main = {
             e: common_vendor.o(($event) => item.action(item), index)
           };
         }),
-        b: common_assets._imports_0$3
+        b: common_assets._imports_0$6
       };
     };
   }

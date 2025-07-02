@@ -1,15 +1,17 @@
-.search_tab {
+.search_tab.data-v-e5a069da {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   background: #fff;
   border-radius: 10px;
+  width: 100%;
+  position: relative;
 }
-.search_tab image {
+.search_tab image.data-v-e5a069da {
   position: relative;
   margin-left: 5px;
 }
-.search_tab .common_search_input {
+.search_tab .common_search_input.data-v-e5a069da {
   display: inline-block;
   padding: 10px 15px;
   width: calc(100% - 85px);
@@ -17,27 +19,44 @@
   position: relative;
   font-size: 22rpx;
 }
-.search_results {
-  margin-top: 10px;
+.search_results.data-v-e5a069da {
   padding: 10px;
   background-color: #f8f8f8;
   border-radius: 5px;
   position: absolute;
+  top: 0px;
   z-index: 12;
   box-shadow: 0 0 15px #0000002b;
   max-height: 400rpx;
   font-size: 22rpx;
 }
-.search_results .result_item {
+.search_results .result_item.data-v-e5a069da {
   font-size: 22rpx;
   padding: 15px 0;
   cursor: pointer;
   color: #333;
   border-bottom: 1px solid #ececec;
 }
-.search_results .result_item:last-child {
+.search_results .result_item.data-v-e5a069da:last-child {
   border-bottom: none;
 }
-.search_results .result_item:hover {
+.search_results .result_item.data-v-e5a069da:hover {
   color: #007aff;
+}
+.search-info-tap.data-v-e5a069da {
+  position: absolute;
+  right: 10rpx;
+  vertical-align: middle;
+  bottom: 0px;
+}
+.search-info-tap text.data-v-e5a069da {
+  color: #fff;
+  background: linear-gradient(135deg, #a494b2, #fad0c4);
+  font-size: 20rpx;
+  width: 260px;
+  padding: 3px 5px;
+  border-radius: 3px;
+  font-weight: 900;
+  position: relative;
+  bottom: 15rpx;
 }

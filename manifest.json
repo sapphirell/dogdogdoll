@@ -2,8 +2,8 @@
     "name" : "dogdogdoll",
     "appid" : "__UNI__5D7AAEE",
     "description" : "娃圈狗狗助手",
-    "versionName" : "1.0.23",
-    "versionCode" : 1023,
+    "versionName" : "1.0.39",
+    "versionCode" : 1039,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
@@ -46,7 +46,17 @@
             },
             /* ios打包配置 */
             "ios" : {
-                "dSYMs" : false
+                "dSYMs" : false,
+                "privacyDescription" : {
+                    "NSPhotoLibraryUsageDescription" : "相册将用于照片上传头像、娃柜、记账等场景",
+                    "NSPhotoLibraryAddUsageDescription" : "用于存储娃娃照片或其它您选择的图片到您的相册",
+                    "NSCameraUsageDescription" : "可以上传您的照片，用于替换头像、发布娃娃照片、记账图片等",
+                    "NSMicrophoneUsageDescription" : "用于向他人发送消息",
+                    "NSLocationWhenInUseUsageDescription" : "用于寻找附近的商店",
+                    "NSCalendarsUsageDescription" : "用于向您添加购买提醒事项",
+                    "NSContactsUsageDescription" : "用于添加您的好友",
+                    "NSLocalNetworkUsageDescription" : "App需要联网获取贩售资讯信息"
+                }
             },
             /* SDK配置 */
             "sdkConfigs" : {
@@ -85,7 +95,17 @@
                 }
             },
             "splashscreen" : {
-                "useOriginalMsgbox" : true
+                "useOriginalMsgbox" : true,
+                "androidStyle" : "default",
+                "iosStyle" : "storyboard",
+                "ios" : {
+                    "storyboard" : "/Users/sapphirell/Desktop/start_creen/storyboard.zip"
+                },
+                "android" : {
+                    "hdpi" : "/Users/sapphirell/Desktop/start_creen/res/drawable-hdpi/image3x.9.png",
+                    "xhdpi" : "/Users/sapphirell/Desktop/start_creen/res/drawable-xhdpi/image3x.9.png",
+                    "xxhdpi" : "/Users/sapphirell/Desktop/start_creen/res/drawable-xxhdpi/image3x.9.png"
+                }
             }
         }
     },

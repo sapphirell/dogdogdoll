@@ -61,6 +61,7 @@
   height: 2.5rem;
   line-height: 2.5rem;
   color: #333;
+  display: inline-block;
 }
 .submit-button[data-v-c24e185a] {
   margin-top: 1.875rem;
@@ -101,4 +102,30 @@
 .delete-button[data-v-c24e185a]:active {
   transform: translateY(0.0625rem);
   box-shadow: 0 0.125rem 0.375rem rgba(255, 77, 79, 0.3);
+}
+.picker-content[data-v-c24e185a] {
+  height: 2.5rem;
+  line-height: 2.5rem;
+  color: #333;
+  /* 添加以下关键属性 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+/* 针对原生picker的特殊处理 */
+[data-v-c24e185a] uni-picker .picker-view {
+  height: 2.5rem !important;
+  line-height: 2.5rem !important;
+}
+[data-v-c24e185a] uni-picker .picker-view-column {
+  height: 2.5rem !important;
+  line-height: 2.5rem !important;
+}
+[data-v-c24e185a] .picker-item {
+  height: 2.5rem !important;
+  line-height: 2.5rem !important;
+  font-size: 0.875rem !important;
 }

@@ -1,6 +1,6 @@
 "use strict";
 const common_vendor = require("./vendor.js");
-const websiteUrl = "http://localhost:8080";
+const websiteUrl = "https://api.fantuanpu.com";
 const image1Url = "https://images1.fantuanpu.com/";
 let global = common_vendor.reactive({
   isLogin: false,
@@ -53,15 +53,78 @@ function wechatSignLogin() {
     }
   });
 }
+function bindWechat() {
+  return new Promise((resolve, reject) => {
+    common_vendor.index.login({
+      provider: "weixin",
+      onlyAuthorize: true,
+      success: (loginRes) => {
+        const { code } = loginRes;
+        if (!code) {
+          common_vendor.index.showToast({
+            title: "微信授权失败，请重试",
+            icon: "none"
+          });
+          reject("微信授权失败");
+          return;
+        }
+        const token = common_vendor.index.getStorageSync("token");
+        if (!token) {
+          common_vendor.index.showToast({
+            title: "请先登录",
+            icon: "none"
+          });
+          reject("用户未登录");
+          return;
+        }
+        common_vendor.index.request({
+          url: `${websiteUrl}/with-state/bind-wechat`,
+          method: "POST",
+          header: {
+            Authorization: token
+          },
+          data: {
+            js_token: code
+          },
+          success: (res) => {
+            if (res.data.status === "success") {
+              getUserInfo();
+              common_vendor.index.showToast({
+                title: "微信绑定成功",
+                icon: "success"
+              });
+              resolve(true);
+            } else {
+              const errorMsg = res.data.msg || "微信绑定失败";
+              common_vendor.index.showToast({
+                title: errorMsg,
+                icon: "none"
+              });
+              reject(errorMsg);
+            }
+          },
+          fail: (err) => {
+            handleRequestError(err, "绑定微信失败");
+            reject(err);
+          }
+        });
+      },
+      fail: (err) => {
+        handleRequestError(err, "微信授权失败");
+        reject(err);
+      }
+    });
+  });
+}
 function getUserInfo() {
   const token = common_vendor.index.getStorageSync("token");
-  common_vendor.index.__f__("log", "at common/config.js:81", "token:", token);
+  common_vendor.index.__f__("log", "at common/config.js:165", "token:", token);
   if (!token) {
-    common_vendor.index.__f__("log", "at common/config.js:83", "没有token，无法获取用户信息");
+    common_vendor.index.__f__("log", "at common/config.js:167", "没有token，无法获取用户信息");
     clearUserInfo();
     return;
   }
-  common_vendor.index.__f__("log", "at common/config.js:87", "请求接口");
+  common_vendor.index.__f__("log", "at common/config.js:171", "请求接口");
   common_vendor.index.request({
     url: `${websiteUrl}/with-state/mine`,
     method: "GET",
@@ -71,10 +134,10 @@ function getUserInfo() {
     success: (res) => {
       const data = res.data.data;
       if (data) {
-        common_vendor.index.__f__("log", "at common/config.js:97", "获取用户信息成功,进行存储", data);
+        common_vendor.index.__f__("log", "at common/config.js:181", "获取用户信息成功,进行存储", data);
         saveUserInfo(data);
       } else {
-        common_vendor.index.__f__("log", "at common/config.js:100", "无法获取，清理用户状态");
+        common_vendor.index.__f__("log", "at common/config.js:184", "无法获取，清理用户状态");
         clearUserInfo();
       }
     },
@@ -100,7 +163,7 @@ function asyncGetUserInfo() {
       success: (res) => {
         const data = res.data.data;
         if (data) {
-          common_vendor.index.__f__("log", "at common/config.js:131", "返回：", data);
+          common_vendor.index.__f__("log", "at common/config.js:215", "返回：", data);
           saveUserInfo(data);
           resolve(data);
         } else {
@@ -114,53 +177,6 @@ function asyncGetUserInfo() {
       }
     });
   });
-}
-async function voteScore(type, score, targetId) {
-  let token = common_vendor.index.getStorageSync("token");
-  if (!token) {
-    common_vendor.index.showToast({
-      title: "请先登录",
-      icon: "none"
-    });
-    return 0;
-  }
-  common_vendor.index.request({
-    url: websiteUrl + "/with-state/add-vote-score",
-    method: "POST",
-    header: {
-      "Authorization": token
-    },
-    data: {
-      target_id: parseInt(targetId),
-      score: parseInt(score),
-      type
-    },
-    success: (res) => {
-      common_vendor.index.__f__("log", "at common/config.js:170", res.data);
-      if (res.data.status == "success") {
-        common_vendor.index.showToast({
-          title: "评分成功",
-          icon: "success"
-        });
-        activeModal.value = false;
-        return 0;
-      } else {
-        common_vendor.index.showToast({
-          title: res.data.msg,
-          icon: "none"
-        });
-        return 0;
-      }
-    },
-    fail: (err) => {
-      common_vendor.index.__f__("log", "at common/config.js:188", err);
-      common_vendor.index.showToast({
-        title: "网络请求失败",
-        icon: "none"
-      });
-    }
-  });
-  return 0;
 }
 function getScene() {
   {
@@ -179,18 +195,18 @@ function clearUserInfo() {
   global.isLogin = false;
 }
 function handleRequestError(error, message = "请求失败") {
-  common_vendor.index.__f__("error", "at common/config.js:246", error);
+  common_vendor.index.__f__("error", "at common/config.js:330", error);
   common_vendor.index.showToast({
     title: message,
     icon: "none"
   });
 }
 exports.asyncGetUserInfo = asyncGetUserInfo;
+exports.bindWechat = bindWechat;
 exports.getScene = getScene;
 exports.getUserInfo = getUserInfo;
 exports.global = global;
 exports.image1Url = image1Url;
-exports.voteScore = voteScore;
 exports.websiteUrl = websiteUrl;
 exports.wechatSignLogin = wechatSignLogin;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/common/config.js.map

@@ -38,8 +38,8 @@
 
 
 			<view class="publish-detail">
-				<text>* 目前树洞为审稿发布，只接受娃圈相关投稿，不接受包含人身攻击或违反法律法规的投稿。</text>
-				<text>* 我们会在工作时间进行审稿，您可以在个人投稿中心查看投稿状态，审核通过后稿件才被可见。</text>
+				<text>* 目前树洞为非审稿发布，只接受娃圈相关内容。</text>
+				<!-- <text>* 我们会在工作时间进行审稿，您可以在个人投稿中心查看投稿状态，审核通过后稿件才被可见。</text> -->
 				<text>* 如果勾选匿名发布，他人将无法通过稿件进入您的主页。如果稿件遭到过多点踩或投诉，我们可能会隐藏这封稿件。</text>
 			</view>
 
@@ -78,7 +78,7 @@
 	const uploadList = ref([]);
 
 	// 新增分类相关数据
-	const categories = ref({}) // 存储分类数据
+	const categories = ref([]) // 存储分类数据
 	const selectedCategory = ref('') // 选中的分类ID
 
 	const selectedIndex = ref(-1)
@@ -215,7 +215,7 @@
 
 			if (res.data.status == "success") {
 				uni.showToast({
-					title: '我们很快审核完成',
+					title: '已收到您的投稿',
 					icon: 'success'
 				})
 				setTimeout(() => {

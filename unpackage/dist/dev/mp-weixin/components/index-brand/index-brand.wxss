@@ -38,8 +38,8 @@
 }
 .brand-header .brand-logo.data-v-aa9d9d58 {
   flex-shrink: 0;
-  width: 140rpx;
-  height: 140rpx;
+  width: 180rpx;
+  height: 180rpx;
   border-radius: 8rpx;
   background: #f8f9fa;
 }
@@ -76,7 +76,7 @@
 }
 .brand-meta .goods-count.data-v-aa9d9d58 {
   font-size: 20rpx;
-  color: #3498db;
+  color: #5dc1f3;
   margin-left: auto;
   flex-shrink: 0;
 }

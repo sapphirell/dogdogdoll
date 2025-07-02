@@ -30,13 +30,19 @@
     "pages/setting/username/username",
     "pages/my_comment/my_comment",
     "pages/my_collocation/my_collocation",
-    "pages/article_detail/article_detail"
+    "pages/article_detail/article_detail",
+    "pages/loadding/loadding",
+    "pages/private/private",
+    "pages/permission/permission"
   ],
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "uni-app",
     "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "backgroundColor": "#F8F8F8",
+    "rpxCalcMaxDeviceWidth": 750,
+    "rpxCalcBaseDeviceWidth": 375,
+    "rpxCalcIncludeWidth": 750
   },
   "tabBar": {
     "selectedColor": "#7cc1d2",

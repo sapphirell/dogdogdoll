@@ -35,6 +35,9 @@
 	.font-alimamashuhei {
 		font-family: "alimamamshuhei" !important;
 	}
+	.font-cute {
+		font-family: "cutefont";
+	}
 
 	.icon_image {
 		width: 20px;
@@ -91,5 +94,11 @@
 
 		height: auto;
 		aspect-ratio: 1;
+	}
+	::-webkit-scrollbar {
+		width: 0!important;
+		height: 0!important;
+		background-color: transparent!important;
+		display: none!important;
 	}
 </style>

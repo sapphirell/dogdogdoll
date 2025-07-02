@@ -541,7 +541,9 @@
 }
 .header-placeholder[data-v-957ceee2] {
   height: var(--957ceee2-headerHeight);
-  background-color: var(--957ceee2-head_color);
+  background: var(--957ceee2-head_color);
+  background-size: cover;
+  background-position: 0px 1.5625rem;
 }
 .content-container[data-v-957ceee2] {
   flex: 1;

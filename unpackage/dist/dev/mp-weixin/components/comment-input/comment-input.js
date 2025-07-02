@@ -30,12 +30,13 @@ const _sfc_main = {
     const footerBottomHeight = common_vendor.computed(() => {
       var _a, _b;
       let safeBottomVar = ((_a = systemInfo.safeAreaInsets) == null ? void 0 : _a.bottom) || 10;
-      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:59", "底部安全距离1:", (_b = systemInfo.safeAreaInsets) == null ? void 0 : _b.bottom, "=>", safeBottomVar);
-      const safeBottom = safeBottomVar + keyboardHeight.value;
+      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:61", "底部安全距离1:", (_b = systemInfo.safeAreaInsets) == null ? void 0 : _b.bottom, "=>", safeBottomVar);
+      let safeBottom = safeBottomVar + keyboardHeight.value;
+      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:64", "底部最终距离2:", safeBottom);
       return `${safeBottom}px`;
     });
     const keyboardHeightChangeHandler = (res) => {
-      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:66", "键盘高度变化", res);
+      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:69", "键盘高度变化", res);
       keyboardHeight.value = res.height;
     };
     const handleFocus = () => {
@@ -60,7 +61,7 @@ const _sfc_main = {
         return;
       }
       let scene = common_config.getScene();
-      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:95", "scene", scene);
+      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:98", "scene", scene);
       emit("submit", {
         content: commentText.value,
         target_id: props.targetId,
@@ -77,8 +78,8 @@ const _sfc_main = {
     __expose({
       focusInput
     });
-    common_vendor.onShow(() => {
-      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:123", "注册键盘弹出事件");
+    common_vendor.onMounted(() => {
+      common_vendor.index.__f__("log", "at components/comment-input/comment-input.vue:127", "注册键盘弹出事件");
       common_vendor.index.onKeyboardHeightChange(keyboardHeightChangeHandler);
     });
     return (_ctx, _cache) => {

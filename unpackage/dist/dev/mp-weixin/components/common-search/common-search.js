@@ -47,7 +47,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
             "Content-Type": "application/json"
           }
         });
-        common_vendor.index.__f__("log", "at components/common-search/common-search.vue:76", "请求结果:", res.data);
+        common_vendor.index.__f__("log", "at components/common-search/common-search.vue:86", "请求结果:", res.data);
         if (res.data.status == "success") {
           if (res.data.data == null) {
             results.value = [];
@@ -60,7 +60,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           return;
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/common-search/common-search.vue:91", "请求错误:", error);
+        common_vendor.index.__f__("error", "at components/common-search/common-search.vue:101", "请求错误:", error);
         results.value = [];
         return;
       }
@@ -84,30 +84,33 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
       return common_vendor.e({
         a: props.mode == "jump"
       }, props.mode == "jump" ? {
-        b: common_assets._imports_0$6
+        b: common_assets._imports_0$10
       } : {}, {
         c: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
         d: searchTerm.value,
         e: results.value.length > 0
+      }, results.value.length > 0 ? common_vendor.e({
+        f: results.value.length > 0 && searchTerm.value.length < 5
+      }, results.value.length > 0 && searchTerm.value.length < 5 ? {} : {}, {
+        g: common_assets._imports_1$6,
+        h: common_vendor.o(cancel)
+      }) : {}, {
+        i: common_vendor.n(_ctx.$attrs.class),
+        j: __props.background || "#fff",
+        k: results.value.length > 0
       }, results.value.length > 0 ? {
-        f: common_assets._imports_1$6,
-        g: common_vendor.o(cancel)
-      } : {}, {
-        h: common_vendor.n(_ctx.$attrs.class),
-        i: __props.background || "#fff",
-        j: results.value.length > 0
-      }, results.value.length > 0 ? {
-        k: common_vendor.f(results.value, (item, k0, i0) => {
+        l: common_vendor.f(results.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.name),
             b: item.id,
             c: common_vendor.o(($event) => onTap(item.id, item.name), item.id)
           };
         }),
-        l: __props.width
+        m: __props.width
       } : {});
     };
   }
 });
-wx.createComponent(_sfc_main);
+const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-e5a069da"]]);
+wx.createComponent(Component);
 //# sourceMappingURL=../../../.sourcemap/mp-weixin/components/common-search/common-search.js.map

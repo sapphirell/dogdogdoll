@@ -1,143 +1,170 @@
 <template>
-
-	<view v-if="goods.name">
+	<view v-if="goods.name" class="goods-detail-container">
 		<meta name="theme-color" content="#F8F8F8"></meta>
-		<view>
-			<!-- 轮播图部分 -->
-			<view style="position: relative;">
-				<view class="heart" @click="likeFn()">
-<!-- 					<image src="../../static/heart-w.png" v-if="!hasLike"></image>
-					<image src="../../static/heart2.png" v-else></image> -->
-					
-					<uni-icons type="heart" size="28" color="#ff4d4f" v-if="!hasLike"></uni-icons>
-					<uni-icons type="heart-filled" size="28" color="#ff4d4f" v-else></uni-icons>
-					
-					<text class="num" style="color:#ff4d4f;">{{ formatNumber(goods.goods_like_count) }}</text>
-				</view>
-				<swiper :interval="3000" :duration="200" @change="onChange" class="banner_swiper" style="max-height: 800px;"  :style="{ height: swiperHeight + 'px' }">
-					<block v-for="(item, key) in goods.goods_images" :key="key">
-						<swiper-item class="banner_swiper_item">
-							<view class="swiper-item">
-								<image :src="item" mode="widthFix" style="width: 100%; display: block;" :class="'swiper-image-'+key" 
-									@tap="viewFullImage(key)" @load="onImageLoad(key)" ></image>
-							</view>
-						</swiper-item>
-					</block>
-				</swiper>
-				<view class="swiper-index-box">
-					<text class="font-alimamashuhei">{{swiperIndex}} / {{goods.goods_images.length}}</text>
-				</view>
+		
+		<!-- 轮播图部分 -->
+		<view class="swiper-container">
+			<view class="heart" @click="likeFn()">
+				<uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="28" color="#ff4d4f"></uni-icons>
+				<text class="num" style="color:#ff4d4f;">{{ formatNumber(goods.goods_like_count) }}</text>
 			</view>
-
-
+			
+			<swiper :interval="3000" :duration="200" @change="onChange" class="banner-swiper" :style="{ height: swiperHeight + 'px' }">
+				<block v-for="(item, key) in goods.goods_images" :key="key">
+					<swiper-item class="swiper-item-container">
+						<view class="swiper-item">
+							<image 
+								:src="item" 
+								mode="widthFix" 
+								:class="'swiper-image-'+key" 
+								@tap="viewFullImage(key)" 
+								@load="onImageLoad(key)"
+							></image>
+						</view>
+					</swiper-item>
+				</block>
+			</swiper>
+			
+			<view class="swiper-index">
+				<text>{{swiperIndex}} / {{goods.goods_images.length}}</text>
+			</view>
 		</view>
-		<view class="msg_body">
-			<view class="msg_block">
-				<text class="lable_text">名称</text>
-				<text class="msg_text">{{goods.name}}</text>
+
+		<!-- 商品基本信息 -->
+		<view class="goods-info">
+			<view class="info-item">
+				<text class="label">名称</text>
+				<!-- <text class="value">{{goods.name}}</text> -->
+				<image :src="goods.goods_name_image" mode="heightFix" style="height: 40rpx;"></image>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">类型</text>
-				<text class="msg_text">{{goods.type}}</text>
+			
+			<view class="info-item">
+				<text class="label">类型</text>
+				<text class="value">{{goods.type}}</text>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">初贩定价</text>
-				<text class="msg_text" v-if="goods.total_amount">{{goods.total_amount + " " + goods.currency}}</text>
-				<text class="msg_text" v-else-if=" goods.goods_sales && goods.goods_sales.length > 0 ">
+			
+			<view class="info-item">
+				<text class="label">初贩定价</text>
+				<!-- <text class="value" v-if="goods.total_amount">{{goods.total_amount + " " + goods.currency}}</text> -->
+				<image :src="goods.goods_price_image" v-if="goods.goods_price_image" mode="heightFix" style="height: 40rpx;"></image>
+				<text class="value" v-else-if="goods.goods_sales && goods.goods_sales.length > 0">
 					{{goods.goods_sales[0].sub_amount + goods.goods_sales[0].fin_amount}}
 					{{goods.goods_sales[0].currency}}
 				</text>
-				
-				<text v-else>未知</text>
-				
+				<text class="value" v-else>未知</text>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">初贩时间</text>
-				<text class="msg_text">{{goods.sub_time1 > 0 ? formatTimestamp(goods.sub_time1) : "未知"}}</text>
+			
+			<view class="info-item">
+				<text class="label">初贩时间</text>
+				<text class="value">{{goods.sub_time1 > 0 ? formatTimestamp(goods.sub_time1) : "未知"}}</text>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">尺寸</text>
-				<text class="msg_text">
+			
+			<view class="info-item">
+				<text class="label">尺寸</text>
+				<text class="value">
 					{{goods.size}} / {{goods.size_detail}}
 				</text>
 			</view>
-			<view v-if="goods.type==='单体' || goods.type === '整体' || goods.type === '单头'" class="msg_block">
-				<text class="lable_text">可选体型</text>
-				<text class="msg_text">
+			
+			<view v-if="goods.type==='单体' || goods.type === '整体' || goods.type === '单头'" class="info-item">
+				<text class="label">可选体型</text>
+				<text class="value">
 					{{goods.body_size || "未知"}}
 				</text>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">可选颜色</text>
-				<text class="msg_text">
+			
+			<view class="info-item">
+				<text class="label">可选颜色</text>
+				<text class="value">
 					{{goods.skin}}
 				</text>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">贩售情报</text>
 			
-				<text v-if="goods.goods_sales == null">暂无收录贩售详细信息</text>
-				<view class="msg_text">
-					<text v-for="sale in goods.goods_sales" :key="sale.id"
-						style="width: 100%;display: block;margin-bottom: 10px;">
-						{{formatTimestamp(sale.sub_time)}},
-						{{sale.sale_type}}, 总价: {{sale.sub_amount + sale.fin_amount}} ({{sale.currency}})
-					</text>
-				</view>
-
+			<view class="info-item">
+				<text class="label">制作方</text>
+				
+				<image @click="jumpBrand(goods.brand_id)" :src="goods.goods_brand_name_image" v-if="goods.goods_brand_name_image" mode="heightFix" style="height: 40rpx;"></image>
 			</view>
-			<view class="msg_block">
-				<text class="lable_text">制作方</text>
-				<text class="msg_text" style="color: #55aae5" @click="jumpBrand(goods.brand_id)">
-					{{goods.brand_name}}
-				</text>
-			</view>
-			<view class="msg_block">
-				<text class="lable_text">备注</text>
-				<text class="msg_text" >
-					{{goods.desc_content}}
+			
+			<view class="info-item">
+				<text class="label">备注</text>
+				<text class="value" >
+					{{goods.desc_content || '暂无备注信息'}}
 				</text>
 			</view>
 		</view>
-
-		<!-- 搭配参考 -->
-		<view style="padding: 40rpx;">
-			<view style="display: flex;margin: 30px 5px 10px 5px;">
-				<text
-					style="color: rgb(100, 198, 220);font-weight: bold; display: block;width: calc(100% - 130rpx);">搭配参考</text>
-				<view style="display: flex;">
-					<text style="width: 110rpx;display: inline-block;color: #888;">查看更多</text>
-					<image src="../../static/right2.png" style="width: 30rpx;height: 30rpx;display: inline-block;position: relative;top: 3rpx;">
-					</image>
+		
+		<!-- 贩售情报 -->
+		<view class="sales-info" v-if="goods.goods_sales && goods.goods_sales.length > 0">
+			<text class="section-title">贩售情报</text>
+			
+			<view class="sales-list">
+				<view v-for="(sale, index) in goods.goods_sales" :key="sale.id" class="sale-item">
+					<view class="sale-header">
+						<text class="sale-type">{{sale.sale_type}}</text>
+						<text class="sale-price">{{sale.sub_amount + sale.fin_amount}} {{sale.currency}}</text>
+					</view>
+					
+					<view class="sale-period">
+						<text>{{formatTimestamp(sale.sub_time)}}</text>
+						<text v-if="sale.sub_time_end > 0" class="separator">至</text>
+						<text v-if="sale.sub_time_end > 0">{{formatTimestamp(sale.sub_time_end)}}</text>
+						<text v-else class="separator">开定</text>
+					</view>
+					
+					<view class="sale-size">
+						<text>{{sale.size}} · {{sale.size_detail}}</text>
+					</view>
 				</view>
-
 			</view>
-
-			<scroll-view scroll-x="true" class="collocationBox" ll-with-animation="true" :show-scrollbar="false">
-				<!-- 遍历搭配参考 -->
-				<view v-if="collocationList && collocationList.collocation_relation_list.length > 0"
-					v-for="collocation in collocationList.collocation_relation_list" :key="collocation.collocation_id"
-					style="" class="collocationItem square" @tap="jump2collectionDetail(collocation.collocation_id, collocation.relation_origin)">
-					<image :src="getImageForList(collocation.image_urls)" mode="aspectFill"
-						style="width: 100%;height: 100%;"></image>
-
+		</view>
+		<view v-else class="no-sales">
+			<text class="section-title">贩售情报</text>
+			<text class="empty-text">暂无贩售信息</text>
+		</view>
+		
+		<!-- 表态组件 -->
+		<item-impression :target_id="props.goods_id" type="2" :goods-type="goods.type"></item-impression>
+		
+		<!-- 搭配参考 -->
+		<view class="collocation-section">
+			<view class="section-header">
+				<text class="section-title">搭配参考</text>
+				<view class="more-link" @tap="jump2collocation">
+					<text>查看更多</text>
+					<image src="../../static/right2.png"></image>
+				</view>
+			</view>
+			
+			<scroll-view scroll-x="true" class="collocation-list">
+				<view 
+					v-for="collocation in collocationList.collocation_relation_list" 
+					:key="collocation.collocation_id"
+					class="collocation-item" 
+					@tap="jump2collectionDetail(collocation.collocation_id, collocation.relation_origin)"
+				>
+					<image 
+						:src="getImageForList(collocation.image_urls)" 
+						mode="aspectFill"
+					></image>
 				</view>
 			</scroll-view>
-
-			<view @tap="jump2collocation"
-				style="border: 1px solid #eaeaea; display: flex;margin: 20rpx auto; border-radius: 15rpx;width: 400rpx;">
-				<image src="../../static/paper_plane.png" style="width: 45rpx;height: 45rpx;margin: 18rpx;"></image>
-				<text style=";color: rgb(184 184 184);margin: 12px auto;">上传搭配参考帮助他人</text>
+			
+			<view @tap="jump2collocation" class="upload-collocation">
+				<image src="../../static/paper_plane.png"></image>
+				<text>上传搭配参考帮助他人</text>
 			</view>
 		</view>
 
-		<!-- 评论区（保留原有结构，需根据接口调整） -->
-		<view style="padding: 10px;">
-			<comment-list ref="commentListRef" :type="2" :relation-id="parseInt(props.goods_id)" @reply="handleReplyComment" />
-		</view> <!-- 加载状态 -->
-		
-		<view v-if="loading" class="loading">加载中...</view>
-		<view v-if="error" class="error">{{ errorMsg }}</view>
+		<!-- 评论区 -->
+		<view class="comment-section">
+			<comment-list 
+				ref="commentListRef" 
+				:type="2" 
+				:relation-id="parseInt(props.goods_id)" 
+				@reply="handleReplyComment" 
+			/>
+		</view>
 		
 		<!-- 输入框 -->
 		<comment-input 
@@ -148,13 +175,9 @@
 		  @update:reply-info="val => replyForItem = val" 
 		/>
 		
-		<!-- 一个不可见透明元素，撑起80px高度 -->
-		<view style="height: 80px;"></view>
-		
-
+		<!-- 底部占位 -->
+		<view class="bottom-placeholder"></view>
 	</view>
-
-
 </template>
 
 <script setup>
@@ -389,15 +412,15 @@
 	}
 	//格式化时间戳
 	function formatTimestamp(timestamp) {
+		if (!timestamp || timestamp <= 0) return '未知'
+		
 		const date = new Date(timestamp * 1000);
 		const year = date.getFullYear();
-		const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月份从0开始，需要+1
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
 		const day = date.getDate().toString().padStart(2, '0');
 		const hours = date.getHours().toString().padStart(2, '0');
 		const minutes = date.getMinutes().toString().padStart(2, '0');
-		const seconds = date.getSeconds().toString().padStart(2, '0');
-
-		// 返回格式化后的日期时间
+		
 		return `${year}-${month}-${day} ${hours}:${minutes}`;
 	}
 	//replyFor 引用回复
@@ -578,223 +601,286 @@
 </script>
 
 <style lang="scss" scoped>
-	.collocationBox {
-		width: 100%; // 避免使用 100vw（可能因滚动条导致宽度溢出）
-		white-space: nowrap; // 强制子元素不换行
-		overflow-x: auto; // 确保横向滚动生效（UniApp的scroll-view组件已封装滚动逻辑，此处为保险可保留）
-		display: block; // 明确容器为块级元素
-		margin-top: 15px;
-		padding: 10px 0px;
-
-		.collocationItem {
-			position: relative;
-			height: auto;
-			/* 高度自动调整以保持比例 */
-			aspect-ratio: 0.7;
-			color: white;
-			width: 22vw;
-			display: inline-block;
-			margin: 0px 20px 0px 0px;
-			border-radius: 10px;
-			overflow: hidden;
-
-		}
+	/* 整体字体调整 */
+	.goods-detail-container {
+		background-color: #f8f8f8;
+		padding-bottom: 20px;
+		font-size: 24rpx; /* 整体字体调小 */
 	}
 
-	.banner_swiper {
-		// min-height: 45vh;
-		// max-height: 55vh;
+	/* 轮播图样式优化 */
+	.swiper-container {
 		position: relative;
+		background-color: #fff;
+		border-radius: 0 0 20rpx 20rpx;
+		overflow: hidden;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 	}
 
 	.heart {
 		position: absolute;
-		top: 10px;
-		right: 20px;
+		top: 20rpx;
+		right: 30rpx;
 		z-index: 10;
-		width: 50px;
-		height: 30px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 70rpx;
+		height: 70rpx;
+		background: rgba(255, 255, 255, 0.8);
+		border-radius: 50%;
+		
 		.uni-icons {
-			width: 30px;
-			height: 30px;
-		}
-
-		image {
-			width: 30px;
-			height: 30px;
-		}
-
-		.num {
-			color: #888;
-			font-size: 14px;
-			display: inline-block;
-			position: relative;
-			margin: 10rpx;
-			top: -5px;
-			// left: 35px;
-			font-weight: 1000;
-
-		}
-	}
-
-
-	.banner_swiper_item {
-	  height: auto; /* 允许高度自适应 */
-	  
-	}
-
-	.swiper-item {
-	  height: auto; /* 允许内容撑开高度 */
-	  uni-image {
-		      position: absolute;
-		      top: -30rpx;
-		      bottom: 0;
-		      margin: auto;
-	  }
-
-	}
-	  .banner_swiper_item {
-		  // 图片不足高度时用灰色波点背景
-		      height: auto;
-		      background: #ffffff;
-		    background-image: radial-gradient(#dfdfdf 20%, transparent 0);
-		    background-size: 20px 20px;
-	  }
-	.swiper-index-box {
-		position: absolute;
-		bottom: 30px;
-		right: 10px;
-		background: rgb(0 0 0 / 64%);
-		padding: 6px 15px;
-		border-radius: 20px;
-
-		text {
-			font-size: 14px;
-			color: #fff;
-		}
-	}
-	.mask {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: #fff;
-		opacity: 0;
-		z-index: 99;
-		width: 100vw;
-		height: 100vh;
-	}
-	// 底部tab
-	.bottom_tab {
-		display: flex;
-		align-items: center;
-		/* 垂直居中 */
-		gap: 8px;
-		/* 元素间距 */
-		box-sizing: border-box;
-		display: flex;
-		align-items: center;
-		padding: 10px;
-		position: fixed;
-		bottom: 0px;
-		z-index: 100;
-		width: 100vw;
-		background: #fff;
-		left: 0px;
-
-		.replyInfo {
-			flex-shrink: 0;
-			/* 禁止缩小 */
-			max-width: 50px;
-			/* 最大宽度限制 */
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			flex-shrink: 0;
-			max-width: 50px;
-			margin-right: 8px;
-		}
-
-		.comment_input {
-			flex: 1;
-			/* 占据剩余空间 */
-			min-width: 0;
-			/* 允许缩小 */
-			flex: 1;
-			margin-right: 8px;
-			height: 40px;
-			border-radius: 5px;
-			min-height: 30px;
-			padding: 8px;
-			box-sizing: border-box;
-			background: #f2f2f2;
-		}
-
-		button {
-			flex-shrink: 0;
-			/* 固定宽度 */
-			width: 90px;
-			/* 按钮固定宽度 */
-			background: rgb(100, 198, 220);
-			border-radius: 10px;
-			width: 90px;
-			color: rgb(255, 255, 255);
-			font-size: 14px;
+			width: 40rpx;
+			height: 40rpx;
 		}
 		
-		uni-button:after {
-			border: none;
+		.num {
+			font-size: 20rpx; /* 调小 */
+			font-weight: bold;
+			margin-top: 5rpx;
 		}
 	}
 
-	.uni-page-head {
-		background: #ffffff00 !important;
+	.banner-swiper {
+		width: 100%;
+	}
+	
+	.swiper-item-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: #ffffff;
+		background-image: radial-gradient(#c6c6c6 15%, #00000000 0);
+		background-size: 20rpx 20rpx;
+	}
+	
+	.swiper-item {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+	}
+	
+	.swiper-index {
+		position: absolute;
+		bottom: 30rpx;
+		right: 30rpx;
+		background: rgba(0, 0, 0, 0.4);
+		padding: 6rpx 20rpx;
+		border-radius: 30rpx;
+		color: #fff;
+		font-size: 24rpx; /* 调小 */
 	}
 
-	.msg_body {
-		border-radius: 30px;
-		overflow: hidden;
-		position: relative;
-		top: -25px;
+	/* 商品信息样式 */
+	.goods-info {
 		background: #fff;
-		padding: 20px;
-		box-shadow: 0px -10px 10px #0000000d;
-
-		.msg_block {
-			font-size: 17px;
-			color: #4cbbd0;
-			margin: 20px 0px;
+		border-radius: 20rpx;
+		margin: 20rpx;
+		padding: 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		
+		.info-item {
 			display: flex;
-			align-items: flex-start;
-
-			.lable_text {
-				width: 45%;
-				font-size: 24rpx;
-				display: inline-block;
-				color: #4cbbd0;
-				font-weight: bold;
+			padding: 18rpx 0; /* 调小内边距 */
+			border-bottom: 1rpx solid #f5f5f5;
+			
+			&:last-child {
+				border-bottom: none;
 			}
+		}
+		
+		.label {
+			width: 180rpx;
+			font-size: 26rpx; /* 调小 */
+			color: #999;
+			flex-shrink: 0;
+		}
+		
+		.value {
+			flex: 1;
+			font-size: 26rpx; /* 调小 */
+			color: #333;
+			word-break: break-all;
+		}
+		
+		.brand {
+			color: #64c6dc;
+			font-weight: bold;
+		}
+	}
 
-			.msg_text {
-				width: 70%;
-				font-size: 24rpx;
-				display: inline-block;
-				// color: #4cbbd0;
+	/* 贩售情报样式 */
+	.sales-info, .no-sales {
+		background: #fff;
+		border-radius: 20rpx;
+		margin: 20rpx;
+		padding: 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		
+		.section-title {
+			display: block;
+			font-size: 28rpx; /* 调小 */
+			font-weight: bold;
+			color: #64c6dc;
+			margin-bottom: 25rpx; /* 调小 */
+			padding-left: 10rpx;
+			border-left: 8rpx solid #64c6dc;
+		}
+	}
+	
+	.sales-list {
+		.sale-item {
+			padding: 20rpx 0; /* 调小 */
+			border-bottom: 1rpx solid #f5f5f5;
+			
+			&:last-child {
+				border-bottom: none;
+			}
+		}
+		
+		.sale-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 12rpx; /* 调小 */
+		}
+		
+		.sale-type {
+			font-size: 26rpx; /* 调小 */
+			font-weight: bold;
+			color: #333;
+			background: #f0f9ff;
+			padding: 5rpx 12rpx; /* 调小 */
+			border-radius: 8rpx;
+		}
+		
+		.sale-price {
+			font-size: 26rpx; /* 调小 */
+			font-weight: bold;
+			color: #ff6b6b;
+		}
+		
+		.sale-period {
+			display: flex;
+			align-items: center;
+			font-size: 24rpx; /* 调小 */
+			color: #666;
+			margin-bottom: 12rpx; /* 调小 */
+			
+			.separator {
+				margin: 0 12rpx; /* 调小 */
+				color: #ccc;
+			}
+		}
+		
+		.sale-size {
+			font-size: 24rpx; /* 调小 */
+			color: #888;
+		}
+	}
+	
+	.empty-text {
+		font-size: 26rpx; /* 调小 */
+		color: #999;
+		text-align: center;
+		padding: 30rpx 0; /* 调小 */
+		display: block;
+	}
+
+	/* 搭配参考样式 */
+	.collocation-section {
+		background: #fff;
+		border-radius: 20rpx;
+		margin: 20rpx;
+		padding: 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		
+		.section-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 25rpx; /* 调小 */
+		}
+		
+		.section-title {
+			font-size: 28rpx; /* 调小 */
+			font-weight: bold;
+			color: #64c6dc;
+			padding-left: 10rpx;
+			border-left: 8rpx solid #64c6dc;
+		}
+		
+		.more-link {
+			display: flex;
+			align-items: center;
+			color: #888;
+			font-size: 24rpx; /* 调小 */
+			
+			image {
+				width: 25rpx; /* 调小 */
+				height: 25rpx; /* 调小 */
+				margin-left: 8rpx; /* 调小 */
+			}
+		}
+		
+		.collocation-list {
+			width: 100%;
+			white-space: nowrap;
+			margin-top: 15rpx; /* 调小 */
+			padding: 8rpx 0; /* 调小 */
+		}
+		
+		.collocation-item {
+			display: inline-block;
+			width: 200rpx; /* 调小 */
+			height: 280rpx; /* 调小 */
+			border-radius: 12rpx;
+			overflow: hidden;
+			margin-right: 18rpx; /* 调小 */
+			box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+			
+			image {
+				width: 100%;
+				height: 100%;
+			}
+		}
+		
+		.upload-collocation {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: 1rpx solid #eaeaea;
+			border-radius: 15rpx;
+			padding: 18rpx; /* 调小 */
+			margin-top: 25rpx; /* 调小 */
+			
+			image {
+				width: 40rpx; /* 调小 */
+				height: 40rpx; /* 调小 */
+				margin-right: 12rpx; /* 调小 */
+			}
+			
+			text {
+				color: #b8b8b8;
+				font-size: 24rpx; /* 调小 */
 			}
 		}
 	}
 
-	//加载更多goods
-	.load_more {
-		border: none;
+	/* 评论区样式 */
+	.comment-section {
 		background: #fff;
-		color: #d6d6d6;
-		font-size: 13px;
-		margin-top: 15px;
+		border-radius: 20rpx;
+		margin: 20rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		font-size: 24rpx; /* 调小 */
 	}
 
-	.load_more::after {
-		border: none;
+	/* 底部占位 */
+	.bottom-placeholder {
+		width: 100%;height: 120rpx
 	}
 </style>

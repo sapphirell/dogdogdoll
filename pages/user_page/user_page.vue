@@ -1,25 +1,43 @@
 <template>
 	<view class="page-container">
-		<meta name="theme-color" content="#F8F8F8"></meta>
+		<meta name="theme-color" content="#F8F8F8">
+		</meta>
 		<view class="header_container">
-			<!-- 头部区域 -->
-			<view class="header">
-				<image class="avatar" :src="userInfo.avatar" mode="aspectFill" />
-				<text class="username">{{ userInfo.user_name }}</text>
-			</view>
+			<!-- 黑名单提示 -->
+<!-- 			<view class="block-info" v-if="is_blocked || they_blocked">
+				<uni-icons type="minus" size="16" color="#fff"></uni-icons>
+				<text>你们已互相拉黑，无法查看彼此主页</text>
+			</view> -->
 
-			<!-- Tab切换 -->
-			<view class="tabs">
-				<view v-for="(tab, index) in tabs" :key="index" class="tab-item font-alimamashuhei"
-					:class="{ active: currentTab === index }" @click="currentTab = index">
-					{{ tab }}
+			<!-- 头像和用户名区域 -->
+			<view class="user-info-container">
+				<view class="user-info-box">
+					<image class="avatar" :src="userInfo.avatar" mode="aspectFill" />
+					<text class="username">{{ userInfo.user_name }}</text>
+				</view>
+
+				<!-- 拉黑按钮 -->
+				<view class="action-buttons">
+					<view class="action-btn block-btn" :class="{ 'blocked': is_blocked }"
+						@click="toggleBlock">
+						<uni-icons :type="is_blocked ? 'minus' : 'minus'" size="16" color="#fff"></uni-icons>
+						<text>{{ is_blocked ? '已拉黑' : '拉黑' }}</text>
+					</view>
 				</view>
 			</view>
 		</view>
 
-
 		<!-- 内容区域 -->
-		<view class="content">
+		<view class="content" v-if="!is_blocked && !they_blocked">
+			<!-- Tab切换 -->
+			<view class="tabs-container">
+				<view class="tabs">
+					<view v-for="(tab, index) in tabs" :key="index" class="tab-item font-alimamashuhei"
+						:class="{ active: currentTab === index }" @click="currentTab = index">
+						{{ tab }}
+					</view>
+				</view>
+			</view>
 			<!-- 搭配列表 -->
 			<view v-if="currentTab === 0" class="collocation-list">
 				<view v-for="(item, index) in collocations" :key="index" class="collocation-item item-image-container"
@@ -51,6 +69,12 @@
 				</view>
 			</view>
 		</view>
+
+		<!-- 无权限提示 -->
+		<view class="empty-state" v-if="is_blocked || they_blocked">
+			<uni-icons type="minus" size="48" color="#ccc"></uni-icons>
+			<text>你无法查看该用户的主页</text>
+		</view>
 	</view>
 </template>
 
@@ -59,7 +83,6 @@
 		ref,
 		watch,
 		onMounted,
-
 	} from 'vue';
 	import {
 		onShow,
@@ -82,6 +105,10 @@
 		avatar: '',
 		user_name: '加载中...'
 	});
+
+	// 黑名单状态（使用后端返回的变量名）
+	const is_blocked = ref(false);    // 我是否拉黑了对方
+	const they_blocked = ref(false);  // 对方是否拉黑了我
 
 	// 各列表数据
 	const collocations = ref([]);
@@ -111,12 +138,10 @@
 			finished: false
 		}
 	]);
+
 	// 监听tab切换
 	watch(currentTab, (newVal) => {
 		const currentPagination = paginations.value[newVal];
-		// currentPagination.page = 1;
-		// currentPagination.finished = false;
-
 		const currentData = [collocations, dolls, reviews][newVal].value;
 		if (currentData.length === 0) {
 			loadData();
@@ -126,6 +151,9 @@
 
 	// 统一数据加载方法
 	const loadData = async () => {
+		// 如果互拉黑则不加载数据
+		if (is_blocked.value || they_blocked.value) return;
+
 		const currentPagination = paginations.value[currentTab.value];
 		if (currentPagination.loading || currentPagination.finished) {
 			return;
@@ -148,7 +176,6 @@
 					listKey = 'comment_list';
 					break;
 			}
-			console.log(`${websiteUrl}${url}`)
 			const res = await uni.request({
 				url: `${websiteUrl}${url}`
 			});
@@ -215,11 +242,88 @@
 			});
 
 			if (res.data.status === 'success') {
-				userInfo.value = res.data.data
+				userInfo.value = res.data.data;
 			}
 		} catch (error) {
 			uni.showToast({
 				title: '用户信息加载失败',
+				icon: 'none'
+			});
+		}
+	};
+
+	// 获取黑名单状态
+	const getBlockStatus = async () => {
+		const token = uni.getStorageSync('token');
+		if (!token) {
+			console.log("未登录")
+			return
+		}
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl}/with-state/blacklist/status`,
+				method: 'GET',
+				data: {
+					target_user_id: props.uid
+				},
+				header: {
+					Authorization: token
+				}
+			});
+
+			if (res.data.status === 'success') {
+				// 使用后端返回的字段名
+				is_blocked.value = res.data.data.is_blocked;
+				they_blocked.value = res.data.data.they_blocked;
+			}
+		} catch (error) {
+			console.log('获取黑名单状态失败', error);
+		}
+	};
+
+	// 切换拉黑状态
+	const toggleBlock = async () => {
+		try {
+			const token = uni.getStorageSync('token');
+			if (!token) {
+				console.log("未登录")
+				return
+			}
+			const action = is_blocked.value ? 'remove' : 'add';
+			const res = await uni.request({
+				url: `${websiteUrl}/with-state/blacklist/${action}?target_user_id=` + props.uid,
+				method: 'POST',
+				header: {
+					Authorization: token
+				}
+			});
+
+			if (res.data.status === 'success') {
+				// 更新本地状态
+				is_blocked.value = !is_blocked.value;
+				
+				// 显示提示
+				uni.showToast({
+					title: is_blocked.value ? '已加入黑名单' : '已移除黑名单',
+					icon: 'none'
+				});
+
+				// 如果是互拉黑，重新加载页面状态
+				if (is_blocked.value || they_blocked.value) {
+					collocations.value = [];
+					dolls.value = [];
+					reviews.value = [];
+				}
+			} else {
+				uni.showToast({
+					title: res.data.msg,
+					icon: 'none'
+				})
+			}
+		} catch (error) {
+			console.log('操作失败', error);
+			uni.showToast({
+				title: '操作失败',
 				icon: 'none'
 			});
 		}
@@ -230,7 +334,7 @@
 		const date = new Date(timestamp * 1000);
 		return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 	};
-	
+
 	// 设置标题
 	uni.setNavigationBarTitle({
 		title: '用户主页',
@@ -239,7 +343,12 @@
 	// 初始化加载
 	onShow(() => {
 		getAuthorInfo();
-		loadData();
+		getBlockStatus().then(() => {
+			// 只有不互拉黑时才加载数据
+			if (!is_blocked.value && !they_blocked.value) {
+				loadData();
+			}
+		});
 	});
 
 	// 上拉加载更多
@@ -250,67 +359,135 @@
 <style lang="less" scoped>
 	.page-container {
 		background-color: #f5f5f5;
+		min-height: 100vh;
+		padding-bottom: 20rpx;
 	}
 
 	.header_container {
-		// background: #e0f3ff;
-		// background-image: radial-gradient(#fff 20%, transparent 0);
-		// background-size: 20px 20px;
-		background: linear-gradient(180deg, rgb(235 240 255) 0%, rgb(255 235 239) 100%);
-
-		.header {
-			display: flex;
-			align-items: center;
-			padding: 90rpx 40rpx 50rpx 40rpx;
-			// background-color: #fff;
-
-			.avatar {
-				width: 120rpx;
-				height: 120rpx;
-				border-radius: 50%;
-				margin-right: 30rpx;
-			}
-
-			.username {
-				display: block;
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				// margin: 20rpx 0 40rpx 0;
-				font-weight: bold;
-				color: #606060;
-				font-size: 30rpx;
-				max-width: 400rpx;
-			}
-		}
-
-		.tabs {
-			display: flex;
-			// background-color: #fff;
-			border-bottom: 1rpx solid #eee;
-
-			.tab-item {
-				flex: 1;
-				text-align: center;
-				padding: 20rpx 0;
-				font-size: 32rpx;
-				color: #666;
-				font-size: 28rpx;
-
-				&.active {
-					color: #5792d3;
-					font-weight: bold;
-					border-bottom: 4rpx solid #5792d3;
-				}
-			}
-		}
+		position: relative;
+		background-image: url("https://images1.fantuanpu.com/bd/bg2.jpg");
+		background-size: cover;
+		padding-bottom: 40rpx;
+		border-bottom-left-radius: 30rpx;
+		border-bottom-right-radius: 30rpx;
+		box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.1);
+		margin-bottom: 20rpx;
+		background-position: 0px -293rpx;
 	}
 
+	.user-info-container {
+		align-items: center;
+		padding-top: 70rpx;
+		padding-bottom: 0rpx;
+	}
+
+	.user-info-box {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		position: relative;
+		z-index: 10;
+	}
+
+	.avatar {
+		width: 200rpx;
+		height: 200rpx;
+		border-radius: 50%;
+		border: 6rpx solid white;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2);
+		margin-bottom: 20rpx;
+		background-color: white;
+	}
+
+	.username {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #5f5f5f;
+		text-align: center;
+	}
+	
+	.action-buttons {
+		position: absolute;
+		right: 30rpx;
+		top: 30rpx;
+		z-index: 20;
+	}
+	
+	.action-btn {
+		padding: 8rpx 20rpx;
+		border-radius: 30rpx;
+		font-size: 24rpx;
+		display: flex;
+		align-items: center;
+		gap: 6rpx;
+		background: rgba(0, 0, 0, 0.3);
+		color: #fff;
+		
+		&.blocked {
+			background: rgba(255, 87, 87, 0.8);
+		}
+	}
+	
+	.block-info {
+		background: rgba(0, 0, 0, 0.3);
+		border-radius: 8rpx;
+		padding: 15rpx;
+		margin: 15rpx 30rpx;
+		text-align: center;
+		color: white;
+		font-size: 24rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8rpx;
+	}
+	
+	.empty-state {
+		text-align: center;
+		padding: 80rpx 30rpx;
+		color: #999;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 20rpx;
+	}
+
+	.tabs-container {
+		position: relative;
+		margin: 20rpx 0 40rpx 0;
+		padding: 0 20rpx;
+	}
+
+	.tabs {
+		display: flex;
+		background-color: white;
+		border-radius: 60rpx;
+		padding: 12rpx;
+		box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.08);
+	}
+
+	.tab-item {
+		flex: 1;
+		text-align: center;
+		padding: 10rpx 0;
+		font-size: 25rpx;
+		color: #666;
+		border-radius: 50rpx;
+		transition: all 0.3s ease;
+
+		&.active {
+			color: #59dcef;
+			font-weight: bold;
+			background: #dffbff;
+			box-shadow: 0 2rpx 8rpx rgba(87, 146, 211, 0.2);
+		}
+	}
 
 	.content {
 		padding: 20rpx;
 		box-sizing: border-box;
-		background: #fff
+		background: #f5f5f5;
+		border-radius: 20rpx;
 	}
 
 	// 通用图片容器样式
@@ -445,6 +622,4 @@
 		-webkit-line-clamp: @lines;
 		overflow: hidden;
 	}
-
-
 </style>

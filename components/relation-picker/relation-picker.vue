@@ -1,6 +1,6 @@
 <!-- components/relation-picker/relation-picker.vue -->
 <template>
-	<common-modal :visible="internalVisible" @update:visible="handleModalVisibilityChange" top="3%">
+	<common-modal :visible="internalVisible" @update:visible="handleModalVisibilityChange" top="200rpx">
 		<view class="relation-picker-container">
 			<view class="picker-header">
 				<view class="mode-switch">
@@ -19,19 +19,19 @@
 			<view class="picker-body">
 				<!-- 精确模式 -->
 				<template v-if="!isFuzzyMode">
-					<common-name-picker ref="typePicker" :dataList="typeList" @select="handleTypeSelect"
+					<common-name-picker ref="typePicker"  :dataList="typeList" @select="handleTypeSelect"
 						@toggle="handleComponentToggle('type')" class="type-picker" />
 
-					<common-search ref="brandSearch" mode="fill" @select="handleBrandSelect"
-						@toggle="handleComponentToggle('brand')" class="brand-search" />
+					<common-search ref="brandSearch" background="#f8f8f8" mode="fill" @select="handleBrandSelect"
+						@toggle="handleComponentToggle('brand')" class="brand-search"  style="padding: 0px!important;" />
 
-					<custom-picker ref="goodsPicker" :dataList="goodsList" @select="handleGoodsSelect"
+					<custom-picker ref="goodsPicker" background="#f8f8f8"  :dataList="goodsList" @select="handleGoodsSelect"
 						@toggle="handleComponentToggle('goods')" class="goods-picker" />
 				</template>
 
 				<!-- 模糊模式 -->
 				<template v-else>
-					<goods-search ref="fuzzySearch" mode="fill" @select="handleFuzzySelect" v-model="searchKeyword"
+					<goods-search ref="fuzzySearch" mode="fill" @select="handleFuzzySelect" v-model="searchKeyword" width="550rpx"
 						@toggle="handleComponentToggle('fuzzy')" class="fuzzy-search" />
 				</template>
 			</view>
@@ -534,7 +534,7 @@
 
 			/deep/ .type-picker {
 				margin-bottom: 40rpx;
-
+				display: block;
 				.select-input {
 					background: #f8f8f8;
 					border-radius: 12rpx;
@@ -549,8 +549,9 @@
 
 				background: #f8f8f8 !important;
 				border-radius: 12rpx !important;
-				// padding: 12rpx 24rpx !important;
+				padding: 16rpx 24rpx !important;
 				min-height: 72rpx; // 新增固定高度
+				// padding: 0px!important;
 
 				.common_search_input {
 					font-size: 22rpx !important;

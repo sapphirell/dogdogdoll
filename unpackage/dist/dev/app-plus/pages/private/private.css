@@ -1,0 +1,13 @@
+.container {
+  padding: 0.625rem;
+}
+h2 {
+  font-size: 0.8125rem;
+  margin: 0.9375rem;
+  color: #28292a;
+}
+.policy-text {
+  display: block;
+  margin: 0.46875rem;
+  color: #2f3a3e;
+}

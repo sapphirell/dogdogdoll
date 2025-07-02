@@ -5,8 +5,7 @@
 		<image :src="brand.logo_image" mode="aspectFit" class="brand_logo"></image>
 		<view class="body">
 			<view>
-				<text style="float: left;font-size: 20px;" selectable="true"
-					user-select="true">{{brand.brand_name}}</text>
+				<image :src="brand.brand_name_image" mode="heightFix" style="height: 60rpx;"></image>
 				<text style="float: right;margin: 5px 0px;">{{brand.country_name}} / {{brand.type}}</text>
 				<view style="clear: both;"></view>
 			</view>
@@ -15,10 +14,10 @@
 			<view
 				style="margin: 20rpx 0rpx;display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;">
 				<view style="display: flex; align-items: center; flex-grow: 1;">
-					<uni-rate style="margin-top: 5px;" v-model="rateValue" allow-half="true" :disabled="!global.isLogin"
-						:color="global.isLogin ? '#65C3D6' : '#FF9DDB'" @change="onRateChange" />
+					<uni-rate style="margin-top: 5px;" :value="brand.score" allow-half="true" 
+						activeColor="#65C3D6" @change="onRateChange" is-fill="false" />
 					<text style="margin-left: 8rpx; position: relative; top: 5px;">
-						{{brand.score}}（{{brand.vote_number}}次评分）
+						{{brand.score}}（{{brand.vote_number}}次评分)
 					</text>
 				</view>
 				<text class="follow" @click="likeBrand" :style="{ background: hasLikeBrand ? '#ff6a6c' : '#65C3D6' }">
@@ -137,7 +136,7 @@
 	const systemInfo = uni.getSystemInfoSync()
 
 	let rateValue = ref(0)
-
+	const myRateValue = ref(0)
 	// 回复
 	const commentListRef = ref(null) // 必须与模板中的ref名称一致
 	const commentInputRef = ref(null) // 输入框聚焦状态联动
@@ -184,7 +183,7 @@
 		const requestData = {
 			content,
 			origin,
-			target_id: parseInt(pageId.value),
+			target_id: parseInt(props.brand_id),
 			type: 1,
 			...(replyInfo.id && {
 				reply_id: replyInfo.id,
@@ -234,6 +233,7 @@
 	}
 	// 新增方法：处理评分变化
 	const onRateChange = (e) => {
+		console.log(e)
 		if (!global.isLogin) {
 			uni.showToast({
 				title: '请先登录',
@@ -243,6 +243,8 @@
 			rateValue.value = 0;
 			return
 		}
+		rateValue.value = e.value
+		myRateValue.value = e.value
 		voteScoreProxy();
 	}
 
@@ -597,7 +599,7 @@
 			success: (res) => {
 				console.log(res.data.data);
 				if (res.data.status == "success") {
-					rateValue.value = res.data.data.score;
+					myRateValue.value = res.data.data.score;
 					return res.data.data.score;
 				} else {
 					uni.showToast({
@@ -648,6 +650,8 @@
 
 	// 在onShow中添加评分刷新
 	onShow(() => {
+		// 登录
+		getUserInfo()
 		// 获取品牌信息
 		getBrandsInfo()
 		// 获取品牌娃娃列表

@@ -9,6 +9,18 @@
 					<text class="author-name">{{ detailData.author_name }}</text>
 					<view class="time">{{ formatTime(detailData.created_at) }}</view>
 				</view>
+				<!-- 举报按钮 -->
+				<view style="width: 120rpx;">
+					<report-button
+						report-type="3" 
+						:relation-id="parseInt(props.id)" 
+						button-text="举报" 
+						icon-type="flag" 
+						icon-size="24"
+						icon-color="#666"
+					/>
+				</view>
+			  
 
 			</view>
 			<!-- 			<button class="share-btn" open-type="share">
@@ -42,6 +54,7 @@
 				</view>
 			</view>
 			<text class="time-text">审核于 {{ formatTime(detailData.approve_time) }}</text>
+			
 		</view>
 	</view>
 
