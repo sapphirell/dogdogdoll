@@ -50,8 +50,8 @@
 							</view>
 						</view>
 
-						<view class="empty-state" v-else>
-							<image class="empty-icon" src="/static/empty.png"></image>
+						<view class="empty-state" v-else style="position: relative;bottom: 80px;">
+							<image class="empty-icon" src="/static/empty.jpg"></image>
 							<text class="empty-text">空空如也～</text>
 							<text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
 						</view>
@@ -96,7 +96,7 @@
 							</view>
 						</view>
 						<view class="empty-state" v-else>
-							<image class="empty-icon" src="/static/empty.png"></image>
+							<image class="empty-icon" src="/static/empty.jpg"></image>
 							<text class="empty-text">展示柜空空如也</text>
 							<text class="empty-tip">快来创建你的展示空间吧！</text>
 						</view>
@@ -147,7 +147,7 @@
 						</view>
 
 						<view class="empty-state" v-else>
-							<image class="empty-icon" src="/static/empty.png"></image>
+							<image class="empty-icon" src="/static/empty.jpg"></image>
 							<text class="empty-text">暂无待补尾款</text>
 							<text class="empty-tip">增加添加一个到账本试试吧～</text>
 						</view>
@@ -1189,22 +1189,19 @@
 			padding-top: 100rpx;
 
 			.empty-icon {
-				width: 280rpx;
-				height: 280rpx;
+				width: 380rpx;
+				height: 380rpx;
 			}
 		}
 
 		/* 尾款日历特殊样式 */
 		.tab_body_3th .empty-state {
 			.empty-icon {
-				width: 260rpx;
-				height: 260rpx;
+				width: 360rpx;
+				height: 360rpx;
 			}
 
 		}
-
-
-
 	}
 	
 	// 空数据样式
@@ -1218,8 +1215,8 @@
 		text-align: center;
 	
 		.empty-icon {
-			width: 240rpx;
-			height: 240rpx;
+			width: 340rpx;
+			height: 340rpx;
 			opacity: 0.8;
 			margin-bottom: 40rpx;
 		}

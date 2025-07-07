@@ -3,7 +3,7 @@
 	<common-modal v-model:visible="showModal" top="20vh" height="auto" :closeable="false">
 		<view class="privacy-container">
 			<view class="header">
-				<image src="/static/new-icon/write.png" class="logo" />
+				<image src="/static/new-icon/write.gif" class="logo" />
 				<text class="title">隐私与权限说明</text>
 			</view>
 
@@ -62,7 +62,7 @@
 		}
 		const scene = getScene();
 		if(scene !== 2 && scene !== 3) {
-			console.log("并非安卓或iOS客户端")
+			console.log("并非安卓或iOS客户端：", scene)
 			return
 		}
 		

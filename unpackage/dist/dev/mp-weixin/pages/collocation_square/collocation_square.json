@@ -7,6 +7,7 @@
     "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "uni-transition": "../../uni_modules/uni-transition/components/uni-transition/uni-transition",
     "common-modal": "../../components/common-modal/common-modal",
+    "loading-toast": "../../components/loading-toast/loading-toast",
     "common-page": "../../components/common-page/common-page"
   }
 }

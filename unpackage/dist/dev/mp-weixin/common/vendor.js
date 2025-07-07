@@ -6432,9 +6432,9 @@ function populateParameters(fromRes, toRes) {
   const hostLanguage = (language || "").replace(/_/g, "-");
   const parameters = {
     appId: "__UNI__5D7AAEE",
-    appName: "dogdogdoll",
-    appVersion: "1.0.32",
-    appVersionCode: 1032,
+    appName: "DogDogDoll",
+    appVersion: "1.0.40",
+    appVersionCode: 1040,
     appLanguage: getAppLanguage(hostLanguage),
     uniCompileVersion: "4.65",
     uniCompilerVersion: "4.65",
@@ -6581,9 +6581,9 @@ const getAppBaseInfo = {
       hostSDKVersion: SDKVersion,
       hostTheme: theme,
       appId: "__UNI__5D7AAEE",
-      appName: "dogdogdoll",
-      appVersion: "1.0.32",
-      appVersionCode: 1032,
+      appName: "DogDogDoll",
+      appVersion: "1.0.40",
+      appVersionCode: 1040,
       appLanguage: getAppLanguage(hostLanguage),
       isUniAppX: false,
       uniPlatform: "mp-weixin",
@@ -7331,7 +7331,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "127.0.0.1,192.168.124.12,192.168.136.1";
   const port = "8090";
-  const id = "mp-weixin_PPS55M";
+  const id = "mp-weixin_RxfCLc";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();

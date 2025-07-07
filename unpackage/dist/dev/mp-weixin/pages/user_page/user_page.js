@@ -1,6 +1,14 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
+}
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
+if (!Math) {
+  _easycom_uni_icons();
+}
 const _sfc_main = {
   __name: "user_page",
   props: ["uid"],
@@ -12,6 +20,8 @@ const _sfc_main = {
       avatar: "",
       user_name: "加载中..."
     });
+    const is_blocked = common_vendor.ref(false);
+    const they_blocked = common_vendor.ref(false);
     const collocations = common_vendor.ref([]);
     const dolls = common_vendor.ref([]);
     const reviews = common_vendor.ref([]);
@@ -49,6 +59,8 @@ const _sfc_main = {
       }
     });
     const loadData = async () => {
+      if (is_blocked.value || they_blocked.value)
+        return;
       const currentPagination = paginations.value[currentTab.value];
       if (currentPagination.loading || currentPagination.finished) {
         return;
@@ -70,7 +82,6 @@ const _sfc_main = {
             listKey = "comment_list";
             break;
         }
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:155", `${common_config.websiteUrl}${url}`);
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}${url}`
         });
@@ -113,7 +124,7 @@ const _sfc_main = {
           currentPagination.page++;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:204", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:227", error);
         common_vendor.index.showToast({
           title: "数据加载失败",
           icon: "none"
@@ -137,6 +148,71 @@ const _sfc_main = {
         });
       }
     };
+    const getBlockStatus = async () => {
+      const token = common_vendor.index.getStorageSync("token");
+      if (!token) {
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:259", "未登录");
+        return;
+      }
+      try {
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl}/with-state/blacklist/status`,
+          method: "GET",
+          data: {
+            target_user_id: props.uid
+          },
+          header: {
+            Authorization: token
+          }
+        });
+        if (res.data.status === "success") {
+          is_blocked.value = res.data.data.is_blocked;
+          they_blocked.value = res.data.data.they_blocked;
+        }
+      } catch (error) {
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:280", "获取黑名单状态失败", error);
+      }
+    };
+    const toggleBlock = async () => {
+      try {
+        const token = common_vendor.index.getStorageSync("token");
+        if (!token) {
+          common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:289", "未登录");
+          return;
+        }
+        const action = is_blocked.value ? "remove" : "add";
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl}/with-state/blacklist/${action}?target_user_id=` + props.uid,
+          method: "POST",
+          header: {
+            Authorization: token
+          }
+        });
+        if (res.data.status === "success") {
+          is_blocked.value = !is_blocked.value;
+          common_vendor.index.showToast({
+            title: is_blocked.value ? "已加入黑名单" : "已移除黑名单",
+            icon: "none"
+          });
+          if (is_blocked.value || they_blocked.value) {
+            collocations.value = [];
+            dolls.value = [];
+            reviews.value = [];
+          }
+        } else {
+          common_vendor.index.showToast({
+            title: res.data.msg,
+            icon: "none"
+          });
+        }
+      } catch (error) {
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:324", "操作失败", error);
+        common_vendor.index.showToast({
+          title: "操作失败",
+          icon: "none"
+        });
+      }
+    };
     const formatTime = (timestamp) => {
       const date = new Date(timestamp * 1e3);
       return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
@@ -146,7 +222,11 @@ const _sfc_main = {
     });
     common_vendor.onShow(() => {
       getAuthorInfo();
-      loadData();
+      getBlockStatus().then(() => {
+        if (!is_blocked.value && !they_blocked.value) {
+          loadData();
+        }
+      });
     });
     common_vendor.onReachBottom(() => {
       loadData();
@@ -155,7 +235,17 @@ const _sfc_main = {
       return common_vendor.e({
         a: userInfo.value.avatar,
         b: common_vendor.t(userInfo.value.user_name),
-        c: common_vendor.f(tabs.value, (tab, index, i0) => {
+        c: common_vendor.p({
+          type: is_blocked.value ? "minus" : "minus",
+          size: "16",
+          color: "#fff"
+        }),
+        d: common_vendor.t(is_blocked.value ? "已拉黑" : "拉黑"),
+        e: is_blocked.value ? 1 : "",
+        f: common_vendor.o(toggleBlock),
+        g: !is_blocked.value && !they_blocked.value
+      }, !is_blocked.value && !they_blocked.value ? common_vendor.e({
+        h: common_vendor.f(tabs.value, (tab, index, i0) => {
           return {
             a: common_vendor.t(tab),
             b: index,
@@ -163,9 +253,9 @@ const _sfc_main = {
             d: common_vendor.o(($event) => currentTab.value = index, index)
           };
         }),
-        d: currentTab.value === 0
+        i: currentTab.value === 0
       }, currentTab.value === 0 ? {
-        e: common_vendor.f(collocations.value, (item, index, i0) => {
+        j: common_vendor.f(collocations.value, (item, index, i0) => {
           return {
             a: item.cover,
             b: common_vendor.t(item.title),
@@ -174,9 +264,9 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        f: currentTab.value === 1
+        k: currentTab.value === 1
       }, currentTab.value === 1 ? {
-        g: common_vendor.f(dolls.value, (item, index, i0) => {
+        l: common_vendor.f(dolls.value, (item, index, i0) => {
           return {
             a: item.cover,
             b: common_vendor.t(item.title),
@@ -186,9 +276,9 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        h: currentTab.value === 2
+        m: currentTab.value === 2
       }, currentTab.value === 2 ? {
-        i: common_vendor.f(reviews.value, (item, index, i0) => {
+        n: common_vendor.f(reviews.value, (item, index, i0) => {
           return {
             a: item.product_thumb,
             b: common_vendor.t(item.product_name),
@@ -196,6 +286,14 @@ const _sfc_main = {
             d: common_vendor.t(item.create_time),
             e: index
           };
+        })
+      } : {}) : {}, {
+        o: is_blocked.value || they_blocked.value
+      }, is_blocked.value || they_blocked.value ? {
+        p: common_vendor.p({
+          type: "minus",
+          size: "48",
+          color: "#ccc"
         })
       } : {});
     };

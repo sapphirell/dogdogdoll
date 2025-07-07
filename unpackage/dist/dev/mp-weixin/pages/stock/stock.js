@@ -236,8 +236,22 @@ const _sfc_main = {
         }
       });
     }
+    function getFirstImage(imageUrls) {
+      if (!imageUrls)
+        return "";
+      const urls = imageUrls.split(",");
+      if (urls.length === 1 && urls[0].trim() !== "") {
+        return urls[0].trim();
+      }
+      for (const url of urls) {
+        if (url.trim() !== "") {
+          return url.trim();
+        }
+      }
+      return "";
+    }
     function getBillData() {
-      common_vendor.index.__f__("log", "at pages/stock/stock.vue:475", common_config.global);
+      common_vendor.index.__f__("log", "at pages/stock/stock.vue:498", common_config.global);
       if (!common_config.global.isLogin) {
         return;
       }
@@ -249,11 +263,11 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:489", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:512", res.data.data);
           billData.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/stock.vue:493", err);
+          common_vendor.index.__f__("log", "at pages/stock/stock.vue:516", err);
         }
       });
     }
@@ -323,7 +337,7 @@ const _sfc_main = {
       }, ((_b = accountBookData.value.account_books) == null ? void 0 : _b.length) > 0 ? {
         n: common_vendor.f(accountBookData.value.account_books, (item, index, i0) => {
           return {
-            a: item.image_url,
+            a: getFirstImage(item.image_url),
             b: common_vendor.t(item.type),
             c: common_vendor.t(item.price),
             d: common_vendor.t(item.name),

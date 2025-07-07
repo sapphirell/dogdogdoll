@@ -1028,18 +1028,13 @@
 	}
 
 	.news-header-title {
-		text-shadow: 3px 0 #000000,
-			-3px 0 #000,
-			0 3px #000,
-			0 -3px #000,
-			3px 3px #000,
-			-3px -3px #000,
-			3px -3px #000,
-			-3px 3px #000;
 		color: #fff;
 		font-size: 30rpx;
 		font-weight: bold;
 		margin: 10rpx 20rpx;
 		display: inline-block;
+		background: #000000c4;
+		padding: 5px 10px;
+		border-radius: 10px 0 10px 0;
 	}
 </style>

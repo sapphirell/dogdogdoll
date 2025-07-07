@@ -408,10 +408,10 @@ const _sfc_main = {
         }),
         y: common_vendor.o(logout)
       } : common_vendor.e({
-        z: common_assets._imports_3,
+        z: common_assets._imports_3$1,
         A: common_vendor.unref(inputPhone),
         B: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
-        C: common_assets._imports_4$1,
+        C: common_assets._imports_4,
         D: common_vendor.unref(inputPassword),
         E: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
         F: common_vendor.o(jump2register),

@@ -5,7 +5,7 @@
 		<!-- 看看 Tab 内容 --><!-- 顶部 tab 切换栏 -->
 		<view class="tabs">
 			<view class="tab" :class="{ active: currentTab === 'find' }" @tap="handleTabSwitch('find')">
-				<image src="/static/new-icon/findfind.png" class="tab-image"></image>
+				<image src="/static/new-icon/findfind.gif" class="tab-image"></image>
 				<!-- <text>找找</text> -->
 			</view>
 			<view class="tab" :class="{ active: currentTab === 'view' }" @tap="handleTabSwitch('view')"> 

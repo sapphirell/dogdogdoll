@@ -80,6 +80,7 @@ const _sfc_main = {
     const handleAction = async (actionType) => {
       try {
         const token = common_vendor.index.getStorageSync("token");
+        common_vendor.index.__f__("log", "at components/attitude-widget/attitude-widget.vue:130", token);
         if (!token) {
           common_vendor.index.showToast({
             title: "请先登录",
@@ -121,7 +122,7 @@ const _sfc_main = {
           showPanel.value = false;
         }
       } catch (err) {
-        common_vendor.index.__f__("log", "at components/attitude-widget/attitude-widget.vue:176", err);
+        common_vendor.index.__f__("log", "at components/attitude-widget/attitude-widget.vue:178", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"

@@ -512,12 +512,12 @@ to {
   padding-top: 100rpx;
 }
 .tab_body_sec .tab_body_sec .empty-state .empty-icon.data-v-4829e7f4 {
-  width: 280rpx;
-  height: 280rpx;
+  width: 380rpx;
+  height: 380rpx;
 }
 .tab_body_sec .tab_body_3th .empty-state .empty-icon.data-v-4829e7f4 {
-  width: 260rpx;
-  height: 260rpx;
+  width: 360rpx;
+  height: 360rpx;
 }
 .empty-state.data-v-4829e7f4 {
   display: flex;
@@ -529,8 +529,8 @@ to {
   text-align: center;
 }
 .empty-state .empty-icon.data-v-4829e7f4 {
-  width: 240rpx;
-  height: 240rpx;
+  width: 340rpx;
+  height: 340rpx;
   opacity: 0.8;
   margin-bottom: 40rpx;
 }

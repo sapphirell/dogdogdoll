@@ -1,6 +1,5 @@
 <template>
 	<view>
-		<image class="list_item_main_image" src="../../static/logo.png"></image>
 		<view class="list_item_main_info">
 			<text>Puypoodoll - momo</text>
 			<text>21分钟前</text>

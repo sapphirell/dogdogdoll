@@ -4,13 +4,15 @@ const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
   const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
+  const _easycom_loading_toast2 = common_vendor.resolveComponent("loading-toast");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_common_search2 + _easycom_common_page2)();
+  (_easycom_common_search2 + _easycom_loading_toast2 + _easycom_common_page2)();
 }
 const _easycom_common_search = () => "../../components/common-search/common-search.js";
+const _easycom_loading_toast = () => "../../components/loading-toast/loading-toast.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_common_search + _easycom_common_page)();
+  (_easycom_common_search + _easycom_loading_toast + _easycom_common_page)();
 }
 const _sfc_main = {
   __name: "calendar",
@@ -44,16 +46,15 @@ const _sfc_main = {
     common_vendor.ref(systemInfo.statusBarHeight);
     let chooseDate = common_vendor.ref(todayFormat);
     let chooseItem = common_vendor.ref({});
-    common_vendor.index.showLoading({
-      title: "加载中"
-    });
+    let loading = common_vendor.ref(true);
     function getDateMap() {
+      loading.value = true;
       common_vendor.index.request({
         url: common_config.websiteUrl + `/goods-news`,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:185", res.data.data);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:188", res.data.data);
           originalNews.value = res.data.data;
           news.value = filterNews("全部");
           for (let [key, value] of Object.entries(news.value)) {
@@ -63,7 +64,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:195", err);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:198", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -71,10 +72,13 @@ const _sfc_main = {
         },
         complete: () => {
           scrollLeft.value = itemWidth * 7 - 5;
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:203", "left:" + scrollLeft.value);
-          common_vendor.index.hideLoading();
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:206", "left:" + scrollLeft.value);
+          loading.value = false;
         }
       });
+    }
+    function isToday(date) {
+      return date === todayFormat;
     }
     function filterNews(type) {
       const filtered = {};
@@ -115,10 +119,10 @@ const _sfc_main = {
           "Content-Type": "application/json"
         },
         success: () => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:253", "点击记录成功");
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:258", "点击记录成功");
         },
         fail: (err) => {
-          common_vendor.index.__f__("error", "at pages/calendar/calendar.vue:256", "点击记录失败:", err);
+          common_vendor.index.__f__("error", "at pages/calendar/calendar.vue:261", "点击记录失败:", err);
         }
       });
       common_vendor.index.navigateTo({
@@ -126,7 +130,7 @@ const _sfc_main = {
       });
     }
     function selectDate(date, item) {
-      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:267", item);
+      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:272", item);
       chooseDate.value = date;
       chooseItem.value = item;
     }
@@ -174,7 +178,7 @@ const _sfc_main = {
           } : {}, {
             c: common_vendor.t(item.weekday),
             d: item.weekday === "周日" || item.weekday === "周六" ? 1 : "",
-            e: common_vendor.t(item.day_number),
+            e: common_vendor.t(isToday(date) ? "今天" : item.day_number),
             f: common_vendor.unref(chooseDate) === date ? 1 : "",
             g: item.id,
             h: common_vendor.o(($event) => selectDate(date, item), item.id)
@@ -218,6 +222,9 @@ const _sfc_main = {
         })
       }, {
         k: common_vendor.p({
+          show: common_vendor.unref(loading)
+        }),
+        l: common_vendor.p({
           head_color: "rgb(185 195 253)"
         })
       });

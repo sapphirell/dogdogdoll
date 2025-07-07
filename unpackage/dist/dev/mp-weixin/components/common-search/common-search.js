@@ -84,7 +84,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
       return common_vendor.e({
         a: props.mode == "jump"
       }, props.mode == "jump" ? {
-        b: common_assets._imports_0$10
+        b: common_assets._imports_0$11
       } : {}, {
         c: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
         d: searchTerm.value,
@@ -92,7 +92,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
       }, results.value.length > 0 ? common_vendor.e({
         f: results.value.length > 0 && searchTerm.value.length < 5
       }, results.value.length > 0 && searchTerm.value.length < 5 ? {} : {}, {
-        g: common_assets._imports_1$6,
+        g: common_assets._imports_1$5,
         h: common_vendor.o(cancel)
       }) : {}, {
         i: common_vendor.n(_ctx.$attrs.class),

@@ -61,6 +61,7 @@
   height: 80rpx;
   line-height: 80rpx;
   color: #333;
+  display: inline-block;
 }
 .submit-button.data-v-c24e185a {
   margin-top: 60rpx;

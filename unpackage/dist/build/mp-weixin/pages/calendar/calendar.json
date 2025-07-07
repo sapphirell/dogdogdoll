@@ -4,6 +4,7 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "common-search": "../../components/common-search/common-search",
+    "loading-toast": "../../components/loading-toast/loading-toast",
     "common-page": "../../components/common-page/common-page"
   }
 }

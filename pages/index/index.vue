@@ -3,6 +3,9 @@
 	</meta>
 	<view>
 		<privacy-permission-modal></privacy-permission-modal>
+		<version-check :show-up-to-date-toast="true" />
+		<loading-toast :show="showLoadding"></loading-toast>
+		    
 		<view class="body">
 			<view class="index_header">
 				<view class="header-placeholders"></view>
@@ -14,7 +17,7 @@
 					<view style="display: inline-block;margin-left: 20rpx;">
 						<!-- <text class="font-alimamashuhei logo"
 							style="">娃圈狗狗助手</text> -->
-						<image src="https://images1.fantuanpu.com/home/title.gif" mode="widthFix" style="width: 400rpx;position: relative;left: -20rpx;margin-bottom: 10rpx;"></image>
+						<image src="/static/new-icon/title.gif" mode="widthFix" style="width: 400rpx;max-height: 180rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;"></image>
 					</view>
 					<goods-search width="720rpx" :hiddenIcon="false"></goods-search>
 
@@ -23,21 +26,21 @@
 					<!-- 四个小方块按钮 -->
 					<view class="index_page_article">
 						<view class="swich_box" :class="{ 'active': activeTab === 'news' }" @click="switchTab('news')">
-							<image src="/static/new-icon/telphone.png" mode="aspectFill"></image>
+							<image src="/static/new-icon/telphone.gif" mode="aspectFill"></image>
 							<text class="font-cute">新情报！</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'brands' }"
 							@click="switchTab('brands')">
-							<image src="/static/new-icon/read.png" mode="aspectFill"></image>
+							<image src="/static/new-icon/read.gif" mode="aspectFill"></image>
 							<text class="font-cute">娃物图鉴</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'hot' }" @click="switchTab('hot')">
-							<image src="/static/new-icon/collocation.png" mode="aspectFill" style="width: 90rpx;height: 90rpx;position: relative;bottom: 0rpx;"></image>
+							<image src="/static/new-icon/collocation.gif" mode="aspectFill" style="width: 90rpx;height: 90rpx;position: relative;bottom: 0rpx;"></image>
 							<text class="font-cute" style="position: relative;bottom: 5rpx;">热门搭配</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'second' }"
 							@click="switchTab('second')">
-							<image src="/static/new-icon/write.png" mode="aspectFill"></image>
+							<image src="/static/new-icon/write.gif" mode="aspectFill"></image>
 							<text class="font-cute">匿名版</text>
 						</view>
 
@@ -248,8 +251,7 @@
 				<!-- </transition> -->
 			</view>
 			
-			<loading-toast :show="showLoadding"></loading-toast>
-			
+	
 		</view>
 	</view>
 
@@ -277,6 +279,7 @@
 	import sdp from '@/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue';
 	let brandsList = ref([]);
 	let data = ref({})
+
 
 	// 定义游标变量
 	let cursor = ref('') // 存储分页游标
@@ -344,6 +347,7 @@
 		// 这里可以添加切换时加载对应数据的逻辑
 
 	}
+
 
 	// 获取系统信息
 	const navBarHeight = computed(() => {

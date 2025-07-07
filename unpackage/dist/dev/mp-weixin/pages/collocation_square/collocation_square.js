@@ -7,16 +7,18 @@ if (!Array) {
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_uni_transition2 = common_vendor.resolveComponent("uni-transition");
   const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
+  const _easycom_loading_toast2 = common_vendor.resolveComponent("loading-toast");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_goods_search2 + _easycom_uni_icons2 + _easycom_uni_transition2 + _easycom_common_modal2 + _easycom_common_page2)();
+  (_easycom_goods_search2 + _easycom_uni_icons2 + _easycom_uni_transition2 + _easycom_common_modal2 + _easycom_loading_toast2 + _easycom_common_page2)();
 }
 const _easycom_goods_search = () => "../../components/goods-search/goods-search.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_uni_transition = () => "../../uni_modules/uni-transition/components/uni-transition/uni-transition.js";
 const _easycom_common_modal = () => "../../components/common-modal/common-modal.js";
+const _easycom_loading_toast = () => "../../components/loading-toast/loading-toast.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_goods_search + _easycom_uni_icons + _easycom_uni_transition + _easycom_common_modal + _easycom_common_page)();
+  (_easycom_goods_search + _easycom_uni_icons + _easycom_uni_transition + _easycom_common_modal + _easycom_loading_toast + _easycom_common_page)();
 }
 const pageSize = 10;
 const _sfc_main = {
@@ -75,20 +77,20 @@ const _sfc_main = {
       };
     };
     const calculateLayout = (instance2) => {
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:276", "进入计算布局逻辑");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:278", "进入计算布局逻辑");
       if (!instance2) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:278", "无法获取instance");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:280", "无法获取instance");
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:281", "获取成功");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:283", "获取成功");
       if (!collocationList.value) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:283", "无列表数据，不需要计算布局");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:285", "无列表数据，不需要计算布局");
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:286", "获取成功，准备createSelectorQuery");
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:287", instance2);
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:288", "获取成功，准备createSelectorQuery");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:289", instance2);
       const query = common_vendor.index.createSelectorQuery().in(instance2.proxy);
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:289", "获取到query");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:291", "获取到query");
       const tasks = collocationList.value.map((_, index) => {
         return new Promise((resolve) => {
           query.select(`#card-${index}`).boundingClientRect((rect) => {
@@ -100,12 +102,12 @@ const _sfc_main = {
         });
       });
       query.exec(async () => {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:304", "进入Query");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:306", "进入Query");
         columnsHeight[0] = 0;
         columnsHeight[1] = 0;
         const results = await Promise.all(tasks);
         if (!results.length) {
-          common_vendor.index.__f__("warn", "at pages/collocation_square/collocation_square.vue:312", "未查询到任何卡片元素");
+          common_vendor.index.__f__("warn", "at pages/collocation_square/collocation_square.vue:314", "未查询到任何卡片元素");
           return;
         }
         results.forEach(({
@@ -113,7 +115,7 @@ const _sfc_main = {
           rect
         }) => {
           if (!rect) {
-            common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:320", `卡片${index}元素查询失败`);
+            common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:322", `卡片${index}元素查询失败`);
             return;
           }
           const item = collocationList.value[index];
@@ -166,7 +168,7 @@ const _sfc_main = {
           goodsTypes.value = ["全部", ...res.data.data];
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:391", "获取商品分类失败:", error);
+        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:393", "获取商品分类失败:", error);
       }
     };
     const fetchSizes = async () => {
@@ -180,7 +182,7 @@ const _sfc_main = {
           sizes.value = ["全部", ...sizeKeys];
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:409", "获取尺寸分类失败:", error);
+        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:411", "获取尺寸分类失败:", error);
       }
     };
     const selectType = (type) => {
@@ -223,7 +225,7 @@ const _sfc_main = {
           goodsNoMore.value = newItems.length < 10;
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:463", "获取随机商品失败:", error);
+        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:465", "获取随机商品失败:", error);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -267,7 +269,7 @@ const _sfc_main = {
         loading.value = false;
       }
       if (loading.value || noMore.value) {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:521", "正在加载或没有更多数据，停止请求");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:523", "正在加载或没有更多数据，停止请求");
         layoutFunction();
         return;
       }
@@ -278,7 +280,7 @@ const _sfc_main = {
           page_size: pageSize,
           filter_goods_id_list: filterGoods.value.map((g) => g.goods_id)
         };
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:536", "请求参数:", JSON.stringify(params, null, 2));
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:538", "请求参数:", JSON.stringify(params, null, 2));
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/collocation-list`,
           method: "POST",
@@ -288,7 +290,7 @@ const _sfc_main = {
             // 确保使用JSON格式
           }
         });
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:547", "接口响应:", res);
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:549", "接口响应:", res);
         if (res.data.status === "success") {
           const data = res.data.data || {};
           const newItems = Array.isArray(data.collocation_relation_list) ? data.collocation_relation_list : [];
@@ -304,7 +306,7 @@ const _sfc_main = {
           layoutFunction();
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:573", "请求失败:", error);
+        common_vendor.index.__f__("error", "at pages/collocation_square/collocation_square.vue:575", "请求失败:", error);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -314,12 +316,12 @@ const _sfc_main = {
       }
     };
     const layoutFunction = async () => {
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:584", "等待next tick");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:586", "等待next tick");
       await common_vendor.nextTick$1();
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:586", "等待完成");
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:588", "等待完成");
       calculateLayout(instance);
       setTimeout(() => {
-        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:590", "二次计算布局");
+        common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:592", "二次计算布局");
         calculateLayout(instance);
       }, 500);
     };
@@ -327,7 +329,7 @@ const _sfc_main = {
       showFilterModal.value = true;
     };
     const handleGoodsSelect = (goods) => {
-      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:630", "选择商品:", goods);
+      common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:632", "选择商品:", goods);
       if (!(goods == null ? void 0 : goods.id))
         return;
       const newGoods = {
@@ -388,7 +390,7 @@ const _sfc_main = {
         a: common_assets._imports_0$8,
         b: currentTab.value === "find" ? 1 : "",
         c: common_vendor.o(($event) => handleTabSwitch("find")),
-        d: common_assets._imports_1$7,
+        d: common_assets._imports_1$6,
         e: currentTab.value === "view" ? 1 : "",
         f: common_vendor.o(($event) => handleTabSwitch("view")),
         g: currentTab.value === "find"
@@ -535,6 +537,9 @@ const _sfc_main = {
         })
       }) : {}, {
         U: common_vendor.p({
+          show: goodsLoading.value || loading.value
+        }),
+        V: common_vendor.p({
           head_color: "#def9ff"
         })
       });

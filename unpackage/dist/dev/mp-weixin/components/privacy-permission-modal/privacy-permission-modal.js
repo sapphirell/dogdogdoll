@@ -29,7 +29,7 @@ const _sfc_main = {
       }
       const scene = common_config.getScene();
       if (scene !== 2 && scene !== 3) {
-        common_vendor.index.__f__("log", "at components/privacy-permission-modal/privacy-permission-modal.vue:65", "并非安卓或iOS客户端");
+        common_vendor.index.__f__("log", "at components/privacy-permission-modal/privacy-permission-modal.vue:65", "并非安卓或iOS客户端：", scene);
         return;
       }
       setTimeout(() => {

@@ -42,7 +42,7 @@
 						<view class="right-actions">
 							<text class="reply-btn" @click="handleReply(comment)">回复</text>
 							<report-button :report-type="5" :relation-id="comment.id" button-text="举报" 
-								icon-color="#999" theme-color="#64c6dc" icon-size="20" />
+								icon-color="#999" theme-color="#64c6dc"  />
 						</view>
 
 					</view>
@@ -90,7 +90,7 @@
 									  button-text="举报"
 									  icon-color="#999"
 									  theme-color="#64c6dc"
-									  icon-size="20"
+									
 									/>
 							</view>
 						</view>

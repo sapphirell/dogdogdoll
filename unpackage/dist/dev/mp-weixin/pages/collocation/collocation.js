@@ -239,8 +239,8 @@ const _sfc_main = {
             d: index
           };
         }),
-        b: common_assets._imports_1$6,
-        c: common_assets._imports_1$5,
+        b: common_assets._imports_1$5,
+        c: common_assets._imports_1$4,
         d: common_vendor.o(($event) => selectImage(_ctx.index)),
         e: title.value,
         f: common_vendor.o(($event) => title.value = $event.detail.value),
@@ -261,7 +261,7 @@ const _sfc_main = {
             g: index
           });
         }),
-        l: common_assets._imports_1$6,
+        l: common_assets._imports_1$5,
         m: common_vendor.o(handleRelationConfirm),
         n: common_vendor.o(handleRelationCancel),
         o: common_vendor.o(($event) => showSelectTab.value = $event),

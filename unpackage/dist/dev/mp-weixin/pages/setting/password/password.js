@@ -47,7 +47,7 @@ const _sfc_main = {
         });
         return;
       }
-      if (!common_config.global.userInfo.password && !oldPassword.value) {
+      if (common_config.global.userInfo.password && !oldPassword.value) {
         common_vendor.index.showToast({
           title: "请输入原密码",
           icon: "none"

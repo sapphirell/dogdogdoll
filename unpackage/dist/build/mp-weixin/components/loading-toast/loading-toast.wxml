@@ -1,0 +1,1 @@
+<view wx:if="{{a}}" class="loading-container data-v-8ed4c0c0"><view class="loading-mask data-v-8ed4c0c0"></view><view class="loading-content data-v-8ed4c0c0"><image class="loading-gif data-v-8ed4c0c0" src="{{b}}" mode="aspectFit"/><text wx:if="{{c}}" class="loading-text data-v-8ed4c0c0">{{d}}</text></view></view>

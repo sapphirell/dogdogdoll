@@ -122,9 +122,10 @@
   margin-top: 20rpx;
 }
 .pageinfo-infobox .info-item .icon.data-v-7c2ebfa5 {
-  width: 60rpx;
-  height: 60rpx;
-  margin: 10rpx 70rpx 0rpx 70rpx;
+  opacity: 0.7;
+  width: 120rpx;
+  height: 120rpx;
+  margin: 10rpx 40rpx 0rpx 40rpx;
 }
 .button-container.data-v-7c2ebfa5 {
   overflow: hidden;

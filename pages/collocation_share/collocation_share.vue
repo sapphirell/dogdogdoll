@@ -673,8 +673,8 @@
 	.report-container {
 		margin: 15rpx 0 0 0;
 		display: inline-block;
-		width: 120rpx;
-		background: #fcfcfc;
+		width: 140rpx;
+		background: #fff;
 		padding: 10rpx 20rpx;
 		border-radius: 10rpx;
 	}

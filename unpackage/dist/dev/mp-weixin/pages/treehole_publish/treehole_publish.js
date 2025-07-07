@@ -171,8 +171,8 @@ const _sfc_main = {
             d: index
           };
         }),
-        h: common_assets._imports_1$6,
-        i: common_assets._imports_1$5,
+        h: common_assets._imports_1$5,
+        i: common_assets._imports_1$4,
         j: common_vendor.o(($event) => selectImage(_ctx.index)),
         k: content.value,
         l: common_vendor.o(($event) => content.value = $event.detail.value),

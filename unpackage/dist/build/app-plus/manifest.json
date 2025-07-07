@@ -5,10 +5,10 @@
     "iPad"
   ],
   "id": "__UNI__5D7AAEE",
-  "name": "dogdogdoll",
+  "name": "DogDogDoll",
   "version": {
-    "name": "1.0.39",
-    "code": 1039
+    "name": "1.0.40",
+    "code": 1040
   },
   "description": "娃圈狗狗助手",
   "developer": {
@@ -76,16 +76,16 @@
         }
       },
       "splashscreen": {
-        "useOriginalMsgbox": true,
+        "useOriginalMsgbox": false,
         "androidStyle": "default",
         "iosStyle": "storyboard",
         "ios": {
-          "storyboard": "/Users/sapphirell/Desktop/start_creen/storyboard.zip"
+          "storyboard": "/Users/sapphirell/Desktop/sc2/storyboard.zip"
         },
         "android": {
-          "hdpi": "/Users/sapphirell/Desktop/start_creen/res/drawable-hdpi/image3x.9.png",
-          "xhdpi": "/Users/sapphirell/Desktop/start_creen/res/drawable-xhdpi/image3x.9.png",
-          "xxhdpi": "/Users/sapphirell/Desktop/start_creen/res/drawable-xxhdpi/image3x.9.png"
+          "hdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",
+          "xhdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/720p.9.png",
+          "xxhdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/1080p.9.png"
         }
       },
       "google": {

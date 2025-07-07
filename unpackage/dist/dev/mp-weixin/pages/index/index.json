@@ -4,6 +4,8 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "privacy-permission-modal": "../../components/privacy-permission-modal/privacy-permission-modal",
+    "version-check": "../../components/version-check/version-check",
+    "loading-toast": "../../components/loading-toast/loading-toast",
     "goods-search": "../../components/goods-search/goods-search",
     "uni-transition": "../../uni_modules/uni-transition/components/uni-transition/uni-transition",
     "common-search": "../../components/common-search/common-search",

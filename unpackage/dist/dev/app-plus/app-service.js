@@ -711,7 +711,7 @@ if (uni.restoreGlobal) {
     const reg = /^[0-9]*$/g;
     return typeof val === "number" || reg.test(val) ? val + "px" : val;
   };
-  const _sfc_main$$ = {
+  const _sfc_main$10 = {
     name: "UniIcons",
     emits: ["click"],
     props: {
@@ -765,7 +765,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render$_(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$$(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       "text",
       {
@@ -780,7 +780,7 @@ if (uni.restoreGlobal) {
       /* CLASS, STYLE */
     );
   }
-  const __easycom_0$b = /* @__PURE__ */ _export_sfc(_sfc_main$$, [["render", _sfc_render$_], ["__scopeId", "data-v-d31e1c47"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-icons/components/uni-icons/uni-icons.vue"]]);
+  const __easycom_0$b = /* @__PURE__ */ _export_sfc(_sfc_main$10, [["render", _sfc_render$$], ["__scopeId", "data-v-d31e1c47"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-icons/components/uni-icons/uni-icons.vue"]]);
   class MPAnimation {
     constructor(options, _this) {
       this.options = options;
@@ -893,7 +893,7 @@ if (uni.restoreGlobal) {
     clearTimeout(_this.timer);
     return new MPAnimation(option, _this);
   }
-  const _sfc_main$_ = {
+  const _sfc_main$$ = {
     name: "uniTransition",
     emits: ["click", "change"],
     props: {
@@ -1147,7 +1147,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render$Z(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$_(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.withDirectives((vue.openBlock(), vue.createElementBlock("view", {
       ref: "ani",
       animation: $data.animationData,
@@ -1160,8 +1160,8 @@ if (uni.restoreGlobal) {
       [vue.vShow, $data.isShow]
     ]);
   }
-  const __easycom_2$2 = /* @__PURE__ */ _export_sfc(_sfc_main$_, [["render", _sfc_render$Z], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-transition/components/uni-transition/uni-transition.vue"]]);
-  const _sfc_main$Z = {
+  const __easycom_2$2 = /* @__PURE__ */ _export_sfc(_sfc_main$$, [["render", _sfc_render$_], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-transition/components/uni-transition/uni-transition.vue"]]);
+  const _sfc_main$_ = {
     __name: "common-modal",
     props: {
       visible: Boolean,
@@ -1218,7 +1218,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$Y(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$Z(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_uni_transition = resolveEasycom(vue.resolveDynamicComponent("uni-transition"), __easycom_2$2);
     return $props.visible ? (vue.openBlock(), vue.createElementBlock("view", {
       key: 0,
@@ -1252,7 +1252,7 @@ if (uni.restoreGlobal) {
       }, 8, ["mode-class", "show"])
     ])) : vue.createCommentVNode("v-if", true);
   }
-  const __easycom_3$2 = /* @__PURE__ */ _export_sfc(_sfc_main$Z, [["render", _sfc_render$Y], ["__scopeId", "data-v-d7656854"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-modal/common-modal.vue"]]);
+  const __easycom_3$2 = /* @__PURE__ */ _export_sfc(_sfc_main$_, [["render", _sfc_render$Z], ["__scopeId", "data-v-d7656854"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-modal/common-modal.vue"]]);
   const websiteUrl = "https://api.fantuanpu.com";
   const image1Url = "https://images1.fantuanpu.com/";
   let global$1 = vue.reactive({
@@ -1388,6 +1388,17 @@ if (uni.restoreGlobal) {
     return 0;
   }
   function getScene() {
+    const platform2 = "app";
+    formatAppLog("log", "at common/config.js:287", "platform:", platform2);
+    {
+      const systemInfo2 = uni.getSystemInfoSync();
+      if (systemInfo2.osName === "ios") {
+        return 2;
+      }
+      if (systemInfo2.osName === "android") {
+        return 3;
+      }
+    }
     return 1;
   }
   function saveUserInfo(data) {
@@ -1402,15 +1413,15 @@ if (uni.restoreGlobal) {
     global$1.isLogin = false;
   }
   function handleRequestError(error, message = "请求失败") {
-    formatAppLog("error", "at common/config.js:331", error);
+    formatAppLog("error", "at common/config.js:333", error);
     uni.showToast({
       title: message,
       icon: "none"
     });
   }
-  const _imports_3$1 = "/static/new-icon/write.png";
+  const _imports_4$1 = "/static/new-icon/write.png";
   const storageKey = "privacyAgreementStatus";
-  const _sfc_main$Y = {
+  const _sfc_main$Z = {
     __name: "privacy-permission-modal",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -1427,7 +1438,7 @@ if (uni.restoreGlobal) {
         }
         const scene = getScene();
         if (scene !== 2 && scene !== 3) {
-          formatAppLog("log", "at components/privacy-permission-modal/privacy-permission-modal.vue:65", "并非安卓或iOS客户端");
+          formatAppLog("log", "at components/privacy-permission-modal/privacy-permission-modal.vue:65", "并非安卓或iOS客户端：", scene);
           return;
         }
         setTimeout(() => {
@@ -1469,7 +1480,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$X(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$Y(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$b);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_3$2);
     return vue.openBlock(), vue.createBlock(_component_common_modal, {
@@ -1483,7 +1494,7 @@ if (uni.restoreGlobal) {
         vue.createElementVNode("view", { class: "privacy-container" }, [
           vue.createElementVNode("view", { class: "header" }, [
             vue.createElementVNode("image", {
-              src: _imports_3$1,
+              src: _imports_4$1,
               class: "logo"
             }),
             vue.createElementVNode("text", { class: "title" }, "隐私与权限说明")
@@ -1539,10 +1550,10 @@ if (uni.restoreGlobal) {
       /* STABLE */
     }, 8, ["visible"]);
   }
-  const __easycom_0$a = /* @__PURE__ */ _export_sfc(_sfc_main$Y, [["render", _sfc_render$X], ["__scopeId", "data-v-c6b543e1"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/privacy-permission-modal/privacy-permission-modal.vue"]]);
+  const __easycom_0$a = /* @__PURE__ */ _export_sfc(_sfc_main$Z, [["render", _sfc_render$Y], ["__scopeId", "data-v-c6b543e1"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/privacy-permission-modal/privacy-permission-modal.vue"]]);
   const _imports_0$c = "/static/search.png";
   const _imports_0$b = "/static/cancel.png";
-  const _sfc_main$X = {
+  const _sfc_main$Y = {
     __name: "goods-search",
     props: {
       modelValue: {
@@ -1637,7 +1648,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$W(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$X(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -1727,8 +1738,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const __easycom_0$9 = /* @__PURE__ */ _export_sfc(_sfc_main$X, [["render", _sfc_render$W], ["__scopeId", "data-v-445b599f"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/goods-search/goods-search.vue"]]);
-  const _sfc_main$W = /* @__PURE__ */ Object.assign({
+  const __easycom_0$9 = /* @__PURE__ */ _export_sfc(_sfc_main$Y, [["render", _sfc_render$X], ["__scopeId", "data-v-445b599f"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/goods-search/goods-search.vue"]]);
+  const _sfc_main$X = /* @__PURE__ */ Object.assign({
     inheritAttrs: false
   }, {
     __name: "common-search",
@@ -1814,7 +1825,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   });
-  function _sfc_render$V(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$W(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", { style: { "width": "100%" } }, [
       vue.createElementVNode(
         "view",
@@ -1891,8 +1902,8 @@ if (uni.restoreGlobal) {
       ])
     ]);
   }
-  const __easycom_2$1 = /* @__PURE__ */ _export_sfc(_sfc_main$W, [["render", _sfc_render$V], ["__scopeId", "data-v-e5a069da"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-search/common-search.vue"]]);
-  const _sfc_main$V = {
+  const __easycom_2$1 = /* @__PURE__ */ _export_sfc(_sfc_main$X, [["render", _sfc_render$W], ["__scopeId", "data-v-e5a069da"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-search/common-search.vue"]]);
+  const _sfc_main$W = {
     __name: "index-brand",
     props: ["brand", "key"],
     setup(__props, { expose: __expose }) {
@@ -1913,7 +1924,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$U(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$V(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", {
       class: "brand-card",
       key: $props.key
@@ -2004,10 +2015,9 @@ if (uni.restoreGlobal) {
       ])
     ]);
   }
-  const __easycom_4$1 = /* @__PURE__ */ _export_sfc(_sfc_main$V, [["render", _sfc_render$U], ["__scopeId", "data-v-aa9d9d58"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/index-brand/index-brand.vue"]]);
+  const __easycom_4$1 = /* @__PURE__ */ _export_sfc(_sfc_main$W, [["render", _sfc_render$V], ["__scopeId", "data-v-aa9d9d58"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/index-brand/index-brand.vue"]]);
   const _imports_0$a = "/static/loading.gif";
-  const defaultGif = "https://images1.fantuanpu.com/home/loading.gif";
-  const _sfc_main$U = {
+  const _sfc_main$V = {
     __name: "loading-toast",
     props: {
       show: {
@@ -2022,12 +2032,12 @@ if (uni.restoreGlobal) {
     setup(__props, { expose: __expose }) {
       __expose();
       const props = __props;
-      const __returned__ = { props, defaultGif, ref: vue.ref };
+      const __returned__ = { props, ref: vue.ref };
       Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
       return __returned__;
     }
   };
-  function _sfc_render$T(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$U(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -2068,7 +2078,204 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
     );
   }
-  const __easycom_4 = /* @__PURE__ */ _export_sfc(_sfc_main$U, [["render", _sfc_render$T], ["__scopeId", "data-v-3ed615fd"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/loading-toast/loading-toast.vue"]]);
+  const __easycom_4 = /* @__PURE__ */ _export_sfc(_sfc_main$V, [["render", _sfc_render$U], ["__scopeId", "data-v-3ed615fd"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/loading-toast/loading-toast.vue"]]);
+  const _sfc_main$U = {
+    __name: "version-check",
+    props: {
+      // 是否显示已是最新版本的提示
+      showUpToDateToast: {
+        type: Boolean,
+        default: false
+      },
+      // 当前版本号
+      currentVersion: {
+        type: String,
+        required: true
+      },
+      // 是否自动检查版本
+      autoCheck: {
+        type: Boolean,
+        default: true
+      }
+    },
+    setup(__props, { expose: __expose }) {
+      const props = __props;
+      const modalVisible = vue.ref(false);
+      const newVersionInfo = vue.ref(null);
+      const showUpToDateToast = vue.ref(false);
+      const cv = vue.ref("1.0.0");
+      const platform2 = vue.computed(() => {
+        const systemInfo2 = uni.getSystemInfoSync();
+        return systemInfo2.platform || "unknown";
+      });
+      const formatTime = (timestamp) => {
+        if (!timestamp)
+          return "未知日期";
+        const date = new Date(timestamp * 1e3);
+        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
+      };
+      const isIgnored = () => {
+        const ignoreTime = uni.getStorageSync("ignoreUpdateTime");
+        formatAppLog("log", "at components/version-check/version-check.vue:87", "忽略时间：", ignoreTime);
+        if (!ignoreTime)
+          return false;
+        const now = Date.now();
+        formatAppLog("log", "at components/version-check/version-check.vue:92", "当前时间", now);
+        return now - ignoreTime < 2592e5;
+      };
+      const checkVersion = async () => {
+        try {
+          let scene = getScene();
+          if (scene === 1 || scene === 4) {
+            formatAppLog("log", "at components/version-check/version-check.vue:102", "scene:", scene);
+            return;
+          }
+          if (isIgnored()) {
+            formatAppLog("log", "at components/version-check/version-check.vue:107", "在忽略期内，不显示更新提示 ");
+            return;
+          }
+          const cv2 = uni.getAppBaseInfo().appVersion;
+          const res = await uni.request({
+            url: `${websiteUrl}/latest-version?version=1.0.40`,
+            method: "GET"
+          });
+          if (res && res.data) {
+            if (res.data.status === "success" && res.data.data) {
+              newVersionInfo.value = res.data.data;
+              modalVisible.value = true;
+            } else if (res.data.status === "failed" && props.showUpToDateToast) {
+              showUpToDateToast.value = true;
+              setTimeout(() => {
+                showUpToDateToast.value = false;
+              }, 2e3);
+            }
+          }
+        } catch (err) {
+          formatAppLog("error", "at components/version-check/version-check.vue:130", "版本检查失败:", err);
+        }
+      };
+      const handleUpdate = () => {
+        uni.setStorageSync("ignoreUpdateTime", Date.now());
+        modalVisible.value = false;
+        const platformValue = platform2.value.toLowerCase();
+        formatAppLog("log", "at components/version-check/version-check.vue:143", platformValue);
+        let scene = getScene();
+        if (scene === 2) {
+          plus.runtime.openURL("https://apps.apple.com/app/id6747564362");
+        } else if (scene === 3) {
+          plus.runtime.openURL("https://apps.apple.com/app/id6747564362");
+        } else {
+          uni.showModal({
+            title: "更新提示",
+            content: "请前往应用商店更新最新版本",
+            showCancel: false
+          });
+        }
+      };
+      const ignoreUpdate = () => {
+        uni.setStorageSync("ignoreUpdateTime", Date.now());
+        modalVisible.value = false;
+      };
+      __expose({
+        checkVersion
+      });
+      vue.onMounted(() => {
+        cv.value = uni.getAppBaseInfo().appVersion;
+        if (props.autoCheck) {
+          setTimeout(() => {
+            checkVersion();
+          }, 1500);
+        }
+      });
+      const __returned__ = { props, modalVisible, newVersionInfo, showUpToDateToast, cv, platform: platform2, formatTime, isIgnored, checkVersion, handleUpdate, ignoreUpdate, ref: vue.ref, onMounted: vue.onMounted, computed: vue.computed, get websiteUrl() {
+        return websiteUrl;
+      }, get getScene() {
+        return getScene;
+      } };
+      Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
+      return __returned__;
+    }
+  };
+  function _sfc_render$T(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_3$2);
+    return vue.openBlock(), vue.createElementBlock(
+      vue.Fragment,
+      null,
+      [
+        vue.createCommentVNode(" 版本检查组件 "),
+        vue.createElementVNode("view", null, [
+          vue.createCommentVNode(" 新版本提示弹窗 "),
+          vue.createVNode(_component_common_modal, {
+            visible: $setup.modalVisible,
+            "onUpdate:visible": _cache[0] || (_cache[0] = ($event) => $setup.modalVisible = $event),
+            top: "15vh"
+          }, {
+            default: vue.withCtx(() => {
+              var _a, _b, _c;
+              return [
+                vue.createElementVNode("view", { class: "version-update-container" }, [
+                  vue.createElementVNode(
+                    "view",
+                    { class: "update-title" },
+                    "发现新版本 v" + vue.toDisplayString((_a = $setup.newVersionInfo) == null ? void 0 : _a.version) + " 当前 v" + vue.toDisplayString(),
+                    1
+                    /* TEXT */
+                  ),
+                  vue.createElementVNode("scroll-view", {
+                    class: "update-content",
+                    "scroll-y": ""
+                  }, [
+                    vue.createElementVNode("view", { class: "update-section" }, [
+                      vue.createElementVNode("view", { class: "section-title" }, "更新内容"),
+                      vue.createElementVNode(
+                        "view",
+                        { class: "section-content" },
+                        vue.toDisplayString(((_b = $setup.newVersionInfo) == null ? void 0 : _b.note) || "优化用户体验，修复已知问题"),
+                        1
+                        /* TEXT */
+                      )
+                    ]),
+                    vue.createElementVNode("view", { class: "update-section" }, [
+                      vue.createElementVNode("view", { class: "section-title" }, "更新日期"),
+                      vue.createElementVNode(
+                        "view",
+                        { class: "section-content" },
+                        vue.toDisplayString($setup.formatTime((_c = $setup.newVersionInfo) == null ? void 0 : _c.created_at)),
+                        1
+                        /* TEXT */
+                      )
+                    ])
+                  ]),
+                  vue.createElementVNode("view", { class: "update-buttons" }, [
+                    vue.createElementVNode("button", {
+                      class: "update-btn ignore",
+                      onClick: $setup.ignoreUpdate
+                    }, "暂不更新"),
+                    vue.createElementVNode("button", {
+                      class: "update-btn confirm",
+                      onClick: $setup.handleUpdate
+                    }, "立即更新")
+                  ])
+                ])
+              ];
+            }),
+            _: 1
+            /* STABLE */
+          }, 8, ["visible"]),
+          vue.createCommentVNode(" 已是最新版本提示 "),
+          $setup.showUpToDateToast ? (vue.openBlock(), vue.createElementBlock("view", {
+            key: 0,
+            class: "toast-message"
+          }, [
+            vue.createElementVNode("text", null, "已是最新版本")
+          ])) : vue.createCommentVNode("v-if", true)
+        ])
+      ],
+      2112
+      /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
+    );
+  }
+  const __easycom_7 = /* @__PURE__ */ _export_sfc(_sfc_main$U, [["render", _sfc_render$T], ["__scopeId", "data-v-3cade7b0"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/version-check/version-check.vue"]]);
   const _sfc_main$T = {
     name: "swiper-dynamic-bullets",
     props: {
@@ -2134,11 +2341,12 @@ if (uni.restoreGlobal) {
     );
   }
   const sdp = /* @__PURE__ */ _export_sfc(_sfc_main$T, [["render", _sfc_render$S], ["__scopeId", "data-v-1fb386b0"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue"]]);
-  const _imports_0$9 = "/static/new-icon/telphone.png";
-  const _imports_1$7 = "/static/new-icon/read.png";
-  const _imports_2$4 = "/static/new-icon/collocation.png";
-  const _imports_4$1 = "/static/default-banner.jpg";
-  const _imports_5 = "/static/noname.png";
+  const _imports_0$9 = "/static/new-icon/title.gif";
+  const _imports_1$7 = "/static/new-icon/telphone.png";
+  const _imports_2$4 = "/static/new-icon/read.png";
+  const _imports_3$1 = "/static/new-icon/collocation.png";
+  const _imports_5 = "/static/default-banner.jpg";
+  const _imports_6 = "/static/noname.png";
   const _sfc_main$S = {
     __name: "index",
     setup(__props, { expose: __expose }) {
@@ -2203,10 +2411,10 @@ if (uni.restoreGlobal) {
         path: "/pages/news/news",
         imageUrl: "/static/share",
         success(res) {
-          formatAppLog("log", "at pages/index/index.vue:379", "分享成功", res);
+          formatAppLog("log", "at pages/index/index.vue:383", "分享成功", res);
         },
         fail(err) {
-          formatAppLog("log", "at pages/index/index.vue:382", "分享失败", err);
+          formatAppLog("log", "at pages/index/index.vue:386", "分享失败", err);
         },
         mp: {
           wxpath: "/pages/index/index.html"
@@ -2286,7 +2494,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("error", "at pages/index/index.vue:480", "获取Banner失败:", err);
+            formatAppLog("error", "at pages/index/index.vue:484", "获取Banner失败:", err);
             data.value = {};
           }
         });
@@ -2350,7 +2558,7 @@ if (uni.restoreGlobal) {
             newsPage.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:550", err);
+            formatAppLog("log", "at pages/index/index.vue:554", err);
             uni.showToast({
               title: "加载失败",
               icon: "none"
@@ -2393,7 +2601,7 @@ if (uni.restoreGlobal) {
             hotPage.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:596", err);
+            formatAppLog("log", "at pages/index/index.vue:600", err);
             uni.showToast({
               title: "加载失败",
               icon: "none"
@@ -2442,7 +2650,7 @@ if (uni.restoreGlobal) {
             }
             const response = res.data.data;
             const newData = response.data;
-            formatAppLog("log", "at pages/index/index.vue:657", "newData:", newData);
+            formatAppLog("log", "at pages/index/index.vue:661", "newData:", newData);
             cursor.value = response.next_cursor || "";
             if (newData.length === 0) {
               hasMore.value = false;
@@ -2452,7 +2660,7 @@ if (uni.restoreGlobal) {
             hasMore.value = response.has_more;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:670", err);
+            formatAppLog("log", "at pages/index/index.vue:674", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -2647,6 +2855,7 @@ if (uni.restoreGlobal) {
     const _component_index_brand = resolveEasycom(vue.resolveDynamicComponent("index-brand"), __easycom_4$1);
     const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$b);
     const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_4);
+    const _component_version_check = resolveEasycom(vue.resolveDynamicComponent("version-check"), __easycom_7);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -2666,9 +2875,9 @@ if (uni.restoreGlobal) {
                 vue.createElementVNode("view", { style: { "display": "inline-block", "margin-left": "20rpx" } }, [
                   vue.createCommentVNode(' <text class="font-alimamashuhei logo"\n							style="">娃圈狗狗助手</text> '),
                   vue.createElementVNode("image", {
-                    src: "https://images1.fantuanpu.com/home/title.gif",
+                    src: _imports_0$9,
                     mode: "widthFix",
-                    style: { "width": "400rpx", "position": "relative", "left": "-20rpx", "margin-bottom": "10rpx" }
+                    style: { "width": "400rpx", "max-height": "180rpx", "position": "relative", "left": "-20rpx", "margin-bottom": "10rpx" }
                   })
                 ]),
                 vue.createVNode(_component_goods_search, {
@@ -2687,7 +2896,7 @@ if (uni.restoreGlobal) {
                     },
                     [
                       vue.createElementVNode("image", {
-                        src: _imports_0$9,
+                        src: _imports_1$7,
                         mode: "aspectFill"
                       }),
                       vue.createElementVNode("text", { class: "font-cute" }, "新情报！")
@@ -2703,7 +2912,7 @@ if (uni.restoreGlobal) {
                     },
                     [
                       vue.createElementVNode("image", {
-                        src: _imports_1$7,
+                        src: _imports_2$4,
                         mode: "aspectFill"
                       }),
                       vue.createElementVNode("text", { class: "font-cute" }, "娃物图鉴")
@@ -2719,7 +2928,7 @@ if (uni.restoreGlobal) {
                     },
                     [
                       vue.createElementVNode("image", {
-                        src: _imports_2$4,
+                        src: _imports_3$1,
                         mode: "aspectFill",
                         style: { "width": "90rpx", "height": "90rpx", "position": "relative", "bottom": "0rpx" }
                       }),
@@ -2739,7 +2948,7 @@ if (uni.restoreGlobal) {
                     },
                     [
                       vue.createElementVNode("image", {
-                        src: _imports_3$1,
+                        src: _imports_4$1,
                         mode: "aspectFill"
                       }),
                       vue.createElementVNode("text", { class: "font-cute" }, "匿名版")
@@ -2798,7 +3007,7 @@ if (uni.restoreGlobal) {
                         $setup.data.length === 0 ? (vue.openBlock(), vue.createElementBlock("swiper-item", { key: 0 }, [
                           vue.createElementVNode("view", { class: "empty-banner" }, [
                             vue.createElementVNode("image", {
-                              src: _imports_4$1,
+                              src: _imports_5,
                               mode: "aspectFill",
                               style: { "width": "100%", "height": "250rpx" }
                             })
@@ -3131,7 +3340,7 @@ if (uni.restoreGlobal) {
                               mode: "aspectFill"
                             }, null, 8, ["src"])) : (vue.openBlock(), vue.createElementBlock("image", {
                               key: 1,
-                              src: _imports_5,
+                              src: _imports_6,
                               class: "avatar",
                               mode: "scaleToFill"
                             })),
@@ -3256,7 +3465,8 @@ if (uni.restoreGlobal) {
               }, 8, ["show"]),
               vue.createCommentVNode(" </transition> ")
             ]),
-            vue.createVNode(_component_loading_toast, { show: $setup.showLoadding }, null, 8, ["show"])
+            vue.createVNode(_component_loading_toast, { show: $setup.showLoadding }, null, 8, ["show"]),
+            vue.createVNode(_component_version_check, { "show-up-to-date-toast": true })
           ])
         ])
       ],
@@ -3480,9 +3690,6 @@ if (uni.restoreGlobal) {
         "957ceee2-footerHeight": footerHeight.value
       }));
       const emit = __emit;
-      const handleScroll = (e2) => {
-        emit("scroll", e2.detail);
-      };
       const systemInfo2 = uni.getSystemInfoSync();
       const navBarHeight = vue.computed(() => {
         return 0;
@@ -3497,7 +3704,7 @@ if (uni.restoreGlobal) {
         const safeBottom = ((_a = systemInfo2.safeAreaInsets) == null ? void 0 : _a.bottom) || 0;
         return `${safeBottom + 20}px`;
       });
-      const __returned__ = { emit, handleScroll, systemInfo: systemInfo2, navBarHeight, props, headerHeight, footerHeight, ref: vue.ref, computed: vue.computed };
+      const __returned__ = { emit, systemInfo: systemInfo2, navBarHeight, props, headerHeight, footerHeight, ref: vue.ref, computed: vue.computed };
       Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
       return __returned__;
     }
@@ -3515,11 +3722,11 @@ if (uni.restoreGlobal) {
           vue.createElementVNode("view", { class: "content-container" }, [
             vue.createCommentVNode(" 这里放页面主要内容 "),
             vue.createElementVNode(
-              "scroll-view",
+              "view",
               {
                 class: "main-content",
                 "scroll-y": "",
-                onScroll: $setup.handleScroll
+                onScroll: _cache[0] || (_cache[0] = (...args) => _ctx.handleScroll && _ctx.handleScroll(...args))
               },
               [
                 vue.renderSlot(_ctx.$slots, "default", {}, void 0, true)
@@ -4020,7 +4227,8 @@ if (uni.restoreGlobal) {
                           ])
                         ])) : (vue.openBlock(), vue.createElementBlock("view", {
                           key: 1,
-                          class: "empty-state"
+                          class: "empty-state",
+                          style: { "position": "relative", "bottom": "80px" }
                         }, [
                           vue.createElementVNode("image", {
                             class: "empty-icon",
@@ -9724,13 +9932,17 @@ if (uni.restoreGlobal) {
         {
           label: "检查更新",
           action: checkUpdate,
-          status: false,
-          displayValue: "无需更新"
+          status: newVersionInfo.value.version,
+          // 有新版本时高亮显示
+          displayValue: updateStatusText.value
         }
       ]);
       let userInfo = vue.ref({});
+      let newVersionInfo = vue.ref({});
       const hasAppliedDeletion = vue.ref(false);
       let needUpdate = vue.ref(false);
+      const updateStatusText = vue.ref("检查更新");
+      let click = vue.ref(0);
       function jump2password() {
         uni.navigateTo({
           url: "/pages/setting/password/password"
@@ -9754,13 +9966,13 @@ if (uni.restoreGlobal) {
           });
         } else {
           bindWechat().then(() => {
-            formatAppLog("log", "at pages/setting/setting.vue:113", "微信绑定成功");
+            formatAppLog("log", "at pages/setting/setting.vue:119", "微信绑定成功");
             uni.showToast({
               title: "微信绑定成功",
               icon: "none"
             });
           }).catch((err) => {
-            formatAppLog("error", "at pages/setting/setting.vue:120", "微信绑定失败:", err);
+            formatAppLog("error", "at pages/setting/setting.vue:126", "微信绑定失败:", err);
             uni.showToast({
               title: "微信绑定失败",
               icon: "none"
@@ -9768,17 +9980,34 @@ if (uni.restoreGlobal) {
           });
         }
       }
-      function checkUpdate() {
-        if (uni.getSystemInfoSync().platform === "app") {
-          const version = plus.runtime.version;
-          formatAppLog("log", "at pages/setting/setting.vue:133", "App version from manifest:", version);
+      const checkUpdate = async () => {
+        if (uni.getSystemInfoSync().platform === "app" || true) {
+          click.value++;
+          uni.getAppBaseInfo().appVersion;
+          const res = await uni.request({
+            url: `${websiteUrl}/latest-version?version=1.0.40`,
+            method: "GET"
+          });
+          if (res && res.data) {
+            if (res.data.status === "success" && res.data.data) {
+              updateStatusText.value = "有新版本:" + res.data.data.version;
+              newVersionInfo.value = true;
+            } else {
+              if (click.value > 1) {
+                uni.showToast({
+                  title: "当前已是最新版本",
+                  icon: "none"
+                });
+              }
+            }
+          }
         } else {
           uni.showToast({
             title: "您所使用的平台无需更新",
             icon: "none"
           });
         }
-      }
+      };
       async function handleAccountDeletion() {
         if (hasAppliedDeletion.value) {
           uni.showModal({
@@ -9900,15 +10129,24 @@ if (uni.restoreGlobal) {
         asyncGetUserInfo().then((user) => {
           hasAppliedDeletion.value = user.delete_apply_at > 0;
         });
+        checkUpdate();
       });
       const __returned__ = { menuItems, get userInfo() {
         return userInfo;
       }, set userInfo(v2) {
         userInfo = v2;
+      }, get newVersionInfo() {
+        return newVersionInfo;
+      }, set newVersionInfo(v2) {
+        newVersionInfo = v2;
       }, hasAppliedDeletion, get needUpdate() {
         return needUpdate;
       }, set needUpdate(v2) {
         needUpdate = v2;
+      }, updateStatusText, get click() {
+        return click;
+      }, set click(v2) {
+        click = v2;
       }, jump2password, jump2telphone, jump2username, jump2wechat, checkUpdate, handleAccountDeletion, applyForAccountDeletion, cancelAccountDeletion, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, get websiteUrl() {
         return websiteUrl;
       }, get wechatSignLogin() {

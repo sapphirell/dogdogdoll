@@ -284,6 +284,7 @@ export async function voteScore(type, score, targetId) {
 export function getScene() {
 	// 获取运行平台信息
 	const platform = process.env.UNI_PLATFORM
+	console.log("platform:", platform)
 
 	// 微信小程序
 	if (platform === 'mp-weixin') {
@@ -296,7 +297,7 @@ export function getScene() {
 	}
 
 	// App 环境
-	if (platform === 'app-plus') {
+	if (platform === 'app-plus' || platform === 'app') {
 		const systemInfo = uni.getSystemInfoSync()
 		// iOS 设备
 		if (systemInfo.osName === 'ios') {
@@ -311,6 +312,7 @@ export function getScene() {
 	// 默认返回网页（可根据需要修改）
 	return 1
 }
+
 
 
 // 工具函数

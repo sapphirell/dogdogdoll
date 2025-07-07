@@ -37,7 +37,7 @@
   padding-bottom: 0.03125rem;
   color: #4cbbd0;
   display: block;
-  background: linear-gradient(178deg, #def9ff, #d6e4f2);
+  background: linear-gradient(180deg, #def9ff, #d6e4f2);
   /* 四个小按钮 */
 }
 .index_header .logo.data-v-1cf27b2a {
@@ -112,7 +112,7 @@
   border-radius: 1.25rem 1.25rem 0 0;
   overflow: hidden;
   background: #fff;
-  width: 740rpx;
+  width: calc(100vw - 20rpx);
   margin: 0 auto;
 }
 .body_list.data-v-1cf27b2a {

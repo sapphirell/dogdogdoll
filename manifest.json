@@ -1,9 +1,9 @@
 {
-    "name" : "dogdogdoll",
+    "name" : "DogDogDoll",
     "appid" : "__UNI__5D7AAEE",
     "description" : "娃圈狗狗助手",
-    "versionName" : "1.0.39",
-    "versionCode" : 1039,
+    "versionName" : "1.0.40",
+    "versionCode" : 1040,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
@@ -95,18 +95,21 @@
                 }
             },
             "splashscreen" : {
-                "useOriginalMsgbox" : true,
+                "useOriginalMsgbox" : false,
                 "androidStyle" : "default",
                 "iosStyle" : "storyboard",
                 "ios" : {
-                    "storyboard" : "/Users/sapphirell/Desktop/start_creen/storyboard.zip"
+                    "storyboard" : "/Users/sapphirell/Desktop/sc2/storyboard.zip"
                 },
                 "android" : {
-                    "hdpi" : "/Users/sapphirell/Desktop/start_creen/res/drawable-hdpi/image3x.9.png",
-                    "xhdpi" : "/Users/sapphirell/Desktop/start_creen/res/drawable-xhdpi/image3x.9.png",
-                    "xxhdpi" : "/Users/sapphirell/Desktop/start_creen/res/drawable-xxhdpi/image3x.9.png"
+                    "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",
+                    "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/720p.9.png",
+                    "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/1080p.9.png"
                 }
             }
+        },
+        "uniStatistics" : {
+            "enable" : false
         }
     },
     /* 快应用特有相关 */
@@ -118,19 +121,82 @@
             "urlCheck" : false,
             "minified" : true
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
     },
     "mp-alipay" : {
-        "usingComponents" : true
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
     },
     "mp-baidu" : {
-        "usingComponents" : true
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
     },
     "mp-toutiao" : {
-        "usingComponents" : true
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
     },
     "uniStatistics" : {
-        "enable" : false
+        "enable" : false,
+        "version" : "2"
     },
-    "vueVersion" : "3"
+    "vueVersion" : "3",
+    "app-harmony" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "h5" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-harmony" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-jd" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-kuaishou" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-lark" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-qq" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-xhs" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "quickapp-webview-huawei" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "quickapp-webview-union" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    }
 }

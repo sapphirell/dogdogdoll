@@ -52,16 +52,15 @@
   height: 70rpx;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
-}
-.heart .uni-icons.data-v-7e2880f6 {
-  width: 40rpx;
-  height: 40rpx;
+  padding: 5rpx;
 }
 .heart .num.data-v-7e2880f6 {
   font-size: 20rpx;
   /* 调小 */
   font-weight: bold;
   margin-top: 5rpx;
+  width: 100%;
+  text-align: center;
 }
 .banner-swiper.data-v-7e2880f6 {
   width: 100%;
@@ -129,14 +128,16 @@
 }
 
 /* 贩售情报样式 */
-.sales-info.data-v-7e2880f6, .no-sales.data-v-7e2880f6 {
+.sales-info.data-v-7e2880f6,
+.no-sales.data-v-7e2880f6 {
   background: #fff;
   border-radius: 20rpx;
   margin: 20rpx;
   padding: 30rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
-.sales-info .section-title.data-v-7e2880f6, .no-sales .section-title.data-v-7e2880f6 {
+.sales-info .section-title.data-v-7e2880f6,
+.no-sales .section-title.data-v-7e2880f6 {
   display: block;
   font-size: 28rpx;
   /* 调小 */
@@ -308,4 +309,9 @@
 .bottom-placeholder.data-v-7e2880f6 {
   width: 100%;
   height: 120rpx;
+}
+.img_info.data-v-7e2880f6 {
+  height: 42rpx;
+  position: relative;
+  left: -5rpx;
 }

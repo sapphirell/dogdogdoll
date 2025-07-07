@@ -1,6 +1,7 @@
 <template>
   <!-- 使用v-show而不是v-if以获得更好的性能 -->
-  <view class="loading-container" v-show="show">
+
+  <view class="loading-container" v-if="props.show">
     <!-- 半透明黑色遮罩层 -->
     <view class="loading-mask"></view>
     
@@ -32,8 +33,7 @@ const props = defineProps({
   }
 });
 
-// 使用默认GIF图片
-const defaultGif = 'https://images1.fantuanpu.com/home/loading.gif';
+
 </script>
 
 <style lang="less" scoped>
@@ -54,8 +54,8 @@ const defaultGif = 'https://images1.fantuanpu.com/home/loading.gif';
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.39); // 半透明黑色背景
-    backdrop-filter: blur(4px); // 背景模糊效果
+    // background-color: rgba(0, 0, 0, 0.39); // 半透明黑色背景
+    // backdrop-filter: blur(4px); // 背景模糊效果
   }
   
   .loading-content {
@@ -67,8 +67,9 @@ const defaultGif = 'https://images1.fantuanpu.com/home/loading.gif';
     justify-content: center;
     padding: 30rpx;
     border-radius: 20rpx;
-    // background: rgba(30, 30, 30, 0.9); // 稍深的背景
-    // box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
+    background: rgba(30, 30, 30, 0.7); // 稍深的背景
+    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
+	backdrop-filter: blur(4px); // 背景模糊效果
     
     .loading-gif {
       width: 220rpx;

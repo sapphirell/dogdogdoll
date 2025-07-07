@@ -270,6 +270,13 @@ to {
 .footer .left-actions .like-container .like-btn .like-count.liked {
   color: rgb(100 198 220);
 }
+.footer .right-actions {
+  display: flex;
+  align-items: center;
+  /* 添加这行确保垂直居中 */
+  gap: 10rpx;
+  /* 添加间距使两个按钮分开 */
+}
 .footer .right-actions .reply-btn {
   font-size: 22rpx;
   color: #97b7df;

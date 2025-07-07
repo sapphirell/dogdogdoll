@@ -170,6 +170,7 @@ function asyncGetUserInfo() {
           clearUserInfo();
           resolve(null);
         }
+        return data;
       },
       fail: (err) => {
         handleRequestError(err, "获取用户信息失败");
@@ -179,6 +180,8 @@ function asyncGetUserInfo() {
   });
 }
 function getScene() {
+  const platform = "mp-weixin";
+  common_vendor.index.__f__("log", "at common/config.js:287", "platform:", platform);
   {
     return 4;
   }
@@ -195,7 +198,7 @@ function clearUserInfo() {
   global.isLogin = false;
 }
 function handleRequestError(error, message = "请求失败") {
-  common_vendor.index.__f__("error", "at common/config.js:330", error);
+  common_vendor.index.__f__("error", "at common/config.js:333", error);
   common_vendor.index.showToast({
     title: message,
     icon: "none"

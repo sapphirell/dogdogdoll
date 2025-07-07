@@ -27,17 +27,17 @@
 
 					<view class="pageinfo-infobox">
 						<view class="info-item" @tap="jump2like">
-							<image src="/static/pixcollocation.png" class="icon"></image>
+							<image src="/static/new-icon/minefollow.gif" class="icon"></image>
 							<text class="info-tap font-alimamashuhei">关注</text>
 							<text class="mine-info-number">{{ likeCount }}</text>
 						</view>
 						<view class="info-item" @tap="jump2message">
-							<image src="/static/pixpaperplane.png" class="icon"></image>
+							<image src="/static/new-icon/minemessage.gif" class="icon"></image>
 							<text class="info-tap font-alimamashuhei">消息</text>
 							<text class="mine-info-number">{{ unreadCount }}</text>
 						</view>
 						<view class="info-item" @tap="jump2collocation">
-							<image src="/static/pixttq2.png" class="icon"></image>
+							<image src="/static/new-icon/minecollocation.gif"  class="icon"></image>
 							<text class="info-tap font-alimamashuhei">搭配</text>
 							<text class="mine-info-number">{{ myCollocationCount }}</text>
 						</view>
@@ -147,7 +147,7 @@
 		wechatSignLogin,
 		getUserInfo,
 		global,
-		getScene
+		getScene,
 	} from "../../common/config.js";
 
 	console.log(global.isLogin)
@@ -712,9 +712,10 @@
 			}
 
 			.icon {
-				width: 60rpx;
-				height: 60rpx;
-				margin: 10rpx 70rpx 0rpx 70rpx;
+				opacity: 0.7;
+				width: 120rpx;
+				height: 120rpx;
+				margin: 10rpx 40rpx 0rpx 40rpx;
 			}
 		}
 	}

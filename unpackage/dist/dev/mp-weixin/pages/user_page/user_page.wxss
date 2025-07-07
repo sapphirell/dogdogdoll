@@ -15,8 +15,6 @@
   background-position: 0px -293rpx;
 }
 .user-info-container.data-v-c3556478 {
-  display: flex;
-  justify-content: center;
   align-items: center;
   padding-top: 70rpx;
   padding-bottom: 0rpx;
@@ -42,6 +40,47 @@
   font-weight: bold;
   color: #5f5f5f;
   text-align: center;
+}
+.action-buttons.data-v-c3556478 {
+  position: absolute;
+  right: 30rpx;
+  top: 30rpx;
+  z-index: 20;
+}
+.action-btn.data-v-c3556478 {
+  padding: 8rpx 20rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+.action-btn.blocked.data-v-c3556478 {
+  background: rgba(255, 87, 87, 0.8);
+}
+.block-info.data-v-c3556478 {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8rpx;
+  padding: 15rpx;
+  margin: 15rpx 30rpx;
+  text-align: center;
+  color: white;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+.empty-state.data-v-c3556478 {
+  text-align: center;
+  padding: 80rpx 30rpx;
+  color: #999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
 }
 .tabs-container.data-v-c3556478 {
   position: relative;

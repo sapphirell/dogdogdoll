@@ -28,7 +28,7 @@ const _sfc_main = {
           formattedDate.value = formatDate(res.data.data.ymd);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:113", err);
+          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:118", err);
         }
       });
     }

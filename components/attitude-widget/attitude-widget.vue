@@ -124,8 +124,10 @@
 	}
 
 	const handleAction = async (actionType) => {
+	
 		try {
 			const token = uni.getStorageSync('token')
+				console.log(token)
 			if (!token) {
 				uni.showToast({
 					title: '请先登录',

@@ -132,7 +132,7 @@ const _sfc_main = {
           });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at components/comment-list/comment-list.vue:288", "点赞失败:", err);
+        common_vendor.index.__f__("error", "at components/comment-list/comment-list.vue:287", "点赞失败:", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -191,10 +191,10 @@ const _sfc_main = {
           } else {
             commentList.value.push(...newComments);
           }
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:353", "total", data.total);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:352", "total", data.total);
           hasMore.value = data.total > commentList.value.length;
           mainCommentsTotal.value = data.total;
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:357", "是否还有更多?", hasMore.value);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:356", "是否还有更多?", hasMore.value);
         }
       } catch (err) {
         common_vendor.index.showToast({
@@ -287,11 +287,9 @@ const _sfc_main = {
             s: common_vendor.p({
               ["report-type"]: 5,
               ["relation-id"]: comment.id,
-              ["button-text"]: "",
-              ["icon-type"]: "flag",
+              ["button-text"]: "举报",
               ["icon-color"]: "#999",
-              ["theme-color"]: "#64c6dc",
-              ["icon-size"]: "20"
+              ["theme-color"]: "#64c6dc"
             }),
             t: comment.localChildren && comment.localChildren.length
           }, comment.localChildren && comment.localChildren.length ? common_vendor.e({
@@ -330,11 +328,9 @@ const _sfc_main = {
                 t: common_vendor.p({
                   ["report-type"]: 5,
                   ["relation-id"]: child.id,
-                  ["button-text"]: "",
-                  ["icon-type"]: "flag",
+                  ["button-text"]: "举报",
                   ["icon-color"]: "#999",
-                  ["theme-color"]: "#64c6dc",
-                  ["icon-size"]: "20"
+                  ["theme-color"]: "#64c6dc"
                 }),
                 v: child.id
               });

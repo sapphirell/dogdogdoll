@@ -5,7 +5,7 @@ const _sfc_main = {
   setup(__props) {
     common_vendor.onMounted(() => {
       common_vendor.index.setNavigationBarTitle({
-        title: "权限说明"
+        title: "用户协议"
       });
     });
     return (_ctx, _cache) => {

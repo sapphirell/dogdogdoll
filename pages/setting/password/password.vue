@@ -111,7 +111,7 @@
 			})
 			return
 		}
-		if (!global.userInfo.password && !oldPassword.value) {
+		if ( global.userInfo.password && !oldPassword.value) {
 			uni.showToast({
 				title: '请输入原密码',
 				icon: 'none'

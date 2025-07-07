@@ -276,7 +276,7 @@ const _sfc_main = {
             a: item,
             b: common_vendor.o(viewFullImage, index)
           }, isEditable.value ? {
-            c: common_assets._imports_1$6,
+            c: common_assets._imports_1$5,
             d: common_vendor.o(($event) => deleteImage(index), index)
           } : {}, {
             e: index
@@ -285,7 +285,7 @@ const _sfc_main = {
         c: isEditable.value,
         d: isEditable.value
       }, isEditable.value ? {
-        e: common_assets._imports_1$5,
+        e: common_assets._imports_1$4,
         f: common_vendor.o(($event) => selectImage(_ctx.index))
       } : {}, {
         g: !isEditable.value,
@@ -309,7 +309,7 @@ const _sfc_main = {
             d: common_vendor.t(item.brand_name),
             e: common_vendor.t(item.goods_name)
           }, isEditable.value ? {
-            f: common_assets._imports_1$6,
+            f: common_assets._imports_1$5,
             g: common_vendor.o(($event) => deleteCollcation(index), index)
           } : {}, {
             h: index

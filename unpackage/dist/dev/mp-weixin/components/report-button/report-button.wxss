@@ -18,9 +18,9 @@
   /* 透明背景 */
 }
 .report-button .default-button.horizontal .button-text.data-v-b620d6d3 {
-  font-size: 24rpx;
+  font-size: 22rpx;
   /* 稍微放大文字 */
-  color: #666;
+  color: #999;
   /* 深一点的颜色 */
   margin-left: 8rpx;
   /* 图标和文字间距 */

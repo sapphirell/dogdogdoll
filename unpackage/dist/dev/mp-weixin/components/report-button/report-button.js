@@ -32,7 +32,7 @@ const _sfc_main = {
     // 图标类型
     iconType: {
       type: String,
-      default: "flag"
+      default: ""
     },
     // 图标大小
     iconSize: {
@@ -71,34 +71,11 @@ const _sfc_main = {
         selectedReason.value = reason;
       }
     };
-    const checkLogin = async () => {
-      if (common_config.global.isLogin)
-        return true;
-      await common_config.asyncGetUserInfo();
-      if (common_config.global.isLogin)
-        return true;
-      return new Promise((resolve) => {
-        common_vendor.index.showModal({
-          title: "登录提示",
-          content: "需要登录后才能举报，是否立即登录？",
-          confirmText: "去登录",
-          cancelText: "取消",
-          success: (res) => {
-            if (res.confirm) {
-              common_config.wechatSignLogin();
-              resolve(false);
-            } else {
-              resolve(false);
-            }
-          }
-        });
-      });
-    };
     const fetchReportReasons = async () => {
       try {
         const token = common_vendor.index.getStorageSync("token");
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/report/reasons?type=${props.reportType}`,
+          url: `${common_config.websiteUrl}/report/reasons?type=${props.reportType}`,
           method: "GET",
           header: {
             "Authorization": token
@@ -123,9 +100,6 @@ const _sfc_main = {
       }
     };
     const handleClick = async () => {
-      const isLoggedIn = await checkLogin();
-      if (!isLoggedIn)
-        return;
       const success = await fetchReportReasons();
       if (!success)
         return;
@@ -158,8 +132,12 @@ const _sfc_main = {
           reason: selectedReason.value,
           details: reportDetails.value
         };
+        let url = `${common_config.websiteUrl}/with-state/report/submit`;
+        if (token == "") {
+          url = `${common_config.websiteUrl}/report/submit`;
+        }
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/report/submit`,
+          url,
           method: "POST",
           header: {
             "Authorization": token,
@@ -202,6 +180,7 @@ const _sfc_main = {
     return (_ctx, _cache) => {
       return {
         a: common_vendor.p({
+          ["v-if"]: __props.iconType !== "",
           type: __props.iconType,
           size: __props.iconSize,
           color: __props.iconColor

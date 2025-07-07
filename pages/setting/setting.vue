@@ -35,6 +35,7 @@
 		global,
 		bindWechat,
 		asyncGetUserInfo,
+	
 	} from "../../common/config.js";
 	uni.setNavigationBarTitle({
 		title: '设置'
@@ -68,18 +69,23 @@
 		{
 			label: '检查更新',
 			action: checkUpdate,
-			status: false,
-			displayValue: '无需更新'
+			status: newVersionInfo.value.version, // 有新版本时高亮显示
+			displayValue: updateStatusText.value 
 		}
 	])
 
 	// 用户信息
 	let userInfo = ref({})
+	// 新版本
+	let newVersionInfo = ref({})
 	// 注销申请状态
 	const hasAppliedDeletion = ref(false)
 	// 是否需要更新
 	let needUpdate = ref(false)
-
+	// 更新状态文本
+	const updateStatusText = ref('检查更新')
+	// 点击次数
+	let click = ref(0)
 
 	//跳转到密码设置页面
 	function jump2password() {
@@ -126,11 +132,32 @@
 		}
 	}
 	//检查更新
-	function checkUpdate() {
+	const checkUpdate = async () => {
+	
 		// 获取manifest.json文件的内容
-		if (uni.getSystemInfoSync().platform === 'app') {
-			const version = plus.runtime.version;
-			console.log('App version from manifest:', version);
+		if (uni.getSystemInfoSync().platform === 'app' || 1 == 1) {
+			click.value ++;
+			const version = uni.getAppBaseInfo().appVersion;
+			const res = await uni.request({
+				url: `${websiteUrl}/latest-version?version=1.0.40`,
+				method: 'GET'
+			});
+
+			if (res && res.data) {
+				if (res.data.status === 'success' && res.data.data) {
+					// 有新版本
+					updateStatusText.value = "有新版本:" + res.data.data.version;
+					newVersionInfo.value = true;
+				} else {
+					if(click.value > 1) {
+						uni.showToast({
+							title: '当前已是最新版本',
+							icon: 'none'
+						})
+					}
+					
+				}
+			}
 		} else {
 			uni.showToast({
 				title: '您所使用的平台无需更新',
@@ -287,6 +314,7 @@
 			// 检查用户是否已申请注销
 			hasAppliedDeletion.value = user.delete_apply_at > 0
 		})
+		checkUpdate()
 	})
 </script>
 
@@ -356,7 +384,7 @@
 		margin-top: 60rpx;
 		padding: 0 12rpx;
 	}
-	
+
 	.logout-btn {
 		padding: 28rpx;
 		border-radius: 16rpx;
@@ -365,12 +393,12 @@
 		box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.12);
 		position: relative;
 		overflow: hidden;
-		
+
 		text {
 			color: #fff;
 		}
 	}
-	
+
 	.logout-btn::after {
 		content: '';
 		position: absolute;
@@ -382,15 +410,15 @@
 		transform: rotate(25deg);
 		transition: all 0.6s;
 	}
-	
+
 	.logout-btn:active {
 		transform: scale(0.96);
 	}
-	
+
 	.logout-btn:active::after {
 		left: 120%;
 	}
-	
+
 	.btn-text {
 		font-size: 32rpx;
 		font-weight: 600;
@@ -399,7 +427,7 @@
 		position: relative;
 		z-index: 1;
 	}
-	
+
 	.deletion-notice {
 		display: block;
 		margin-top: 30rpx;

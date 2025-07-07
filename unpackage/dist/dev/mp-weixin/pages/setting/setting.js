@@ -37,12 +37,17 @@ const _sfc_main = {
       {
         label: "检查更新",
         action: checkUpdate,
-        status: false,
-        displayValue: "无需更新"
+        status: newVersionInfo.value.version,
+        // 有新版本时高亮显示
+        displayValue: updateStatusText.value
       }
     ]);
     common_vendor.ref({});
+    let newVersionInfo = common_vendor.ref({});
+    const hasAppliedDeletion = common_vendor.ref(false);
     common_vendor.ref(false);
+    const updateStatusText = common_vendor.ref("检查更新");
+    let click = common_vendor.ref(0);
     function jump2password() {
       common_vendor.index.navigateTo({
         url: "/pages/setting/password/password"
@@ -66,13 +71,13 @@ const _sfc_main = {
         });
       } else {
         common_config.bindWechat().then(() => {
-          common_vendor.index.__f__("log", "at pages/setting/setting.vue:99", "微信绑定成功");
+          common_vendor.index.__f__("log", "at pages/setting/setting.vue:119", "微信绑定成功");
           common_vendor.index.showToast({
             title: "微信绑定成功",
             icon: "none"
           });
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/setting/setting.vue:106", "微信绑定失败:", err);
+          common_vendor.index.__f__("error", "at pages/setting/setting.vue:126", "微信绑定失败:", err);
           common_vendor.index.showToast({
             title: "微信绑定失败",
             icon: "none"
@@ -80,20 +85,159 @@ const _sfc_main = {
         });
       }
     }
-    function checkUpdate() {
-      if (common_vendor.index.getSystemInfoSync().platform === "app") {
-        const version = plus.runtime.version;
-        common_vendor.index.__f__("log", "at pages/setting/setting.vue:119", "App version from manifest:", version);
+    const checkUpdate = async () => {
+      if (common_vendor.index.getSystemInfoSync().platform === "app" || true) {
+        click.value++;
+        common_vendor.index.getAppBaseInfo().appVersion;
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl}/latest-version?version=1.0.40`,
+          method: "GET"
+        });
+        if (res && res.data) {
+          if (res.data.status === "success" && res.data.data) {
+            updateStatusText.value = "有新版本:" + res.data.data.version;
+            newVersionInfo.value = true;
+          } else {
+            if (click.value > 1) {
+              common_vendor.index.showToast({
+                title: "当前已是最新版本",
+                icon: "none"
+              });
+            }
+          }
+        }
       } else {
         common_vendor.index.showToast({
           title: "您所使用的平台无需更新",
           icon: "none"
         });
       }
+    };
+    async function handleAccountDeletion() {
+      if (hasAppliedDeletion.value) {
+        common_vendor.index.showModal({
+          title: "取消注销申请",
+          content: "确定要取消账号注销申请吗？",
+          success: async (res) => {
+            if (res.confirm) {
+              await cancelAccountDeletion();
+            }
+          }
+        });
+      } else {
+        common_vendor.index.showModal({
+          title: "申请注销账号",
+          content: "确定要申请注销账号吗？注销后账号将不可恢复！",
+          confirmText: "确认注销",
+          confirmColor: "#f56c6c",
+          success: async (res) => {
+            if (res.confirm) {
+              await applyForAccountDeletion();
+            }
+          }
+        });
+      }
     }
-    common_config.getUserInfo();
+    async function applyForAccountDeletion() {
+      const token = common_vendor.index.getStorageSync("token");
+      if (!token) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
+      common_vendor.index.showLoading({
+        title: "处理中...",
+        mask: true
+      });
+      try {
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl}/with-state/apply-delete`,
+          method: "POST",
+          header: {
+            "Authorization": token
+          }
+        });
+        common_vendor.index.hideLoading();
+        if (res.data.status === "success") {
+          hasAppliedDeletion.value = true;
+          common_config.global.userInfo.deleteApplyAt = Math.floor(Date.now() / 1e3);
+          common_vendor.index.showToast({
+            title: "已申请注销账号",
+            icon: "success",
+            duration: 3e3
+          });
+          setTimeout(() => {
+            common_vendor.index.showModal({
+              title: "注销申请已提交",
+              content: "您的账号将在30天后正式注销。在此期间您可以正常使用所有功能，并可随时取消注销申请。",
+              showCancel: false,
+              confirmText: "知道了"
+            });
+          }, 1e3);
+        } else {
+          throw new Error(res.data.msg || "申请注销失败");
+        }
+      } catch (error) {
+        common_vendor.index.hideLoading();
+        common_vendor.index.showToast({
+          title: error.message || "操作失败，请稍后重试",
+          icon: "none",
+          duration: 3e3
+        });
+      }
+    }
+    async function cancelAccountDeletion() {
+      const token = common_vendor.index.getStorageSync("token");
+      if (!token) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
+      common_vendor.index.showLoading({
+        title: "处理中...",
+        mask: true
+      });
+      try {
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl}/with-state/cancel-delete`,
+          method: "POST",
+          header: {
+            "Authorization": token
+          }
+        });
+        common_vendor.index.hideLoading();
+        if (res.data.status === "success") {
+          hasAppliedDeletion.value = false;
+          common_config.global.userInfo.deleteApplyAt = 0;
+          common_vendor.index.showToast({
+            title: "已取消注销申请",
+            icon: "success",
+            duration: 3e3
+          });
+        } else {
+          throw new Error(res.data.msg || "取消注销失败");
+        }
+      } catch (error) {
+        common_vendor.index.hideLoading();
+        common_vendor.index.showToast({
+          title: error.message || "操作失败，请稍后重试",
+          icon: "none",
+          duration: 3e3
+        });
+      }
+    }
+    common_vendor.onMounted(() => {
+      common_config.asyncGetUserInfo().then((user) => {
+        hasAppliedDeletion.value = user.delete_apply_at > 0;
+      });
+      checkUpdate();
+    });
     return (_ctx, _cache) => {
-      return {
+      return common_vendor.e({
         a: common_vendor.f(menuItems.value, (item, index, i0) => {
           return {
             a: common_vendor.t(item.label),
@@ -103,8 +247,12 @@ const _sfc_main = {
             e: common_vendor.o(($event) => item.action(item), index)
           };
         }),
-        b: common_assets._imports_0$6
-      };
+        b: common_assets._imports_0$6,
+        c: common_vendor.t(hasAppliedDeletion.value ? "取消注销申请" : "申请注销账号"),
+        d: common_vendor.o(handleAccountDeletion),
+        e: hasAppliedDeletion.value ? "#f56c6c" : "#cfcad8",
+        f: hasAppliedDeletion.value
+      }, hasAppliedDeletion.value ? {} : {});
     };
   }
 };

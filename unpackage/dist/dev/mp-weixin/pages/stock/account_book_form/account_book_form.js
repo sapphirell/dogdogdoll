@@ -23,6 +23,8 @@ const _sfc_main = {
   setup(__props) {
     const props = __props;
     const isEdit = props.account_book_id ? true : false;
+    const count = common_vendor.ref(1);
+    const imageList = common_vendor.ref([]);
     const systemInfo = common_vendor.index.getSystemInfoSync();
     common_vendor.ref(systemInfo.statusBarHeight);
     let name = common_vendor.ref("");
@@ -78,7 +80,7 @@ const _sfc_main = {
           sizeOptions.value = formattedSizes;
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:277", "获取尺寸数据失败:", err);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:302", "获取尺寸数据失败:", err);
         common_vendor.index.showToast({
           title: "获取尺寸数据失败",
           icon: "none"
@@ -115,7 +117,7 @@ const _sfc_main = {
         });
         customTypes.value = res.data.data || [];
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:322", "获取分类失败:", err);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:347", "获取分类失败:", err);
       }
     };
     const addNewType = async () => {
@@ -184,7 +186,7 @@ const _sfc_main = {
                 });
               }
             } catch (err) {
-              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:396", "删除失败:", err);
+              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:421", "删除失败:", err);
               common_vendor.index.showToast({
                 title: err.errMsg || "请求失败",
                 icon: "none"
@@ -204,7 +206,6 @@ const _sfc_main = {
     const selectedType = common_vendor.ref(0);
     common_vendor.ref(["请选择", "娃衣", "娃头", "眼珠", "假发", "娃鞋", "其它"]);
     common_vendor.ref({});
-    const accountImage = common_vendor.ref("");
     function updateSelectedType(e) {
       selectedType.value = e.detail.value;
     }
@@ -220,11 +221,14 @@ const _sfc_main = {
           id
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:449", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:469", res.data.data);
           name.value = res.data.data.name;
           price.value = parseInt(res.data.data.price);
+          count.value = res.data.data.count || 1;
           selectedType.value = typeOptions.value.indexOf(res.data.data.type);
-          accountImage.value = res.data.data.image_url;
+          if (res.data.data.image_url) {
+            imageList.value = res.data.data.image_url.split(",");
+          }
           form.value = {
             isRemind: res.data.data.is_remind,
             finalPrice: res.data.data.final_price,
@@ -245,10 +249,10 @@ const _sfc_main = {
               res.data.data.size_detail || ""
             ];
           }
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:478", "f:", form);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:502", "f:", form);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:481", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:505", err);
         }
       });
     }
@@ -263,12 +267,13 @@ const _sfc_main = {
           const detail = res.data.data;
           name.value = detail.name;
           price.value = detail.fin_amount + detail.sub_amount;
+          count.value = 1;
           if ((_a = detail.goods_images) == null ? void 0 : _a[0]) {
-            accountImage.value = detail.goods_images[0];
+            imageList.value = [detail.goods_images[0]];
           }
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:505", "获取商品详情失败:", error);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:533", "获取商品详情失败:", error);
         common_vendor.index.showToast({
           title: "获取商品信息失败",
           icon: "none"
@@ -302,7 +307,7 @@ const _sfc_main = {
               },
               // 改为JSON格式传参
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:543", res2.data.status);
+                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:571", res2.data.status);
                 if (res2.data.status === "success") {
                   common_vendor.index.showToast({
                     title: "删除成功",
@@ -317,7 +322,7 @@ const _sfc_main = {
                 }
               },
               fail: (err) => {
-                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:558", "请求失败:", err);
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:586", "请求失败:", err);
                 common_vendor.index.showToast({
                   title: "网络错误",
                   icon: "none"
@@ -328,25 +333,45 @@ const _sfc_main = {
         }
       });
     }
-    function selectImage() {
-      common_image.chooseImage().then((res) => {
-        common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:573", tokenData);
-          common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
-            if (uploadRes.statusCode != 200) {
-              common_vendor.index.showToast({
-                title: "上传失败",
-                icon: "none"
-              });
+    async function selectImage() {
+      common_vendor.index.chooseImage({
+        count: 9,
+        success: async (res) => {
+          const tempFilePaths = res.tempFilePaths;
+          for (const filePath of tempFilePaths) {
+            try {
+              const tokenData = await common_image.getQiniuToken();
+              const uploadRes = await common_image.uploadImageToQiniu(filePath, tokenData.token, tokenData.path);
+              common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:612", "res:", uploadRes);
+              if (uploadRes.qiniuRes.statusCode === 200) {
+                const imageUrl = common_config.image1Url + tokenData.path;
+                imageList.value.push(imageUrl);
+              } else {
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:617", "上传失败:", filePath);
+              }
+            } catch (error) {
+              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:620", "上传错误:", error);
             }
-            common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:582", common_config.image1Url + tokenData.path);
-            accountImage.value = common_config.image1Url + tokenData.path;
-            common_vendor.index.showToast({
-              title: "上传成功",
-              icon: "success"
-            });
+          }
+          common_vendor.index.showToast({
+            title: `上传了${tempFilePaths.length}张图片`,
+            icon: "success"
           });
-        });
+        }
+      });
+    }
+    function removeImage(index, event) {
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      common_vendor.index.showModal({
+        title: "删除图片",
+        content: "确定删除这张图片吗？",
+        success: (res) => {
+          if (res.confirm) {
+            imageList.value.splice(index, 1);
+          }
+        }
       });
     }
     common_config.asyncGetUserInfo().then((userInfo) => {
@@ -371,6 +396,13 @@ const _sfc_main = {
       }
     }
     const validateForm = () => {
+      if (count.value <= 0) {
+        common_vendor.index.showToast({
+          title: "个数必须大于0",
+          icon: "none"
+        });
+        return false;
+      }
       if (form.value.isRemind) {
         if (!form.value.finalPrice || form.value.finalPrice <= 0) {
           common_vendor.index.showToast({
@@ -386,9 +418,12 @@ const _sfc_main = {
       let postData = {
         name: name.value,
         price: parseInt(price.value, 10),
+        count: parseInt(count.value, 10),
+        // 新增：个数
         type: typeOptions.value[selectedType.value],
         // 使用合并后的分类列表
-        image_url: accountImage.value,
+        image_url: imageList.value.join(","),
+        // 修改：图片数组转逗号分隔字符串
         is_remind: form.value.isRemind,
         final_price: parseInt(form.value.finalPrice, 10),
         final_time: form.value.finalTime,
@@ -402,7 +437,7 @@ const _sfc_main = {
         buy_date: moreInfo.value.buyDate,
         position: moreInfo.value.position
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:665", "提交数据:", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:724", "提交数据:", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -411,7 +446,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:675", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:734", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -433,9 +468,12 @@ const _sfc_main = {
       let postData = {
         name: name.value,
         price: parseInt(price.value, 10),
+        count: parseInt(count.value, 10),
+        // 新增：个数
         type: typeOptions.value[selectedType.value],
         // 使用合并后的分类列表
-        image_url: accountImage.value,
+        image_url: imageList.value.join(","),
+        // 修改：图片数组转逗号分隔字符串
         id: parseInt(props.account_book_id, 10),
         is_remind: form.value.isRemind,
         // 转换为数据库需要的格式
@@ -459,7 +497,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:723", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:783", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -475,6 +513,12 @@ const _sfc_main = {
             });
           }
         }
+      });
+    }
+    function viewFullImage(index) {
+      common_vendor.index.previewImage({
+        current: imageList.value["index"],
+        urls: imageList.value
       });
     }
     common_vendor.onShow(() => {
@@ -524,80 +568,95 @@ const _sfc_main = {
         }),
         p: common_vendor.unref(price),
         q: common_vendor.o(($event) => common_vendor.isRef(price) ? price.value = $event.detail.value : price = $event.detail.value),
-        r: accountImage.value
-      }, accountImage.value ? {
-        s: accountImage.value,
-        t: common_vendor.o(selectImage)
-      } : {
-        v: common_vendor.o(selectImage)
-      }, {
-        w: common_vendor.o(onSizeChange),
-        x: common_vendor.p({
+        r: count.value,
+        s: common_vendor.o(($event) => count.value = $event.detail.value),
+        t: common_vendor.f(imageList.value, (img, index, i0) => {
+          return {
+            a: img,
+            b: common_vendor.o(($event) => viewFullImage(), index),
+            c: common_vendor.o((e) => removeImage(index, e), index),
+            d: "0299c5b6-3-" + i0,
+            e: index
+          };
+        }),
+        v: common_vendor.p({
+          type: "close",
+          size: "22",
+          color: "#fff"
+        }),
+        w: common_vendor.p({
+          type: "plusempty",
+          size: "40",
+          color: "#ccc"
+        }),
+        x: common_vendor.o(selectImage),
+        y: common_vendor.o(onSizeChange),
+        z: common_vendor.p({
           placeholder: "请选择尺寸",
           localdata: sizeOptions.value,
           value: selectedSizePath.value
         }),
-        y: !showMoreInfo.value
+        A: !showMoreInfo.value
       }, !showMoreInfo.value ? {
-        z: common_vendor.p({
+        B: common_vendor.p({
           type: "right",
           size: "20",
           color: "#888"
         })
       } : {
-        A: common_vendor.p({
+        C: common_vendor.p({
           type: "down",
           size: "20",
           color: "#888"
         })
       }, {
-        B: common_vendor.o(($event) => toggleMoreInfo()),
-        C: showMoreInfo.value
+        D: common_vendor.o(($event) => toggleMoreInfo()),
+        E: showMoreInfo.value
       }, showMoreInfo.value ? {
-        D: moreInfo.value.sizeDetail,
-        E: common_vendor.o(($event) => moreInfo.value.sizeDetail = $event.detail.value),
-        F: moreInfo.value.color,
-        G: common_vendor.o(($event) => moreInfo.value.color = $event.detail.value),
-        H: moreInfo.value.remark,
-        I: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
-        J: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
-        K: moreInfo.value.buyDate,
-        L: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
-        M: moreInfo.value.position,
-        N: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
+        F: moreInfo.value.sizeDetail,
+        G: common_vendor.o(($event) => moreInfo.value.sizeDetail = $event.detail.value),
+        H: moreInfo.value.color,
+        I: common_vendor.o(($event) => moreInfo.value.color = $event.detail.value),
+        J: moreInfo.value.remark,
+        K: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
+        L: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
+        M: moreInfo.value.buyDate,
+        N: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
+        O: moreInfo.value.position,
+        P: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
       } : {}, {
-        O: !form.value.isRemind
+        Q: !form.value.isRemind
       }, !form.value.isRemind ? {
-        P: common_vendor.p({
+        R: common_vendor.p({
           type: "right",
           size: "20",
           color: "#888"
         })
       } : {
-        Q: common_vendor.p({
+        S: common_vendor.p({
           type: "down",
           size: "20",
           color: "#888"
         })
       }, {
-        R: form.value.finalPrice > 0
+        T: form.value.finalPrice > 0
       }, form.value.finalPrice > 0 ? {} : {}, {
-        S: common_vendor.o(($event) => toggleRemind()),
-        T: form.value.isRemind
+        U: common_vendor.o(($event) => toggleRemind()),
+        V: form.value.isRemind
       }, form.value.isRemind ? {
-        U: form.value.finalPrice,
-        V: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
-        W: common_vendor.t(form.value.finalTime || "选择截止日期"),
-        X: form.value.finalTime,
-        Y: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
+        W: form.value.finalPrice,
+        X: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
+        Y: common_vendor.t(form.value.finalTime || "选择截止日期"),
+        Z: form.value.finalTime,
+        aa: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
       } : {}, {
-        Z: common_assets._imports_0$7,
-        aa: common_vendor.unref(isEdit)
+        ab: common_assets._imports_0$7,
+        ac: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        ab: common_vendor.o(handleDelete)
+        ad: common_vendor.o(handleDelete)
       } : {}, {
-        ac: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
-        ad: common_vendor.o(postSubmit)
+        ae: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        af: common_vendor.o(postSubmit)
       });
     };
   }

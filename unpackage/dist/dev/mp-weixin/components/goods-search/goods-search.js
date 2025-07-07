@@ -97,14 +97,14 @@ const _sfc_main = {
       } : {}, {
         c: !__props.hiddenIcon
       }, !__props.hiddenIcon ? {
-        d: common_assets._imports_0$10
+        d: common_assets._imports_0$11
       } : {}, {
         e: inputValue.value,
         f: common_vendor.o(onSearchInput),
         g: __props.fontSize || "22rpx",
         h: results.value.length > 0
       }, results.value.length > 0 ? {
-        i: common_assets._imports_1$6,
+        i: common_assets._imports_1$5,
         j: common_vendor.o(cancel)
       } : {}, {
         k: common_vendor.n(_ctx.$attrs.class),

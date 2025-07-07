@@ -8,9 +8,9 @@
 		<!-- 页面内容区域 -->
 		<view class="content-container">
 			<!-- 这里放页面主要内容 -->
-			<scroll-view class="main-content" scroll-y @scroll="handleScroll">
+			<view class="main-content" scroll-y @scroll="handleScroll">
 				<slot></slot>
-			</scroll-view>
+			</view>
 		</view>
 
 		<!-- 底部安全区域占位 -->
