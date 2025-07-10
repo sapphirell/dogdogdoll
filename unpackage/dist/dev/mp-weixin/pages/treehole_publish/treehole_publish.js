@@ -4,14 +4,16 @@ const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 const common_image = require("../../common/image.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_uni_icons2 + _easycom_common_page2)();
+  (_easycom_view_logs2 + _easycom_uni_icons2 + _easycom_common_page2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_uni_icons + _easycom_common_page)();
+  (_easycom_view_logs + _easycom_uni_icons + _easycom_common_page)();
 }
 const _sfc_main = {
   __name: "treehole_publish",
@@ -36,10 +38,10 @@ const _sfc_main = {
       title: "投稿树洞"
     });
     function selectImage() {
-      common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:108", "openSelect");
+      common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:109", "openSelect");
       common_image.chooseImage().then((res) => {
         common_image.getQiniuToken().then((tokenData) => {
-          common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:111", tokenData);
+          common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:112", tokenData);
           common_image.uploadImageToQiniu(res, tokenData.token, tokenData.path).then((uploadRes) => {
             if (uploadRes.statusCode != 200) {
               common_vendor.index.showToast({
@@ -47,7 +49,7 @@ const _sfc_main = {
                 icon: "none"
               });
             }
-            common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:120", common_config.image1Url + tokenData.path);
+            common_vendor.index.__f__("log", "at pages/treehole_publish/treehole_publish.vue:121", common_config.image1Url + tokenData.path);
             uploadList.value.push(common_config.image1Url + tokenData.path);
             common_vendor.index.showToast({
               title: "上传成功",
@@ -70,7 +72,7 @@ const _sfc_main = {
           }));
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:150", "获取分类失败:", err);
+        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:151", "获取分类失败:", err);
       }
     };
     function handleCategoryChange(e) {
@@ -141,7 +143,7 @@ const _sfc_main = {
         }
       } catch (err) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:236", "提交失败:", err);
+        common_vendor.index.__f__("error", "at pages/treehole_publish/treehole_publish.vue:237", "提交失败:", err);
         common_vendor.index.showToast({
           title: "网络请求失败",
           icon: "none"

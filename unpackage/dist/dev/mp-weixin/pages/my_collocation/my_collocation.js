@@ -2,6 +2,14 @@
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
+  _easycom_view_logs2();
+}
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
+if (!Math) {
+  _easycom_view_logs();
+}
 const _sfc_main = {
   __name: "my_collocation",
   setup(__props) {
@@ -95,7 +103,7 @@ const _sfc_main = {
         }),
         c: loading.value
       }, loading.value ? {
-        d: common_assets._imports_0$9
+        d: common_assets._imports_0$10
       } : {}, {
         e: noMore.value
       }, noMore.value ? {} : {}, {

@@ -198,6 +198,30 @@
   /* 调小 */
   color: #888;
 }
+
+/* 尾款账单按钮样式 */
+.bill-action.data-v-7e2880f6 {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 15rpx;
+  padding-top: 15rpx;
+  border-top: 1rpx dashed #eee;
+}
+.bill-action text.data-v-7e2880f6 {
+  font-size: 24rpx;
+  color: #64c6dc;
+  margin-left: 8rpx;
+}
+.bill-action.data-v-7e2880f6:active {
+  opacity: 0.7;
+}
+
+/* 调整贩售情报项的内边距 */
+.sale-item.data-v-7e2880f6 {
+  padding: 20rpx 0 15rpx;
+  /* 底部减少内边距 */
+}
 .empty-text.data-v-7e2880f6 {
   font-size: 26rpx;
   /* 调小 */
@@ -314,4 +338,103 @@
   height: 42rpx;
   position: relative;
   left: -5rpx;
+}
+.action-buttons.data-v-7e2880f6 {
+  display: flex;
+  gap: 15rpx;
+  /* 进一步减少间距 */
+  padding: 0;
+  margin: 20rpx 0 30rpx;
+  /* 调整上下边距 */
+  justify-content: space-between;
+  /* 均匀分布 */
+}
+.action-btn.data-v-7e2880f6 {
+  /* 添加这行解决按钮高度问题 */
+  line-height: normal !important;
+  flex: 1;
+  /* 等宽分布 */
+  height: 100rpx;
+  /* 增加高度 */
+  display: flex;
+  flex-direction: column;
+  /* 垂直排列 */
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  /* 图标文字间距 */
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  /* 减小字体 */
+  font-weight: 600;
+  /* 加粗 */
+  border: none;
+  /* 移除边框 */
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  padding: 10rpx 0;
+  /* 增加内边距 */
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.15);
+  /* 增强阴影 */
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
+  /* 文字阴影 */
+  /* 移除伪元素边框 */
+  /* 图标样式 */
+}
+.action-btn.data-v-7e2880f6::before {
+  content: none;
+}
+.action-btn.data-v-7e2880f6:active {
+  transform: scale(0.96);
+  box-shadow: 0 3rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+.action-btn.data-v-7e2880f6::after {
+  border: none;
+  /* 移除默认边框 */
+}
+.action-btn text.data-v-7e2880f6 {
+  color: #fff;
+  line-height: 1.2;
+}
+.action-btn .uni-icons.data-v-7e2880f6 {
+  filter: drop-shadow(0 1rpx 2rpx rgba(0, 0, 0, 0.2));
+  /* 图标阴影 */
+}
+
+/* 新增的按钮内容容器 */
+.btn-content.data-v-7e2880f6 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 糖果配色方案 */
+.add-to-stock.data-v-7e2880f6 {
+  background: linear-gradient(135deg, #64c6dc, #4aa5c0);
+  box-shadow: 0 6rpx 16rpx rgba(74, 165, 192, 0.3);
+}
+.wish-resale.data-v-7e2880f6 {
+  background: linear-gradient(135deg, #ff9a9e, #f78ca0);
+  box-shadow: 0 6rpx 16rpx rgba(247, 140, 160, 0.3);
+}
+.add-showcase.data-v-7e2880f6 {
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  box-shadow: 0 6rpx 16rpx rgba(161, 140, 209, 0.3);
+}
+
+/* 调整商品信息间距 */
+.goods-info.data-v-7e2880f6 {
+  margin-bottom: 10rpx;
+}
+.goods-info .info-item.data-v-7e2880f6:first-child {
+  padding-top: 10rpx;
+  /* 第一个信息项顶部留空 */
+}
+
+/* 确保按钮与上方内容有间距 */
+.swiper-container.data-v-7e2880f6 {
+  margin-bottom: 0;
 }

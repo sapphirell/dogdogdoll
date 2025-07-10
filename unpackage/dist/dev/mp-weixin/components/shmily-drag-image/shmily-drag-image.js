@@ -1,0 +1,418 @@
+"use strict";
+const common_vendor = require("../../common/vendor.js");
+require("../../common/config.js");
+const _sfc_main = {
+  __name: "shmily-drag-image",
+  props: {
+    value: {
+      type: Array,
+      default: () => []
+    },
+    modelValue: {
+      type: Array,
+      default: () => []
+    },
+    keyName: {
+      type: String,
+      default: "image_url"
+      // 默认使用image_url作为图片字段
+    },
+    number: {
+      type: Number,
+      default: 6
+    },
+    imageWidth: {
+      type: Number,
+      default: 0
+    },
+    cols: {
+      type: Number,
+      default: 3
+    },
+    borderRadius: {
+      type: String,
+      default: 0
+    },
+    padding: {
+      type: Number,
+      default: 10
+    },
+    scale: {
+      type: Number,
+      default: 1.1
+    },
+    opacity: {
+      type: Number,
+      default: 0.7
+    },
+    // 新增：每个项目之间的边距
+    itemMargin: {
+      type: Number,
+      default: 10
+    },
+    // 新增：图片与文字的比例
+    imageRatio: {
+      type: Number,
+      default: 0.7
+      // 图片区域占总高度的70%
+    }
+  },
+  emits: ["input", "update:modelValue"],
+  setup(__props, { emit: __emit }) {
+    const props = __props;
+    const emit = __emit;
+    const imageList = common_vendor.ref([]);
+    const width = common_vendor.ref(0);
+    const add = common_vendor.ref({
+      x: 0,
+      y: 0
+    });
+    const colsValue = common_vendor.ref(0);
+    const viewWidth = common_vendor.ref(0);
+    const viewHeight = common_vendor.ref(0);
+    const tempItem = common_vendor.ref(null);
+    const timer = common_vendor.ref(null);
+    const changeStatus = common_vendor.ref(true);
+    common_vendor.ref(true);
+    const first = common_vendor.ref(true);
+    const touchStartY = common_vendor.ref(0);
+    const longPressTimer = common_vendor.ref(null);
+    const isDragging = common_vendor.ref(false);
+    const areaHeight = common_vendor.computed(() => {
+      if (imageList.value.length < props.number) {
+        return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + "px";
+      }
+      return Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value + "px";
+    });
+    const childWidth = common_vendor.computed(() => {
+      return viewWidth.value - rpx2px(props.padding) * 2 + "px";
+    });
+    const childHeight = common_vendor.computed(() => {
+      return viewHeight.value - rpx2px(props.padding) * 2 + "px";
+    });
+    const getSrc = (item) => {
+      return props.keyName !== null ? item[props.keyName] : item;
+    };
+    const getItemData = (item) => {
+      return {
+        id: item.id,
+        src: getSrc(item),
+        name: item.name,
+        price: item.price,
+        type: item.type
+      };
+    };
+    const onChange = (e, item) => {
+      if (!item)
+        return;
+      item.oldX = e.detail.x;
+      item.oldY = e.detail.y;
+      if (e.detail.source === "touch") {
+        if (item.moveEnd) {
+          item.offset = Math.sqrt(
+            Math.pow(item.oldX - item.absX * viewWidth.value, 2) + Math.pow(item.oldY - item.absY * viewHeight.value, 2)
+            // 使用viewHeight
+          );
+        }
+        let x = Math.floor((e.detail.x + viewWidth.value / 2) / viewWidth.value);
+        if (x >= colsValue.value)
+          return;
+        let y = Math.floor((e.detail.y + viewHeight.value / 2) / viewHeight.value);
+        let index = colsValue.value * y + x;
+        if (item.index !== index && index < imageList.value.length) {
+          changeStatus.value = false;
+          imageList.value.forEach((obj) => {
+            if (item.index > index && obj.index >= index && obj.index < item.index) {
+              changeObj(obj, 1);
+            } else if (item.index < index && obj.index <= index && obj.index > item.index) {
+              changeObj(obj, -1);
+            } else if (obj.id !== item.id) {
+              obj.offset = 0;
+              obj.x = obj.oldX;
+              obj.y = obj.oldY;
+              setTimeout(() => {
+                common_vendor.nextTick$1(() => {
+                  obj.x = obj.absX * viewWidth.value;
+                  obj.y = obj.absY * viewHeight.value;
+                });
+              }, 0);
+            }
+          });
+          item.index = index;
+          item.absX = x;
+          item.absY = y;
+          if (!item.moveEnd) {
+            setTimeout(() => {
+              common_vendor.nextTick$1(() => {
+                item.x = item.absX * viewWidth.value;
+                item.y = item.absY * viewHeight.value;
+              });
+            }, 0);
+          }
+          sortList();
+        }
+      }
+    };
+    const changeObj = (obj, i) => {
+      obj.index += i;
+      obj.offset = 0;
+      obj.x = obj.oldX;
+      obj.y = obj.oldY;
+      obj.absX = obj.index % colsValue.value;
+      obj.absY = Math.floor(obj.index / colsValue.value);
+      setTimeout(() => {
+        common_vendor.nextTick$1(() => {
+          obj.x = obj.absX * viewWidth.value;
+          obj.y = obj.absY * viewHeight.value;
+        });
+      }, 0);
+    };
+    const onLongPressStart = (item, e) => {
+      touchStartY.value = e.touches[0].clientY;
+      if (longPressTimer.value) {
+        clearTimeout(longPressTimer.value);
+        longPressTimer.value = null;
+      }
+      imageList.value.forEach((item2) => {
+        item2.ready = false;
+        item2.disable = true;
+      });
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:241", "长按开始");
+      longPressTimer.value = setTimeout(() => {
+        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:245", "长按成功！");
+        common_vendor.index.vibrateShort({
+          success: () => {
+            common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:248", "触感反馈");
+          }
+        });
+        item.ready = true;
+        item.disable = false;
+        isDragging.value = true;
+        touchstart(item);
+      }, 240);
+    };
+    const touchstart = (item, e) => {
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:259", "进入touchstart");
+      imageList.value.forEach((v) => {
+        v.zIndex = v.index + 9;
+      });
+      item.zIndex = 99;
+      item.moveEnd = true;
+      tempItem.value = item;
+      timer.value = setTimeout(() => {
+        item.scale = props.scale;
+        item.opacity = props.opacity;
+        clearTimeout(timer.value);
+        timer.value = null;
+      }, 200);
+    };
+    const touchend = (item) => {
+      item.scale = 1;
+      item.opacity = 1;
+      item.x = item.oldX;
+      item.y = item.oldY;
+      item.offset = 0;
+      item.moveEnd = false;
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:284", "结束点击，清理ready");
+      imageList.value.forEach((item2) => {
+        item2.ready = false;
+        item2.disable = true;
+      });
+      isDragging.value = false;
+      if (longPressTimer.value) {
+        clearTimeout(longPressTimer.value);
+        longPressTimer.value = null;
+      }
+      setTimeout(() => {
+        common_vendor.nextTick$1(() => {
+          item.x = item.absX * viewWidth.value;
+          item.y = item.absY * viewHeight.value;
+          tempItem.value = null;
+          changeStatus.value = true;
+        });
+      }, 0);
+    };
+    const getFirstImage = (imageUrls) => {
+      var _a;
+      if (!imageUrls)
+        return "";
+      const urls = imageUrls.split(",");
+      const firstUrl = ((_a = urls[0]) == null ? void 0 : _a.trim()) || "";
+      if (firstUrl.startsWith("http")) {
+        return firstUrl;
+      }
+      return "";
+    };
+    const mouseenter = () => {
+    };
+    const mouseleave = () => {
+    };
+    const onTouchMove = (e, item) => {
+      if (isDragging.value)
+        return;
+      const touchY = e.touches[0].clientY;
+      const deltaY = Math.abs(touchY - touchStartY.value);
+      if (deltaY > 10 && longPressTimer.value) {
+        clearTimeout(longPressTimer.value);
+        longPressTimer.value = null;
+      }
+    };
+    function go2editor(id) {
+      common_vendor.index.navigateTo({
+        url: "/pages/stock/account_book_form/account_book_form?account_book_id=" + id
+      });
+    }
+    const sortList = () => {
+      const result = [];
+      const source = props.modelValue.length ? props.modelValue : props.value;
+      const list = [...imageList.value].sort((a, b) => a.index - b.index);
+      for (let s of list) {
+        const item = source.find((d) => getSrc(d) === s.src);
+        if (item) {
+          result.push(item);
+        } else {
+          if (props.keyName !== null) {
+            result.push({
+              [props.keyName]: s.src
+            });
+          } else {
+            result.push(s.src);
+          }
+        }
+      }
+      emit("input", result);
+      emit("update:modelValue", result);
+    };
+    const addProperties = (item) => {
+      const data = getItemData(item);
+      const absX = imageList.value.length % colsValue.value;
+      const absY = Math.floor(imageList.value.length / colsValue.value);
+      const x = absX * viewWidth.value;
+      const y = absY * viewHeight.value;
+      imageList.value.push({
+        ...data,
+        x,
+        y,
+        oldX: x,
+        oldY: y,
+        absX,
+        absY,
+        scale: 1,
+        zIndex: 9,
+        opacity: 1,
+        index: imageList.value.length,
+        id: guid(16),
+        disable: false,
+        offset: 0,
+        moveEnd: false
+      });
+      add.value.x = imageList.value.length % colsValue.value * viewWidth.value;
+      add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value;
+    };
+    const rpx2px = (v) => {
+      return width.value * v / 750;
+    };
+    const guid = (len = 32) => {
+      const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");
+      const uuid = [];
+      const radix = chars.length;
+      for (let i = 0; i < len; i++)
+        uuid[i] = chars[0 | Math.random() * radix];
+      uuid.shift();
+      return `u${uuid.join("")}`;
+    };
+    common_vendor.onMounted(() => {
+      width.value = common_vendor.index.getSystemInfoSync().windowWidth;
+      const instance = common_vendor.getCurrentInstance();
+      common_vendor.nextTick$1(() => {
+        const query = common_vendor.index.createSelectorQuery().in(instance.proxy);
+        query.select(".con").boundingClientRect((data) => {
+          if (!data) {
+            common_vendor.index.__f__("error", "at components/shmily-drag-image/shmily-drag-image.vue:543", "未找到 .con 元素");
+            return;
+          }
+          colsValue.value = props.cols;
+          viewWidth.value = data.width / props.cols;
+          viewHeight.value = viewWidth.value * 1.3;
+          if (props.imageWidth > 0) {
+            viewWidth.value = rpx2px(props.imageWidth);
+            viewHeight.value = viewWidth.value * 1.3;
+            colsValue.value = Math.floor(data.width / viewWidth.value);
+          }
+          const list = props.modelValue.length ? props.modelValue : props.value;
+          list.forEach((item) => {
+            addProperties(item);
+          });
+          first.value = false;
+        }).exec();
+      });
+    });
+    common_vendor.watch(() => props.value, (n) => {
+      if (!first.value && changeStatus.value) {
+        updateImageList(n);
+      }
+    }, {
+      deep: true
+    });
+    common_vendor.watch(() => props.modelValue, (n) => {
+      if (!first.value && changeStatus.value) {
+        updateImageList(n);
+      }
+    }, {
+      deep: true
+    });
+    const updateImageList = (newList) => {
+      let flag = false;
+      for (let i = 0; i < newList.length; i++) {
+        if (flag) {
+          addProperties(getSrc(newList[i]));
+          continue;
+        }
+        if (imageList.value.length === i || imageList.value[i].src !== getSrc(newList[i])) {
+          flag = true;
+          imageList.value.splice(i);
+          addProperties(getSrc(newList[i]));
+        }
+      }
+    };
+    return (_ctx, _cache) => {
+      return common_vendor.e({
+        a: viewWidth.value
+      }, viewWidth.value ? {
+        b: common_vendor.f(imageList.value, (item, index, i0) => {
+          return {
+            a: getFirstImage(item.src),
+            b: common_vendor.t(item.name),
+            c: common_vendor.t(item.price),
+            d: common_vendor.t(item.type),
+            e: "scale(" + item.scale + ")",
+            f: !item.disable && item.ready ? 1 : "",
+            g: item.id,
+            h: item.y,
+            i: item.x,
+            j: item.disable || !item.ready,
+            k: common_vendor.o(($event) => onChange($event, item), item.id),
+            l: common_vendor.o(($event) => onLongPressStart(item, $event), item.id),
+            m: common_vendor.o(($event) => touchend(item), item.id),
+            n: common_vendor.o(($event) => go2editor(item.id), item.id),
+            o: common_vendor.o(($event) => onTouchMove($event), item.id),
+            p: item.zIndex,
+            q: item.opacity
+          };
+        }),
+        c: childWidth.value,
+        d: childHeight.value,
+        e: __props.borderRadius + "rpx",
+        f: __props.itemMargin + "px",
+        g: viewWidth.value + "px",
+        h: viewHeight.value + "px",
+        i: areaHeight.value,
+        j: common_vendor.o(mouseenter),
+        k: common_vendor.o(mouseleave)
+      } : {});
+    };
+  }
+};
+const Component = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-96f535cf"]]);
+wx.createComponent(Component);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/components/shmily-drag-image/shmily-drag-image.js.map

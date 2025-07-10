@@ -218,8 +218,14 @@
 			{
 				"navigationBarTitleText" : ""
 			}
+		},
+		{
+			"path" : "pages/drag-image-test/drag-image-test",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
 		}
-
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",

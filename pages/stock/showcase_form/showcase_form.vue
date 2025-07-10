@@ -1,6 +1,9 @@
 <template>
+
 	<view>
-		<meta name="theme-color" content="#F8F8F8"></meta>
+		<meta name="theme-color" content="#F8F8F8">
+		<view-logs />
+		</meta>
 		<view v-if="!isEditable" class="edit-tip">
 			<text>当前状态不可编辑</text>
 		</view>
@@ -29,8 +32,8 @@
 		<view class="oneLine"></view>
 		<view class="">
 			<view class="relation-trigger" v-if="isEditable" @tap="showRelationPicker">
-			  <text class="placeholder">点击关联娃物</text>
-			  <image src="/static/right2.png" class="arrow-icon" />
+				<text class="placeholder">点击关联娃物</text>
+				<image src="/static/right2.png" class="arrow-icon" />
 			</view>
 		</view>
 		<view class="publish-detail">
@@ -41,9 +44,11 @@
 		<view class="saveCollocationDataList">
 			<view v-for="(item, index) in saveCollocationDataList" :key="index">
 				<view class="saveCollocationDataItem">
-					<image v-if="item.goods_image" :src="item.goods_image" mode="aspectFill" style="width: 70px;height: 70px;"></image>
+					<image v-if="item.goods_image" :src="item.goods_image" mode="aspectFill"
+						style="width: 70px;height: 70px;"></image>
 					<text v-else class="no-image">?</text>
-					<text class="info-tap" style="width: calc(100% - 120px);display: inline-block;">{{item.type}} {{item.brand_name}} -
+					<text class="info-tap" style="width: calc(100% - 120px);display: inline-block;">{{item.type}}
+						{{item.brand_name}} -
 						{{item.goods_name}} </text>
 					<image src="/static/cancel.png" v-if="isEditable" class="close_icon"
 						@tap="deleteCollcation(index)" />
@@ -52,13 +57,8 @@
 		</view>
 
 
-		 <relation-picker
-		   v-model:visible="showSelectTab"
-		    :typeList="typeList"
-		    :goodsList="goodsList"
-		    @confirm="handleRelationConfirm"
-		    @cancel="handleRelationCancel"
-		  />
+		<relation-picker v-model:visible="showSelectTab" :typeList="typeList" :goodsList="goodsList"
+			@confirm="handleRelationConfirm" @cancel="handleRelationCancel" />
 
 
 		<view class="footer">
@@ -75,6 +75,9 @@
 		ref,
 		computed,
 	} from 'vue';
+	import {
+		onLoad
+	} from '@dcloudio/uni-app';
 	import {
 		websiteUrl,
 		image1Url,
@@ -108,7 +111,7 @@
 	const chooseGoodsName = ref("")
 	const chooseGoodsId = ref(0)
 	const chooseType = ref("")
-	
+
 
 
 	// 处理确认事件
@@ -126,54 +129,54 @@
 	//   })
 	// }
 	const handleRelationConfirm = (data) => {
-	  try {
-	    const relationData = {
-	      goods_id: data.goods.id || 0,
-	      goods_name: data.goods.name,
-	      goods_image: data.goods.image || '',
-	      brand_id: data.brand.id || 0,
-	      brand_name: data.brand.name || (data.isFuzzy ? '' : '未知品牌'),
-	      type: data.type || (data.isFuzzy ? '未知类型' : '')
-	    }
-	
-	    // 去重检查（同时匹配ID和名称）
-	    const isExist = saveCollocationDataList.value.some(item => 
-	      (item.goods_id !== 0 && item.goods_id === relationData.goods_id) ||
-	      item.goods_name === relationData.goods_name
-	    )
-	
-	    if (!isExist) {
-	      saveCollocationDataList.value.push(relationData)
-	    } else {
-	      uni.showToast({
-	        title: '已存在相同关联项',
-	        icon: 'none'
-	      })
-	    }
-	  } catch (error) {
-	    console.error('保存关联数据失败:', error)
-	    uni.showToast({
-	      title: '保存关联信息失败',
-	      icon: 'none'
-	    })
-	  }
+		try {
+			const relationData = {
+				goods_id: data.goods.id || 0,
+				goods_name: data.goods.name,
+				goods_image: data.goods.image || '',
+				brand_id: data.brand.id || 0,
+				brand_name: data.brand.name || (data.isFuzzy ? '' : '未知品牌'),
+				type: data.type || (data.isFuzzy ? '未知类型' : '')
+			}
+
+			// 去重检查（同时匹配ID和名称）
+			const isExist = saveCollocationDataList.value.some(item =>
+				(item.goods_id !== 0 && item.goods_id === relationData.goods_id) ||
+				item.goods_name === relationData.goods_name
+			)
+
+			if (!isExist) {
+				saveCollocationDataList.value.push(relationData)
+			} else {
+				uni.showToast({
+					title: '已存在相同关联项',
+					icon: 'none'
+				})
+			}
+		} catch (error) {
+			console.error('保存关联数据失败:', error)
+			uni.showToast({
+				title: '保存关联信息失败',
+				icon: 'none'
+			})
+		}
 	}
 	// 处理取消事件
 	const handleRelationCancel = () => {
-	  console.log('用户取消选择')
+		console.log('用户取消选择')
 	}
-	
+
 	const showRelationPicker = () => {
-	  showSelectTab.value = true;
+		showSelectTab.value = true;
 	}
-	
+
 	// 是否可编辑
 	const isEditable = computed(() => [-1, 1, 3].includes(display.value));
 	// const displayText = computed(() => displayOptions.value[display.value]);
 	const showDelete = computed(() => {
 		if (props.showcase_id > 0) {
 			return true
-		} 
+		}
 		return false
 	});
 
@@ -217,7 +220,7 @@
 	// 获取Showcase详情
 	async function getShowCaseInfo() {
 		if (!props.showcase_id) return
-		
+
 
 		try {
 			const res = await uni.request({
@@ -262,27 +265,33 @@
 
 	//选择图片
 	async function selectImage() {
-	  try {
-	    // 选择多张图片
-	    const imagePaths = await chooseImageList(9);
-	    
-	    // 逐个上传
-	    for (const path of imagePaths) {
-	      // 为每个图片获取独立token
-	      const tokenData = await getQiniuToken();
-	      
-	      // 上传到七牛云
-	      await uploadImageToQiniu(path, tokenData.token, tokenData.path);
-	      
-	      // 添加到展示列表
-	      uploadList.value.push(image1Url + tokenData.path);
-	    }
-	    
-	    uni.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: 'success' });
-	  } catch (error) {
-	    console.error('上传出错:', error);
-	    uni.showToast({ title: '部分图片上传失败', icon: 'none' });
-	  }
+		try {
+			// 选择多张图片
+			const imagePaths = await chooseImageList(9);
+
+			// 逐个上传
+			for (const path of imagePaths) {
+				// 为每个图片获取独立token
+				const tokenData = await getQiniuToken();
+
+				// 上传到七牛云
+				await uploadImageToQiniu(path, tokenData.token, tokenData.path);
+
+				// 添加到展示列表
+				uploadList.value.push(image1Url + tokenData.path);
+			}
+
+			uni.showToast({
+				title: `成功上传${imagePaths.length}张图片`,
+				icon: 'success'
+			});
+		} catch (error) {
+			console.error('上传出错:', error);
+			uni.showToast({
+				title: '部分图片上传失败',
+				icon: 'none'
+			});
+		}
 	}
 
 	async function handleDelete() {
@@ -293,9 +302,10 @@
 				if (res.confirm) {
 					try {
 						const res = await uni.request({
-							url: `${websiteUrl}/with-state/delete-showcase?id=` + props.showcase_id,
+							url: `${websiteUrl}/with-state/delete-showcase?id=` + props
+								.showcase_id,
 							method: 'POST',
-						
+
 							header: {
 								'Authorization': uni.getStorageSync('token'),
 							}
@@ -344,7 +354,7 @@
 			});
 			return;
 		}
-		let scene = getScene()		
+		let scene = getScene()
 		let postData = {
 			name: name.value,
 			description: description.value,
@@ -370,7 +380,7 @@
 					...postData,
 					id: parseInt(props.showcase_id, 10)
 				}
-			} 
+			}
 
 			const res = await uni.request({
 				url,
@@ -444,10 +454,10 @@
 			})
 			return
 		}
-		
+
 		//如果没有goods_id，存储goods_name进去即可
 		if (chooseGoodsId.value == 0) {
-			let data  = {
+			let data = {
 				"brand_id": chooseBrandId.value,
 				"goods_id": 0,
 				"brand_name": chooseBrandName.value,
@@ -464,8 +474,8 @@
 			chooseType.value = ""
 			return
 		}
-		
-		
+
+
 		getGoodsInfo(chooseGoodsId.value).then((res) => {
 			let data = {
 				"brand_id": chooseBrandId.value,
@@ -496,14 +506,35 @@
 	uni.setNavigationBarTitle({
 		title: '展示柜'
 	})
-	
-	
+
+
 
 	
-	onMounted(() => {
-		getTypes()
-		getShowCaseInfo()
-	})
+	onLoad(async (options) => {
+		// 解析 URL 参数
+		if (options.goods_id && options.goods_name && options.brand_id && options.brand_name && options.type) {
+			// 获取商品图片
+			let goodsImage = '';
+			try {
+				const goodsInfo = await getGoodsInfo(parseInt(options.goods_id));
+				goodsImage = goodsInfo.data.goods_images[0] || '';
+			} catch (error) {
+				console.error('获取商品图片失败:', error);
+			}
+
+			// 添加到关联列表
+			saveCollocationDataList.value.push({
+				brand_id: parseInt(options.brand_id, 10),
+				goods_id: parseInt(options.goods_id, 10),
+				brand_name: options.brand_name,
+				goods_name: options.goods_name,
+				goods_image: goodsImage,
+				type: options.type
+			});
+		}
+		getTypes();
+		getShowCaseInfo();
+	});
 </script>
 
 <style lang="less">
@@ -567,7 +598,7 @@
 				bottom: 30px;
 				margin-left: 10px;
 			}
-			
+
 			.no-image {
 				display: inline-block;
 				width: 70px;
@@ -641,30 +672,30 @@
 		text-align: center;
 		font-size: 14px;
 	}
-	
 
-	
+
+
 	// 关联娃物
 	.relation-trigger {
-	  display: flex;
-	  align-items: center;
-	  padding: 20rpx 30rpx;
-	  background: #f8f8f8;
-	  border-radius: 12rpx;
-	  margin: 20rpx;
-	  
-	  .placeholder {
-	    flex: 1;
-	    color: #999;
-	    font-size: 28rpx;
-	  }
-	  
-	  .arrow-icon {
-	    width: 30rpx;
-	    height: 30rpx;
-	  }
+		display: flex;
+		align-items: center;
+		padding: 20rpx 30rpx;
+		background: #f8f8f8;
+		border-radius: 12rpx;
+		margin: 20rpx;
+
+		.placeholder {
+			flex: 1;
+			color: #999;
+			font-size: 28rpx;
+		}
+
+		.arrow-icon {
+			width: 30rpx;
+			height: 30rpx;
+		}
 	}
-	
+
 	.publish-detail {
 		text {
 			display: block;

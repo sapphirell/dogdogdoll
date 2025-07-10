@@ -2,6 +2,14 @@
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
+  _easycom_view_logs2();
+}
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
+if (!Math) {
+  _easycom_view_logs();
+}
 const _sfc_main = {
   __name: "setting",
   setup(__props) {
@@ -71,13 +79,13 @@ const _sfc_main = {
         });
       } else {
         common_config.bindWechat().then(() => {
-          common_vendor.index.__f__("log", "at pages/setting/setting.vue:119", "微信绑定成功");
+          common_vendor.index.__f__("log", "at pages/setting/setting.vue:120", "微信绑定成功");
           common_vendor.index.showToast({
             title: "微信绑定成功",
             icon: "none"
           });
         }).catch((err) => {
-          common_vendor.index.__f__("error", "at pages/setting/setting.vue:126", "微信绑定失败:", err);
+          common_vendor.index.__f__("error", "at pages/setting/setting.vue:127", "微信绑定失败:", err);
           common_vendor.index.showToast({
             title: "微信绑定失败",
             icon: "none"
@@ -88,9 +96,8 @@ const _sfc_main = {
     const checkUpdate = async () => {
       if (common_vendor.index.getSystemInfoSync().platform === "app" || true) {
         click.value++;
-        common_vendor.index.getAppBaseInfo().appVersion;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/latest-version?version=1.0.40`,
+          url: `${common_config.websiteUrl}/latest-version?version=${common_config.dogdogdollVersion}`,
           method: "GET"
         });
         if (res && res.data) {
@@ -247,7 +254,7 @@ const _sfc_main = {
             e: common_vendor.o(($event) => item.action(item), index)
           };
         }),
-        b: common_assets._imports_0$6,
+        b: common_assets._imports_0$7,
         c: common_vendor.t(hasAppliedDeletion.value ? "取消注销申请" : "申请注销账号"),
         d: common_vendor.o(handleAccountDeletion),
         e: hasAppliedDeletion.value ? "#f56c6c" : "#cfcad8",

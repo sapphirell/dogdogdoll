@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view>
 		<meta name="theme-color" content="#F8F8F8"></meta>
 		<!-- 图片轮播区域 -->

@@ -1,5 +1,6 @@
 <template>
 	<common-page head_color="rgb(185 195 253)">
+		<view-logs></view-logs>
 		<!-- 顶部搜索和分类区域 -->
 		<view class="header-container">
 			<view class="search-container"  :style="miniProgram ? 'width:500rpx; margin:0rpx 20rpx 10rpx 20rpx;' : ''">

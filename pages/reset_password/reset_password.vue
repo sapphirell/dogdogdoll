@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view class="container">
 		<view class="header">
 			<text class="title">重置密码</text>

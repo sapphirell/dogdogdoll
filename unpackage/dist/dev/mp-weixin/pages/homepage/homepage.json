@@ -2,6 +2,7 @@
   "navigationBarTitleText": "home",
   "navigationStyle": "custom",
   "usingComponents": {
+    "view-logs": "../../components/view-logs/view-logs",
     "common-search": "../../components/common-search/common-search",
     "homepage-list-item": "../../components/homepage-list-item/homepage-list-item"
   }

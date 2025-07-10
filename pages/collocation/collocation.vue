@@ -1,5 +1,6 @@
 <template>
 	<view>
+		<view-logs />
 		<!-- 上传图片列表 -->
 		<view style="width: 100%;overflow: hidden;">
 			<scroll-view scroll-x="true" class="upload_box" ll-with-animation="true" :show-scrollbar="false">

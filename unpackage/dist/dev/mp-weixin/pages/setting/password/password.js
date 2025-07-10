@@ -2,12 +2,14 @@
 const common_vendor = require("../../../common/vendor.js");
 const common_config = require("../../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  _easycom_uni_icons2();
+  (_easycom_view_logs2 + _easycom_uni_icons2)();
 }
+const _easycom_view_logs = () => "../../../components/view-logs/view-logs.js";
 const _easycom_uni_icons = () => "../../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_uni_icons();
+  (_easycom_view_logs + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "password",
@@ -65,7 +67,7 @@ const _sfc_main = {
           new_password: newPassword.value
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/setting/password/password.vue:133", res.data);
+          common_vendor.index.__f__("log", "at pages/setting/password/password.vue:134", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "修改成功",

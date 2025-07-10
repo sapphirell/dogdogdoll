@@ -1454,3 +1454,10 @@
 uni-button[data-v-0299c5b6]:after {
   border: none;
 }
+.size-measurements[data-v-0299c5b6] {
+  display: flex;
+  gap: 0.625rem;
+}
+.size-measurements .form-item[data-v-0299c5b6] {
+  flex: 1;
+}

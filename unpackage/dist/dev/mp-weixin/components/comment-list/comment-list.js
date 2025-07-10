@@ -2,16 +2,16 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
-  const _easycom_attitude_widget2 = common_vendor.resolveComponent("attitude-widget");
-  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_report_button2 = common_vendor.resolveComponent("report-button");
-  (_easycom_attitude_widget2 + _easycom_uni_icons2 + _easycom_report_button2)();
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  const _easycom_attitude_widget2 = common_vendor.resolveComponent("attitude-widget");
+  (_easycom_report_button2 + _easycom_uni_icons2 + _easycom_attitude_widget2)();
 }
-const _easycom_attitude_widget = () => "../attitude-widget/attitude-widget.js";
-const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_report_button = () => "../report-button/report-button.js";
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
+const _easycom_attitude_widget = () => "../attitude-widget/attitude-widget.js";
 if (!Math) {
-  (_easycom_attitude_widget + _easycom_uni_icons + _easycom_report_button)();
+  (_easycom_report_button + _easycom_uni_icons + _easycom_attitude_widget)();
 }
 const _sfc_main = {
   __name: "comment-list",
@@ -132,7 +132,7 @@ const _sfc_main = {
           });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at components/comment-list/comment-list.vue:287", "点赞失败:", err);
+        common_vendor.index.__f__("error", "at components/comment-list/comment-list.vue:285", "点赞失败:", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -191,10 +191,10 @@ const _sfc_main = {
           } else {
             commentList.value.push(...newComments);
           }
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:352", "total", data.total);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:350", "total", data.total);
           hasMore.value = data.total > commentList.value.length;
           mainCommentsTotal.value = data.total;
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:356", "是否还有更多?", hasMore.value);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:354", "是否还有更多?", hasMore.value);
         }
       } catch (err) {
         common_vendor.index.showToast({
@@ -262,35 +262,35 @@ const _sfc_main = {
             c: common_vendor.t(formatUsername(comment.username)),
             d: common_vendor.o(($event) => jump2user(comment.uid), comment.id),
             e: common_vendor.t(comment.floor),
-            f: common_vendor.t(comment.comment),
-            g: common_vendor.o(($event) => handleReply(comment), comment.id),
-            h: common_vendor.o(($event) => handleAttitudeChange(comment, $event), comment.id),
-            i: "779bedea-0-" + i0,
-            j: common_vendor.p({
-              ["target-id"]: comment.id,
-              type: 6,
-              ["attitude-status"]: comment.attitudeStatus,
-              ["attitude-counts"]: comment.attitudeCounts
-            }),
-            k: common_vendor.t(formatTime(comment.created_at)),
-            l: "779bedea-1-" + i0,
-            m: common_vendor.p({
-              type: comment.user_like ? "hand-up-filled" : "hand-up",
-              size: "18",
-              color: comment.user_like ? "rgb(100 198 220)" : "#999"
-            }),
-            n: common_vendor.t(comment.like_count || 0),
-            o: comment.user_like ? 1 : "",
-            p: common_vendor.o(($event) => handleLike(comment), comment.id),
-            q: common_vendor.o(($event) => handleReply(comment), comment.id),
-            r: "779bedea-2-" + i0,
-            s: common_vendor.p({
+            f: "779bedea-0-" + i0,
+            g: common_vendor.p({
               ["report-type"]: 5,
               ["relation-id"]: comment.id,
               ["button-text"]: "举报",
               ["icon-color"]: "#999",
               ["theme-color"]: "#64c6dc"
             }),
+            h: common_vendor.t(comment.comment),
+            i: common_vendor.o(($event) => handleReply(comment), comment.id),
+            j: common_vendor.t(formatTime(comment.created_at)),
+            k: "779bedea-1-" + i0,
+            l: common_vendor.p({
+              type: comment.user_like ? "hand-up-filled" : "hand-up",
+              size: "18",
+              color: comment.user_like ? "rgb(100 198 220)" : "#999"
+            }),
+            m: common_vendor.t(comment.like_count || 0),
+            n: comment.user_like ? 1 : "",
+            o: common_vendor.o(($event) => handleLike(comment), comment.id),
+            p: common_vendor.o(($event) => handleAttitudeChange(comment, $event), comment.id),
+            q: "779bedea-2-" + i0,
+            r: common_vendor.p({
+              ["target-id"]: comment.id,
+              type: 6,
+              ["attitude-status"]: comment.attitudeStatus,
+              ["attitude-counts"]: comment.attitudeCounts
+            }),
+            s: common_vendor.o(($event) => handleReply(comment), comment.id),
             t: comment.localChildren && comment.localChildren.length
           }, comment.localChildren && comment.localChildren.length ? common_vendor.e({
             v: common_vendor.f(visibleChildren(comment), (child, index, i1) => {
@@ -303,35 +303,35 @@ const _sfc_main = {
               }, child.reply_for ? {
                 f: common_vendor.t(child.reply_for)
               } : {}, {
-                g: common_vendor.t(child.comment),
-                h: common_vendor.o(($event) => handleReply(comment), child.id),
-                i: common_vendor.o(($event) => handleAttitudeChange(comment, $event), child.id),
-                j: "779bedea-3-" + i0 + "-" + i1,
-                k: common_vendor.p({
-                  ["target-id"]: child.id,
-                  type: 6,
-                  ["attitude-status"]: comment.attitudeStatus,
-                  ["attitude-counts"]: comment.attitudeCounts
-                }),
-                l: common_vendor.t(formatTime(child.created_at)),
-                m: "779bedea-4-" + i0 + "-" + i1,
-                n: common_vendor.p({
-                  type: child.user_like ? "hand-up-filled" : "hand-up",
-                  size: "18",
-                  color: child.user_like ? "rgb(100 198 220)" : "#999"
-                }),
-                o: common_vendor.t(child.like_count || 0),
-                p: child.user_like ? 1 : "",
-                q: common_vendor.o(($event) => handleLike(child), child.id),
-                r: common_vendor.o(($event) => handleReply(comment, child), child.id),
-                s: "779bedea-5-" + i0 + "-" + i1,
-                t: common_vendor.p({
+                g: "779bedea-3-" + i0 + "-" + i1,
+                h: common_vendor.p({
                   ["report-type"]: 5,
                   ["relation-id"]: child.id,
                   ["button-text"]: "举报",
                   ["icon-color"]: "#999",
                   ["theme-color"]: "#64c6dc"
                 }),
+                i: common_vendor.t(child.comment),
+                j: common_vendor.o(($event) => handleReply(comment), child.id),
+                k: common_vendor.t(formatTime(child.created_at)),
+                l: "779bedea-4-" + i0 + "-" + i1,
+                m: common_vendor.p({
+                  type: child.user_like ? "hand-up-filled" : "hand-up",
+                  size: "18",
+                  color: child.user_like ? "rgb(100 198 220)" : "#999"
+                }),
+                n: common_vendor.t(child.like_count || 0),
+                o: child.user_like ? 1 : "",
+                p: common_vendor.o(($event) => handleLike(child), child.id),
+                q: common_vendor.o(($event) => handleAttitudeChange(comment, $event), child.id),
+                r: "779bedea-5-" + i0 + "-" + i1,
+                s: common_vendor.p({
+                  ["target-id"]: child.id,
+                  type: 6,
+                  ["attitude-status"]: comment.attitudeStatus,
+                  ["attitude-counts"]: comment.attitudeCounts
+                }),
+                t: common_vendor.o(($event) => handleReply(comment, child), child.id),
                 v: child.id
               });
             }),

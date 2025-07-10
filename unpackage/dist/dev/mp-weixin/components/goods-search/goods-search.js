@@ -97,7 +97,7 @@ const _sfc_main = {
       } : {}, {
         c: !__props.hiddenIcon
       }, !__props.hiddenIcon ? {
-        d: common_assets._imports_0$11
+        d: common_assets._imports_0$12
       } : {}, {
         e: inputValue.value,
         f: common_vendor.o(onSearchInput),

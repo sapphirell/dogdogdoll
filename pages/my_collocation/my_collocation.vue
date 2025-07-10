@@ -2,6 +2,7 @@
 	<view class="container">
 		<meta name="theme-color" content="#F8F8F8">
 		</meta>
+		<view-logs />
 		<scroll-view class="scroll-content" scroll-y @scrolltolower="loadMore" :show-scrollbar="false">
 			<view v-if="list.length === 0 && !loading" class="empty-tip">
 				暂无发布的搭配，快去创建吧~

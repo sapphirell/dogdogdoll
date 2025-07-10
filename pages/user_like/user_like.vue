@@ -1,6 +1,7 @@
 <template>
 	<view class="container">
 		<meta name="theme-color" content="#F8F8F8"></meta>
+		<view-logs />
 		<!-- 分类导航 -->
 		<view class="nav-bar">
 			<view v-for="(item, index) in categories" :key="index" class="nav-item"

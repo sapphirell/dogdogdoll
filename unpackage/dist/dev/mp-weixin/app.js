@@ -36,6 +36,7 @@ if (!Math) {
   "./pages/loadding/loadding.js";
   "./pages/private/private.js";
   "./pages/permission/permission.js";
+  "./pages/drag-image-test/drag-image-test.js";
 }
 const _sfc_main = {
   __name: "App",

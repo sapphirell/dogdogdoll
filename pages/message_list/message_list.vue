@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<view-logs />
 		<meta name="theme-color" content="#F8F8F8"></meta>
 		<!-- 顶部未读消息 -->
 		<!--    <view class="header">

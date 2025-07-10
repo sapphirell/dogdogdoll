@@ -4,12 +4,14 @@ const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
 const common_image = require("../../../common/image.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_relation_picker2 = common_vendor.resolveComponent("relation-picker");
-  _easycom_relation_picker2();
+  (_easycom_view_logs2 + _easycom_relation_picker2)();
 }
+const _easycom_view_logs = () => "../../../components/view-logs/view-logs.js";
 const _easycom_relation_picker = () => "../../../components/relation-picker/relation-picker.js";
 if (!Math) {
-  _easycom_relation_picker();
+  (_easycom_view_logs + _easycom_relation_picker)();
 }
 const _sfc_main = {
   __name: "showcase_form",
@@ -49,7 +51,7 @@ const _sfc_main = {
           });
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:154", "保存关联数据失败:", error);
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:157", "保存关联数据失败:", error);
         common_vendor.index.showToast({
           title: "保存关联信息失败",
           icon: "none"
@@ -57,7 +59,7 @@ const _sfc_main = {
       }
     };
     const handleRelationCancel = () => {
-      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:163", "用户取消选择");
+      common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:166", "用户取消选择");
     };
     const showRelationPicker = () => {
       showSelectTab.value = true;
@@ -72,6 +74,30 @@ const _sfc_main = {
     const name = common_vendor.ref("");
     const description = common_vendor.ref("");
     const display = common_vendor.ref(-1);
+    function getGoodsInfo(id) {
+      return new Promise((resolve, reject) => {
+        common_vendor.index.request({
+          url: common_config.websiteUrl + "/goods?id=" + id,
+          method: "GET",
+          timeout: 5e3,
+          success: (res) => {
+            common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:198", res.data.data);
+            resolve(res.data);
+          },
+          fail: (err) => {
+            common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:202", err);
+            common_vendor.index.showToast({
+              title: "网络请求失败",
+              icon: "none"
+            });
+            reject(err);
+          },
+          complete: () => {
+            common_vendor.index.hideLoading();
+          }
+        });
+      });
+    }
     const saveCollocationDataList = common_vendor.ref([]);
     async function getShowCaseInfo() {
       var _a;
@@ -90,7 +116,7 @@ const _sfc_main = {
         description.value = data.description;
         display.value = data.display;
         uploadList.value = ((_a = data.image_urls) == null ? void 0 : _a.split(",")) || [];
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:236", data);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:239", data);
         if (data.relations) {
           saveCollocationDataList.value = data.relations.map((r) => ({
             goods_id: r.relation_goods_id,
@@ -122,10 +148,16 @@ const _sfc_main = {
           await common_image.uploadImageToQiniu(path, tokenData.token, tokenData.path);
           uploadList.value.push(common_config.image1Url + tokenData.path);
         }
-        common_vendor.index.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: "success" });
+        common_vendor.index.showToast({
+          title: `成功上传${imagePaths.length}张图片`,
+          icon: "success"
+        });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:283", "上传出错:", error);
-        common_vendor.index.showToast({ title: "部分图片上传失败", icon: "none" });
+        common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:289", "上传出错:", error);
+        common_vendor.index.showToast({
+          title: "部分图片上传失败",
+          icon: "none"
+        });
       }
     }
     async function handleDelete() {
@@ -229,7 +261,7 @@ const _sfc_main = {
           return;
         }
       } catch (err) {
-        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:398", err);
+        common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:408", err);
         common_vendor.index.showToast({
           title: "提交失败",
           icon: "none"
@@ -242,11 +274,11 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:418", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:428", res.data.data);
           typeList.value = res.data.data;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:422", err);
+          common_vendor.index.__f__("log", "at pages/stock/showcase_form/showcase_form.vue:432", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -263,7 +295,24 @@ const _sfc_main = {
     common_vendor.index.setNavigationBarTitle({
       title: "展示柜"
     });
-    common_vendor.onMounted(() => {
+    common_vendor.onLoad(async (options) => {
+      if (options.goods_id && options.goods_name && options.brand_id && options.brand_name && options.type) {
+        let goodsImage = "";
+        try {
+          const goodsInfo = await getGoodsInfo(parseInt(options.goods_id));
+          goodsImage = goodsInfo.data.goods_images[0] || "";
+        } catch (error) {
+          common_vendor.index.__f__("error", "at pages/stock/showcase_form/showcase_form.vue:522", "获取商品图片失败:", error);
+        }
+        saveCollocationDataList.value.push({
+          brand_id: parseInt(options.brand_id, 10),
+          goods_id: parseInt(options.goods_id, 10),
+          brand_name: options.brand_name,
+          goods_name: options.goods_name,
+          goods_image: goodsImage,
+          type: options.type
+        });
+      }
       getTypes();
       getShowCaseInfo();
     });
@@ -296,7 +345,7 @@ const _sfc_main = {
         l: common_vendor.o(($event) => description.value = $event.detail.value),
         m: isEditable.value
       }, isEditable.value ? {
-        n: common_assets._imports_2$3,
+        n: common_assets._imports_2$2,
         o: common_vendor.o(showRelationPicker)
       } : {}, {
         p: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {

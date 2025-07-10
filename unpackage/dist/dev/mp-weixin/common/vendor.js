@@ -7329,9 +7329,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "127.0.0.1,192.168.124.12,192.168.136.1";
+  const hosts = "127.0.0.1,192.168.124.12,192.168.136.1,169.254.165.77";
   const port = "8090";
-  const id = "mp-weixin_RxfCLc";
+  const id = "mp-weixin_sfFvdq";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8497,6 +8497,12 @@ const pages = [
   },
   {
     path: "pages/permission/permission",
+    style: {
+      navigationBarTitleText: ""
+    }
+  },
+  {
+    path: "pages/drag-image-test/drag-image-test",
     style: {
       navigationBarTitleText: ""
     }

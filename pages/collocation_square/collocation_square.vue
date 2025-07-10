@@ -1,6 +1,6 @@
 <template>
-	<meta name="theme-color" content="#def9ff">
-	</meta>
+	<meta name="theme-color" content="#def9ff"></meta>
+	<view-logs />
 	<common-page head_color="#def9ff">
 		<!-- 看看 Tab 内容 --><!-- 顶部 tab 切换栏 -->
 		<view class="tabs">

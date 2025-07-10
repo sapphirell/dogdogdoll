@@ -2,12 +2,14 @@
 const common_vendor = require("../../../common/vendor.js");
 const common_config = require("../../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  _easycom_uni_icons2();
+  (_easycom_view_logs2 + _easycom_uni_icons2)();
 }
+const _easycom_view_logs = () => "../../../components/view-logs/view-logs.js";
 const _easycom_uni_icons = () => "../../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_uni_icons();
+  (_easycom_view_logs + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "username",

@@ -2,6 +2,7 @@
 	<view>
 		<meta name="theme-color" content="#F8F8F8">
 		</meta>
+		<view-logs></view-logs>
 		<image :src="brand.logo_image" mode="aspectFit" class="brand_logo"></image>
 		<view class="body">
 			<view>

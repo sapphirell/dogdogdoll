@@ -3,14 +3,16 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_uni_transition2 = common_vendor.resolveComponent("uni-transition");
   const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
   const _easycom_loading_toast2 = common_vendor.resolveComponent("loading-toast");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_goods_search2 + _easycom_uni_icons2 + _easycom_uni_transition2 + _easycom_common_modal2 + _easycom_loading_toast2 + _easycom_common_page2)();
+  (_easycom_view_logs2 + _easycom_goods_search2 + _easycom_uni_icons2 + _easycom_uni_transition2 + _easycom_common_modal2 + _easycom_loading_toast2 + _easycom_common_page2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_goods_search = () => "../../components/goods-search/goods-search.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_uni_transition = () => "../../uni_modules/uni-transition/components/uni-transition/uni-transition.js";
@@ -18,7 +20,7 @@ const _easycom_common_modal = () => "../../components/common-modal/common-modal.
 const _easycom_loading_toast = () => "../../components/loading-toast/loading-toast.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_goods_search + _easycom_uni_icons + _easycom_uni_transition + _easycom_common_modal + _easycom_loading_toast + _easycom_common_page)();
+  (_easycom_view_logs + _easycom_goods_search + _easycom_uni_icons + _easycom_uni_transition + _easycom_common_modal + _easycom_loading_toast + _easycom_common_page)();
 }
 const pageSize = 10;
 const _sfc_main = {
@@ -387,7 +389,7 @@ const _sfc_main = {
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_assets._imports_0$8,
+        a: common_assets._imports_0$9,
         b: currentTab.value === "find" ? 1 : "",
         c: common_vendor.o(($event) => handleTabSwitch("find")),
         d: common_assets._imports_1$6,
@@ -450,7 +452,7 @@ const _sfc_main = {
           return common_vendor.e({
             a: item.avatar || "/default_avatar.jpg",
             b: common_vendor.t(getUserName(item.username)),
-            c: "e981f8ca-2-" + i0 + ",e981f8ca-0",
+            c: "e981f8ca-3-" + i0 + ",e981f8ca-1",
             d: common_vendor.t(item.like_count),
             e: common_vendor.o(($event) => jumpToUserPage(item.uid), item.collocation_id),
             f: ((_a = item.image_urls) == null ? void 0 : _a.length) > 0

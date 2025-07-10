@@ -33,7 +33,8 @@
     "pages/article_detail/article_detail",
     "pages/loadding/loadding",
     "pages/private/private",
-    "pages/permission/permission"
+    "pages/permission/permission",
+    "pages/drag-image-test/drag-image-test"
   ],
   "window": {
     "navigationBarTextStyle": "black",

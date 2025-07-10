@@ -1,6 +1,7 @@
 <template>
 	<meta name="theme-color" content="#d8deff">
 	</meta>
+	<view-logs />
 	<common-page head_color="#d8deff">
 		<view class="container" style="overflow: hidden;">
 			<view class="head_container">
@@ -18,51 +19,15 @@
 			</view>
 
 			<view class="data_body">
-				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-left']" :duration="300"
+				<view @tap="jump2test">拖拽测试</view>
+				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
 					:show="activeTab === 1">
-
-					<view class="tab_body_1st">
-						<view class="type-header">
-							<picker class="type-picker" mode="selector" :value="selectedType" :range="typeOptions"
-								@change="updateSelectedType">
-								<view class="uni-input">{{ typeOptions[selectedType] }}</view>
-							</picker>
-							<text class="manage-btn" @tap="showTypeModal">管理分类</text>
-						</view>
-						<view class="summary-container">
-							<text class="total-text">当前分类合计：¥{{ totalPrice }}</text>
-						</view>
-
-
-						<view class="content" v-if="accountBookData.account_books?.length > 0">
-							<view class="content-grid">
-								<view v-for="(item, index) in accountBookData.account_books" :key="index"
-									class="grid-item" @tap="go2editor(item.id)">
-									<image :src="getFirstImage(item.image_url)" mode="aspectFill" class="item-image"></image>
-									<text class="item-type">{{ item.type }}</text>
-									<view class="item-info">
-										<text class="item-price">{{ item.price }}￥</text>
-									</view>
-									<view class="item-info">
-										<text class="item-name one_line_text">{{ item.name }}</text>
-									</view>
-								</view>
-							</view>
-						</view>
-
-						<view class="empty-state" v-else style="position: relative;bottom: 80px;">
-							<image class="empty-icon" src="/static/empty.jpg"></image>
-							<text class="empty-text">空空如也～</text>
-							<text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
-						</view>
-
+					<!-- 我的物品 -->
+					<stock-myitems :accountBookData="accountBookData" @go2editor="go2editor" 
+						@update-type="handleTypeUpdate"></stock-myitems>
 						
-						<!-- <view class="floating-button" @tap="go2addAccountBook">
-							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
-						</view> -->
-					</view>
 				</uni-transition>
-				<uni-transition :name="transitionName()" :mode-class="transitionName()" :duration="300"
+				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
 					:show="activeTab === 2">
 
 					<view class="tab_body_sec">
@@ -224,17 +189,18 @@
 
 		console.log(`从 tab ${oldIndex} 切换到 tab ${index}，方向: ${transitionName()}`);
 
-		switch (index) {
-			case 1:
-				getAccountBookData();
-				break;
-			case 2:
-				getShowcaseData();
-				break;
-			case 3:
-				getBillData();
-				break;
-		}
+		  // 根据切换的 tab 加载数据
+		  switch (index) {
+		    case 1:
+		      getAccountBookData();
+		      break;
+		    case 2:
+		      getShowcaseData();
+		      break;
+		    case 3:
+		      getBillData();
+		      break;
+		  }
 	}
 	// 计算当月账单金额
 	function countPaid(bills) {
@@ -258,126 +224,13 @@
 	  // 返回格式 "已补款金额/总金额"
 	  return `${paidAmount.toFixed(1)}/${totalAmount.toFixed(1)}`;
 	}
-	// 账本下选择的下拉菜单按钮
-	const selectedType = ref(0);
 
-	const typeModalVisible = ref(false);
-	const newTypeName = ref('');
-	const customTypes = ref([]); // 用户自定义分类
-
-	// 账本下选择的下拉菜单按钮
-	const defaultTypes = ['全部', '娃头', '娃衣', '素体', '眼珠', '假发', '娃鞋'];
-
-	// 组合分类选项
-	const typeOptions = computed(() => [
-		...defaultTypes,
-		...customTypes.value.map(t => t.name)
-	]);
-	// 在script setup部分添加
-	const showTypeModal = () => {
-		typeModalVisible.value = true;
+	// 添加类型更新处理
+	const handleTypeUpdate = (type) => {
+	  getAccountBookData(type);
 	};
 
-
-	// 获取分类数据
-	const getAccountTypes = async () => {
-		const token = uni.getStorageSync('token');
-		try {
-			const res = await uni.request({
-				url: websiteUrl + '/with-state/account-types',
-				method: 'GET',
-				header: {
-					'Authorization': token
-				}
-			});
-			customTypes.value = res.data.data || [];
-		} catch (err) {
-			console.error('获取分类失败:', err);
-		}
-	};
-
-	// 添加分类
-	const addNewType = async () => {
-		if (!newTypeName.value.trim()) {
-			uni.showToast({
-				title: '请输入分类名称',
-				icon: 'none'
-			});
-			return;
-		}
-
-		const token = uni.getStorageSync('token');
-		try {
-			await uni.request({
-				url: websiteUrl + '/with-state/add-account-type',
-				method: 'POST',
-				header: {
-					'Authorization': token
-				},
-				data: {
-					name: newTypeName.value.trim()
-				}
-			});
-			await getAccountTypes();
-			newTypeName.value = '';
-			uni.showToast({
-				title: '添加成功'
-			});
-		} catch (err) {
-			uni.showToast({
-				title: '添加失败',
-				icon: 'none'
-			});
-		}
-	};
-
-
-	// 删除分类
-	const deleteType = async (id) => {
-		uni.showModal({
-			title: '确认删除',
-			// content: '如果该分类下存在物品，则不可以直接删除分类',
-			success: async (res) => {
-				if (res.confirm) {
-					const token = uni.getStorageSync('token');
-					try {
-						const response = await uni.request({
-							url: websiteUrl + '/with-state/delete-account-type',
-							method: 'POST',
-							header: {
-								'Authorization': token,
-								'Content-Type': 'application/json' // 添加Content-Type
-							},
-							data: {
-								id
-							}, // 使用JSON格式传参
-						});
-
-						const resData = response.data;
-
-						if (resData.status === "success") { // 严格判断状态
-							await getAccountTypes();
-							uni.showToast({
-								title: '删除成功'
-							});
-						} else {
-							uni.showToast({
-								title: resData.msg || '删除失败',
-								icon: 'none'
-							});
-						}
-					} catch (err) {
-						console.error('删除失败:', err);
-						uni.showToast({
-							title: err.errMsg || '请求失败',
-							icon: 'none'
-						});
-					}
-				}
-			}
-		});
-	};
-
+	
 	// 处理悬浮按钮点击事件
 	function handleFloatingButton() {
 		switch (activeTab.value) {
@@ -403,19 +256,8 @@
 	const billData = ref({});
 
 
-	// 添加计算属性
-	const totalPrice = computed(() => {
-		if (!accountBookData.value.account_books) return 0;
-		return accountBookData.value.account_books.reduce((sum, item) => {
-			return sum + (parseFloat(item.price) || 0);
-		}, 0).toFixed(2);
-	});
-	// 切换账本选择类型
-	function updateSelectedType(e) {
-		selectedType.value = e.detail.value;
-		const selectedTypeName = typeOptions.value[selectedType.value];
-		getAccountBookData(selectedTypeName === "全部" ? "" : selectedTypeName);
-	}
+
+
 	//获取账本数据
 	function getAccountBookData(type) {
 		console.log(global)
@@ -470,28 +312,7 @@
 		});
 	}
 	
-	// 获取第一张图片URL
-	function getFirstImage(imageUrls) {
-	  if (!imageUrls) return ''; // 无图片时
-	  
-	  // 分割URL字符串
-	  const urls = imageUrls.split(',');
-	  
-	  // 处理只有一张图片的情况
-	  if (urls.length === 1 && urls[0].trim() !== '') {
-	    return urls[0].trim();
-	  }
-	  
-	  // 返回第一张有效图片
-	  for (const url of urls) {
-	    if (url.trim() !== '') {
-	      return url.trim();
-	    }
-	  }
-	  
 
-	  return '';
-	}
 
 	//获取账单数据
 	function getBillData() {
@@ -518,6 +339,11 @@
 		});
 	}
 
+	function jump2test() {
+		uni.navigateTo({
+			url: '/pages/drag-image-test/drag-image-test'
+		})
+	}
 
 	//跳转到添加账本数据
 	function go2addAccountBook() {
@@ -575,17 +401,23 @@
 	}
 
 	onShow(() => {
-		// 加载用户信息
-		asyncGetUserInfo().then((userInfo) => {
-			// 获取用户自定义分类
-			getAccountTypes();
-			// 获取我的娃物
-			getAccountBookData();
-			// 获取我的展示柜
-			getShowcaseData();
-			// 获取账单数据
-			getBillData();
-		})
+	  // 加载用户信息
+	  asyncGetUserInfo().then((userInfo) => {
+	    // 移除 getAccountTypes() 调用，因为它已在组件内部处理
+	    
+	    // 根据当前激活的 tab 加载数据
+	    switch (activeTab.value) {
+	      case 1:
+	        getAccountBookData();
+	        break;
+	      case 2:
+	        getShowcaseData();
+	        break;
+	      case 3:
+	        getBillData();
+	        break;
+	    }
+	  })
 	})
 </script>
 
@@ -1249,5 +1081,18 @@
 				content: '💰 ';
 			}
 		}
+	}
+	
+	.loading-overlay {
+	  position: absolute;
+	  top: 0;
+	  left: 0;
+	  right: 0;
+	  bottom: 0;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  background: rgba(255, 255, 255, 0.8);
+	  z-index: 1000;
 	}
 </style>

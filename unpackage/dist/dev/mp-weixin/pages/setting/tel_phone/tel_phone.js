@@ -1,6 +1,14 @@
 "use strict";
 const common_vendor = require("../../../common/vendor.js");
 const common_config = require("../../../common/config.js");
+if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
+  _easycom_view_logs2();
+}
+const _easycom_view_logs = () => "../../../components/view-logs/view-logs.js";
+if (!Math) {
+  _easycom_view_logs();
+}
 const _sfc_main = {
   __name: "tel_phone",
   setup(__props) {
@@ -22,7 +30,7 @@ const _sfc_main = {
           code: code.value
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/setting/tel_phone/tel_phone.vue:57", res.data);
+          common_vendor.index.__f__("log", "at pages/setting/tel_phone/tel_phone.vue:58", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "修改成功",
@@ -71,7 +79,7 @@ const _sfc_main = {
           tel_phone: telPhone.value
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/setting/tel_phone/tel_phone.vue:110", res.data);
+          common_vendor.index.__f__("log", "at pages/setting/tel_phone/tel_phone.vue:111", res.data);
           if (res.data.status == "success") {
             buttonMsg.value = "已发送";
             common_vendor.index.showToast({

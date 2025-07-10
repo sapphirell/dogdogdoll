@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<!-- 页面主体 -->
 	<view class="backbody">
 		<!-- 个人信息部分 -->

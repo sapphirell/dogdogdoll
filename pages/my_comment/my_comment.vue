@@ -1,5 +1,6 @@
 <template>
 	<view class="page-container">
+		<view-logs />
 		<!-- 列表区域 -->
 		<scroll-view class="comment-list" scroll-y @scrolltolower="loadMore" :show-scrollbar="false">
 			<!-- 列表内容 -->

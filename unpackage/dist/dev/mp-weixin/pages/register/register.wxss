@@ -51,7 +51,8 @@
   color: #666;
   margin-bottom: 24rpx;
 }
-.form-box .input-item .input-wrapper.data-v-bac4a35d, .form-box .input-item .code-wrapper.data-v-bac4a35d {
+.form-box .input-item .input-wrapper.data-v-bac4a35d,
+.form-box .input-item .code-wrapper.data-v-bac4a35d {
   position: relative;
   height: 96rpx;
   background: #ffffff;

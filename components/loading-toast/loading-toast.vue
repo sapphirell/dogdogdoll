@@ -29,7 +29,7 @@ const props = defineProps({
 
   text: {
     type: String,
-    default: '助手加载中...'
+    default: 'To Connect The Love...'
   }
 });
 

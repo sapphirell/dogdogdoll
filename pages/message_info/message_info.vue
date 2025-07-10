@@ -1,5 +1,6 @@
 <template>
   <view class="container">
+	  <view-logs />
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-wrapper">
       <uni-load-more status="loading"></uni-load-more>

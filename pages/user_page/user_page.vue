@@ -1,6 +1,7 @@
 <template>
 	<view class="page-container">
 		<meta name="theme-color" content="#F8F8F8">
+		<view-logs />
 		</meta>
 		<view class="header_container">
 			<!-- 黑名单提示 -->

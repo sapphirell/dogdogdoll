@@ -2,18 +2,20 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_report_button2 = common_vendor.resolveComponent("report-button");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_comment_list2 = common_vendor.resolveComponent("comment-list");
   const _easycom_comment_input2 = common_vendor.resolveComponent("comment-input");
-  (_easycom_report_button2 + _easycom_uni_icons2 + _easycom_comment_list2 + _easycom_comment_input2)();
+  (_easycom_view_logs2 + _easycom_report_button2 + _easycom_uni_icons2 + _easycom_comment_list2 + _easycom_comment_input2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_report_button = () => "../../components/report-button/report-button.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_comment_list = () => "../../components/comment-list/comment-list.js";
 const _easycom_comment_input = () => "../../components/comment-input/comment-input.js";
 if (!Math) {
-  (_easycom_report_button + _easycom_uni_icons + _easycom_comment_list + _easycom_comment_input)();
+  (_easycom_view_logs + _easycom_report_button + _easycom_uni_icons + _easycom_comment_list + _easycom_comment_input)();
 }
 const _sfc_main = {
   __name: "treehole_detail",
@@ -40,8 +42,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:123", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:124", "target", target);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:124", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:125", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -50,7 +52,7 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:135", "item", item);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:136", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
@@ -67,7 +69,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:153", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:154", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -92,10 +94,10 @@ const _sfc_main = {
           if (res.data.status == "success") {
             const newComment = res.data.data;
             if (newComment.parent_id === 0) {
-              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:178", "添加主评论");
+              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:179", "添加主评论");
               (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
             } else {
-              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:182", "添加子评论");
+              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:183", "添加子评论");
               (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
             }
             common_vendor.index.showToast({
@@ -176,7 +178,7 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:276", res.data);
+          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:277", res.data);
           if (res.data.status == "success") {
             if (res.data.data.id > 0) {
               hasLiked.value = true;
@@ -192,7 +194,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:294", err);
+          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:295", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -235,7 +237,7 @@ const _sfc_main = {
     };
     common_vendor.onMounted(async () => {
       pageId.value = props.id;
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:360", "pageId", pageId.value);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:361", "pageId", pageId.value);
       try {
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/treehole-detail?id=${props.id}`
@@ -244,7 +246,7 @@ const _sfc_main = {
           detailData.value = res.data.data;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:371", error);
+        common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:372", error);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -256,7 +258,7 @@ const _sfc_main = {
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: detailData.value
-      }, detailData.value ? {
+      }, detailData.value ? common_vendor.e({
         b: detailData.value.avatar || "/static/noname.png",
         c: common_vendor.t(detailData.value.author_name),
         d: common_vendor.t(formatTime(detailData.value.created_at)),
@@ -294,22 +296,24 @@ const _sfc_main = {
           color: "#666"
         }),
         m: common_vendor.o(($event) => copyUrl(detailData.value)),
-        n: common_vendor.t(formatTime(detailData.value.approve_time))
-      } : {}, {
-        o: common_vendor.sr(commentListRef, "f102c4f6-3", {
+        n: detailData.value.approve_time > 0
+      }, detailData.value.approve_time > 0 ? {
+        o: common_vendor.t(formatTime(detailData.value.approve_time))
+      } : {}) : {}, {
+        p: common_vendor.sr(commentListRef, "f102c4f6-4", {
           "k": "commentListRef"
         }),
-        p: common_vendor.o(handleReplyComment),
-        q: common_vendor.p({
+        q: common_vendor.o(handleReplyComment),
+        r: common_vendor.p({
           type: 5,
           ["relation-id"]: parseInt(props.id)
         }),
-        r: common_vendor.sr(commentInputRef, "f102c4f6-4", {
+        s: common_vendor.sr(commentInputRef, "f102c4f6-5", {
           "k": "commentInputRef"
         }),
-        s: common_vendor.o(handleCommentSubmit),
-        t: common_vendor.o((val) => common_vendor.isRef(replyForItem) ? replyForItem.value = val : replyForItem = val),
-        v: common_vendor.p({
+        t: common_vendor.o(handleCommentSubmit),
+        v: common_vendor.o((val) => common_vendor.isRef(replyForItem) ? replyForItem.value = val : replyForItem = val),
+        w: common_vendor.p({
           ["reply-info"]: common_vendor.unref(replyForItem),
           ["target-id"]: pageId.value
         })

@@ -723,100 +723,6 @@
   color: #fff;
 }
 
-.mask[data-v-f15d1ff3] {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(255, 255, 255, 0);
-  -webkit-backdrop-filter: blur(2px);
-          backdrop-filter: blur(2px);
-  z-index: 998;
-}
-.attitude-container[data-v-f15d1ff3] {
-  position: relative;
-  width: 100%;
-}
-.counts-and-expand[data-v-f15d1ff3] {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  position: relative;
-}
-.global-counts[data-v-f15d1ff3] {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.global-counts .count-item[data-v-f15d1ff3] {
-  display: flex;
-  align-items: center;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.625rem;
-  background: #f5f5f5;
-  transition: all 0.3s;
-}
-.global-counts .count-item.active[data-v-f15d1ff3] {
-  background: #e0f0ff;
-}
-.global-counts .count-item.active .emoji[data-v-f15d1ff3],
-.global-counts .count-item.active .count[data-v-f15d1ff3] {
-  color: #007AFF;
-}
-.global-counts .count-item .emoji[data-v-f15d1ff3] {
-  font-size: 0.875rem;
-}
-.global-counts .count-item .count[data-v-f15d1ff3] {
-  font-size: 0.6875rem;
-  margin-left: 0.15625rem;
-}
-.expand-btn[data-v-f15d1ff3] {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  padding: 0.125rem 0.25rem;
-}
-.expand-btn .btn-text[data-v-f15d1ff3] {
-  font-size: 0.6875rem;
-  color: #888;
-  margin-left: 0.125rem;
-}
-.attitude-panel[data-v-f15d1ff3] {
-  position: absolute;
-  top: 110%;
-  right: 0;
-  background: #fff;
-  border-radius: 0.25rem;
-  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
-  padding: 0.5rem;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.375rem;
-  z-index: 999;
-}
-.attitude-panel .attitude-btn[data-v-f15d1ff3] {
-  padding: 0.375rem;
-  border-radius: 0.25rem;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-}
-.attitude-panel .attitude-btn.active[data-v-f15d1ff3] {
-  background: #e0f0ff;
-}
-.attitude-panel .attitude-btn.active .emoji[data-v-f15d1ff3],
-.attitude-panel .attitude-btn.active .label[data-v-f15d1ff3] {
-  color: #007AFF;
-}
-.attitude-panel .attitude-btn .emoji[data-v-f15d1ff3] {
-  margin-right: 0.25rem;
-}
-.attitude-panel .attitude-btn .label[data-v-f15d1ff3] {
-  font-size: 0.75rem;
-}
-
 .report-button[data-v-b620d6d3] {
   display: inline-flex;
   align-items: center;
@@ -962,6 +868,99 @@ uni-button[data-v-b620d6d3]::after {
 /* 弹窗关闭按钮缩小 */
 [data-v-b620d6d3] .uni-icons {
   font-size: 0.6875rem !important;
+}
+
+.mask[data-v-f15d1ff3] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0);
+  -webkit-backdrop-filter: blur(2px);
+          backdrop-filter: blur(2px);
+  z-index: 998;
+}
+.attitude-container[data-v-f15d1ff3] {
+  position: relative;
+}
+.counts-and-expand[data-v-f15d1ff3] {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  position: relative;
+}
+.global-counts[data-v-f15d1ff3] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.global-counts .count-item[data-v-f15d1ff3] {
+  display: flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.625rem;
+  background: #f5f5f5;
+  transition: all 0.3s;
+}
+.global-counts .count-item.active[data-v-f15d1ff3] {
+  background: #e0f0ff;
+}
+.global-counts .count-item.active .emoji[data-v-f15d1ff3],
+.global-counts .count-item.active .count[data-v-f15d1ff3] {
+  color: #007AFF;
+}
+.global-counts .count-item .emoji[data-v-f15d1ff3] {
+  font-size: 0.875rem;
+}
+.global-counts .count-item .count[data-v-f15d1ff3] {
+  font-size: 0.6875rem;
+  margin-left: 0.15625rem;
+}
+.expand-btn[data-v-f15d1ff3] {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.125rem 0.25rem;
+}
+.expand-btn .btn-text[data-v-f15d1ff3] {
+  font-size: 0.6875rem;
+  color: #888;
+  margin-left: 0.125rem;
+}
+.attitude-panel[data-v-f15d1ff3] {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #fff;
+  border-radius: 0.25rem;
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.375rem;
+  z-index: 999;
+}
+.attitude-panel .attitude-btn[data-v-f15d1ff3] {
+  padding: 0.375rem;
+  border-radius: 0.25rem;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+}
+.attitude-panel .attitude-btn.active[data-v-f15d1ff3] {
+  background: #e0f0ff;
+}
+.attitude-panel .attitude-btn.active .emoji[data-v-f15d1ff3],
+.attitude-panel .attitude-btn.active .label[data-v-f15d1ff3] {
+  color: #007AFF;
+}
+.attitude-panel .attitude-btn .emoji[data-v-f15d1ff3] {
+  margin-right: 0.25rem;
+}
+.attitude-panel .attitude-btn .label[data-v-f15d1ff3] {
+  font-size: 0.75rem;
 }
 
 .comment-container[data-v-ea2f609f] {
@@ -1382,16 +1381,15 @@ uni-button[data-v-88f35a0c]:after {
   height: 2.1875rem;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
-}
-.heart .uni-icons[data-v-7e2880f6] {
-  width: 1.25rem;
-  height: 1.25rem;
+  padding: 0.15625rem;
 }
 .heart .num[data-v-7e2880f6] {
   font-size: 0.625rem;
   /* 调小 */
   font-weight: bold;
   margin-top: 0.15625rem;
+  width: 100%;
+  text-align: center;
 }
 .banner-swiper[data-v-7e2880f6] {
   width: 100%;
@@ -1459,14 +1457,16 @@ uni-button[data-v-88f35a0c]:after {
 }
 
 /* 贩售情报样式 */
-.sales-info[data-v-7e2880f6], .no-sales[data-v-7e2880f6] {
+.sales-info[data-v-7e2880f6],
+.no-sales[data-v-7e2880f6] {
   background: #fff;
   border-radius: 0.625rem;
   margin: 0.625rem;
   padding: 0.9375rem;
   box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
 }
-.sales-info .section-title[data-v-7e2880f6], .no-sales .section-title[data-v-7e2880f6] {
+.sales-info .section-title[data-v-7e2880f6],
+.no-sales .section-title[data-v-7e2880f6] {
   display: block;
   font-size: 0.875rem;
   /* 调小 */
@@ -1526,6 +1526,30 @@ uni-button[data-v-88f35a0c]:after {
   font-size: 0.75rem;
   /* 调小 */
   color: #888;
+}
+
+/* 尾款账单按钮样式 */
+.bill-action[data-v-7e2880f6] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.46875rem;
+  padding-top: 0.46875rem;
+  border-top: 0.03125rem dashed #eee;
+}
+.bill-action uni-text[data-v-7e2880f6] {
+  font-size: 0.75rem;
+  color: #64c6dc;
+  margin-left: 0.25rem;
+}
+.bill-action[data-v-7e2880f6]:active {
+  opacity: 0.7;
+}
+
+/* 调整贩售情报项的内边距 */
+.sale-item[data-v-7e2880f6] {
+  padding: 0.625rem 0 0.46875rem;
+  /* 底部减少内边距 */
 }
 .empty-text[data-v-7e2880f6] {
   font-size: 0.8125rem;
@@ -1638,4 +1662,108 @@ uni-button[data-v-88f35a0c]:after {
 .bottom-placeholder[data-v-7e2880f6] {
   width: 100%;
   height: 3.75rem;
+}
+.img_info[data-v-7e2880f6] {
+  height: 1.3125rem;
+  position: relative;
+  left: -0.15625rem;
+}
+.action-buttons[data-v-7e2880f6] {
+  display: flex;
+  gap: 0.46875rem;
+  /* 进一步减少间距 */
+  padding: 0;
+  margin: 0.625rem 0 0.9375rem;
+  /* 调整上下边距 */
+  justify-content: space-between;
+  /* 均匀分布 */
+}
+.action-btn[data-v-7e2880f6] {
+  /* 添加这行解决按钮高度问题 */
+  line-height: normal !important;
+  flex: 1;
+  /* 等宽分布 */
+  height: 3.125rem;
+  /* 增加高度 */
+  display: flex;
+  flex-direction: column;
+  /* 垂直排列 */
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  /* 图标文字间距 */
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  /* 减小字体 */
+  font-weight: 600;
+  /* 加粗 */
+  border: none;
+  /* 移除边框 */
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  padding: 0.3125rem 0;
+  /* 增加内边距 */
+  box-shadow: 0 0.1875rem 0.5rem rgba(0, 0, 0, 0.15);
+  /* 增强阴影 */
+  text-shadow: 0 0.03125rem 0.0625rem rgba(0, 0, 0, 0.1);
+  /* 文字阴影 */
+  /* 移除伪元素边框 */
+  /* 图标样式 */
+}
+.action-btn[data-v-7e2880f6]::before {
+  content: none;
+}
+.action-btn[data-v-7e2880f6]:active {
+  transform: scale(0.96);
+  box-shadow: 0 0.09375rem 0.25rem rgba(0, 0, 0, 0.15);
+}
+.action-btn[data-v-7e2880f6]::after {
+  border: none;
+  /* 移除默认边框 */
+}
+.action-btn uni-text[data-v-7e2880f6] {
+  color: #fff;
+  line-height: 1.2;
+}
+.action-btn .uni-icons[data-v-7e2880f6] {
+  filter: drop-shadow(0 0.03125rem 0.0625rem rgba(0, 0, 0, 0.2));
+  /* 图标阴影 */
+}
+
+/* 新增的按钮内容容器 */
+.btn-content[data-v-7e2880f6] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 糖果配色方案 */
+.add-to-stock[data-v-7e2880f6] {
+  background: linear-gradient(135deg, #64c6dc, #4aa5c0);
+  box-shadow: 0 0.1875rem 0.5rem rgba(74, 165, 192, 0.3);
+}
+.wish-resale[data-v-7e2880f6] {
+  background: linear-gradient(135deg, #ff9a9e, #f78ca0);
+  box-shadow: 0 0.1875rem 0.5rem rgba(247, 140, 160, 0.3);
+}
+.add-showcase[data-v-7e2880f6] {
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  box-shadow: 0 0.1875rem 0.5rem rgba(161, 140, 209, 0.3);
+}
+
+/* 调整商品信息间距 */
+.goods-info[data-v-7e2880f6] {
+  margin-bottom: 0.3125rem;
+}
+.goods-info .info-item[data-v-7e2880f6]:first-child {
+  padding-top: 0.3125rem;
+  /* 第一个信息项顶部留空 */
+}
+
+/* 确保按钮与上方内容有间距 */
+.swiper-container[data-v-7e2880f6] {
+  margin-bottom: 0;
 }

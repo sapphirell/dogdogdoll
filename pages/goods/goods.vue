@@ -2,16 +2,18 @@
 	<view v-if="goods.name" class="goods-detail-container">
 		<meta name="theme-color" content="#F8F8F8">
 		</meta>
+		<view-logs />
 
 		<!-- 轮播图部分 -->
 		<view class="swiper-container">
 			<view class="heart" @click="likeFn()">
-				<uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="28" color="#ff4d4f" style="position: relative;top: 5rpx;"></uni-icons>
+				<uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="28" color="#ff4d4f"
+					style="position: relative;top: 5rpx;"></uni-icons>
 				<text class="num" style="color:#ff4d4f;">{{ formatNumber(goods.goods_like_count) }}</text>
 			</view>
 
 			<swiper :interval="3000" :duration="200" @change="onChange" class="banner-swiper"
-				:style="{ height: swiperHeight + 'px' }">
+				:style="{ height: swiperHeight + 'px', 'min-height': '200px', 'max-height': maxHeight + 'px' }">
 				<block v-for="(item, key) in goods.goods_images" :key="key">
 					<swiper-item class="swiper-item-container">
 						<view class="swiper-item">
@@ -29,16 +31,37 @@
 
 		<!-- 商品基本信息 -->
 		<view class="goods-info">
+			<view class="action-buttons">
+			  <button class="action-btn add-to-stock" @click="addToStock">
+			    <view class="btn-content">
+			      <uni-icons type="plus" size="18" color="#fff" style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
+			      <text>放入物品栏</text>
+			    </view>
+			  </button>
+			  <button class="action-btn wish-resale" @click="wishResale">
+			    <view class="btn-content">
+			      <uni-icons type="star" size="18" color="#fff" style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
+			      <text>期望再贩</text>
+			    </view>
+			  </button>
+			  <button class="action-btn add-showcase" @click="addToShowcase">
+			    <view class="btn-content">
+			      <uni-icons type="vip" size="18" color="#fff" style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
+			      <text>加入展示柜</text>
+			    </view>
+			  </button>
+			</view>
+
 			<view class="info-item">
 				<text class="label">名称</text>
 				<!-- <text class="value">{{goods.name}}</text> -->
 				<image :src="goods.goods_name_image" mode="heightFix" class="img_info"></image>
 			</view>
-
-			<view class="info-item">
+			<view class="info-item" @click="selectType(goods.type)">
 				<text class="label">类型</text>
 				<text class="value">{{goods.type}}</text>
 			</view>
+
 
 			<view class="info-item">
 				<text class="label">初贩定价</text>
@@ -57,7 +80,7 @@
 				<text class="value">{{goods.sub_time1 > 0 ? formatTimestamp(goods.sub_time1) : "未知"}}</text>
 			</view>
 
-			<view class="info-item">
+			<view class="info-item" @click="selectSize(goods.size)">
 				<text class="label">尺寸</text>
 				<text class="value">
 					{{goods.size}} / {{goods.size_detail}}
@@ -82,8 +105,18 @@
 				<text class="label">制作方</text>
 
 				<image @click="jumpBrand(goods.brand_id)" :src="goods.goods_brand_name_image"
-					v-if="goods.goods_brand_name_image" mode="heightFix" class="img_info" style="background: rgb(169 231 255);padding: 0rpx 20rpx;"></image>
-		
+					v-if="goods.goods_brand_name_image" mode="heightFix" class="img_info"
+					style="background: rgb(169 231 255);padding: 0rpx 20rpx;"></image>
+
+			</view>
+
+			<view class="info-item">
+				<text class="label">材质</text>
+
+				<text class="value">
+					{{goods.doll_material}}
+				</text>
+
 			</view>
 
 			<view class="info-item">
@@ -92,6 +125,8 @@
 					{{goods.desc_content || '暂无备注信息'}}
 				</text>
 			</view>
+
+
 		</view>
 
 		<!-- 贩售情报 -->
@@ -114,6 +149,12 @@
 
 					<view class="sale-size">
 						<text>{{sale.size}} · {{sale.size_detail}}</text>
+					</view>
+
+					<!-- 新增尾款账单按钮 -->
+					<view class="bill-action" @click="createBill(sale)">
+						<uni-icons type="plus" size="16" color="#64c6dc"></uni-icons>
+						<text>创建一个尾款账单</text>
 					</view>
 				</view>
 			</view>
@@ -214,12 +255,17 @@
 	let hasLike = ref(false)
 	//搭配参考列表
 	let collocationList = ref(false)
-
+	// 是否正在加载许愿状态
+	let wishLoading = ref(false);
+	// 在组件中新增的状态变量
+	let hasWish = ref(false);
+	let wishCount = ref(0);
 
 	//轮播图高度
 	const swiperHeight = ref(400); // 初始高度，根据需求调整
 	const imageHeights = ref([]);
 
+	const maxHeight = ref(uni.upx2px(1000)); // 将1000rpx转换为px单位
 
 
 	// 引用回复
@@ -342,13 +388,15 @@
 						imageHeights.value[index] = rect.height;
 						const validHeights = imageHeights.value.filter(h => h > 0);
 						if (validHeights.length === 0) return;
-						swiperHeight.value = Math.max(...validHeights);
+
+						// 计算高度时加入上限限制
+						const calculatedHeight = Math.max(...validHeights);
+						swiperHeight.value = Math.min(calculatedHeight, maxHeight.value);
 					} catch (e) {
 						console.error('高度计算异常:', e);
 					}
 				}).exec();
 		}, 20);
-
 	}
 
 	uni.showLoading({
@@ -374,6 +422,8 @@
 			success: (res) => {
 				console.log(res.data.data);
 				goods.value = res.data.data;
+				// 获取祈愿状态
+				getWishInfo();
 			},
 			fail: (err) => {
 				console.log(err);
@@ -530,6 +580,70 @@
 		})
 	}
 
+	function addToShowcase() {
+		if (!goods.value.id || !goods.value.name || !goods.value.brand_id || !goods.value.brand_name || !goods.value
+			.type) {
+			uni.showToast({
+				title: '商品信息不完整',
+				icon: 'none'
+			});
+			return;
+		}
+
+
+
+		const params = {
+			goods_id: goods.value.id,
+			goods_name: goods.value.name,
+			brand_id: goods.value.brand_id,
+			brand_name: goods.value.brand_name,
+			type: goods.value.type
+		};
+
+		const query = Object.keys(params)
+			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+			.join('&');
+
+		uni.navigateTo({
+			url: `/pages/stock/showcase_form/showcase_form?${query}`
+		});
+	}
+	// 选择类型跳转
+	function selectType(type) {
+	 //  if (!type || type === '未知') {
+		// uni.showToast({
+		//   title: '暂无类型信息',
+		//   icon: 'none'
+		// });
+		// return;
+	 //  }
+	  
+	 //  // 使用 switchTab 替代 navigateTo
+	 //  uni.switchTab({
+		// url: `/pages/collocation_square/collocation_square?type=${encodeURIComponent(type)}`
+	 //  });
+	}
+
+	// 选择尺寸跳转
+	function selectSize(size) {
+	 //  if (!size || size === '未知') {
+		// uni.showToast({
+		//   title: '暂无尺寸信息',
+		//   icon: 'none'
+		// });
+		// return;
+	 //  }
+
+	 //  const sizeValue = size.replace('分体', '')
+		// .replace('分', '')
+		// .replace('体', '')
+		// .trim();
+
+	 //  // 使用 switchTab 替代 navigateTo
+	 //  uni.switchTab({
+		// url: `/pages/collocation_square/collocation_square?size=${encodeURIComponent(sizeValue)}`
+	 //  });
+	}
 	//获取搭配集合
 	function getCollocation() {
 		uni.request({
@@ -573,6 +687,106 @@
 			url: '/pages/user_page/user_page?uid=' + uid
 		})
 	}
+
+	//放入物品栏
+	function addToStock() {
+		uni.navigateTo({
+			url: `/pages/stock/account_book_form/account_book_form?goods_id=${props.goods_id}`
+		});
+	}
+
+
+	// 创建尾款账单
+	function createBill(sale) {
+		const params = {
+			amount: sale.fin_amount,
+			currency: sale.currency,
+			name: goods.value.name,
+			sale_id: sale.id
+		}
+
+		// 编码参数
+		const query = Object.keys(params)
+			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+			.join('&');
+
+		uni.navigateTo({
+			url: `/pages/stock/bill_form/bill_form?${query}`
+		});
+	}
+	
+	// 期望再贩功能
+	function wishResale() {
+	  if (wishLoading.value) return;
+	  
+	  let token = uni.getStorageSync('token');
+	  if (!global.isLogin) {
+	    uni.showToast({
+	      title: '请先登录',
+	      icon: 'none'
+	    });
+	    return;
+	  }
+	  
+	  wishLoading.value = true;
+	  
+	  uni.request({
+	    url: websiteUrl + '/with-state/wish-restock',
+	    method: 'POST',
+	    header: {
+	      'Authorization': token,
+	      'Content-Type': 'application/json'
+	    },
+	    data: {
+	      goods_id: parseInt(props.goods_id)
+	    },
+	    success: (res) => {
+	      if (res.data.status === "success") {
+	        uni.showToast({
+	          title: '许愿成功',
+	          icon: 'success'
+	        });
+	        
+	        // 更新UI状态
+	        hasWish.value = true;
+	        wishCount.value = res.data.data.wish_count || wishCount.value + 1;
+	      } else {
+	        uni.showToast({
+	          title: res.data.msg || '许愿失败',
+	          icon: 'none'
+	        });
+	      }
+	    },
+	    fail: (err) => {
+	      console.error('许愿请求失败:', err);
+	      uni.showToast({
+	        title: '网络请求失败',
+	        icon: 'none'
+	      });
+	    },
+	    complete: () => {
+	      wishLoading.value = false;
+	    }
+	  });
+	}
+	
+	// 获取许愿信息
+	function getWishInfo() {
+	  let token = uni.getStorageSync('token');
+	  
+	  uni.request({
+	    url: websiteUrl + '/with-state/wish-info?goods_id=' + props.goods_id,
+	    method: 'GET',
+	    header: token ? { 'Authorization': token } : {},
+	    success: (res) => {
+	      if (res.data.status === "success") {
+	        hasWish.value = res.data.data.user_has_wished;
+	        wishCount.value = res.data.data.wish_count;
+	      }
+	    }
+	  });
+	}
+	
 	//加载商品
 	getGoods();
 
@@ -628,7 +842,7 @@
 			font-weight: bold;
 			margin-top: 5rpx;
 			width: 100%;
-			    text-align: center;
+			text-align: center;
 		}
 	}
 
@@ -787,6 +1001,32 @@
 		}
 	}
 
+	/* 尾款账单按钮样式 */
+	.bill-action {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		margin-top: 15rpx;
+		padding-top: 15rpx;
+		border-top: 1rpx dashed #eee;
+
+		text {
+			font-size: 24rpx;
+			color: #64c6dc;
+			margin-left: 8rpx;
+		}
+
+		&:active {
+			opacity: 0.7;
+		}
+	}
+
+	/* 调整贩售情报项的内边距 */
+	.sale-item {
+		padding: 20rpx 0 15rpx;
+		/* 底部减少内边距 */
+	}
+
 	.empty-text {
 		font-size: 26rpx;
 		/* 调小 */
@@ -914,5 +1154,113 @@
 		height: 42rpx;
 		position: relative;
 		left: -5rpx;
+	}
+
+	.action-buttons {
+		display: flex;
+		gap: 15rpx;
+		/* 进一步减少间距 */
+		padding: 0;
+		margin: 20rpx 0 30rpx;
+		/* 调整上下边距 */
+		justify-content: space-between;
+		/* 均匀分布 */
+	}
+
+	.action-btn {
+		  /* 添加这行解决按钮高度问题 */
+		  line-height: normal !important;
+		flex: 1;
+		/* 等宽分布 */
+		height: 100rpx;
+		/* 增加高度 */
+		display: flex;
+		flex-direction: column;
+		/* 垂直排列 */
+		align-items: center;
+		justify-content: center;
+		gap: 8rpx;
+		/* 图标文字间距 */
+		border-radius: 16rpx;
+		font-size: 24rpx;
+		/* 减小字体 */
+		font-weight: 600;
+		/* 加粗 */
+		border: none;
+		/* 移除边框 */
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		padding: 10rpx 0;
+		/* 增加内边距 */
+		box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.15);
+		/* 增强阴影 */
+		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
+		/* 文字阴影 */
+
+		/* 移除伪元素边框 */
+		&::before {
+			content: none;
+		}
+
+		&:active {
+			transform: scale(0.96);
+			box-shadow: 0 3rpx 8rpx rgba(0, 0, 0, 0.15);
+		}
+
+		&::after {
+			border: none;
+			/* 移除默认边框 */
+		}
+
+		text {
+			color: #fff;
+			line-height: 1.2;
+		}
+
+		/* 图标样式 */
+		.uni-icons {
+			filter: drop-shadow(0 1rpx 2rpx rgba(0, 0, 0, 0.2));
+			/* 图标阴影 */
+		}
+	}
+	/* 新增的按钮内容容器 */
+	.btn-content {
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	  height: 100%;
+	}
+
+	/* 糖果配色方案 */
+	.add-to-stock {
+		background: linear-gradient(135deg, #64c6dc, #4aa5c0);
+		box-shadow: 0 6rpx 16rpx rgba(74, 165, 192, 0.3);
+	}
+
+	.wish-resale {
+		background: linear-gradient(135deg, #ff9a9e, #f78ca0);
+		box-shadow: 0 6rpx 16rpx rgba(247, 140, 160, 0.3);
+	}
+
+	.add-showcase {
+		background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+		box-shadow: 0 6rpx 16rpx rgba(161, 140, 209, 0.3);
+	}
+
+	/* 调整商品信息间距 */
+	.goods-info {
+		margin-bottom: 10rpx;
+
+		.info-item:first-child {
+			padding-top: 10rpx;
+			/* 第一个信息项顶部留空 */
+		}
+	}
+
+	/* 确保按钮与上方内容有间距 */
+	.swiper-container {
+		margin-bottom: 0;
 	}
 </style>

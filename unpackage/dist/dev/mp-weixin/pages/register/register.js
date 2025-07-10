@@ -1,6 +1,14 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
+  _easycom_view_logs2();
+}
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
+if (!Math) {
+  _easycom_view_logs();
+}
 const _sfc_main = {
   __name: "register",
   setup(__props) {
@@ -41,16 +49,27 @@ const _sfc_main = {
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/send-sms-code`,
           method: "POST",
-          data: { tel_phone: formData.value.telephone }
+          data: {
+            tel_phone: formData.value.telephone
+          }
         });
         if (res.data.status === "success") {
           startCountdown();
-          common_vendor.index.showToast({ title: "验证码已发送", icon: "none" });
+          common_vendor.index.showToast({
+            title: "验证码已发送",
+            icon: "none"
+          });
         } else {
-          common_vendor.index.showToast({ title: res.data.msg || "发送失败", icon: "none" });
+          common_vendor.index.showToast({
+            title: res.data.msg || "发送失败",
+            icon: "none"
+          });
         }
       } catch (err) {
-        common_vendor.index.showToast({ title: "网络请求失败", icon: "none" });
+        common_vendor.index.showToast({
+          title: "网络请求失败",
+          icon: "none"
+        });
       }
     };
     const startCountdown = () => {
@@ -119,21 +138,31 @@ const _sfc_main = {
             icon: "success",
             complete: () => {
               setTimeout(() => {
-                common_vendor.index.switchTab({ url: "/pages/mine/mine" });
+                common_vendor.index.switchTab({
+                  url: "/pages/mine/mine"
+                });
               }, 1500);
             }
           });
         } else {
-          common_vendor.index.showToast({ title: res.data.msg || "注册失败", icon: "none" });
+          common_vendor.index.showToast({
+            title: res.data.msg || "注册失败",
+            icon: "none"
+          });
         }
       } catch (err) {
-        common_vendor.index.showToast({ title: "网络请求失败", icon: "none" });
+        common_vendor.index.showToast({
+          title: "网络请求失败",
+          icon: "none"
+        });
       } finally {
         loading.value = false;
       }
     };
     const navigateToLogin = () => {
-      common_vendor.index.navigateTo({ url: "/pages/login/login" });
+      common_vendor.index.navigateTo({
+        url: "/pages/login/login"
+      });
     };
     return (_ctx, _cache) => {
       return common_vendor.e({

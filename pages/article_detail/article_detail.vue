@@ -1,5 +1,6 @@
 <template>
   <view class="article-container">
+	  <view-logs></view-logs>
     <!-- 文章封面 -->
     <image 
       v-if="article.banner" 

@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "",
   "usingComponents": {
+    "view-logs": "../../components/view-logs/view-logs",
     "report-button": "../../components/report-button/report-button",
     "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "comment-list": "../../components/comment-list/comment-list",

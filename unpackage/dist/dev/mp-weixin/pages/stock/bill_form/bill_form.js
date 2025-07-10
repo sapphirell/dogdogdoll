@@ -2,17 +2,35 @@
 const common_vendor = require("../../../common/vendor.js");
 const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
+if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
+  _easycom_view_logs2();
+}
+const _easycom_view_logs = () => "../../../components/view-logs/view-logs.js";
+if (!Math) {
+  _easycom_view_logs();
+}
 const _sfc_main = {
   __name: "bill_form",
   props: ["bill_id"],
   setup(__props) {
     const props = __props;
+    const routeParams = common_vendor.ref({});
     const isEdit = props.bill_id ? true : false;
     const name = common_vendor.ref("");
     const price = common_vendor.ref("");
     const date = common_vendor.ref("");
     const status = common_vendor.ref(0);
     const statusList = ["未补款", "已补款"];
+    common_vendor.onLoad((options) => {
+      routeParams.value = options;
+      if (options.name) {
+        name.value = decodeURIComponent(options.name);
+      }
+      if (options.amount) {
+        price.value = options.amount;
+      }
+    });
     function getBillById(id) {
       let token = common_vendor.index.getStorageSync("token");
       common_vendor.index.request({
@@ -28,7 +46,7 @@ const _sfc_main = {
           formattedDate.value = formatDate(res.data.data.ymd);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:118", err);
+          common_vendor.index.__f__("log", "at pages/stock/bill_form/bill_form.vue:141", err);
         }
       });
     }
@@ -178,7 +196,7 @@ const _sfc_main = {
         i: status.value,
         j: statusList,
         k: common_vendor.o(updateStatus),
-        l: common_assets._imports_0$7,
+        l: common_assets._imports_0$8,
         m: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
         n: common_vendor.o(postSubmit),
         o: common_vendor.unref(isEdit)

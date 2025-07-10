@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view class="container">
 		<meta name="theme-color" content="#F8F8F8">
 		</meta>
@@ -111,6 +112,33 @@
 					<input v-model="moreInfo.color" placeholder="请输入颜色" class="form-input" />
 				</view>
 
+				<!-- 新增字段开始 -->
+				<!-- 店名 -->
+				<view class="form-item">
+					<text class="form-label">店名</text>
+					<input v-model="moreInfo.shopName" placeholder="请输入店名" class="form-input" />
+				</view>
+
+				<!-- 头围 -->
+				<view class="form-item">
+					<text class="form-label">头围</text>
+					<input v-model="moreInfo.headCircumference" placeholder="请输入头围(cm)" class="form-input"
+						type="digit" />
+				</view>
+
+				<!-- 肩宽 -->
+				<view class="form-item">
+					<text class="form-label">肩宽</text>
+					<input v-model="moreInfo.shoulderWidth" placeholder="请输入肩宽(cm)" class="form-input" type="digit" />
+				</view>
+
+				<!-- 妆师 -->
+				<view class="form-item">
+					<text class="form-label">妆师</text>
+					<input v-model="moreInfo.makeupArtist" placeholder="请输入妆师" class="form-input" />
+				</view>
+				<!-- 新增字段结束 -->
+
 				<!-- 备注 -->
 				<view class="form-item">
 					<text class="form-label">备注</text>
@@ -122,13 +150,34 @@
 					<text class="form-label">购入时间</text>
 					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
 						<picker mode="date" :value="moreInfo.buyDate"
-							@change="(e) => moreInfo.buyDate = e.detail.value" >
+							@change="(e) => moreInfo.buyDate = e.detail.value">
 							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
 								{{ moreInfo.buyDate || '选择购入日期' }}
 							</view>
 						</picker>
 					</view>
 				</view>
+
+				<!-- 新增字段开始 -->
+				<!-- 到家日期 -->
+				<view class="form-item">
+					<text class="form-label">到家日期</text>
+					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
+						<picker mode="date" :value="moreInfo.arrivalDate"
+							@change="(e) => moreInfo.arrivalDate = e.detail.value">
+							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
+								{{ moreInfo.arrivalDate || '选择到家日期' }}
+							</view>
+						</picker>
+					</view>
+				</view>
+
+				<!-- 附加值 -->
+				<view class="form-item">
+					<text class="form-label">附加值</text>
+					<input v-model="moreInfo.additionalValue" placeholder="请输入附加值" class="form-input" type="digit" />
+				</view>
+				<!-- 新增字段结束 -->
 
 				<!-- 存放位置 -->
 				<view class="form-item">
@@ -157,7 +206,7 @@
 				<view class="form-item">
 					<text class="form-label">补款日期</text>
 					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
-						<picker  mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value">
+						<picker mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value">
 							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
 								{{ form.finalTime || '选择截止日期' }}
 							</view>
@@ -192,7 +241,8 @@
 		onMounted
 	} from 'vue';
 	import {
-		onShow
+		onShow,
+		onLoad
 	} from '@dcloudio/uni-app';
 	import {
 		websiteUrl,
@@ -269,7 +319,13 @@
 		color: '',
 		remark: '',
 		buyDate: '',
-		position: ''
+		position: '',
+		shopName: '', // 店名
+		headCircumference: '', // 头围
+		shoulderWidth: '', // 肩宽
+		makeupArtist: '', // 妆师
+		arrivalDate: '', // 到家日期
+		additionalValue: '' // 附加值
 	});
 
 	// 获取尺寸数据
@@ -488,7 +544,14 @@
 					remark: res.data.data.remark || '',
 					buyDate: res.data.data.buy_date ? new Date(res.data.data.buy_date).toISOString().split(
 						'T')[0] : '',
-					position: res.data.data.position || ''
+					position: res.data.data.position || '',
+					shopName: res.data.data.shop_name || '',
+					headCircumference: res.data.data.head_circumference || '',
+					shoulderWidth: res.data.data.shoulder_width || '',
+					makeupArtist: res.data.data.makeup_artist || '',
+					arrivalDate: res.data.data.arrival_date ? new Date(res.data.data.arrival_date)
+						.toISOString().split('T')[0] : '',
+					additionalValue: res.data.data.additional_value || ''
 				};
 
 				// 设置尺寸选择器
@@ -718,7 +781,13 @@
 			color: moreInfo.value.color,
 			remark: moreInfo.value.remark,
 			buy_date: moreInfo.value.buyDate,
-			position: moreInfo.value.position
+			position: moreInfo.value.position,
+			shop_name: moreInfo.value.shopName,
+			head_circumference: moreInfo.value.headCircumference,
+			shoulder_width: moreInfo.value.shoulderWidth,
+			makeup_artist: moreInfo.value.makeupArtist,
+			arrival_date: moreInfo.value.arrivalDate,
+			additional_value: moreInfo.value.additionalValue
 		}
 
 		console.log('提交数据:', postData)
@@ -769,7 +838,13 @@
 			color: moreInfo.value.color,
 			remark: moreInfo.value.remark,
 			buy_date: moreInfo.value.buyDate,
-			position: moreInfo.value.position
+			position: moreInfo.value.position,
+			shop_name: moreInfo.value.shopName,
+			head_circumference: moreInfo.value.headCircumference,
+			shoulder_width: moreInfo.value.shoulderWidth,
+			makeup_artist: moreInfo.value.makeupArtist,
+			arrival_date: moreInfo.value.arrivalDate,
+			additional_value: moreInfo.value.additionalValue,
 		}
 
 		uni.request({
@@ -815,6 +890,85 @@
 			// 获取尺寸数据
 			fetchSizes();
 		});
+	});
+	// 获取商品信息
+	const getGoodsInfo = (id) => {
+		return new Promise((resolve, reject) => {
+			uni.request({
+				url: websiteUrl + '/goods?id=' + id,
+				method: 'GET',
+				timeout: 5000,
+				success: (res) => {
+					if (res.data.status === "success") {
+						resolve(res.data.data);
+					} else {
+						reject(new Error(res.data.msg || '获取商品信息失败'));
+					}
+				},
+				fail: (err) => {
+					console.error('商品详情获取失败', err);
+					reject(err);
+				}
+			})
+		})
+	}
+
+	// 使用商品信息填充表单
+	const fillFormWithGoodsInfo = (goodsInfo) => {
+		// 填充商品名称
+		name.value = goodsInfo.name;
+
+		// 计算总价（定金+尾款）
+		const totalPrice = goodsInfo.total_amount ? goodsInfo.total_amount : (parseFloat(goodsInfo.sub_amount) || 0) +
+			(parseFloat(goodsInfo.fin_amount) || 0);
+		price.value = totalPrice;
+
+		// 添加商品图片
+		if (goodsInfo.goods_images && goodsInfo.goods_images.length > 0) {
+			imageList.value = [goodsInfo.goods_images[0]];
+		}
+
+		// 如果有尺寸信息，设置尺寸选择器
+		if (goodsInfo.size) {
+			// 设置尺寸选择器
+			selectedSizePath.value = [
+				goodsInfo.size, // 大分类
+				goodsInfo.size_detail || '' // 小分类/尺寸详情
+			];
+
+			// 填充尺寸详情
+			moreInfo.value.sizeDetail = goodsInfo.size_detail || '';
+		}
+
+		// 如果有货币类型，添加到名称后面
+		if (goodsInfo.currency) {
+			name.value += ` (${goodsInfo.currency})`;
+		}
+
+		// 如果有颜色信息，填充颜色
+		if (goodsInfo.color) {
+			moreInfo.value.color = goodsInfo.color;
+		}
+	}
+
+	// 在setup中添加onLoad钩子
+	onLoad(async (options) => {
+		// 接收跳转参数
+		console.log("接收到的参数:", options);
+
+		// 如果有goods_id参数，获取商品信息
+		if (options.goods_id) {
+			try {
+				const goodsInfo = await getGoodsInfo(options.goods_id);
+				fillFormWithGoodsInfo(goodsInfo);
+			} catch (error) {
+				console.error('获取商品信息失败:', error);
+				uni.showToast({
+					title: '获取商品信息失败',
+					icon: 'none'
+				});
+			}
+		}
 	});
 </script>
 
@@ -1119,5 +1273,14 @@
 
 	uni-button:after {
 		border: none;
+	}
+
+	.size-measurements {
+		display: flex;
+		gap: 20rpx;
+
+		.form-item {
+			flex: 1;
+		}
 	}
 </style>

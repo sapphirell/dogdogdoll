@@ -1,6 +1,7 @@
 <template>
 	<common-page title="发布树洞">
 		<meta name="theme-color" content="#F8F8F8"></meta>
+		<view-logs />
 		<view class="publish-box">
 			<!-- 分类选择 -->
 			<picker class="category-picker" :range="categories" range-key="label" @change="handleCategoryChange"

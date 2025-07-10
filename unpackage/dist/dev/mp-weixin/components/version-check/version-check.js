@@ -20,7 +20,7 @@ const _sfc_main = {
     // 当前版本号
     currentVersion: {
       type: String,
-      required: true
+      required: false
     },
     // 是否自动检查版本
     autoCheck: {
@@ -46,27 +46,27 @@ const _sfc_main = {
     };
     const isIgnored = () => {
       const ignoreTime = common_vendor.index.getStorageSync("ignoreUpdateTime");
-      common_vendor.index.__f__("log", "at components/version-check/version-check.vue:87", "忽略时间：", ignoreTime);
+      common_vendor.index.__f__("log", "at components/version-check/version-check.vue:88", "忽略时间：", ignoreTime);
       if (!ignoreTime)
         return false;
       const now = Date.now();
-      common_vendor.index.__f__("log", "at components/version-check/version-check.vue:92", "当前时间", now);
+      common_vendor.index.__f__("log", "at components/version-check/version-check.vue:93", "当前时间", now);
       return now - ignoreTime < 2592e5;
     };
     const checkVersion = async () => {
       try {
         let scene = common_config.getScene();
         if (scene === 1 || scene === 4) {
-          common_vendor.index.__f__("log", "at components/version-check/version-check.vue:102", "scene:", scene);
+          common_vendor.index.__f__("log", "at components/version-check/version-check.vue:103", "scene:", scene);
           return;
         }
         if (isIgnored()) {
-          common_vendor.index.__f__("log", "at components/version-check/version-check.vue:107", "在忽略期内，不显示更新提示 ");
+          common_vendor.index.__f__("log", "at components/version-check/version-check.vue:108", "在忽略期内，不显示更新提示 ");
           return;
         }
         const cv2 = common_vendor.index.getAppBaseInfo().appVersion;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/latest-version?version=1.0.40`,
+          url: `${common_config.websiteUrl}/latest-version?version=${common_config.dogdogdollVersion}`,
           method: "GET"
         });
         if (res && res.data) {
@@ -81,14 +81,14 @@ const _sfc_main = {
           }
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at components/version-check/version-check.vue:130", "版本检查失败:", err);
+        common_vendor.index.__f__("error", "at components/version-check/version-check.vue:131", "版本检查失败:", err);
       }
     };
     const handleUpdate = () => {
       common_vendor.index.setStorageSync("ignoreUpdateTime", Date.now());
       modalVisible.value = false;
       const platformValue = platform.value.toLowerCase();
-      common_vendor.index.__f__("log", "at components/version-check/version-check.vue:143", platformValue);
+      common_vendor.index.__f__("log", "at components/version-check/version-check.vue:144", platformValue);
       let scene = common_config.getScene();
       if (scene === 2) {
         plus.runtime.openURL("https://apps.apple.com/app/id6747564362");

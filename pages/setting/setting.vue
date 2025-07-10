@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view class="settings-container">
 		<!-- 统一item结构 -->
 		<view v-for="(item, index) in menuItems" :key="index" class="menu-item" @click="item.action(item)">
@@ -35,7 +36,7 @@
 		global,
 		bindWechat,
 		asyncGetUserInfo,
-	
+		dogdogdollVersion,
 	} from "../../common/config.js";
 	uni.setNavigationBarTitle({
 		title: '设置'
@@ -137,9 +138,9 @@
 		// 获取manifest.json文件的内容
 		if (uni.getSystemInfoSync().platform === 'app' || 1 == 1) {
 			click.value ++;
-			const version = uni.getAppBaseInfo().appVersion;
+	
 			const res = await uni.request({
-				url: `${websiteUrl}/latest-version?version=1.0.40`,
+				url: `${websiteUrl}/latest-version?version=${dogdogdollVersion}`,
 				method: 'GET'
 			});
 

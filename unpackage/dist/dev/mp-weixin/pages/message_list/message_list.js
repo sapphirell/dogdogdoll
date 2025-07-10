@@ -2,14 +2,16 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_swipe_action_item2 = common_vendor.resolveComponent("uni-swipe-action-item");
   const _easycom_uni_swipe_action2 = common_vendor.resolveComponent("uni-swipe-action");
-  (_easycom_uni_swipe_action_item2 + _easycom_uni_swipe_action2)();
+  (_easycom_view_logs2 + _easycom_uni_swipe_action_item2 + _easycom_uni_swipe_action2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_swipe_action_item = () => "../../uni_modules/uni-swipe-action/components/uni-swipe-action-item/uni-swipe-action-item.js";
 const _easycom_uni_swipe_action = () => "../../uni_modules/uni-swipe-action/components/uni-swipe-action/uni-swipe-action.js";
 if (!Math) {
-  (_easycom_uni_swipe_action_item + _easycom_uni_swipe_action)();
+  (_easycom_view_logs + _easycom_uni_swipe_action_item + _easycom_uni_swipe_action)();
 }
 const _sfc_main = {
   __name: "message_list",
@@ -83,7 +85,7 @@ const _sfc_main = {
       }
     };
     const loadMore = () => {
-      common_vendor.index.__f__("log", "at pages/message_list/message_list.vue:137", "触发加载更多", loading.value, hasMore.value);
+      common_vendor.index.__f__("log", "at pages/message_list/message_list.vue:138", "触发加载更多", loading.value, hasMore.value);
       if (loading.value || !hasMore.value)
         return;
       fetchMessages(true);
@@ -199,7 +201,7 @@ const _sfc_main = {
             f: common_vendor.o(($event) => gotoDetail(item.id), item.id),
             g: item.id,
             h: common_vendor.o(handleSwipeClick, item.id),
-            i: "cb03c942-1-" + i0 + ",cb03c942-0",
+            i: "cb03c942-2-" + i0 + ",cb03c942-1",
             j: common_vendor.p({
               ["right-options"]: swipeOptions(item),
               threshold: 0.4

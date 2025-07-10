@@ -39,7 +39,8 @@
 	} from 'vue';
 	import {
 		websiteUrl,
-		getScene
+		getScene,
+		dogdogdollVersion,
 	} from '../../common/config.js';
 
 	// 组件属性
@@ -52,7 +53,7 @@
 		// 当前版本号
 		currentVersion: {
 			type: String,
-			required: true
+			required: false
 		},
 		// 是否自动检查版本
 		autoCheck: {
@@ -109,7 +110,7 @@
 			}
 			const cv = uni.getAppBaseInfo().appVersion;
 			const res = await uni.request({
-				url: `${websiteUrl}/latest-version?version=1.0.40`,
+				url: `${websiteUrl}/latest-version?version=${dogdogdollVersion}`,
 				method: 'GET'
 			});
 

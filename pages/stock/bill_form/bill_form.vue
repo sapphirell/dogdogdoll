@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view class="container">
 		<meta name="theme-color" content="#F8F8F8"></meta>
 		<!-- 表单卡片容器 -->
@@ -84,11 +85,12 @@
 
 
 <script setup>
-	import { ref, onMounted } from 'vue';
+	import { ref, onMounted, computed } from 'vue';
 	import { websiteUrl } from "../../../common/config.js";
-
+	import { onLoad } from '@dcloudio/uni-app'; 
+	
 	const props = defineProps(["bill_id"]);
-
+	const routeParams = ref({});
 	// 判断页面是否有参数，如果有代表编辑，如果没有代表新增
 	const isEdit = props.bill_id ? true : false;
 
@@ -99,6 +101,27 @@
 	const status = ref(0); // 默认未补款
 	const statusList = ['未补款', '已补款'];
 
+	// 在 onLoad 中获取跳转参数
+	onLoad((options) => {
+		// 保存所有路由参数
+		routeParams.value = options;
+		
+		// 如果有名称参数，设置名称
+		if (options.name) {
+			name.value = decodeURIComponent(options.name);
+		}
+		
+		// 如果有金额参数，设置金额
+		if (options.amount) {
+			price.value = options.amount;
+		}
+		
+		// // 设置当前日期为默认日期
+		// const today = new Date();
+		// date.value = today.toISOString().split('T')[0];
+		// formattedDate.value = formatDate(date.value);
+	});
+	
 	// 获取账单详情
 	function getBillById(id) {
 		let token = uni.getStorageSync('token');

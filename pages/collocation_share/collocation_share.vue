@@ -1,5 +1,6 @@
 <template>
 	<view>
+		<view-logs />
 		<!-- 图片轮播区域 -->
 		<view style="position: relative;">
 			<view class="heart" @click="likeFn()">
@@ -44,8 +45,7 @@
 		<!-- 关联商品列表 -->
 		<view class="goods-list">
 			<!-- <text class="about">相关商品</text> -->
-			<view v-for="item in detailData.collocation_relation_list" :key="item.id" class="goods-item"
-				@click="item.relation_goods_id > 0 ? navigateToGoods(item.relation_goods_id) : null">
+			<view v-for="item in detailData.collocation_relation_list" :key="item.id" class="goods-item" @click="navigateToRelated(item)">
 				<!-- 商品图片 -->
 				<view class="image-container">
 					<template v-if="item.relation_goods_id === 0">
@@ -287,21 +287,29 @@
 			loading.value = false
 		}
 	}
-	// 商品点击跳转
-	const navigateToGoods = (goodsId) => {
-		//如果goodsId是0，提示商品暂时没有录入
-		if (goodsId == 0) {
-			uni.showToast({
-				title: '商品暂时没有录入',
-				icon: 'none'
-			})
-			return
-		}
-		uni.navigateTo({
-			url: `/pages/goods/goods?goods_id=${goodsId}`
-		})
-	}
 
+// 商品点击跳转方法
+const navigateToRelated = (item) => {
+  // 如果有有效的商品ID，跳转到商品页面
+  if (item.relation_goods_id > 0) {
+    uni.navigateTo({
+      url: `/pages/goods/goods?goods_id=${item.relation_goods_id}`
+    })
+  } 
+  // 如果有有效的品牌ID，跳转到品牌页面
+  else if (item.relation_brand_id > 0) {
+    uni.navigateTo({
+      url: `/pages/brand/brand?brand_id=${item.relation_brand_id}`
+    })
+  } 
+  // 都没有时提示
+  else {
+    uni.showToast({
+      title: '暂无商品和品牌信息',
+      icon: 'none'
+    })
+  }
+}
 	// 新增获取用户信息方法
 	const getAuthorInfo = async (uid) => {
 		try {

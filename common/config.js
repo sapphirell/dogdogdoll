@@ -7,6 +7,8 @@ import {
 export const websiteUrl = 'https://api.fantuanpu.com';	
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
+// 客户端版本号
+export const dogdogdollVersion = "1.0.40"
 
 // 全局状态
 export let global = reactive({
@@ -313,6 +315,23 @@ export function getScene() {
 	return 1
 }
 
+
+export function getGoodsInfo (id) {
+		return new Promise((resolve, reject) => {
+			uni.request({
+				url: websiteUrl + '/goods?id=' + id,
+				method: 'GET',
+				timeout: 5000,
+				success: (res) => {
+					resolve(res.data.data)
+				},
+				fail: (err) => {
+					console.error('商品详情获取失败', err)
+					reject(err)
+				}
+			})
+		})
+	}
 
 
 // 工具函数

@@ -1,11 +1,13 @@
 <template>
 	<meta name="theme-color" content="#def9ff">
 	</meta>
+	<view-logs />
 	<view>
 		<privacy-permission-modal></privacy-permission-modal>
 		<version-check :show-up-to-date-toast="true" />
 		<loading-toast :show="showLoadding"></loading-toast>
-		    
+		<view-logs></view-logs>
+
 		<view class="body">
 			<view class="index_header">
 				<view class="header-placeholders"></view>
@@ -17,7 +19,9 @@
 					<view style="display: inline-block;margin-left: 20rpx;">
 						<!-- <text class="font-alimamashuhei logo"
 							style="">娃圈狗狗助手</text> -->
-						<image src="/static/new-icon/title.gif" mode="widthFix" style="width: 400rpx;max-height: 180rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;"></image>
+						<image src="/static/new-icon/title.gif" mode="widthFix"
+							style="width: 400rpx;max-height: 180rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;">
+						</image>
 					</view>
 					<goods-search width="720rpx" :hiddenIcon="false"></goods-search>
 
@@ -35,7 +39,8 @@
 							<text class="font-cute">娃物图鉴</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'hot' }" @click="switchTab('hot')">
-							<image src="/static/new-icon/collocation.gif" mode="aspectFill" style="width: 90rpx;height: 90rpx;position: relative;bottom: 0rpx;"></image>
+							<image src="/static/new-icon/collocation.gif" mode="aspectFill"
+								style="width: 90rpx;height: 90rpx;position: relative;bottom: 0rpx;"></image>
 							<text class="font-cute" style="position: relative;bottom: 5rpx;">热门搭配</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'second' }"
@@ -56,7 +61,7 @@
 				<uni-transition :mode-class="['fade']" :show="activeTab === 'news'">
 					<!-- 品牌图透 -->
 					<view class="body_list news-box" v-if="activeTab === 'news'">
-						
+
 						<view style="position: relative;height: 250rpx;margin-bottom: 20rpx; display: none;">
 							<!-- 轮播图部分 -->
 							<swiper :interval="3000" :duration="200" class="banner_swiper"
@@ -80,10 +85,19 @@
 						</view>
 						<view v-for="item in newsList" :key="item.id" class="news-item" @tap="jump2saleNews(item)">
 							<view class="news-images">
-								<swiper v-if="item.image_list.length > 0" class="image-swiper" :autoplay="true"
-									:circular="true">
+								<swiper v-if="item.image_list.length > 0" class="image-swiper"
+									:autoplay="item.imagesLoaded" :circular="true">
 									<swiper-item v-for="(img, idx) in item.image_list" :key="idx">
-										<image :src="img" mode="aspectFill" class="swiper-image" />
+										<!-- 添加加载状态层 -->
+										<view class="image-container">
+											<image :src="img" mode="aspectFill" class="swiper-image"
+												:class="{loaded: item.imagesLoaded}" @load="handleNewsImageLoad(item)"
+												@error="handleNewsImageError(item, idx)" />
+											<view v-if="!item.imagesLoaded" class="loading-overlay">
+												<uni-icons type="loop" size="28" color="rgb(185 185 185)"
+													class="loading-icon"></uni-icons>
+											</view>
+										</view>
 									</swiper-item>
 								</swiper>
 							</view>
@@ -112,12 +126,11 @@
 					<view style="width: 700rpx;">
 						<common-search style="width: 100%;" width="720rpx"></common-search>
 					</view>
-					
-					
+
+
 					<view class="filter-tabs">
 						<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
-							:class="{ 'active': activeSearchType === tab.value }"
-							@click="handleTabClick(tab.value)">
+							:class="{ 'active': activeSearchType === tab.value }" @click="handleTabClick(tab.value)">
 							{{ tab.label }}
 						</view>
 					</view>
@@ -127,9 +140,9 @@
 						<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
 					</view>
 					<view class="body_list brand_box" style="position: relative;" v-if="activeTab === 'brands'">
-						
 
-					
+
+
 						<view v-for="(item, index) in brandsList" :key="item.id">
 							<index-brand :brand="item"></index-brand>
 						</view>
@@ -214,10 +227,20 @@
 
 							<!-- 图片 -->
 							<view v-if="item.images.length > 0" class="image-grid">
-								<swiper class="image-swiper" :autoplay="true" :circular="true" indicator-dots>
+								<swiper class="image-swiper" :autoplay="item.imagesLoaded" :circular="true"
+									:indicator-dots="item.images.length > 1" :duration="300">
 									<swiper-item v-for="(img, idx) in item.images" :key="idx">
-										<image :src="img" mode="aspectFill" class="swiper-image"
-											@tap.stop="previewImage(item.images, idx)" />
+										<!-- 添加加载状态层 -->
+										<view class="image-container">
+											<image :src="img" mode="aspectFill" class="swiper-image"
+												:class="{loaded: item.imagesLoaded}"
+												@tap.stop="previewImage(item.images, idx)" @load="handleImageLoad(item)"
+												@error="handleImageError(item, idx)" />
+											<view v-if="!item.imagesLoaded" class="loading-overlay">
+												<uni-icons type="spinner-cycle" size="28" color="#4cbbd0"
+													class="loading-icon"></uni-icons>
+											</view>
+										</view>
 									</swiper-item>
 								</swiper>
 							</view>
@@ -250,8 +273,8 @@
 				</uni-transition>
 				<!-- </transition> -->
 			</view>
-			
-	
+
+
 		</view>
 	</view>
 
@@ -407,8 +430,8 @@
 	const refreshData = async () => {
 		showLoadding.value = true
 		// 等待0.3s
-		setTimeout(async()=> {
-		
+		setTimeout(async () => {
+
 			// 根据当前选项卡刷新对应数据
 			const refreshActions = {
 				'brands': () => {
@@ -416,17 +439,17 @@
 					brandsList.value = [];
 					hasMore.value = true;
 					getBrands(true)
-			
+
 				},
 				'news': () => {
 					newsPage.value = 1;
 					newsList.value = [];
 					newsHasMore.value = true;
 					getNews(true)
-			
+
 				},
 				'hot': () => {
-			
+
 					hotPage.value = 1;
 					hotList.value = [];
 					hotHasMore.value = true;
@@ -439,11 +462,11 @@
 					getTreeholeList(true)
 				}
 			};
-			
+
 			await refreshActions[activeTab.value]();
 			// getArticles(); // 始终刷新轮播图
 		}, 800)
-		
+
 	};
 
 
@@ -541,7 +564,12 @@
 				pageSize: newsPageSize.value
 			},
 			success: (res) => {
-				const newData = res.data.data.news_list
+				const newData = res.data.data.news_list.map(item => ({
+					...item,
+					// 新增加载状态字段
+					imagesLoaded: false,
+					loadCount: 0
+				}))
 				if (newData.length === 0) {
 					newsHasMore.value = false
 					return
@@ -685,7 +713,8 @@
 	}
 
 
-	// 获取树洞列表
+
+	// 在getTreeholeList方法中初始化加载状态
 	const getTreeholeList = async (isRefresh = false) => {
 		if (isRefresh) treeholePage.value = 1;
 		if (!treeholeHasMore.value || treeholeLoading.value) return
@@ -701,7 +730,10 @@
 			success: (res) => {
 				const newData = res.data.data.submission_list.map(item => ({
 					...item,
-					images: item.images || []
+					images: item.images || [],
+					// 新增加载状态字段
+					imagesLoaded: false,
+					loadCount: 0
 				}))
 
 				if (newData.length === 0) {
@@ -726,6 +758,49 @@
 		})
 	}
 
+	// 图片加载完成处理
+	const handleImageLoad = (item) => {
+		console.log("图片加载完成", item)
+		item.loadCount++;
+		// 所有图片加载完成后再启用轮播
+		if (item.loadCount >= item.images.length) {
+			item.imagesLoaded = true;
+		}
+	}
+
+	// 图片加载失败处理
+	const handleImageError = (item, idx) => {
+		console.error(`图片加载失败: ${item.images[idx]}`);
+		// 标记为加载完成（即使失败也要继续）
+		item.loadCount++;
+		if (item.loadCount >= item.images.length) {
+			item.imagesLoaded = true;
+		}
+
+		// 可选：替换为占位图
+		// item.images[idx] = '/static/image-error.png';
+	}
+	// 新闻图片加载完成处理
+	const handleNewsImageLoad = (item) => {
+		item.loadCount++;
+		// 所有图片加载完成后再启用轮播
+		if (item.loadCount >= item.image_list.length) {
+			item.imagesLoaded = true;
+		}
+	}
+
+	// 新闻图片加载失败处理
+	const handleNewsImageError = (item, idx) => {
+		console.error(`新闻图片加载失败: ${item.image_list[idx]}`);
+		// 标记为加载完成（即使失败也要继续）
+		item.loadCount++;
+		if (item.loadCount >= item.image_list.length) {
+			item.imagesLoaded = true;
+		}
+
+		// 可选：替换为占位图
+		// item.image_list[idx] = '/static/image-error.png';
+	}
 	// 处理发布
 	function handlePublish() {
 		// 检查登录状态
@@ -835,9 +910,9 @@
 		/* 确保有足够的高度 */
 		// background: #575568;
 		background: #d6e4f2;
-		
+
 	}
-	
+
 	// 适配区域
 	.header-placeholders {
 		height: v-bind(headerHeight);
@@ -874,7 +949,7 @@
 			font-weight: 1000;
 			color: #8fa0b5;
 			width: 250rpx;
-			padding-top: 10rpx; 
+			padding-top: 10rpx;
 			vertical-align: top;
 			position: relative;
 		}
@@ -886,61 +961,68 @@
 
 		/* 四个小按钮 */
 		.index_page_article {
-		    height: 180rpx; /* 增加高度以适应图片和文字 */
-		    width: 100%;
-		    display: flex;
-		    justify-content: space-around; /* 均匀分布四个按钮 */
-		    padding: 10rpx 0;
+			height: 180rpx;
+			/* 增加高度以适应图片和文字 */
+			width: 100%;
+			display: flex;
+			justify-content: space-around;
+			/* 均匀分布四个按钮 */
+			padding: 10rpx 0;
 			margin-bottom: 20rpx;
-		    .swich_box {
-		        width: 150rpx; /* 增加宽度 */
-		        height: 160rpx; /* 增加高度 */
-		        display: flex;
-		        flex-direction: column;
-		        align-items: center;
-		        justify-content: center;
-		        position: relative;
-		        transition: all 0.3s ease;
-		        border-radius: 30rpx;
-		        padding: 15rpx 0;
-		        
-		        image {
-		            width: 80rpx ; /* 统一图片大小 */
-		            height: 80rpx ;
-		            display: block;
-		            margin-bottom: 15rpx; /* 图片和文字间距 */
-		            transition: all 0.3s ease;
-		        }
-		        
-		        text {
-		            font-size: 23rpx;
-		            font-weight: bold;
-		            transition: all 0.3s ease;
-		            color: #fff;
-		            text-align: center;
-		            display: block;
-		            width: 100%;
-		        }
-		
-		        /* 激活状态样式 */
-		        &.active {
-		            position: relative;
-		            bottom: 20rpx;
-		            background: #fff;
-		            border-radius: 40rpx;
-		            // box-shadow: 0 -5rpx 10rpx rgba(0,0,0,0.05);
-		            box-shadow: 0 0 10px #0000001a;
-					
-		            // image {
-		            //     transform: translateY(-10rpx); /* 图片上移 */
-		            // }
-		            
-		            text {
-		                color: #7ab6c6;
-		                // transform: translateY(5rpx); /* 文字下移 */
-		            }
-		        }
-		    }
+
+			.swich_box {
+				width: 150rpx;
+				/* 增加宽度 */
+				height: 160rpx;
+				/* 增加高度 */
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				position: relative;
+				transition: all 0.3s ease;
+				border-radius: 30rpx;
+				padding: 15rpx 0;
+
+				image {
+					width: 80rpx;
+					/* 统一图片大小 */
+					height: 80rpx;
+					display: block;
+					margin-bottom: 15rpx;
+					/* 图片和文字间距 */
+					transition: all 0.3s ease;
+				}
+
+				text {
+					font-size: 23rpx;
+					font-weight: bold;
+					transition: all 0.3s ease;
+					color: #fff;
+					text-align: center;
+					display: block;
+					width: 100%;
+				}
+
+				/* 激活状态样式 */
+				&.active {
+					position: relative;
+					bottom: 20rpx;
+					background: #fff;
+					border-radius: 40rpx;
+					// box-shadow: 0 -5rpx 10rpx rgba(0,0,0,0.05);
+					box-shadow: 0 0 10px #0000001a;
+
+					// image {
+					//     transform: translateY(-10rpx); /* 图片上移 */
+					// }
+
+					text {
+						color: #7ab6c6;
+						// transform: translateY(5rpx); /* 文字下移 */
+					}
+				}
+			}
 		}
 	}
 
@@ -1130,6 +1212,7 @@
 
 			.image-swiper {
 				width: 200rpx;
+
 				.swiper-image {
 					width: 100%;
 					height: 100%;
@@ -1157,7 +1240,7 @@
 				}
 
 				.news-desc {
-					font-size: 22rpx;
+					font-size: 23rpx;
 					color: #666;
 					line-height: 1.6;
 					display: -webkit-box;
@@ -1175,7 +1258,8 @@
 					bottom: 20rpx;
 
 					.brand-tag {
-						background: linear-gradient(135deg, #97e7f7, #d5acd6);;
+						background: linear-gradient(135deg, #97e7f7, #d5acd6);
+						;
 						color: #fff;
 						padding: 4rpx 12rpx;
 						border-radius: 6rpx;
@@ -1374,7 +1458,7 @@
 	}
 
 	.content {
-		font-size: 22rpx;
+		font-size: 23rpx;
 		color: #888;
 		line-height: 1.6;
 		margin-bottom: 30rpx;
@@ -1543,10 +1627,55 @@
 			transform: rotate(360deg);
 		}
 	}
+
 	::-webkit-scrollbar {
-		width: 0!important;
-		height: 0!important;
-		background-color: transparent!important;
-		display: none!important;
+		width: 0 !important;
+		height: 0 !important;
+		background-color: transparent !important;
+		display: none !important;
+	}
+
+	// 新增图片容器样式
+	.image-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(255, 255, 255, 0.7);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 10;
+	}
+
+	.loading-icon {
+		animation: rotate 1s linear infinite;
+	}
+
+	@keyframes rotate {
+		from {
+			transform: rotate(0deg);
+		}
+
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	// 图片加载完成后的动画
+	.swiper-image {
+		opacity: 0;
+		transition: opacity 0.5s ease;
+
+		&.loaded {
+			opacity: 1;
+		}
 	}
 </style>

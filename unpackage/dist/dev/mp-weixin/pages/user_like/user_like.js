@@ -1,6 +1,14 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
+if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
+  _easycom_view_logs2();
+}
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
+if (!Math) {
+  _easycom_view_logs();
+}
 const _sfc_main = {
   __name: "user_like",
   setup(__props) {
@@ -91,7 +99,7 @@ const _sfc_main = {
       if (!noMore.value) {
         loadData();
       } else {
-        common_vendor.index.__f__("log", "at pages/user_like/user_like.vue:202", "no more");
+        common_vendor.index.__f__("log", "at pages/user_like/user_like.vue:203", "no more");
       }
     };
     const resetPagination = () => {

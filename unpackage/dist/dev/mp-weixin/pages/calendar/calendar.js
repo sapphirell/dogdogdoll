@@ -3,16 +3,18 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
   const _easycom_loading_toast2 = common_vendor.resolveComponent("loading-toast");
   const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_common_search2 + _easycom_loading_toast2 + _easycom_common_page2)();
+  (_easycom_view_logs2 + _easycom_common_search2 + _easycom_loading_toast2 + _easycom_common_page2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_common_search = () => "../../components/common-search/common-search.js";
 const _easycom_loading_toast = () => "../../components/loading-toast/loading-toast.js";
 const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_common_search + _easycom_loading_toast + _easycom_common_page)();
+  (_easycom_view_logs + _easycom_common_search + _easycom_loading_toast + _easycom_common_page)();
 }
 const _sfc_main = {
   __name: "calendar",
@@ -54,7 +56,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:188", res.data.data);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:189", res.data.data);
           originalNews.value = res.data.data;
           news.value = filterNews("全部");
           for (let [key, value] of Object.entries(news.value)) {
@@ -64,7 +66,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:198", err);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:199", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -72,7 +74,7 @@ const _sfc_main = {
         },
         complete: () => {
           scrollLeft.value = itemWidth * 7 - 5;
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:206", "left:" + scrollLeft.value);
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:207", "left:" + scrollLeft.value);
           loading.value = false;
         }
       });
@@ -119,10 +121,10 @@ const _sfc_main = {
           "Content-Type": "application/json"
         },
         success: () => {
-          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:258", "点击记录成功");
+          common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:259", "点击记录成功");
         },
         fail: (err) => {
-          common_vendor.index.__f__("error", "at pages/calendar/calendar.vue:261", "点击记录失败:", err);
+          common_vendor.index.__f__("error", "at pages/calendar/calendar.vue:262", "点击记录失败:", err);
         }
       });
       common_vendor.index.navigateTo({
@@ -130,7 +132,7 @@ const _sfc_main = {
       });
     }
     function selectDate(date, item) {
-      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:272", item);
+      common_vendor.index.__f__("log", "at pages/calendar/calendar.vue:273", item);
       chooseDate.value = date;
       chooseItem.value = item;
     }
@@ -189,7 +191,7 @@ const _sfc_main = {
         g: common_vendor.t(common_vendor.unref(chooseItem).weekday),
         h: common_vendor.unref(chooseItem).goods == null
       }, common_vendor.unref(chooseItem).goods == null ? {
-        i: common_assets._imports_0$5
+        i: common_assets._imports_0$6
       } : {
         j: common_vendor.f(common_vendor.unref(chooseItem).goods, (good, k0, i0) => {
           return common_vendor.e({

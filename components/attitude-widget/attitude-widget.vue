@@ -89,7 +89,7 @@
 			label: '难以直视'
 		},
 		{
-			emoji: '🤡',
+			emoji: '🔴',
 			value: 5,
 			label: '谁的鼻子掉了?'
 		}
@@ -198,7 +198,6 @@
 
 	.attitude-container {
 		position: relative;
-		width: 100%;
 	}
 
 	.counts-and-expand {

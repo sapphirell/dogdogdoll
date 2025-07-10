@@ -2,12 +2,14 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  _easycom_uni_icons2();
+  (_easycom_view_logs2 + _easycom_uni_icons2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  _easycom_uni_icons();
+  (_easycom_view_logs + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "user_page",
@@ -124,7 +126,7 @@ const _sfc_main = {
           currentPagination.page++;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:227", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:228", error);
         common_vendor.index.showToast({
           title: "数据加载失败",
           icon: "none"
@@ -151,7 +153,7 @@ const _sfc_main = {
     const getBlockStatus = async () => {
       const token = common_vendor.index.getStorageSync("token");
       if (!token) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:259", "未登录");
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:260", "未登录");
         return;
       }
       try {
@@ -170,14 +172,14 @@ const _sfc_main = {
           they_blocked.value = res.data.data.they_blocked;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:280", "获取黑名单状态失败", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:281", "获取黑名单状态失败", error);
       }
     };
     const toggleBlock = async () => {
       try {
         const token = common_vendor.index.getStorageSync("token");
         if (!token) {
-          common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:289", "未登录");
+          common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:290", "未登录");
           return;
         }
         const action = is_blocked.value ? "remove" : "add";
@@ -206,7 +208,7 @@ const _sfc_main = {
           });
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:324", "操作失败", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:325", "操作失败", error);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"

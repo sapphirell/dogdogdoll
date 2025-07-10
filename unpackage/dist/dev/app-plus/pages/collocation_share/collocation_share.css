@@ -718,7 +718,6 @@ uni-button[data-v-b620d6d3]::after {
 }
 .attitude-container[data-v-f15d1ff3] {
   position: relative;
-  width: 100%;
 }
 .counts-and-expand[data-v-f15d1ff3] {
   display: flex;
@@ -1210,8 +1209,8 @@ uni-button[data-v-88f35a0c]:after {
 .report-container[data-v-38d96b75] {
   margin: 0.46875rem 0 0 0;
   display: inline-block;
-  width: 3.75rem;
-  background: #fcfcfc;
+  width: 4.375rem;
+  background: #fff;
   padding: 0.3125rem 0.625rem;
   border-radius: 0.3125rem;
 }

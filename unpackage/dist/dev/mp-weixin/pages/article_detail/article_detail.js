@@ -2,16 +2,18 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_mp_html2 = common_vendor.resolveComponent("mp-html");
   const _easycom_comment_list2 = common_vendor.resolveComponent("comment-list");
   const _easycom_comment_input2 = common_vendor.resolveComponent("comment-input");
-  (_easycom_mp_html2 + _easycom_comment_list2 + _easycom_comment_input2)();
+  (_easycom_view_logs2 + _easycom_mp_html2 + _easycom_comment_list2 + _easycom_comment_input2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_mp_html = () => "../../uni_modules/mp-html/components/mp-html/mp-html.js";
 const _easycom_comment_list = () => "../../components/comment-list/comment-list.js";
 const _easycom_comment_input = () => "../../components/comment-input/comment-input.js";
 if (!Math) {
-  (_easycom_mp_html + _easycom_comment_list + _easycom_comment_input)();
+  (_easycom_view_logs + _easycom_mp_html + _easycom_comment_list + _easycom_comment_input)();
 }
 const _sfc_main = {
   __name: "article_detail",
@@ -109,7 +111,7 @@ const _sfc_main = {
         }),
         e: article.value.id > 0
       }, article.value.id > 0 ? {
-        f: common_vendor.sr(commentListRef, "55f34774-1", {
+        f: common_vendor.sr(commentListRef, "55f34774-2", {
           "k": "commentListRef"
         }),
         g: common_vendor.o(handleReplyComment),
@@ -117,7 +119,7 @@ const _sfc_main = {
           type: 7,
           ["relation-id"]: parseInt(article.value.id)
         }),
-        i: common_vendor.sr(commentInputRef, "55f34774-2", {
+        i: common_vendor.sr(commentInputRef, "55f34774-3", {
           "k": "commentInputRef"
         }),
         j: common_vendor.o(handleCommentSubmit),

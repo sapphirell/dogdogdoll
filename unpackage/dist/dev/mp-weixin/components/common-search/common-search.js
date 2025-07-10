@@ -84,7 +84,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
       return common_vendor.e({
         a: props.mode == "jump"
       }, props.mode == "jump" ? {
-        b: common_assets._imports_0$11
+        b: common_assets._imports_0$12
       } : {}, {
         c: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
         d: searchTerm.value,

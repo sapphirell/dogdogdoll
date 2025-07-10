@@ -2,23 +2,25 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_rate2 = common_vendor.resolveComponent("uni-rate");
   const _easycom_comment_list2 = common_vendor.resolveComponent("comment-list");
   const _easycom_comment_input2 = common_vendor.resolveComponent("comment-input");
-  (_easycom_uni_rate2 + _easycom_comment_list2 + _easycom_comment_input2)();
+  (_easycom_view_logs2 + _easycom_uni_rate2 + _easycom_comment_list2 + _easycom_comment_input2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_rate = () => "../../uni_modules/uni-rate/components/uni-rate/uni-rate.js";
 const _easycom_comment_list = () => "../../components/comment-list/comment-list.js";
 const _easycom_comment_input = () => "../../components/comment-input/comment-input.js";
 if (!Math) {
-  (_easycom_uni_rate + _easycom_comment_list + _easycom_comment_input)();
+  (_easycom_view_logs + _easycom_uni_rate + _easycom_comment_list + _easycom_comment_input)();
 }
 const _sfc_main = {
   __name: "brand",
   props: ["brand_id"],
   setup(__props) {
     const props = __props;
-    common_vendor.index.__f__("log", "at pages/brand/brand.vue:120", props);
+    common_vendor.index.__f__("log", "at pages/brand/brand.vue:121", props);
     const hasLikeBrand = common_vendor.ref(false);
     let newsList = common_vendor.ref([]);
     let newsPage = common_vendor.ref({
@@ -44,8 +46,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:152", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:153", "target", target);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:153", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:154", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -54,7 +56,7 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:164", "item", item);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:165", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
@@ -71,7 +73,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:182", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:183", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -120,7 +122,7 @@ const _sfc_main = {
       });
     };
     const onRateChange = (e) => {
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:236", e);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:237", e);
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
           title: "请先登录",
@@ -181,7 +183,7 @@ const _sfc_main = {
         }
       } catch (err) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:308", "评分失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:309", "评分失败:", err);
         common_vendor.index.showToast({
           title: "评分失败，请重试",
           icon: "none"
@@ -221,7 +223,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:367", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:368", res.data.data);
           brand.value = res.data.data;
           common_vendor.index.setNavigationBarTitle({
             title: res.data.data.brand_name
@@ -229,7 +231,7 @@ const _sfc_main = {
           getHasLikeBrand();
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:377", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:378", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -277,7 +279,7 @@ const _sfc_main = {
           });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:429", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:430", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -296,7 +298,7 @@ const _sfc_main = {
         });
         hasLikeBrand.value = ((_a = res.data.data) == null ? void 0 : _a.id) > 0;
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:451", "获取关注状态失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:452", "获取关注状态失败:", err);
       }
     };
     function formatTimestamp(timestamp) {
@@ -315,7 +317,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:476", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:477", res.data.data);
           goods.value.page_index = res.data.data.page_index;
           goods.value.total = res.data.data.total;
           goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
@@ -330,7 +332,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:494", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:495", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -364,7 +366,7 @@ const _sfc_main = {
           type
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:600", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:601", res.data.data);
           if (res.data.status == "success") {
             myRateValue.value = res.data.data.score;
             return res.data.data.score;
@@ -377,7 +379,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:613", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:614", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -460,7 +462,7 @@ const _sfc_main = {
             g: item.id
           });
         }),
-        s: common_vendor.sr(commentListRef, "1a297a1d-1", {
+        s: common_vendor.sr(commentListRef, "1a297a1d-2", {
           "k": "commentListRef"
         }),
         t: common_vendor.o(handleReplyComment),
@@ -468,7 +470,7 @@ const _sfc_main = {
           type: 1,
           ["relation-id"]: parseInt(props.brand_id)
         }),
-        w: common_vendor.sr(commentInputRef, "1a297a1d-2", {
+        w: common_vendor.sr(commentInputRef, "1a297a1d-3", {
           "k": "commentInputRef"
         }),
         x: common_vendor.o(handleCommentSubmit),

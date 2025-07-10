@@ -654,9 +654,10 @@
   margin-top: 0.625rem;
 }
 .pageinfo-infobox .info-item .icon[data-v-7c2ebfa5] {
-  width: 1.875rem;
-  height: 1.875rem;
-  margin: 0.3125rem 2.1875rem 0 2.1875rem;
+  opacity: 0.7;
+  width: 3.75rem;
+  height: 3.75rem;
+  margin: 0.3125rem 1.25rem 0 1.25rem;
 }
 .button-container[data-v-7c2ebfa5] {
   overflow: hidden;

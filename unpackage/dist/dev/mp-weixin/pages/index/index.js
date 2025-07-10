@@ -3,26 +3,28 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_privacy_permission_modal2 = common_vendor.resolveComponent("privacy-permission-modal");
   const _easycom_version_check2 = common_vendor.resolveComponent("version-check");
   const _easycom_loading_toast2 = common_vendor.resolveComponent("loading-toast");
   const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_uni_transition2 = common_vendor.resolveComponent("uni-transition");
   const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
   const _easycom_index_brand2 = common_vendor.resolveComponent("index-brand");
-  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  (_easycom_privacy_permission_modal2 + _easycom_version_check2 + _easycom_loading_toast2 + _easycom_goods_search2 + _easycom_uni_transition2 + _easycom_common_search2 + _easycom_index_brand2 + _easycom_uni_icons2)();
+  (_easycom_view_logs2 + _easycom_privacy_permission_modal2 + _easycom_version_check2 + _easycom_loading_toast2 + _easycom_goods_search2 + _easycom_uni_icons2 + _easycom_uni_transition2 + _easycom_common_search2 + _easycom_index_brand2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_privacy_permission_modal = () => "../../components/privacy-permission-modal/privacy-permission-modal.js";
 const _easycom_version_check = () => "../../components/version-check/version-check.js";
 const _easycom_loading_toast = () => "../../components/loading-toast/loading-toast.js";
 const _easycom_goods_search = () => "../../components/goods-search/goods-search.js";
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_uni_transition = () => "../../uni_modules/uni-transition/components/uni-transition/uni-transition.js";
 const _easycom_common_search = () => "../../components/common-search/common-search.js";
 const _easycom_index_brand = () => "../../components/index-brand/index-brand.js";
-const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  (_easycom_privacy_permission_modal + _easycom_version_check + _easycom_loading_toast + _easycom_goods_search + _easycom_uni_transition + _easycom_common_search + _easycom_index_brand + _easycom_uni_icons)();
+  (_easycom_view_logs + _easycom_privacy_permission_modal + _easycom_version_check + _easycom_loading_toast + _easycom_goods_search + _easycom_uni_icons + _easycom_uni_transition + _easycom_common_search + _easycom_index_brand)();
 }
 const _sfc_main = {
   __name: "index",
@@ -152,7 +154,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("error", "at pages/index/index.vue:484", "获取Banner失败:", err);
+          common_vendor.index.__f__("error", "at pages/index/index.vue:507", "获取Banner失败:", err);
           data.value = {};
         }
       });
@@ -203,7 +205,12 @@ const _sfc_main = {
           pageSize: newsPageSize.value
         },
         success: (res) => {
-          const newData = res.data.data.news_list;
+          const newData = res.data.data.news_list.map((item) => ({
+            ...item,
+            // 新增加载状态字段
+            imagesLoaded: false,
+            loadCount: 0
+          }));
           if (newData.length === 0) {
             newsHasMore.value = false;
             return;
@@ -213,7 +220,7 @@ const _sfc_main = {
           newsPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:554", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:582", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -256,7 +263,7 @@ const _sfc_main = {
           hotPage.value++;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:600", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:628", err);
           common_vendor.index.showToast({
             title: "加载失败",
             icon: "none"
@@ -305,7 +312,7 @@ const _sfc_main = {
           }
           const response = res.data.data;
           const newData = response.data;
-          common_vendor.index.__f__("log", "at pages/index/index.vue:661", "newData:", newData);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:689", "newData:", newData);
           cursor.value = response.next_cursor || "";
           if (newData.length === 0) {
             hasMore.value = false;
@@ -315,7 +322,7 @@ const _sfc_main = {
           hasMore.value = response.has_more;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:674", err);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:702", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -343,7 +350,10 @@ const _sfc_main = {
         success: (res) => {
           const newData = res.data.data.submission_list.map((item) => ({
             ...item,
-            images: item.images || []
+            images: item.images || [],
+            // 新增加载状态字段
+            imagesLoaded: false,
+            loadCount: 0
           }));
           if (newData.length === 0) {
             treeholeHasMore.value = false;
@@ -364,6 +374,33 @@ const _sfc_main = {
           showLoadding.value = false;
         }
       });
+    };
+    const handleImageLoad = (item) => {
+      common_vendor.index.__f__("log", "at pages/index/index.vue:763", "图片加载完成", item);
+      item.loadCount++;
+      if (item.loadCount >= item.images.length) {
+        item.imagesLoaded = true;
+      }
+    };
+    const handleImageError = (item, idx) => {
+      common_vendor.index.__f__("error", "at pages/index/index.vue:773", `图片加载失败: ${item.images[idx]}`);
+      item.loadCount++;
+      if (item.loadCount >= item.images.length) {
+        item.imagesLoaded = true;
+      }
+    };
+    const handleNewsImageLoad = (item) => {
+      item.loadCount++;
+      if (item.loadCount >= item.image_list.length) {
+        item.imagesLoaded = true;
+      }
+    };
+    const handleNewsImageError = (item, idx) => {
+      common_vendor.index.__f__("error", "at pages/index/index.vue:794", `新闻图片加载失败: ${item.image_list[idx]}`);
+      item.loadCount++;
+      if (item.loadCount >= item.image_list.length) {
+        item.imagesLoaded = true;
+      }
     };
     function handlePublish() {
       if (!common_config.global.isLogin) {
@@ -450,73 +487,87 @@ const _sfc_main = {
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: common_vendor.s(_ctx.__cssVars()),
-        b: common_vendor.p({
+        b: common_vendor.s(_ctx.__cssVars()),
+        c: common_vendor.p({
           ["show-up-to-date-toast"]: true
         }),
-        c: common_vendor.p({
+        d: common_vendor.p({
           show: common_vendor.unref(showLoadding)
         }),
-        d: common_assets._imports_0,
-        e: common_vendor.p({
+        e: common_assets._imports_0,
+        f: common_vendor.p({
           width: "720rpx",
           hiddenIcon: false
         }),
-        f: common_assets._imports_1,
-        g: activeTab.value === "news" ? 1 : "",
-        h: common_vendor.o(($event) => switchTab("news")),
-        i: common_assets._imports_2,
-        j: activeTab.value === "brands" ? 1 : "",
-        k: common_vendor.o(($event) => switchTab("brands")),
-        l: common_assets._imports_3,
-        m: activeTab.value === "hot" ? 1 : "",
-        n: common_vendor.o(($event) => switchTab("hot")),
-        o: common_assets._imports_0$1,
-        p: activeTab.value === "second" ? 1 : "",
-        q: common_vendor.o(($event) => switchTab("second")),
-        r: activeTab.value === "news"
+        g: common_assets._imports_1,
+        h: activeTab.value === "news" ? 1 : "",
+        i: common_vendor.o(($event) => switchTab("news")),
+        j: common_assets._imports_2,
+        k: activeTab.value === "brands" ? 1 : "",
+        l: common_vendor.o(($event) => switchTab("brands")),
+        m: common_assets._imports_3,
+        n: activeTab.value === "hot" ? 1 : "",
+        o: common_vendor.o(($event) => switchTab("hot")),
+        p: common_assets._imports_0$1,
+        q: activeTab.value === "second" ? 1 : "",
+        r: common_vendor.o(($event) => switchTab("second")),
+        s: activeTab.value === "news"
       }, activeTab.value === "news" ? common_vendor.e({
-        s: common_vendor.f(common_vendor.unref(data), (item, k0, i0) => {
+        t: common_vendor.f(common_vendor.unref(data), (item, k0, i0) => {
           return {
             a: item.banner,
             b: common_vendor.o(($event) => handleBannerClick(item), item.id),
             c: item.id
           };
         }),
-        t: common_vendor.unref(data).length === 0
+        v: common_vendor.unref(data).length === 0
       }, common_vendor.unref(data).length === 0 ? {
-        v: common_assets._imports_5
+        w: common_assets._imports_5
       } : {}, {
-        w: common_vendor.f(common_vendor.unref(newsList), (item, k0, i0) => {
+        x: common_vendor.f(common_vendor.unref(newsList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.image_list.length > 0
           }, item.image_list.length > 0 ? {
             b: common_vendor.f(item.image_list, (img, idx, i1) => {
-              return {
+              return common_vendor.e({
                 a: img,
-                b: idx
-              };
-            })
+                b: common_vendor.o(($event) => handleNewsImageLoad(item), idx),
+                c: common_vendor.o(($event) => handleNewsImageError(item, idx), idx)
+              }, !item.imagesLoaded ? {
+                d: "1cf27b2a-7-" + i0 + "-" + i1 + ",1cf27b2a-6",
+                e: common_vendor.p({
+                  type: "loop",
+                  size: "28",
+                  color: "rgb(185 185 185)"
+                })
+              } : {}, {
+                f: idx
+              });
+            }),
+            c: item.imagesLoaded ? 1 : "",
+            d: !item.imagesLoaded,
+            e: item.imagesLoaded
           } : {}, {
-            c: common_vendor.t(item.title),
-            d: common_vendor.t(item.content),
-            e: common_vendor.t(item.brand_name),
-            f: common_vendor.t(formatTime(item.created_at)),
-            g: item.id,
-            h: common_vendor.o(($event) => jump2saleNews(item), item.id)
+            f: common_vendor.t(item.title),
+            g: common_vendor.t(item.content),
+            h: common_vendor.t(item.brand_name),
+            i: common_vendor.t(formatTime(item.created_at)),
+            j: item.id,
+            k: common_vendor.o(($event) => jump2saleNews(item), item.id)
           });
         }),
-        x: newsLoading.value
+        y: newsLoading.value
       }, newsLoading.value ? {} : {}, {
-        y: !newsHasMore.value
+        z: !newsHasMore.value
       }, !newsHasMore.value ? {} : {}) : {}, {
-        z: common_vendor.p({
+        A: common_vendor.p({
           ["mode-class"]: ["fade"],
           show: activeTab.value === "news"
         }),
-        A: common_vendor.p({
+        B: common_vendor.p({
           width: "720rpx"
         }),
-        B: common_vendor.f(tabs.value, (tab, index, i0) => {
+        C: common_vendor.f(tabs.value, (tab, index, i0) => {
           return {
             a: common_vendor.t(tab.label),
             b: index,
@@ -524,34 +575,34 @@ const _sfc_main = {
             d: common_vendor.o(($event) => handleTabClick(tab.value), index)
           };
         }),
-        C: activeSearchType.value == 1
+        D: activeSearchType.value == 1
       }, activeSearchType.value == 1 ? {} : {}, {
-        D: activeSearchType.value == 2
+        E: activeSearchType.value == 2
       }, activeSearchType.value == 2 ? {} : {}, {
-        E: activeSearchType.value == 3
+        F: activeSearchType.value == 3
       }, activeSearchType.value == 3 ? {} : {}, {
-        F: activeTab.value === "brands"
+        G: activeTab.value === "brands"
       }, activeTab.value === "brands" ? common_vendor.e({
-        G: common_vendor.f(common_vendor.unref(brandsList), (item, index, i0) => {
+        H: common_vendor.f(common_vendor.unref(brandsList), (item, index, i0) => {
           return {
-            a: "1cf27b2a-7-" + i0 + ",1cf27b2a-5",
+            a: "1cf27b2a-10-" + i0 + ",1cf27b2a-8",
             b: common_vendor.p({
               brand: item
             }),
             c: item.id
           };
         }),
-        H: loading.value
+        I: loading.value
       }, loading.value ? {} : {}, {
-        I: !hasMore.value
+        J: !hasMore.value
       }, !hasMore.value ? {} : {}) : {}, {
-        J: common_vendor.p({
+        K: common_vendor.p({
           ["mode-class"]: ["fade"],
           show: activeTab.value === "brands"
         }),
-        K: activeTab.value === "hot"
+        L: activeTab.value === "hot"
       }, activeTab.value === "hot" ? common_vendor.e({
-        L: common_vendor.f(common_vendor.unref(hotList), (item, k0, i0) => {
+        M: common_vendor.f(common_vendor.unref(hotList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.image_urls.length > 0
           }, item.image_urls.length > 0 ? {
@@ -574,34 +625,34 @@ const _sfc_main = {
             f: item.avatar,
             g: common_vendor.t(item.origin == 1 ? "搭配" : "展示柜"),
             h: common_vendor.t(formatTime(item.created_at)),
-            i: "1cf27b2a-9-" + i0 + ",1cf27b2a-8",
+            i: "1cf27b2a-12-" + i0 + ",1cf27b2a-11",
             j: common_vendor.t(item.like_count),
             k: item.collocation_id,
             l: common_vendor.o(($event) => jumpToCollocationDetail(item), item.collocation_id)
           });
         }),
-        M: common_vendor.p({
+        N: common_vendor.p({
           type: "heart",
           size: "18",
           color: "#ff4d4f"
         }),
-        N: hotLoading.value
+        O: hotLoading.value
       }, hotLoading.value ? {} : {}, {
-        O: !hotHasMore.value
+        P: !hotHasMore.value
       }, !hotHasMore.value ? {} : {}) : {}, {
-        P: common_vendor.p({
+        Q: common_vendor.p({
           ["mode-class"]: ["fade"],
           show: activeTab.value === "hot"
         }),
-        Q: activeTab.value === "second"
+        R: activeTab.value === "second"
       }, activeTab.value === "second" ? common_vendor.e({
-        R: common_vendor.p({
+        S: common_vendor.p({
           type: "plusempty",
           size: "30",
           color: "#fff"
         }),
-        S: common_vendor.o(handlePublish),
-        T: common_vendor.f(common_vendor.unref(treeholeList), (item, k0, i0) => {
+        T: common_vendor.o(handlePublish),
+        U: common_vendor.f(common_vendor.unref(treeholeList), (item, k0, i0) => {
           return common_vendor.e({
             a: item.avatar !== ""
           }, item.avatar !== "" ? {
@@ -617,48 +668,62 @@ const _sfc_main = {
             i: item.images.length > 0
           }, item.images.length > 0 ? {
             j: common_vendor.f(item.images, (img, idx, i1) => {
-              return {
+              return common_vendor.e({
                 a: img,
                 b: common_vendor.o(($event) => previewImage(item.images, idx), idx),
-                c: idx
-              };
-            })
+                c: common_vendor.o(($event) => handleImageLoad(item), idx),
+                d: common_vendor.o(($event) => handleImageError(item, idx), idx)
+              }, !item.imagesLoaded ? {
+                e: "1cf27b2a-15-" + i0 + "-" + i1 + ",1cf27b2a-13",
+                f: common_vendor.p({
+                  type: "spinner-cycle",
+                  size: "28",
+                  color: "#4cbbd0"
+                })
+              } : {}, {
+                g: idx
+              });
+            }),
+            k: item.imagesLoaded ? 1 : "",
+            l: !item.imagesLoaded,
+            m: item.imagesLoaded,
+            n: item.images.length > 1
           } : {}, {
-            k: "1cf27b2a-12-" + i0 + ",1cf27b2a-10",
-            l: common_vendor.p({
+            o: "1cf27b2a-16-" + i0 + ",1cf27b2a-13",
+            p: common_vendor.p({
               type: item.has_liked ? "hand-up-filled" : "hand-up",
               size: "18",
               color: item.has_liked ? "#ff4d4f" : "#666"
             }),
-            m: common_vendor.t(item.like_count || 0),
-            n: common_vendor.o(($event) => handleLike(item), item.id),
-            o: "1cf27b2a-13-" + i0 + ",1cf27b2a-10",
-            p: common_vendor.t(item.comment_count || 0),
-            q: "1cf27b2a-14-" + i0 + ",1cf27b2a-10",
-            r: common_vendor.o(($event) => copyUrl(item), item.id),
-            s: item.id,
-            t: common_vendor.o(($event) => jump2treeholeDetail(item), item.id)
+            q: common_vendor.t(item.like_count || 0),
+            r: common_vendor.o(($event) => handleLike(item), item.id),
+            s: "1cf27b2a-17-" + i0 + ",1cf27b2a-13",
+            t: common_vendor.t(item.comment_count || 0),
+            v: "1cf27b2a-18-" + i0 + ",1cf27b2a-13",
+            w: common_vendor.o(($event) => copyUrl(item), item.id),
+            x: item.id,
+            y: common_vendor.o(($event) => jump2treeholeDetail(item), item.id)
           });
         }),
-        U: common_vendor.p({
+        V: common_vendor.p({
           type: "chat",
           size: "18",
           color: "#666"
         }),
-        V: common_vendor.p({
+        W: common_vendor.p({
           type: "redo",
           size: "18",
           color: "#666"
         }),
-        W: treeholeLoading.value
+        X: treeholeLoading.value
       }, treeholeLoading.value ? {} : {}, {
-        X: !treeholeHasMore.value
+        Y: !treeholeHasMore.value
       }, !treeholeHasMore.value ? {} : {}) : {}, {
-        Y: common_vendor.p({
+        Z: common_vendor.p({
           ["mode-class"]: ["fade"],
           show: activeTab.value === "second"
         }),
-        Z: common_vendor.s(_ctx.__cssVars())
+        aa: common_vendor.s(_ctx.__cssVars())
       });
     };
   }

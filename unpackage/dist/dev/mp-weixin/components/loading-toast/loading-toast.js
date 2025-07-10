@@ -10,7 +10,7 @@ const _sfc_main = {
     },
     text: {
       type: String,
-      default: "助手加载中..."
+      default: "To Connect The Love..."
     }
   },
   setup(__props) {
@@ -19,7 +19,7 @@ const _sfc_main = {
       return common_vendor.e({
         a: props.show
       }, props.show ? common_vendor.e({
-        b: common_assets._imports_0$10,
+        b: common_assets._imports_0$11,
         c: __props.text
       }, __props.text ? {
         d: common_vendor.t(__props.text)

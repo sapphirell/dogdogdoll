@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view class="container">
 		<view class="content">
 			<view class="section">

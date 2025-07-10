@@ -17,12 +17,11 @@
 						<text class="username"
 							@tap="jump2user(comment.uid)">{{ formatUsername(comment.username) }}</text>
 						<text class="floor">#{{ comment.floor }}</text>
+						<report-button :report-type="5" :relation-id="comment.id" button-text="举报" icon-color="#999"
+							theme-color="#64c6dc" />
+
 					</view>
 					<text class="comment-text" @click="handleReply(comment)">{{ comment.comment }}</text>
-					<!-- 新增表态按钮组 -->
-					<attitude-widget :target-id="comment.id" :type="6" :attitude-status="comment.attitudeStatus"
-						:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
-
 
 
 					<view class="footer">
@@ -39,10 +38,13 @@
 							</view>
 						</view>
 
+						
 						<view class="right-actions">
+							<!-- 新增表态按钮组 -->
+							<attitude-widget :target-id="comment.id" :type="6" :attitude-status="comment.attitudeStatus"
+								:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
+							
 							<text class="reply-btn" @click="handleReply(comment)">回复</text>
-							<report-button :report-type="5" :relation-id="comment.id" button-text="举报" 
-								icon-color="#999" theme-color="#64c6dc"  />
 						</view>
 
 					</view>
@@ -58,14 +60,13 @@
 							<text @tap="jump2user(child.uid)"
 								class="username">{{ formatUsername(child.username) }}</text>
 							<text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text>
+							<report-button :report-type="5" :relation-id="child.id" button-text="举报" icon-color="#999"
+								theme-color="#64c6dc" />
 						</view>
 
 						<text class="comment-text" @click="handleReply(comment)">{{ child.comment }}</text>
 
-						<!-- 新增表态按钮组 -->
-						<attitude-widget :target-id="child.id" :type="6" :attitude-status="comment.attitudeStatus"
-							:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
-
+						
 
 
 						<view class="footer">
@@ -83,15 +84,12 @@
 							</view>
 
 							<view class="right-actions">
+								<!-- 新增表态按钮组 -->
+								<attitude-widget :target-id="child.id" :type="6" :attitude-status="comment.attitudeStatus"
+									:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
+								
 								<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
-								 <report-button 
-									  :report-type="5" 
-									  :relation-id="child.id"
-									  button-text="举报"
-									  icon-color="#999"
-									  theme-color="#64c6dc"
-									
-									/>
+
 							</view>
 						</view>
 					</view>
@@ -767,17 +765,19 @@
 		}
 
 		.right-actions {
-		      display: flex;
-		      align-items: center; /* 添加这行确保垂直居中 */
-		      gap: 10rpx; /* 添加间距使两个按钮分开 */
-		
-		      .reply-btn {
-		        font-size: 22rpx;
-		        color: #97b7df;
-		        padding: 6rpx 20rpx;
-		        border-radius: 24rpx;
-		      }
-		    }
+			display: flex;
+			align-items: center;
+			/* 添加这行确保垂直居中 */
+			gap: 10rpx;
+			/* 添加间距使两个按钮分开 */
+
+			.reply-btn {
+				font-size: 22rpx;
+				color: #97b7df;
+				padding: 6rpx 20rpx;
+				border-radius: 24rpx;
+			}
+		}
 	}
 
 	/* 子评论操作栏微调 */

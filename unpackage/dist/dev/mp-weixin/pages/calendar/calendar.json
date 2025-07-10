@@ -3,6 +3,7 @@
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {
+    "view-logs": "../../components/view-logs/view-logs",
     "common-search": "../../components/common-search/common-search",
     "loading-toast": "../../components/loading-toast/loading-toast",
     "common-page": "../../components/common-page/common-page"

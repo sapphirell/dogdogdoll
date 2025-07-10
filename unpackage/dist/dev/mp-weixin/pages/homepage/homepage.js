@@ -2,14 +2,16 @@
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_common_search2 = common_vendor.resolveComponent("common-search");
   const _easycom_homepage_list_item2 = common_vendor.resolveComponent("homepage-list-item");
-  (_easycom_common_search2 + _easycom_homepage_list_item2)();
+  (_easycom_view_logs2 + _easycom_common_search2 + _easycom_homepage_list_item2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_common_search = () => "../../components/common-search/common-search.js";
 const _easycom_homepage_list_item = () => "../../components/homepage-list-item/homepage-list-item.js";
 if (!Math) {
-  (_easycom_common_search + _easycom_homepage_list_item)();
+  (_easycom_view_logs + _easycom_common_search + _easycom_homepage_list_item)();
 }
 const _sfc_main = {
   __name: "homepage",
@@ -28,14 +30,14 @@ const _sfc_main = {
       { name: "其它配件" }
     ];
     function bindPickerChange(e) {
-      common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:68", "picker发送选择改变，携带值为", e.detail.value);
+      common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:69", "picker发送选择改变，携带值为", e.detail.value);
       index.value = e.detail.value;
     }
     const systemInfo = common_vendor.index.getSystemInfoSync();
     const statusBarHeight = common_vendor.ref(systemInfo.statusBarHeight);
-    common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:74", "状态栏高度" + statusBarHeight.value);
+    common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:75", "状态栏高度" + statusBarHeight.value);
     common_vendor.onReachBottom(() => {
-      common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:77", "onEachBottom!");
+      common_vendor.index.__f__("log", "at pages/homepage/homepage.vue:78", "onEachBottom!");
     });
     function go2goods() {
       common_vendor.index.navigateTo({

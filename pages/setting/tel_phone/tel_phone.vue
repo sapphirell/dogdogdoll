@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view style="padding: 15px;">
 		<view v-if="global.userInfo.tel_phone">
 			<input type="text" class="inputer" :value="global.userInfo.tel_phone" disabled=""/>

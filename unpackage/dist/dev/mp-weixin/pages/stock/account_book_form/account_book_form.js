@@ -4,18 +4,20 @@ const common_assets = require("../../../common/assets.js");
 const common_config = require("../../../common/config.js");
 const common_image = require("../../../common/image.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_common_modal2 = common_vendor.resolveComponent("common-modal");
   const _easycom_goods_search2 = common_vendor.resolveComponent("goods-search");
   const _easycom_uni_data_picker2 = common_vendor.resolveComponent("uni-data-picker");
-  (_easycom_uni_icons2 + _easycom_common_modal2 + _easycom_goods_search2 + _easycom_uni_data_picker2)();
+  (_easycom_view_logs2 + _easycom_uni_icons2 + _easycom_common_modal2 + _easycom_goods_search2 + _easycom_uni_data_picker2)();
 }
+const _easycom_view_logs = () => "../../../components/view-logs/view-logs.js";
 const _easycom_uni_icons = () => "../../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_common_modal = () => "../../../components/common-modal/common-modal.js";
 const _easycom_goods_search = () => "../../../components/goods-search/goods-search.js";
 const _easycom_uni_data_picker = () => "../../../uni_modules/uni-data-picker/components/uni-data-picker/uni-data-picker.js";
 if (!Math) {
-  (_easycom_uni_icons + _easycom_common_modal + _easycom_goods_search + _easycom_uni_data_picker)();
+  (_easycom_view_logs + _easycom_uni_icons + _easycom_common_modal + _easycom_goods_search + _easycom_uni_data_picker)();
 }
 const _sfc_main = {
   __name: "account_book_form",
@@ -52,7 +54,19 @@ const _sfc_main = {
       color: "",
       remark: "",
       buyDate: "",
-      position: ""
+      position: "",
+      shopName: "",
+      // 店名
+      headCircumference: "",
+      // 头围
+      shoulderWidth: "",
+      // 肩宽
+      makeupArtist: "",
+      // 妆师
+      arrivalDate: "",
+      // 到家日期
+      additionalValue: ""
+      // 附加值
     });
     const fetchSizes = async () => {
       try {
@@ -80,7 +94,7 @@ const _sfc_main = {
           sizeOptions.value = formattedSizes;
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:302", "获取尺寸数据失败:", err);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:358", "获取尺寸数据失败:", err);
         common_vendor.index.showToast({
           title: "获取尺寸数据失败",
           icon: "none"
@@ -117,7 +131,7 @@ const _sfc_main = {
         });
         customTypes.value = res.data.data || [];
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:347", "获取分类失败:", err);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:403", "获取分类失败:", err);
       }
     };
     const addNewType = async () => {
@@ -186,7 +200,7 @@ const _sfc_main = {
                 });
               }
             } catch (err) {
-              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:421", "删除失败:", err);
+              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:477", "删除失败:", err);
               common_vendor.index.showToast({
                 title: err.errMsg || "请求失败",
                 icon: "none"
@@ -221,7 +235,7 @@ const _sfc_main = {
           id
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:469", res.data.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:525", res.data.data);
           name.value = res.data.data.name;
           price.value = parseInt(res.data.data.price);
           count.value = res.data.data.count || 1;
@@ -241,7 +255,13 @@ const _sfc_main = {
             buyDate: res.data.data.buy_date ? new Date(res.data.data.buy_date).toISOString().split(
               "T"
             )[0] : "",
-            position: res.data.data.position || ""
+            position: res.data.data.position || "",
+            shopName: res.data.data.shop_name || "",
+            headCircumference: res.data.data.head_circumference || "",
+            shoulderWidth: res.data.data.shoulder_width || "",
+            makeupArtist: res.data.data.makeup_artist || "",
+            arrivalDate: res.data.data.arrival_date ? new Date(res.data.data.arrival_date).toISOString().split("T")[0] : "",
+            additionalValue: res.data.data.additional_value || ""
           };
           if (res.data.data.size) {
             selectedSizePath.value = [
@@ -249,10 +269,10 @@ const _sfc_main = {
               res.data.data.size_detail || ""
             ];
           }
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:502", "f:", form);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:565", "f:", form);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:505", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:568", err);
         }
       });
     }
@@ -273,7 +293,7 @@ const _sfc_main = {
           }
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:533", "获取商品详情失败:", error);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:596", "获取商品详情失败:", error);
         common_vendor.index.showToast({
           title: "获取商品信息失败",
           icon: "none"
@@ -307,7 +327,7 @@ const _sfc_main = {
               },
               // 改为JSON格式传参
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:571", res2.data.status);
+                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:634", res2.data.status);
                 if (res2.data.status === "success") {
                   common_vendor.index.showToast({
                     title: "删除成功",
@@ -322,7 +342,7 @@ const _sfc_main = {
                 }
               },
               fail: (err) => {
-                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:586", "请求失败:", err);
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:649", "请求失败:", err);
                 common_vendor.index.showToast({
                   title: "网络错误",
                   icon: "none"
@@ -342,15 +362,15 @@ const _sfc_main = {
             try {
               const tokenData = await common_image.getQiniuToken();
               const uploadRes = await common_image.uploadImageToQiniu(filePath, tokenData.token, tokenData.path);
-              common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:612", "res:", uploadRes);
+              common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:675", "res:", uploadRes);
               if (uploadRes.qiniuRes.statusCode === 200) {
                 const imageUrl = common_config.image1Url + tokenData.path;
                 imageList.value.push(imageUrl);
               } else {
-                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:617", "上传失败:", filePath);
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:680", "上传失败:", filePath);
               }
             } catch (error) {
-              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:620", "上传错误:", error);
+              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:683", "上传错误:", error);
             }
           }
           common_vendor.index.showToast({
@@ -435,9 +455,15 @@ const _sfc_main = {
         color: moreInfo.value.color,
         remark: moreInfo.value.remark,
         buy_date: moreInfo.value.buyDate,
-        position: moreInfo.value.position
+        position: moreInfo.value.position,
+        shop_name: moreInfo.value.shopName,
+        head_circumference: moreInfo.value.headCircumference,
+        shoulder_width: moreInfo.value.shoulderWidth,
+        makeup_artist: moreInfo.value.makeupArtist,
+        arrival_date: moreInfo.value.arrivalDate,
+        additional_value: moreInfo.value.additionalValue
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:724", "提交数据:", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:793", "提交数据:", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -446,7 +472,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:734", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:803", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -487,7 +513,13 @@ const _sfc_main = {
         color: moreInfo.value.color,
         remark: moreInfo.value.remark,
         buy_date: moreInfo.value.buyDate,
-        position: moreInfo.value.position
+        position: moreInfo.value.position,
+        shop_name: moreInfo.value.shopName,
+        head_circumference: moreInfo.value.headCircumference,
+        shoulder_width: moreInfo.value.shoulderWidth,
+        makeup_artist: moreInfo.value.makeupArtist,
+        arrival_date: moreInfo.value.arrivalDate,
+        additional_value: moreInfo.value.additionalValue
       };
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/update-account-book",
@@ -497,7 +529,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:783", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:858", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -527,6 +559,64 @@ const _sfc_main = {
         fetchSizes();
       });
     });
+    const getGoodsInfo = (id) => {
+      return new Promise((resolve, reject) => {
+        common_vendor.index.request({
+          url: common_config.websiteUrl + "/goods?id=" + id,
+          method: "GET",
+          timeout: 5e3,
+          success: (res) => {
+            if (res.data.status === "success") {
+              resolve(res.data.data);
+            } else {
+              reject(new Error(res.data.msg || "获取商品信息失败"));
+            }
+          },
+          fail: (err) => {
+            common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:909", "商品详情获取失败", err);
+            reject(err);
+          }
+        });
+      });
+    };
+    const fillFormWithGoodsInfo = (goodsInfo) => {
+      name.value = goodsInfo.name;
+      const totalPrice = goodsInfo.total_amount ? goodsInfo.total_amount : (parseFloat(goodsInfo.sub_amount) || 0) + (parseFloat(goodsInfo.fin_amount) || 0);
+      price.value = totalPrice;
+      if (goodsInfo.goods_images && goodsInfo.goods_images.length > 0) {
+        imageList.value = [goodsInfo.goods_images[0]];
+      }
+      if (goodsInfo.size) {
+        selectedSizePath.value = [
+          goodsInfo.size,
+          // 大分类
+          goodsInfo.size_detail || ""
+          // 小分类/尺寸详情
+        ];
+        moreInfo.value.sizeDetail = goodsInfo.size_detail || "";
+      }
+      if (goodsInfo.currency) {
+        name.value += ` (${goodsInfo.currency})`;
+      }
+      if (goodsInfo.color) {
+        moreInfo.value.color = goodsInfo.color;
+      }
+    };
+    common_vendor.onLoad(async (options) => {
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:957", "接收到的参数:", options);
+      if (options.goods_id) {
+        try {
+          const goodsInfo = await getGoodsInfo(options.goods_id);
+          fillFormWithGoodsInfo(goodsInfo);
+        } catch (error) {
+          common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:965", "获取商品信息失败:", error);
+          common_vendor.index.showToast({
+            title: "获取商品信息失败",
+            icon: "none"
+          });
+        }
+      }
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: newTypeName.value,
@@ -536,7 +626,7 @@ const _sfc_main = {
           return {
             a: common_vendor.t(type.name),
             b: common_vendor.o(($event) => deleteType(type.id), type.id),
-            c: "0299c5b6-1-" + i0 + ",0299c5b6-0",
+            c: "0299c5b6-2-" + i0 + ",0299c5b6-1",
             d: type.id
           };
         }),
@@ -575,7 +665,7 @@ const _sfc_main = {
             a: img,
             b: common_vendor.o(($event) => viewFullImage(), index),
             c: common_vendor.o((e) => removeImage(index, e), index),
-            d: "0299c5b6-3-" + i0,
+            d: "0299c5b6-4-" + i0,
             e: index
           };
         }),
@@ -617,46 +707,59 @@ const _sfc_main = {
         G: common_vendor.o(($event) => moreInfo.value.sizeDetail = $event.detail.value),
         H: moreInfo.value.color,
         I: common_vendor.o(($event) => moreInfo.value.color = $event.detail.value),
-        J: moreInfo.value.remark,
-        K: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
-        L: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
-        M: moreInfo.value.buyDate,
-        N: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
-        O: moreInfo.value.position,
-        P: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
+        J: moreInfo.value.shopName,
+        K: common_vendor.o(($event) => moreInfo.value.shopName = $event.detail.value),
+        L: moreInfo.value.headCircumference,
+        M: common_vendor.o(($event) => moreInfo.value.headCircumference = $event.detail.value),
+        N: moreInfo.value.shoulderWidth,
+        O: common_vendor.o(($event) => moreInfo.value.shoulderWidth = $event.detail.value),
+        P: moreInfo.value.makeupArtist,
+        Q: common_vendor.o(($event) => moreInfo.value.makeupArtist = $event.detail.value),
+        R: moreInfo.value.remark,
+        S: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
+        T: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
+        U: moreInfo.value.buyDate,
+        V: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
+        W: common_vendor.t(moreInfo.value.arrivalDate || "选择到家日期"),
+        X: moreInfo.value.arrivalDate,
+        Y: common_vendor.o((e) => moreInfo.value.arrivalDate = e.detail.value),
+        Z: moreInfo.value.additionalValue,
+        aa: common_vendor.o(($event) => moreInfo.value.additionalValue = $event.detail.value),
+        ab: moreInfo.value.position,
+        ac: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
       } : {}, {
-        Q: !form.value.isRemind
+        ad: !form.value.isRemind
       }, !form.value.isRemind ? {
-        R: common_vendor.p({
+        ae: common_vendor.p({
           type: "right",
           size: "20",
           color: "#888"
         })
       } : {
-        S: common_vendor.p({
+        af: common_vendor.p({
           type: "down",
           size: "20",
           color: "#888"
         })
       }, {
-        T: form.value.finalPrice > 0
+        ag: form.value.finalPrice > 0
       }, form.value.finalPrice > 0 ? {} : {}, {
-        U: common_vendor.o(($event) => toggleRemind()),
-        V: form.value.isRemind
+        ah: common_vendor.o(($event) => toggleRemind()),
+        ai: form.value.isRemind
       }, form.value.isRemind ? {
-        W: form.value.finalPrice,
-        X: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
-        Y: common_vendor.t(form.value.finalTime || "选择截止日期"),
-        Z: form.value.finalTime,
-        aa: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
+        aj: form.value.finalPrice,
+        ak: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
+        al: common_vendor.t(form.value.finalTime || "选择截止日期"),
+        am: form.value.finalTime,
+        an: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
       } : {}, {
-        ab: common_assets._imports_0$7,
-        ac: common_vendor.unref(isEdit)
+        ao: common_assets._imports_0$8,
+        ap: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        ad: common_vendor.o(handleDelete)
+        aq: common_vendor.o(handleDelete)
       } : {}, {
-        ae: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
-        af: common_vendor.o(postSubmit)
+        ar: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        as: common_vendor.o(postSubmit)
       });
     };
   }

@@ -1,6 +1,7 @@
 <template>
 	<meta name="theme-color" content="#e0f3ff">
 	</meta>
+	<view-logs />
 	<view head_color="url('/static/bg/bg2.jpg')">
 
 		<view class="container">

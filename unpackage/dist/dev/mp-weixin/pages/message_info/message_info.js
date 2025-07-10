@@ -2,14 +2,16 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_load_more2 = common_vendor.resolveComponent("uni-load-more");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  (_easycom_uni_load_more2 + _easycom_uni_icons2)();
+  (_easycom_view_logs2 + _easycom_uni_load_more2 + _easycom_uni_icons2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_load_more = () => "../../uni_modules/uni-load-more/components/uni-load-more/uni-load-more.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 if (!Math) {
-  (_easycom_uni_load_more + _easycom_uni_icons)();
+  (_easycom_view_logs + _easycom_uni_load_more + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "message_info",
@@ -50,7 +52,7 @@ const _sfc_main = {
         }
       } catch (err) {
         error.value = "请求失败，请检查网络";
-        common_vendor.index.__f__("error", "at pages/message_info/message_info.vue:96", "详情请求失败:", err);
+        common_vendor.index.__f__("error", "at pages/message_info/message_info.vue:97", "详情请求失败:", err);
       } finally {
         loading.value = false;
       }

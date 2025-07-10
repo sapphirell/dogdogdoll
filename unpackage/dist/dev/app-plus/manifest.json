@@ -45,47 +45,47 @@
     "distribute": {
       "icons": {
         "android": {
-          "hdpi": "",
-          "xhdpi": "",
-          "xxhdpi": "",
-          "xxxhdpi": ""
+          "hdpi": "unpackage/res/icons/72x72.png",
+          "xhdpi": "unpackage/res/icons/96x96.png",
+          "xxhdpi": "unpackage/res/icons/144x144.png",
+          "xxxhdpi": "unpackage/res/icons/192x192.png"
         },
         "ios": {
-          "appstore": "",
+          "appstore": "unpackage/res/icons/1024x1024.png",
           "ipad": {
-            "app": "",
-            "app@2x": "",
-            "notification": "",
-            "notification@2x": "",
-            "proapp@2x": "",
-            "settings": "",
-            "settings@2x": "",
-            "spotlight": "",
-            "spotlight@2x": ""
+            "app": "unpackage/res/icons/76x76.png",
+            "app@2x": "unpackage/res/icons/152x152.png",
+            "notification": "unpackage/res/icons/20x20.png",
+            "notification@2x": "unpackage/res/icons/40x40.png",
+            "proapp@2x": "unpackage/res/icons/167x167.png",
+            "settings": "unpackage/res/icons/29x29.png",
+            "settings@2x": "unpackage/res/icons/58x58.png",
+            "spotlight": "unpackage/res/icons/40x40.png",
+            "spotlight@2x": "unpackage/res/icons/80x80.png"
           },
           "iphone": {
-            "app@2x": "",
-            "app@3x": "",
-            "notification@2x": "",
-            "notification@3x": "",
-            "settings@2x": "",
-            "settings@3x": "",
-            "spotlight@2x": "",
-            "spotlight@3x": ""
+            "app@2x": "unpackage/res/icons/120x120.png",
+            "app@3x": "unpackage/res/icons/180x180.png",
+            "notification@2x": "unpackage/res/icons/40x40.png",
+            "notification@3x": "unpackage/res/icons/60x60.png",
+            "settings@2x": "unpackage/res/icons/58x58.png",
+            "settings@3x": "unpackage/res/icons/87x87.png",
+            "spotlight@2x": "unpackage/res/icons/80x80.png",
+            "spotlight@3x": "unpackage/res/icons/120x120.png"
           }
         }
       },
       "splashscreen": {
-        "useOriginalMsgbox": true,
+        "useOriginalMsgbox": false,
         "androidStyle": "default",
         "iosStyle": "storyboard",
         "ios": {
           "storyboard": "/Users/sapphirell/Desktop/sc2/storyboard.zip"
         },
         "android": {
-          "hdpi": "/Users/sapphirell/Desktop/start_creen/res/drawable-hdpi/image3x.9.png",
-          "xhdpi": "/Users/sapphirell/Desktop/start_creen/res/drawable-xhdpi/image3x.9.png",
-          "xxhdpi": "/Users/sapphirell/Desktop/start_creen/res/drawable-xxhdpi/image3x.9.png"
+          "hdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",
+          "xhdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/720p.9.png",
+          "xxhdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/1080p.9.png"
         }
       },
       "google": {
@@ -133,13 +133,14 @@
         }
       }
     },
+    "uniStatistics": {
+      "enable": false,
+      "version": "2"
+    },
     "statusbar": {
       "immersed": "supportedDevice",
       "style": "dark",
       "background": "#F8F8F8"
-    },
-    "uniStatistics": {
-      "enable": false
     },
     "allowsInlineMediaPlayback": true,
     "safearea": {
@@ -219,7 +220,8 @@
       "concatenate": true
     },
     "uniStatistics": {
-      "enable": false
+      "enable": false,
+      "version": "2"
     },
     "safearea": {
       "background": "#fefefe",

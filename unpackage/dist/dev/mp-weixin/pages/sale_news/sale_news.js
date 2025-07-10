@@ -2,14 +2,16 @@
 const common_vendor = require("../../common/vendor.js");
 const common_config = require("../../common/config.js");
 if (!Array) {
+  const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_comment_list2 = common_vendor.resolveComponent("comment-list");
   const _easycom_comment_input2 = common_vendor.resolveComponent("comment-input");
-  (_easycom_comment_list2 + _easycom_comment_input2)();
+  (_easycom_view_logs2 + _easycom_comment_list2 + _easycom_comment_input2)();
 }
+const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_comment_list = () => "../../components/comment-list/comment-list.js";
 const _easycom_comment_input = () => "../../components/comment-input/comment-input.js";
 if (!Math) {
-  (_easycom_comment_list + _easycom_comment_input)();
+  (_easycom_view_logs + _easycom_comment_list + _easycom_comment_input)();
 }
 const _sfc_main = {
   __name: "sale_news",
@@ -41,8 +43,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:108", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:109", "target", target);
+      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:109", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:110", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -51,7 +53,7 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:120", "item", item);
+      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:121", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
@@ -86,7 +88,7 @@ const _sfc_main = {
           handleError(res.data.msg || "数据加载失败");
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/sale_news/sale_news.vue:187", "请求失败:", err);
+        common_vendor.index.__f__("error", "at pages/sale_news/sale_news.vue:188", "请求失败:", err);
         handleError("网络请求失败");
       } finally {
         loading.value = false;
@@ -105,7 +107,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:208", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/sale_news/sale_news.vue:209", "reply_info", replyInfo);
       const requestData = {
         content,
         origin,
@@ -252,7 +254,7 @@ const _sfc_main = {
         i: hasLikeBrand.value ? "#ff6a6c" : "#65C3D6",
         j: common_vendor.t(detailData.value.title),
         k: common_vendor.t(detailData.value.content),
-        l: common_vendor.sr(commentListRef, "c9c53f1c-0", {
+        l: common_vendor.sr(commentListRef, "c9c53f1c-1", {
           "k": "commentListRef"
         }),
         m: common_vendor.o(handleReplyComment),
@@ -266,7 +268,7 @@ const _sfc_main = {
       }, error.value ? {
         q: common_vendor.t(errorMsg.value)
       } : {}, {
-        r: common_vendor.sr(commentInputRef, "c9c53f1c-1", {
+        r: common_vendor.sr(commentInputRef, "c9c53f1c-2", {
           "k": "commentInputRef"
         }),
         s: common_vendor.o(handleCommentSubmit),

@@ -1,6 +1,7 @@
 <template>
 	<view class="container" v-if="detailData">
 		<meta name="theme-color" content="#F8F8F8"></meta>
+		<view-logs />
 		<!-- 头部作者信息 -->
 		<view class="header">
 			<view class="author-info">
@@ -53,7 +54,7 @@
 					<text class="action-text">分享</text>
 				</view>
 			</view>
-			<text class="time-text">审核于 {{ formatTime(detailData.approve_time) }}</text>
+			<text class="time-text" v-if="detailData.approve_time > 0">审核于 {{ formatTime(detailData.approve_time) }}</text>
 			
 		</view>
 	</view>

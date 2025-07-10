@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
   <view class="password-container">
     <view class="form-wrapper">
       <view class="input-group">
