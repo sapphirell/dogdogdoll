@@ -126,6 +126,8 @@
 	const longPressTimer = ref(null);
 	const isDragging = ref(false); // 全局拖拽状态
 
+	const isMounted = ref(false); // 是否已挂载
+
 	// 计算属性
 	const areaHeight = computed(() => {
 		if (imageList.value.length < props.number) {
@@ -323,14 +325,25 @@
 			clearTimeout(longPressTimer.value);
 			longPressTimer.value = null;
 		}
+		// 修复：确保所有项目位置正确恢复
 		setTimeout(() => {
+			imageList.value.forEach(obj => {
+				if (obj.ready) return; // 跳过当前拖拽项
+
+				obj.x = obj.absX * viewWidth.value;
+				obj.y = obj.absY * viewHeight.value;
+				obj.offset = 0;
+				obj.moveEnd = false;
+			});
+
+			// 当前拖拽项单独处理
 			nextTick(() => {
-				item.x = item.absX * viewWidth.value
-				item.y = item.absY * viewHeight.value
-				tempItem.value = null
-				changeStatus.value = true
-			})
-		}, 0)
+				item.x = item.absX * viewWidth.value;
+				item.y = item.absY * viewHeight.value;
+				tempItem.value = null;
+				changeStatus.value = true;
+			});
+		}, 50); // 稍作延迟确保渲染完成
 	}
 	// 获取第一张图片 - 修复路径问题
 	const getFirstImage = (imageUrls) => {
@@ -569,11 +582,11 @@
 		width.value = uni.getSystemInfoSync().windowWidth
 
 		// 获取当前组件实例
-		const instance = getCurrentInstance()
+		// const instance = getCurrentInstance()
 
 		// 使用 nextTick 确保元素已渲染
 		nextTick(() => {
-			const query = uni.createSelectorQuery().in(instance.proxy)
+			const query = uni.createSelectorQuery().in(getCurrentInstance().proxy)
 			query.select('.con').boundingClientRect(data => {
 				if (!data) {
 					console.error('未找到 .con 元素')
@@ -602,40 +615,85 @@
 				first.value = false
 			}).exec()
 		})
+		isMounted.value = true;
 	})
+	const initViewSize = () => {
+		return new Promise(resolve => {
+			const query = uni.createSelectorQuery().in(getCurrentInstance().proxy);
+			query.select('.con').boundingClientRect(data => {
+				if (!data) return resolve();
 
+				colsValue.value = props.cols;
+				viewWidth.value = data.width / props.cols;
+				viewHeight.value = viewWidth.value * 1.3;
+
+				if (props.imageWidth > 0) {
+					viewWidth.value = rpx2px(props.imageWidth);
+					viewHeight.value = viewWidth.value * 1.3;
+					colsValue.value = Math.floor(data.width / viewWidth.value);
+				}
+				resolve();
+			}).exec();
+		});
+	};
 	// 监听 value 和 modelValue 的变化
-	watch(() => props.value, (n) => {
-		if (!first.value && changeStatus.value) {
-			updateImageList(n)
+	watch(() => props.modelValue, (newVal) => {
+		if (isMounted.value) {
+			nextTick(() => {
+				initViewSize().then(() => {
+					updateImageList(newVal);
+				});
+			});
 		}
 	}, {
 		deep: true
-	})
-
-	watch(() => props.modelValue, (n) => {
-		if (!first.value && changeStatus.value) {
-			updateImageList(n)
-		}
-	}, {
-		deep: true
-	})
+	});
 
 	// 更新图片列表的公共方法
 	const updateImageList = (newList) => {
-		let flag = false
-		for (let i = 0; i < newList.length; i++) {
-			if (flag) {
-				addProperties(getSrc(newList[i]))
-				continue
+		// 保留原有位置信息
+		const oldItems = imageList.value.reduce((map, item) => {
+			map[item.id] = item;
+			return map;
+		}, {});
+
+		// 重建列表，保留原有位置状态
+		imageList.value = newList.map(item => {
+			const existing = oldItems[item.id];
+			if (existing) {
+				return {
+					...existing,
+					...getItemData(item) // 更新可能变化的数据
+				};
 			}
-			if (imageList.value.length === i || imageList.value[i].src !== getSrc(newList[i])) {
-				flag = true
-				imageList.value.splice(i)
-				addProperties(getSrc(newList[i]))
-			}
-		}
-	}
+			return createNewItem(item);
+		});
+	};
+
+	// 创建新项目的方法
+	const createNewItem = (item) => {
+		const data = getItemData(item);
+		const absX = imageList.value.length % colsValue.value;
+		const absY = Math.floor(imageList.value.length / colsValue.value);
+
+		return {
+			...data,
+			x: absX * viewWidth.value,
+			y: absY * viewHeight.value,
+			oldX: absX * viewWidth.value,
+			oldY: absY * viewHeight.value,
+			absX,
+			absY,
+			scale: 1,
+			zIndex: 9,
+			opacity: 1,
+			index: imageList.value.length,
+			disable: false,
+			offset: 0,
+			moveEnd: false,
+			ready: false
+		};
+	};
 </script>
 
 <style lang="scss" scoped>
