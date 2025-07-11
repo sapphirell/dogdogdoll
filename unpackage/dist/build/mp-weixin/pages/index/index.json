@@ -3,13 +3,14 @@
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {
+    "view-logs": "../../components/view-logs/view-logs",
     "privacy-permission-modal": "../../components/privacy-permission-modal/privacy-permission-modal",
     "version-check": "../../components/version-check/version-check",
     "loading-toast": "../../components/loading-toast/loading-toast",
-    "goods-search": "../../components/goods-search/goods-search",
+    "switch-search": "../../components/switch-search/switch-search",
+    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "uni-transition": "../../uni_modules/uni-transition/components/uni-transition/uni-transition",
     "common-search": "../../components/common-search/common-search",
-    "index-brand": "../../components/index-brand/index-brand",
-    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons"
+    "index-brand": "../../components/index-brand/index-brand"
   }
 }

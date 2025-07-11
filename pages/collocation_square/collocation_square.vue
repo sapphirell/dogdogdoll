@@ -1288,11 +1288,12 @@
 			flex-wrap: wrap;
 			padding: 20rpx;
 			gap:10rpx;
+			background: linear-gradient(1deg, #e4e4e4, #fff);
 		}
 		
 		.goods-card {
 			width: 350rpx;
-			margin-bottom: 20rpx;
+			margin-bottom: 0rpx;
 			background: #fff;
 			border-radius: 16rpx;
 			overflow: hidden;

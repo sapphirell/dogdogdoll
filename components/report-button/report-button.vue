@@ -3,7 +3,7 @@
 	<view class="report-button" @click="handleClick">
 		<slot>
 			<view class="default-button horizontal">
-				<uni-icons :v-if="iconType !== ''" :type="iconType" :size="iconSize" :color="iconColor"></uni-icons>
+				<uni-icons :v-if="iconType !== ''" :type="iconType" :size="  parseInt(iconSize)" :color="iconColor"></uni-icons>
 				<text class="button-text">{{ buttonText }}</text>
 			</view>
 		</slot>
@@ -89,7 +89,7 @@
 		},
 		// 图标大小
 		iconSize: {
-			type: Number,
+			type: String,
 			default: 24
 		},
 		// 图标颜色
@@ -278,6 +278,7 @@
       color: #999; /* 深一点的颜色 */
       margin-left: 8rpx; /* 图标和文字间距 */
       font-weight: 500;
+	  width: 50rpx;
     }
   }
   

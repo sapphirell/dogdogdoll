@@ -14,6 +14,7 @@ const _easycom_common_modal = () => "../common-modal/common-modal.js";
 if (!Math) {
   (_easycom_uni_icons + _easycom_shmily_drag_image + _easycom_common_modal)();
 }
+const PRICE_VISIBLE_KEY = "accountBookPriceVisible";
 const _sfc_main = {
   __name: "stock-myitems",
   props: {
@@ -22,6 +23,7 @@ const _sfc_main = {
   emits: ["go2editor", "update-type", "init-request", "update:accountBookData"],
   setup(__props, { emit: __emit }) {
     const props = __props;
+    const isPriceVisible = common_vendor.ref(true);
     const emits = __emit;
     const typeModalVisible = common_vendor.ref(false);
     const newTypeName = common_vendor.ref("");
@@ -51,7 +53,7 @@ const _sfc_main = {
         });
         customTypes.value = res.data.data || [];
       } catch (err) {
-        common_vendor.index.__f__("error", "at components/stock-myitems/stock-myitems.vue:77", "获取分类失败:", err);
+        common_vendor.index.__f__("error", "at components/stock-myitems/stock-myitems.vue:82", "获取分类失败:", err);
       }
     };
     const addNewType = async () => {
@@ -86,6 +88,25 @@ const _sfc_main = {
         });
       }
     };
+    const handleSortChange = (sortedIds) => {
+      const token = common_vendor.index.getStorageSync("token");
+      common_vendor.index.request({
+        url: common_config.websiteUrl + "/with-state/sort-account-book",
+        method: "POST",
+        header: {
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        data: {
+          sorted_ids: sortedIds
+        },
+        success: (res) => {
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("error", "at components/stock-myitems/stock-myitems.vue:138", "排序失败:", err);
+        }
+      });
+    };
     const deleteType = async (id) => {
       common_vendor.index.showModal({
         title: "确认删除",
@@ -117,7 +138,7 @@ const _sfc_main = {
                 });
               }
             } catch (err) {
-              common_vendor.index.__f__("error", "at components/stock-myitems/stock-myitems.vue:149", "删除失败:", err);
+              common_vendor.index.__f__("error", "at components/stock-myitems/stock-myitems.vue:176", "删除失败:", err);
               common_vendor.index.showToast({
                 title: err.errMsg || "请求失败",
                 icon: "none"
@@ -132,11 +153,15 @@ const _sfc_main = {
       const selectedTypeName = typeOptions.value[selectedType.value];
       emits("update-type", selectedTypeName === "全部" ? "" : selectedTypeName);
     };
-    common_vendor.onMounted(() => {
-      getAccountTypes();
+    common_vendor.watch(isPriceVisible, (newValue) => {
+      common_vendor.index.setStorageSync(PRICE_VISIBLE_KEY, newValue.toString());
     });
-    common_vendor.onMounted(() => {
-      setTimeout(initDragSystem, 300);
+    common_vendor.onShow(() => {
+      const savedVisibleState = common_vendor.index.getStorageSync(PRICE_VISIBLE_KEY);
+      if (savedVisibleState !== "") {
+        isPriceVisible.value = savedVisibleState === "true";
+      }
+      getAccountTypes();
     });
     return (_ctx, _cache) => {
       var _a, _b;
@@ -161,59 +186,68 @@ const _sfc_main = {
           size: "18",
           color: "#74c9e5"
         }),
-        i: common_vendor.t(totalPrice.value),
-        j: ((_a = __props.accountBookData.account_books) == null ? void 0 : _a.length) > 0
-      }, ((_b = __props.accountBookData.account_books) == null ? void 0 : _b.length) > 0 ? {
-        k: common_vendor.o(($event) => __props.accountBookData.account_books = $event),
+        i: isPriceVisible.value
+      }, isPriceVisible.value ? {
+        j: common_vendor.t(totalPrice.value)
+      } : {}, {
+        k: common_vendor.o(($event) => isPriceVisible.value = !isPriceVisible.value),
         l: common_vendor.p({
+          type: isPriceVisible.value ? "eye" : "eye-slash",
+          size: "18",
+          color: "#74c9e5"
+        }),
+        m: ((_a = __props.accountBookData.account_books) == null ? void 0 : _a.length) > 0
+      }, ((_b = __props.accountBookData.account_books) == null ? void 0 : _b.length) > 0 ? {
+        n: common_vendor.o(handleSortChange),
+        o: common_vendor.o(($event) => __props.accountBookData.account_books = $event),
+        p: common_vendor.p({
           ["border-radius"]: "20",
           modelValue: __props.accountBookData.account_books
         })
       } : {
-        m: common_assets._imports_0$3
+        q: common_assets._imports_0$3
       }, {
-        n: common_vendor.o(($event) => typeModalVisible.value = false),
-        o: common_vendor.p({
+        r: common_vendor.o(($event) => typeModalVisible.value = false),
+        s: common_vendor.p({
           type: "closeempty",
           size: "24",
           color: "#999"
         }),
-        p: common_vendor.f(customTypes.value, (type, index, i0) => {
+        t: common_vendor.f(customTypes.value, (type, index, i0) => {
           return {
-            a: "30803138-6-" + i0 + ",30803138-4",
+            a: "30803138-7-" + i0 + ",30803138-5",
             b: common_vendor.t(type.name),
             c: common_vendor.o(($event) => deleteType(type.id), type.id),
-            d: "30803138-7-" + i0 + ",30803138-4",
+            d: "30803138-8-" + i0 + ",30803138-5",
             e: type.id
           };
         }),
-        q: common_vendor.p({
-          type: "folder",
+        v: common_vendor.p({
+          type: "folder-add",
           size: "20",
-          color: "#747EE5"
+          color: "#3db5c7"
         }),
-        r: common_vendor.p({
+        w: common_vendor.p({
           type: "trash",
           size: "20",
           color: "#ff6666"
         }),
-        s: customTypes.value.length === 0
+        x: customTypes.value.length === 0
       }, customTypes.value.length === 0 ? {
-        t: common_assets._imports_1$8
+        y: common_assets._imports_1$8
       } : {}, {
-        v: newTypeName.value,
-        w: common_vendor.o(($event) => newTypeName.value = $event.detail.value),
-        x: common_vendor.p({
+        z: newTypeName.value,
+        A: common_vendor.o(($event) => newTypeName.value = $event.detail.value),
+        B: common_vendor.p({
           type: "plus",
           size: "16",
           color: "#fff"
         }),
-        y: common_vendor.o(addNewType),
-        z: common_vendor.o((val) => typeModalVisible.value = val),
-        A: common_vendor.p({
+        C: common_vendor.o(addNewType),
+        D: common_vendor.o((val) => typeModalVisible.value = val),
+        E: common_vendor.p({
           visible: typeModalVisible.value,
-          top: "250rpx",
-          height: "65%"
+          top: "250rpx"
         })
       });
     };

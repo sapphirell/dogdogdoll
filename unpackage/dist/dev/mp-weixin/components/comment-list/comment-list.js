@@ -35,6 +35,7 @@ const _sfc_main = {
     common_vendor.reactive({});
     const emit = __emit;
     const loading = common_vendor.ref(false);
+    const tempCommentMap = common_vendor.ref({});
     const handleAttitudeChange = (comment, {
       status,
       counts
@@ -43,29 +44,86 @@ const _sfc_main = {
       comment.attitudeCounts = counts;
     };
     __expose({
-      // 添加主评论
+      // 添加主评论（支持临时评论）
       addNewComment: (comment) => {
-        commentList.value.unshift({
+        const tempComment = {
           ...comment,
+          isTemp: true,
           showAll: false,
           localChildren: [],
           childTotal: 0
-        });
+        };
+        tempCommentMap.value[comment.id] = tempComment;
+        commentList.value.unshift(tempComment);
       },
-      // 添加子评论
+      // 添加回复评论（支持临时评论）
       addReplyComment: (reply) => {
-        const parent = commentList.value.find((c) => c.id === reply.parent_id);
+        const parentId = reply.parent_id;
+        const parent = commentList.value.find((c) => c.id === parentId);
         if (parent) {
+          const tempReply = {
+            ...reply,
+            isTemp: true
+          };
+          tempCommentMap.value[reply.id] = tempReply;
           if (!parent.localChildren) {
             parent.localChildren = [];
           }
           if (typeof parent.childTotal !== "number") {
             parent.childTotal = 0;
           }
-          parent.localChildren.unshift(reply);
+          parent.localChildren.unshift(tempReply);
           parent.childTotal += 1;
           if (!parent.showAll && parent.childTotal <= 5) {
             parent.showAll = true;
+          }
+        }
+      },
+      // 更新临时评论为真实评论
+      updateTempComment: (tempId, newComment) => {
+        const mainIndex = commentList.value.findIndex((c) => c.id === tempId);
+        if (mainIndex !== -1) {
+          commentList.value[mainIndex] = {
+            ...newComment,
+            showAll: commentList.value[mainIndex].showAll,
+            localChildren: commentList.value[mainIndex].localChildren || [],
+            childTotal: commentList.value[mainIndex].childTotal || 0
+          };
+          delete tempCommentMap.value[tempId];
+          return;
+        }
+        for (const parent of commentList.value) {
+          if (parent.localChildren && parent.localChildren.length) {
+            const childIndex = parent.localChildren.findIndex((c) => c.id === tempId);
+            if (childIndex !== -1) {
+              parent.localChildren[childIndex] = {
+                ...newComment,
+                // 保留原有的临时属性
+                parent_id: parent.localChildren[childIndex].parent_id
+              };
+              delete tempCommentMap.value[tempId];
+              return;
+            }
+          }
+        }
+      },
+      // 移除临时评论
+      removeTempComment: (tempId) => {
+        const mainIndex = commentList.value.findIndex((c) => c.id === tempId);
+        if (mainIndex !== -1) {
+          commentList.value.splice(mainIndex, 1);
+          delete tempCommentMap.value[tempId];
+          return;
+        }
+        for (const parent of commentList.value) {
+          if (parent.localChildren && parent.localChildren.length) {
+            const childIndex = parent.localChildren.findIndex((c) => c.id === tempId);
+            if (childIndex !== -1) {
+              parent.localChildren.splice(childIndex, 1);
+              parent.childTotal = Math.max(0, parent.childTotal - 1);
+              delete tempCommentMap.value[tempId];
+              return;
+            }
           }
         }
       }
@@ -90,6 +148,12 @@ const _sfc_main = {
       } finally {
         loading.value = false;
       }
+    };
+    const previewImage = (url) => {
+      common_vendor.index.previewImage({
+        urls: [url],
+        current: url
+      });
     };
     const handleLike = async (comment) => {
       if (!common_config.global.isLogin) {
@@ -132,7 +196,7 @@ const _sfc_main = {
           });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at components/comment-list/comment-list.vue:285", "点赞失败:", err);
+        common_vendor.index.__f__("error", "at components/comment-list/comment-list.vue:398", "点赞失败:", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -149,6 +213,8 @@ const _sfc_main = {
       return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`;
     };
     const formatUsername = (name) => {
+      if (!name)
+        return "未知用户";
       return name.length > 12 ? name.slice(0, 12) + "..." : name;
     };
     const loadMainComments = async () => {
@@ -191,10 +257,10 @@ const _sfc_main = {
           } else {
             commentList.value.push(...newComments);
           }
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:350", "total", data.total);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:464", "total", data.total);
           hasMore.value = data.total > commentList.value.length;
           mainCommentsTotal.value = data.total;
-          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:354", "是否还有更多?", hasMore.value);
+          common_vendor.index.__f__("log", "at components/comment-list/comment-list.vue:468", "是否还有更多?", hasMore.value);
         }
       } catch (err) {
         common_vendor.index.showToast({
@@ -211,6 +277,22 @@ const _sfc_main = {
         target,
         relationId: props.relationId
       });
+    };
+    const getAssociationTypeText = (type) => {
+      return type === 1 ? "娃物" : type === 2 ? "店铺" : "关联内容";
+    };
+    const navigateToAssociation = (comment) => {
+      if (!comment.association_id)
+        return;
+      if (comment.association_type === 1) {
+        common_vendor.index.navigateTo({
+          url: `/pages/goods/goods?goods_id=${comment.association_id}`
+        });
+      } else if (comment.association_type === 2) {
+        common_vendor.index.navigateTo({
+          url: `/pages/brand/brand?brand_id=${comment.association_id}`
+        });
+      }
     };
     const shouldShowMore = (comment) => {
       return comment.childTotal > 5 && !comment.showAll;
@@ -268,85 +350,118 @@ const _sfc_main = {
               ["relation-id"]: comment.id,
               ["button-text"]: "举报",
               ["icon-color"]: "#999",
-              ["theme-color"]: "#64c6dc"
+              ["theme-color"]: "#64c6dc",
+              ["icon-size"]: "24"
             }),
-            h: common_vendor.t(comment.comment),
-            i: common_vendor.o(($event) => handleReply(comment), comment.id),
-            j: common_vendor.t(formatTime(comment.created_at)),
-            k: "779bedea-1-" + i0,
-            l: common_vendor.p({
+            h: comment.image_url
+          }, comment.image_url ? {
+            i: comment.image_url,
+            j: common_vendor.o(($event) => previewImage(comment.image_url), comment.id)
+          } : {}, {
+            k: common_vendor.t(comment.comment),
+            l: common_vendor.o(($event) => handleReply(comment), comment.id),
+            m: comment.association_id
+          }, comment.association_id ? {
+            n: comment.association_image,
+            o: common_vendor.t(comment.association_name),
+            p: common_vendor.t(getAssociationTypeText(comment.association_type)),
+            q: "779bedea-1-" + i0,
+            r: common_vendor.p({
+              type: "arrow-right",
+              size: "20",
+              color: "#999"
+            }),
+            s: common_vendor.o(($event) => navigateToAssociation(comment), comment.id)
+          } : {}, {
+            t: common_vendor.t(formatTime(comment.created_at)),
+            v: "779bedea-2-" + i0,
+            w: common_vendor.p({
               type: comment.user_like ? "hand-up-filled" : "hand-up",
               size: "18",
               color: comment.user_like ? "rgb(100 198 220)" : "#999"
             }),
-            m: common_vendor.t(comment.like_count || 0),
-            n: comment.user_like ? 1 : "",
-            o: common_vendor.o(($event) => handleLike(comment), comment.id),
-            p: common_vendor.o(($event) => handleAttitudeChange(comment, $event), comment.id),
-            q: "779bedea-2-" + i0,
-            r: common_vendor.p({
+            x: common_vendor.t(comment.like_count || 0),
+            y: comment.user_like ? 1 : "",
+            z: common_vendor.o(($event) => handleLike(comment), comment.id),
+            A: common_vendor.o(($event) => handleAttitudeChange(comment, $event), comment.id),
+            B: "779bedea-3-" + i0,
+            C: common_vendor.p({
               ["target-id"]: comment.id,
               type: 6,
               ["attitude-status"]: comment.attitudeStatus,
               ["attitude-counts"]: comment.attitudeCounts
             }),
-            s: common_vendor.o(($event) => handleReply(comment), comment.id),
-            t: comment.localChildren && comment.localChildren.length
+            D: common_vendor.o(($event) => handleReply(comment), comment.id),
+            E: comment.localChildren && comment.localChildren.length
           }, comment.localChildren && comment.localChildren.length ? common_vendor.e({
-            v: common_vendor.f(visibleChildren(comment), (child, index, i1) => {
+            F: common_vendor.f(visibleChildren(comment), (child, index, i1) => {
               return common_vendor.e({
                 a: common_vendor.o(($event) => jump2user(child.uid), child.id),
                 b: child.avatar,
                 c: common_vendor.t(formatUsername(child.username)),
                 d: common_vendor.o(($event) => jump2user(child.uid), child.id),
-                e: child.reply_for
-              }, child.reply_for ? {
-                f: common_vendor.t(child.reply_for)
-              } : {}, {
-                g: "779bedea-3-" + i0 + "-" + i1,
-                h: common_vendor.p({
+                e: "779bedea-4-" + i0 + "-" + i1,
+                f: common_vendor.p({
                   ["report-type"]: 5,
                   ["relation-id"]: child.id,
                   ["button-text"]: "举报",
                   ["icon-color"]: "#999",
                   ["theme-color"]: "#64c6dc"
                 }),
-                i: common_vendor.t(child.comment),
-                j: common_vendor.o(($event) => handleReply(comment), child.id),
-                k: common_vendor.t(formatTime(child.created_at)),
-                l: "779bedea-4-" + i0 + "-" + i1,
-                m: common_vendor.p({
+                g: child.image_url
+              }, child.image_url ? {
+                h: child.image_url,
+                i: common_vendor.o(($event) => previewImage(child.image_url), child.id)
+              } : {}, {
+                j: common_vendor.t(child.comment),
+                k: common_vendor.o(($event) => handleReply(comment), child.id),
+                l: child.association_id
+              }, child.association_id ? {
+                m: child.association_image,
+                n: common_vendor.t(child.association_name),
+                o: common_vendor.t(getAssociationTypeText(child.association_type)),
+                p: "779bedea-5-" + i0 + "-" + i1,
+                q: common_vendor.p({
+                  type: "arrow-right",
+                  size: "20",
+                  color: "#999"
+                }),
+                r: common_vendor.o(($event) => navigateToAssociation(child), child.id)
+              } : {}, {
+                s: common_vendor.t(formatTime(child.created_at)),
+                t: "779bedea-6-" + i0 + "-" + i1,
+                v: common_vendor.p({
                   type: child.user_like ? "hand-up-filled" : "hand-up",
                   size: "18",
                   color: child.user_like ? "rgb(100 198 220)" : "#999"
                 }),
-                n: common_vendor.t(child.like_count || 0),
-                o: child.user_like ? 1 : "",
-                p: common_vendor.o(($event) => handleLike(child), child.id),
-                q: common_vendor.o(($event) => handleAttitudeChange(comment, $event), child.id),
-                r: "779bedea-5-" + i0 + "-" + i1,
-                s: common_vendor.p({
+                w: common_vendor.t(child.like_count || 0),
+                x: child.user_like ? 1 : "",
+                y: common_vendor.o(($event) => handleLike(child), child.id),
+                z: common_vendor.o(($event) => handleAttitudeChange(comment, $event), child.id),
+                A: "779bedea-7-" + i0 + "-" + i1,
+                B: common_vendor.p({
                   ["target-id"]: child.id,
                   type: 6,
                   ["attitude-status"]: comment.attitudeStatus,
                   ["attitude-counts"]: comment.attitudeCounts
                 }),
-                t: common_vendor.o(($event) => handleReply(comment, child), child.id),
-                v: child.id
+                C: common_vendor.o(($event) => handleReply(comment, child), child.id),
+                D: child.id
               });
             }),
-            w: shouldShowMore(comment)
+            G: shouldShowMore(comment)
           }, shouldShowMore(comment) ? {
-            x: common_vendor.t(remainingCount(comment)),
-            y: "779bedea-6-" + i0,
-            z: common_vendor.p({
+            H: common_vendor.t(remainingCount(comment)),
+            I: "779bedea-8-" + i0,
+            J: common_vendor.p({
               type: "arrow-down",
               size: "18",
               color: "#007AFF"
             }),
-            A: common_vendor.o(($event) => loadMore(comment), comment.id)
+            K: common_vendor.o(($event) => loadMore(comment), comment.id)
           } : {}) : {}, {
-            B: comment.id
+            L: comment.id
           });
         }),
         d: commentList.value.length > 0

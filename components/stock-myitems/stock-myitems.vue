@@ -9,10 +9,15 @@
 	import {
 		websiteUrl
 	} from '../../common/config.js';
-
+	import {
+		onShow
+	} from '@dcloudio/uni-app';
 	const props = defineProps({
 		accountBookData: Object
 	});
+	// 新增：控制总价显示/隐藏的状态
+	const isPriceVisible = ref(true);
+	const PRICE_VISIBLE_KEY = 'accountBookPriceVisible';
 
 	const emits = defineEmits(['go2editor', 'update-type', 'init-request', 'update:accountBookData']);
 
@@ -112,6 +117,28 @@
 			});
 		}
 	};
+	// 处理排序事件
+	const handleSortChange = (sortedIds) => {
+		const token = uni.getStorageSync('token');
+		uni.request({
+			url: websiteUrl + '/with-state/sort-account-book',
+			method: 'POST',
+			header: {
+				'Authorization': token,
+				'Content-Type': 'application/json'
+			},
+			data: {
+				sorted_ids: sortedIds
+			},
+			success: (res) => {
+				
+			},
+			fail: (err) => {
+				
+				console.error('排序失败:', err);
+			}
+		});
+	}
 
 	// 删除分类
 	const deleteType = async (id) => {
@@ -164,17 +191,18 @@
 		emits('update-type', selectedTypeName === "全部" ? "" : selectedTypeName);
 	};
 
-	// 初始化分类数据
-	onMounted(() => {
-		getAccountTypes();
+	// 监听状态变化，保存到本地存储
+	watch(isPriceVisible, (newValue) => {
+		uni.setStorageSync(PRICE_VISIBLE_KEY, newValue.toString());
 	});
 
-
-
-	// 确保组件挂载后初始化拖拽系统
-	onMounted(() => {
-		// 延迟执行以确保DOM渲染完成
-		setTimeout(initDragSystem, 300);
+	// 初始化分类数据
+	onShow(() => {
+		const savedVisibleState = uni.getStorageSync(PRICE_VISIBLE_KEY);
+		if (savedVisibleState !== '') {
+			isPriceVisible.value = savedVisibleState === 'true';
+		}
+		getAccountTypes();
 	});
 </script>
 
@@ -202,13 +230,21 @@
 		<view class="summary-container">
 			<view class="summary-content">
 				<uni-icons type="money" size="18" color="#74c9e5"></uni-icons>
-				<text class="total-text">当前分类合计：¥{{ totalPrice }}</text>
+				<text class="total-text">当前分类合计：
+					<text v-if="isPriceVisible">¥{{ totalPrice }}</text>
+					<text v-else>******</text>
+				</text>
+				<!-- 新增：切换显示/隐藏的小眼睛按钮 -->
+				<uni-icons :type="isPriceVisible ? 'eye' : 'eye-slash'" size="18" color="#74c9e5" class="toggle-eye"
+					@tap="isPriceVisible = !isPriceVisible"></uni-icons>
+				<text style="position: absolute;right: 30px;">长按排序</text>
 			</view>
 		</view>
 
 		<!-- 内容区域 -->
 		<view class="content" v-if="accountBookData.account_books?.length > 0">
-			<shmily-drag-image v-model="accountBookData.account_books" border-radius="20"></shmily-drag-image>
+			<shmily-drag-image v-model="accountBookData.account_books" border-radius="20"
+				@sort-change="handleSortChange"></shmily-drag-image>
 		</view>
 
 		<!-- 空状态 -->
@@ -220,31 +256,33 @@
 	</view>
 
 	<!-- 分类管理弹窗 -->
-	<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="250rpx" height="65%">
+	<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="250rpx">
 		<view class="type-modal">
 			<view class="modal-header">
 				<text class="modal-title">分类管理</text>
 				<uni-icons type="closeempty" size="24" color="#999" @tap="typeModalVisible = false"></uni-icons>
 			</view>
-
-			<view class="type-list">
-				<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
-					<view class="type-icon">
-						<uni-icons type="folder" size="20" color="#747EE5"></uni-icons>
+			<scroll-view scroll-y style="height: 400rpx;">
+				<view class="type-list">
+					<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
+						<view class="type-icon">
+							<uni-icons type="folder-add" size="20" color="#3db5c7"></uni-icons>
+						</view>
+						<text class="type-name">{{ type.name }}</text>
+						<view class="type-actions">
+							<uni-icons type="trash" size="20" color="#ff6666" @tap="deleteType(type.id)"></uni-icons>
+						</view>
 					</view>
-					<text class="type-name">{{ type.name }}</text>
-					<view class="type-actions">
-						<uni-icons type="trash" size="20" color="#ff6666" @tap="deleteType(type.id)"></uni-icons>
+				
+					<view v-if="customTypes.length === 0" class="empty-types">
+						<image class="empty-folder" src="/static/folder-empty.png"></image>
+						<text class="empty-text">暂无自定义分类</text>
+						<text class="empty-tip">请在下方添加新分类</text>
 					</view>
 				</view>
-
-				<view v-if="customTypes.length === 0" class="empty-types">
-					<image class="empty-folder" src="/static/folder-empty.png"></image>
-					<text class="empty-text">暂无自定义分类</text>
-					<text class="empty-tip">请在下方添加新分类</text>
-				</view>
-			</view>
-
+				<view style="height: 100rpx;"></view>
+			</scroll-view>
+			
 			<view class="add-type-container">
 				<view class="add-type-form">
 					<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
@@ -260,7 +298,6 @@
 </template>
 
 <style lang="scss" scoped>
-	
 	/* 调整原有样式 */
 	.content {
 		padding: 0 20rpx;
@@ -374,8 +411,6 @@
 			height: 300rpx;
 			opacity: 0.8;
 			margin-bottom: 40rpx;
-			border-radius: 50%;
-			box-shadow: 0 8rpx 25rpx rgba(0, 0, 0, 0.1);
 		}
 
 		.empty-text {
@@ -395,8 +430,8 @@
 	.type-modal {
 		padding: 30rpx;
 		box-sizing: border-box;
-		width: 86vw;
-		height: 100%;
+		width: 85vw;
+		height: 600rpx;
 		display: flex;
 		flex-direction: column;
 
@@ -492,7 +527,9 @@
 		.add-type-container {
 			border-top: 1rpx solid #f0f0f0;
 			padding-top: 25rpx;
-
+			position: absolute;
+			bottom: 30px;
+			background-color: #fff;
 			.add-type-form {
 				display: flex;
 				gap: 20rpx;
@@ -537,5 +574,32 @@
 				text-align: center;
 			}
 		}
+	}
+
+	.summary-content {
+		position: relative;
+		display: flex;
+		align-items: center;
+		/* 其他样式保持不变 */
+
+		.toggle-eye {
+			margin-left: 15rpx;
+			padding: 8rpx;
+			border-radius: 50%;
+			background-color: rgba(116, 201, 229, 0.1);
+			transition: all 0.3s ease;
+
+			&:active {
+				transform: scale(0.9);
+				background-color: rgba(116, 201, 229, 0.2);
+			}
+		}
+	}
+
+	/* 调整总价文本的间距 */
+	.total-text {
+		display: flex;
+		align-items: center;
+		gap: 8rpx;
 	}
 </style>

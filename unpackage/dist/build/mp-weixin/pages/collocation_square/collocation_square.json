@@ -3,6 +3,7 @@
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {
+    "view-logs": "../../components/view-logs/view-logs",
     "goods-search": "../../components/goods-search/goods-search",
     "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "uni-transition": "../../uni_modules/uni-transition/components/uni-transition/uni-transition",

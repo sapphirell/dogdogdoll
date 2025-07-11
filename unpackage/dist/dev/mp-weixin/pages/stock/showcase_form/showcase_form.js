@@ -345,7 +345,7 @@ const _sfc_main = {
         l: common_vendor.o(($event) => description.value = $event.detail.value),
         m: isEditable.value
       }, isEditable.value ? {
-        n: common_assets._imports_2$2,
+        n: common_assets._imports_2$3,
         o: common_vendor.o(showRelationPicker)
       } : {}, {
         p: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {

@@ -7,19 +7,19 @@
 			<view class="head_container">
 				<view class="switch_tab">
 					<button @click="switch_tab(1)" class="font-alimamashuhei" :class="{'active': activeTab === 1}">
-						<text>我的物品</text>
+						<image class="tab_img" src="/static/new-icon/myitems.png" mode="widthFix" style="width: 160rpx;opacity: 0.9;"></image>
 					</button>
 					<button @click="switch_tab(2)" class="font-alimamashuhei" :class="{'active': activeTab === 2}">
-						<text>展示柜</text>
+						<image  class="tab_img"  src="/static/new-icon/showcase.png" mode="widthFix" style="width: 130rpx;opacity: 0.9;"></image>
 					</button>
 					<button @click="switch_tab(3)" class="font-alimamashuhei" :class="{'active': activeTab === 3}">
-						<text>尾款日历</text>
+						<image  class="tab_img"  src="/static/new-icon/calendar.png" mode="widthFix" style="width: 160rpx;opacity: 0.9;"></image>
 					</button>
 				</view>
 			</view>
 
 			<view class="data_body">
-				<view @tap="jump2test">拖拽测试</view>
+				<!-- <view @tap="jump2test">拖拽测试</view> -->
 				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
 					:show="activeTab === 1">
 					<!-- 我的物品 -->
@@ -53,7 +53,7 @@
 											</view>
 											<view class="interaction-item">
 												<image src="/static/6.png" class="interaction-icon"></image>
-												<text class="interaction-count">{{ item.likes || 0 }}</text>
+												<text class="interaction-count">{{ item.like_count || 0 }}</text>
 											</view>
 										</view>
 									</view>
@@ -227,6 +227,7 @@
 
 	// 添加类型更新处理
 	const handleTypeUpdate = (type) => {
+		console.log("更新账本列表")
 	  getAccountBookData(type);
 	};
 
@@ -262,6 +263,10 @@
 	function getAccountBookData(type) {
 		console.log(global)
 		if (!global.isLogin) {
+			accountBookData.value = {}
+			showcaseData.value = {}
+			billData.value = {}
+			
 			return
 		}
 		let token = uni.getStorageSync('token');
@@ -1095,4 +1100,6 @@
 	  background: rgba(255, 255, 255, 0.8);
 	  z-index: 1000;
 	}
+	
+
 </style>

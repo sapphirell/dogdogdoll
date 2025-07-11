@@ -34,7 +34,8 @@
     "pages/loadding/loadding",
     "pages/private/private",
     "pages/permission/permission",
-    "pages/drag-image-test/drag-image-test"
+    "pages/drag-image-test/drag-image-test",
+    "pages/account_book_preview/account_book_preview"
   ],
   "window": {
     "navigationBarTextStyle": "black",

@@ -14,15 +14,31 @@
 				<image @tap="jump2user(comment.uid)" :src="comment.avatar" class="avatar" mode="aspectFill" />
 				<view class="content">
 					<view class="header">
-						<text class="username"
-							@tap="jump2user(comment.uid)">{{ formatUsername(comment.username) }}</text>
-						<text class="floor">#{{ comment.floor }}</text>
-						<report-button :report-type="5" :relation-id="comment.id" button-text="举报" icon-color="#999"
-							theme-color="#64c6dc" />
+						<view>
+							<text class="username"
+								@tap="jump2user(comment.uid)">{{ formatUsername(comment.username) }}</text>
+							<text class="floor">#{{ comment.floor }}</text>
+						</view>
+						
+						<report-button :report-type=5 :relation-id="comment.id" button-text="举报" icon-color="#999"
+							theme-color="#64c6dc" icon-size="24" />
 
 					</view>
+					<!-- 新增：评论图片展示 -->
+					<view v-if="comment.image_url" class="comment-images">
+						<image :src="comment.image_url" mode="aspectFill" class="comment-image"
+							@tap="previewImage(comment.image_url)" />
+					</view>
 					<text class="comment-text" @click="handleReply(comment)">{{ comment.comment }}</text>
-
+					<!-- 新增：关联信息展示 -->
+					  <view v-if="comment.association_id" class="association-card" @click="navigateToAssociation(comment)">
+					    <image :src="comment.association_image" mode="aspectFill" class="association-image" />
+					    <view class="association-info">
+					      <text class="association-name">{{ comment.association_name }}</text>
+					      <text class="association-type">{{ getAssociationTypeText(comment.association_type) }}</text>
+					    </view>
+					    <uni-icons type="arrow-right" size="20" color="#999" class="association-arrow" />
+					  </view>
 
 					<view class="footer">
 						<view class="left-actions">
@@ -38,12 +54,13 @@
 							</view>
 						</view>
 
-						
+
 						<view class="right-actions">
 							<!-- 新增表态按钮组 -->
 							<attitude-widget :target-id="comment.id" :type="6" :attitude-status="comment.attitudeStatus"
-								:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
-							
+								:attitude-counts="comment.attitudeCounts"
+								@change="handleAttitudeChange(comment, $event)" />
+
 							<text class="reply-btn" @click="handleReply(comment)">回复</text>
 						</view>
 
@@ -59,14 +76,27 @@
 						<view class="header">
 							<text @tap="jump2user(child.uid)"
 								class="username">{{ formatUsername(child.username) }}</text>
-							<text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text>
-							<report-button :report-type="5" :relation-id="child.id" button-text="举报" icon-color="#999"
+							<!-- <text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text> -->
+							<report-button :report-type=5 :relation-id="child.id" button-text="举报" icon-color="#999"
 								theme-color="#64c6dc" />
 						</view>
-
+						<!-- 评论图片 -->
+						<view v-if="child.image_url" class="comment-images">
+							<image :src="child.image_url" mode="aspectFill" class="comment-image"
+								@tap="previewImage(child.image_url)" />
+						</view>
 						<text class="comment-text" @click="handleReply(comment)">{{ child.comment }}</text>
 
-						
+
+						 <view v-if="child.association_id" class="association-card" @click="navigateToAssociation(child)">
+						    <image :src="child.association_image" mode="aspectFill" class="association-image" />
+						    <view class="association-info">
+						      <text class="association-name">{{ child.association_name }}</text>
+						      <text class="association-type">{{ getAssociationTypeText(child.association_type) }}</text>
+						    </view>
+						    <uni-icons type="arrow-right" size="20" color="#999" class="association-arrow" />
+						  </view>
+
 
 
 						<view class="footer">
@@ -85,9 +115,10 @@
 
 							<view class="right-actions">
 								<!-- 新增表态按钮组 -->
-								<attitude-widget :target-id="child.id" :type="6" :attitude-status="comment.attitudeStatus"
-									:attitude-counts="comment.attitudeCounts" @change="handleAttitudeChange(comment, $event)" />
-								
+								<attitude-widget :target-id="child.id" :type="6"
+									:attitude-status="comment.attitudeStatus" :attitude-counts="comment.attitudeCounts"
+									@change="handleAttitudeChange(comment, $event)" />
+
 								<text class="reply-btn" @click="handleReply(comment, child)">回复</text>
 
 							</view>
@@ -162,7 +193,8 @@
 	const emit = defineEmits(['reply'])
 
 	const loading = ref(false)
-
+	// 添加临时评论ID映射
+	const tempCommentMap = ref({})
 	// 处理状态变化
 	const handleAttitudeChange = (comment, {
 		status,
@@ -175,42 +207,116 @@
 
 	// 暴露给父组件的方法
 	defineExpose({
-		// 添加主评论
-		addNewComment: (comment) => {
-			commentList.value.unshift({
-				...comment,
-				showAll: false,
-				localChildren: [],
-				childTotal: 0
-			})
-		},
-
-		// 添加子评论
-		addReplyComment: (reply) => {
-			const parent = commentList.value.find(c => c.id === reply.parent_id)
-			if (parent) {
-				// 确保 localChildren 数组存在
-				if (!parent.localChildren) {
-					parent.localChildren = []
-				}
-				// 确保 childTotal 存在
-				if (typeof parent.childTotal !== 'number') {
-					parent.childTotal = 0
-				}
-
-				parent.localChildren.unshift(reply)
-				parent.childTotal += 1
-
-				// 自动展开子评论列表
-				if (!parent.showAll && parent.childTotal <= 5) {
-					parent.showAll = true
-				}
-			}
-		},
-
-
-
+	  // 添加主评论（支持临时评论）
+	  addNewComment: (comment) => {
+	    // 标记为临时评论
+	    const tempComment = {
+	      ...comment,
+	      isTemp: true,
+	      showAll: false,
+	      localChildren: [],
+	      childTotal: 0
+	    }
+	    
+	    // 保存到临时映射
+	    tempCommentMap.value[comment.id] = tempComment
+	    
+	    commentList.value.unshift(tempComment)
+	  },
+	
+	  // 添加回复评论（支持临时评论）
+	  addReplyComment: (reply) => {
+	    const parentId = reply.parent_id
+	    const parent = commentList.value.find(c => c.id === parentId)
+	    
+	    if (parent) {
+	      // 标记为临时评论
+	      const tempReply = {
+	        ...reply,
+	        isTemp: true
+	      }
+	      
+	      // 保存到临时映射
+	      tempCommentMap.value[reply.id] = tempReply
+	      
+	      // 确保 localChildren 数组存在
+	      if (!parent.localChildren) {
+	        parent.localChildren = []
+	      }
+	      
+	      // 确保 childTotal 存在
+	      if (typeof parent.childTotal !== 'number') {
+	        parent.childTotal = 0
+	      }
+	
+	      parent.localChildren.unshift(tempReply)
+	      parent.childTotal += 1
+	
+	      // 自动展开子评论列表
+	      if (!parent.showAll && parent.childTotal <= 5) {
+	        parent.showAll = true
+	      }
+	    }
+	  },
+	
+	  // 更新临时评论为真实评论
+	  updateTempComment: (tempId, newComment) => {
+	    // 更新主评论
+	    const mainIndex = commentList.value.findIndex(c => c.id === tempId)
+	    if (mainIndex !== -1) {
+	      commentList.value[mainIndex] = {
+	        ...newComment,
+	        showAll: commentList.value[mainIndex].showAll,
+	        localChildren: commentList.value[mainIndex].localChildren || [],
+	        childTotal: commentList.value[mainIndex].childTotal || 0
+	      }
+	      delete tempCommentMap.value[tempId]
+	      return
+	    }
+	    
+	    // 更新子评论
+	    for (const parent of commentList.value) {
+	      if (parent.localChildren && parent.localChildren.length) {
+	        const childIndex = parent.localChildren.findIndex(c => c.id === tempId)
+	        if (childIndex !== -1) {
+	          parent.localChildren[childIndex] = {
+	            ...newComment,
+	            // 保留原有的临时属性
+	            parent_id: parent.localChildren[childIndex].parent_id
+	          }
+	          delete tempCommentMap.value[tempId]
+	          return
+	        }
+	      }
+	    }
+	  },
+	
+	  // 移除临时评论
+	  removeTempComment: (tempId) => {
+	    // 从主评论移除
+	    const mainIndex = commentList.value.findIndex(c => c.id === tempId)
+	    if (mainIndex !== -1) {
+	      commentList.value.splice(mainIndex, 1)
+	      delete tempCommentMap.value[tempId]
+	      return
+	    }
+	    
+	    // 从子评论移除
+	    for (const parent of commentList.value) {
+	      if (parent.localChildren && parent.localChildren.length) {
+	        const childIndex = parent.localChildren.findIndex(c => c.id === tempId)
+	        if (childIndex !== -1) {
+	          parent.localChildren.splice(childIndex, 1)
+	          parent.childTotal = Math.max(0, parent.childTotal - 1)
+	          delete tempCommentMap.value[tempId]
+	          return
+	        }
+	      }
+	    }
+	  }
 	})
+	
+	
 
 	// 初始化加载评论
 	onMounted(() => {
@@ -235,6 +341,13 @@
 		} finally {
 			loading.value = false
 		}
+	}
+	// 新增方法：预览图片
+	const previewImage = (url) => {
+		uni.previewImage({
+			urls: [url],
+			current: url
+		})
 	}
 
 	// 处理点赞
@@ -302,7 +415,8 @@
 	}
 
 	const formatUsername = (name) => {
-		return name.length > 12 ? name.slice(0, 12) + '...' : name
+	  if (!name) return '未知用户' // 添加空值检查
+	  return name.length > 12 ? name.slice(0, 12) + '...' : name
 	}
 
 	// 加载主评论
@@ -372,7 +486,27 @@
 		})
 	}
 
+	// 新增方法：获取关联类型文本
+	  const getAssociationTypeText = (type) => {
+	    return type === 1 ? '娃物' : type === 2 ? '店铺' : '关联内容';
+	  }
 
+	// 新增方法：跳转到关联页面
+	const navigateToAssociation = (comment) => {
+		if (!comment.association_id) return
+
+		if (comment.association_type === 1) {
+			// 跳转到商品页面
+			uni.navigateTo({
+				url: `/pages/goods/goods?goods_id=${comment.association_id}`
+			})
+		} else if (comment.association_type === 2) {
+			// 跳转到品牌页面
+			uni.navigateTo({
+				url: `/pages/brand/brand?brand_id=${comment.association_id}`
+			})
+		}
+	}
 
 	const shouldShowMore = (comment) => {
 		return comment.childTotal > 5 && !comment.showAll
@@ -448,7 +582,7 @@
 		border-radius: 16rpx;
 		margin-bottom: 24rpx;
 		padding: 24rpx;
-		box-shadow: 0 4rpx 22rpx rgba(0, 0, 0, 0.05);
+		// box-shadow: 0 4rpx 22rpx rgba(0, 0, 0, 0.05);
 	}
 
 	.main-comment,
@@ -788,4 +922,80 @@
 			padding: 4rpx 12rpx;
 		}
 	}
+
+	/* 新增：评论图片样式 */
+	.comment-images {
+		margin: 15rpx 0;
+
+		.comment-image {
+			width: 200rpx;
+			height: 200rpx;
+			border-radius: 10rpx;
+		}
+	}
+
+	/* 新增：关联链接样式 */
+	  .association-card {
+	    display: flex;
+	    align-items: center;
+	    padding: 16rpx;
+	    background: #fff;
+	    border-radius: 16rpx;
+	    margin: 16rpx 0;
+	    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+	    border: 1rpx solid #f0f0f0;
+	    
+	    .association-image {
+	      width: 100rpx;
+	      height: 100rpx;
+	      border-radius: 12rpx;
+	      margin-right: 20rpx;
+	      background: #f8f8f8;
+	    }
+	    
+	    .association-info {
+	      flex: 1;
+	      display: flex;
+	      flex-direction: column;
+	      overflow: hidden;
+	      
+	      .association-name {
+	        font-size: 28rpx;
+	        color: #333;
+	        font-weight: bold;
+	        overflow: hidden;
+	        text-overflow: ellipsis;
+	        white-space: nowrap;
+	        margin-bottom: 6rpx;
+	      }
+	      
+	      .association-type {
+	        font-size: 22rpx;
+	        color: #999;
+	        background: #f7f7f7;
+	        padding: 4rpx 12rpx;
+	        border-radius: 20rpx;
+	        align-self: flex-start;
+	      }
+	    }
+	    
+	    .association-arrow {
+	      margin-left: 10rpx;
+	      flex-shrink: 0;
+	    }
+	  }
+	  
+	  /* 删除原有的关联链接样式 */
+	  .association-link {
+	    display: none;
+	  }
+	  
+	  /* 调整原有样式，确保新卡片布局协调 */
+	  .comment-card {
+	    padding-bottom: 10rpx; /* 减少底部内边距 */
+	  }
+	  
+	  .footer {
+	    margin-top: 10rpx; /* 减少顶部间距 */
+	  }
 </style>

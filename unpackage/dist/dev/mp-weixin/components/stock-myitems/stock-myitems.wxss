@@ -122,8 +122,6 @@
   height: 300rpx;
   opacity: 0.8;
   margin-bottom: 40rpx;
-  border-radius: 50%;
-  box-shadow: 0 8rpx 25rpx rgba(0, 0, 0, 0.1);
 }
 .empty-state .empty-text.data-v-30803138 {
   font-size: 32rpx;
@@ -139,8 +137,8 @@
 .type-modal.data-v-30803138 {
   padding: 30rpx;
   box-sizing: border-box;
-  width: 86vw;
-  height: 100%;
+  width: 85vw;
+  height: 600rpx;
   display: flex;
   flex-direction: column;
 }
@@ -224,6 +222,9 @@
 .type-modal .add-type-container.data-v-30803138 {
   border-top: 1rpx solid #f0f0f0;
   padding-top: 25rpx;
+  position: absolute;
+  bottom: 30px;
+  background-color: #fff;
 }
 .type-modal .add-type-container .add-type-form.data-v-30803138 {
   display: flex;
@@ -262,4 +263,28 @@
   font-size: 24rpx;
   color: #aaa;
   text-align: center;
+}
+.summary-content.data-v-30803138 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* 其他样式保持不变 */
+}
+.summary-content .toggle-eye.data-v-30803138 {
+  margin-left: 15rpx;
+  padding: 8rpx;
+  border-radius: 50%;
+  background-color: rgba(116, 201, 229, 0.1);
+  transition: all 0.3s ease;
+}
+.summary-content .toggle-eye.data-v-30803138:active {
+  transform: scale(0.9);
+  background-color: rgba(116, 201, 229, 0.2);
+}
+
+/* 调整总价文本的间距 */
+.total-text.data-v-30803138 {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
 }

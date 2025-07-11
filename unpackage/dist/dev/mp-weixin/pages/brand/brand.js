@@ -60,11 +60,8 @@ const _sfc_main = {
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
-    const handleCommentSubmit = ({
-      content,
-      replyInfo,
-      origin
-    }) => {
+    const handleCommentSubmit = (submitData) => {
+      var _a, _b, _c;
       let token = common_vendor.index.getStorageSync("token");
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
@@ -73,19 +70,76 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:183", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:181", "reply_info", replyForItem.value);
       const requestData = {
-        content,
-        origin,
+        content: submitData.content,
+        origin: submitData.origin,
         target_id: parseInt(props.brand_id),
         type: 1,
-        ...replyInfo.id && {
-          reply_id: replyInfo.id,
-          reply_for: replyInfo.comment,
-          reply_user_id: replyInfo.user_id,
-          parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+        // 品牌评论类型
+        image_url: submitData.image_url || "",
+        association_id: submitData.association_id || 0,
+        association_type: submitData.association_type || 0,
+        is_anonymous: submitData.is_anonymous || 0,
+        ...replyForItem.value.id && {
+          reply_id: replyForItem.value.id,
+          reply_for: replyForItem.value.comment,
+          reply_uid: replyForItem.value.user_id,
+          parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
         }
       };
+      const tempComment = {
+        id: Date.now(),
+        // 临时ID
+        content: submitData.content,
+        created_at: Math.floor(Date.now() / 1e3),
+        like_count: 0,
+        reply_count: 0,
+        is_liked: false,
+        floor: 0,
+        // 临时楼层数
+        // 匿名处理
+        ...submitData.is_anonymous ? {
+          avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+          username: "匿名用户",
+          is_anonymous: 1
+        } : {
+          avatar: common_config.global.userInfo.avatar,
+          username: common_config.global.userInfo.nickname,
+          is_anonymous: 0
+        },
+        // 关联信息
+        ...submitData.association_id && {
+          association_id: submitData.association_id,
+          association_type: submitData.association_type
+        },
+        // 图片信息
+        ...submitData.image_url && {
+          image_url: submitData.image_url
+        },
+        // 回复信息
+        ...replyForItem.value.id && {
+          reply_id: replyForItem.value.id,
+          reply_for: replyForItem.value.comment,
+          reply_uid: replyForItem.value.user_id,
+          parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+          // 处理被回复者的匿名状态
+          reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+        }
+      };
+      if (!replyForItem.value.id) {
+        (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+      } else if (replyForItem.value.parent_id === 0) {
+        (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+          ...tempComment,
+          parent_id: replyForItem.value.id
+        });
+      } else {
+        (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+          ...tempComment,
+          parent_id: replyForItem.value.parent_id
+        });
+      }
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -94,19 +148,31 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          var _a, _b;
+          var _a2, _b2;
           if (res.data.status == "success") {
             const newComment = res.data.data;
-            if (newComment.parent_id === 0) {
-              (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-            } else {
-              (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+            const finalComment = {
+              ...newComment,
+              ...submitData.is_anonymous ? {
+                avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                username: "匿名用户",
+                is_anonymous: 1
+              } : {
+                avatar: common_config.global.userInfo.avatar,
+                username: common_config.global.userInfo.nickname,
+                is_anonymous: 0
+              }
+            };
+            if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+              finalComment.reply_username = "匿名用户";
             }
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
             common_vendor.index.showToast({
               title: "评论成功",
               icon: "success"
             });
           } else {
+            (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
             common_vendor.index.showToast({
               title: res.data.msg,
               icon: "none"
@@ -114,6 +180,8 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
+          var _a2;
+          (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -122,7 +190,7 @@ const _sfc_main = {
       });
     };
     const onRateChange = (e) => {
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:237", e);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:322", e);
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
           title: "请先登录",
@@ -183,7 +251,7 @@ const _sfc_main = {
         }
       } catch (err) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:309", "评分失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:394", "评分失败:", err);
         common_vendor.index.showToast({
           title: "评分失败，请重试",
           icon: "none"
@@ -223,7 +291,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:368", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:453", res.data.data);
           brand.value = res.data.data;
           common_vendor.index.setNavigationBarTitle({
             title: res.data.data.brand_name
@@ -231,7 +299,7 @@ const _sfc_main = {
           getHasLikeBrand();
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:378", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:463", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -279,7 +347,7 @@ const _sfc_main = {
           });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:430", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:515", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -298,7 +366,7 @@ const _sfc_main = {
         });
         hasLikeBrand.value = ((_a = res.data.data) == null ? void 0 : _a.id) > 0;
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:452", "获取关注状态失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:537", "获取关注状态失败:", err);
       }
     };
     function formatTimestamp(timestamp) {
@@ -317,7 +385,7 @@ const _sfc_main = {
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:477", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:562", res.data.data);
           goods.value.page_index = res.data.data.page_index;
           goods.value.total = res.data.data.total;
           goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
@@ -332,7 +400,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:495", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:580", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -366,7 +434,7 @@ const _sfc_main = {
           type
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:601", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:686", res.data.data);
           if (res.data.status == "success") {
             myRateValue.value = res.data.data.score;
             return res.data.data.score;
@@ -379,7 +447,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:614", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:699", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"

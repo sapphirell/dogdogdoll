@@ -188,6 +188,7 @@
   padding: 30rpx;
   box-sizing: border-box;
   width: 80vw;
+  height: 50vh;
 }
 .type-modal .type-list.data-v-0299c5b6 {
   max-height: 500rpx;

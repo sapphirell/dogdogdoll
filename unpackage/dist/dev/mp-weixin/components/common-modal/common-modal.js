@@ -41,6 +41,9 @@ const _sfc_main = {
       // width: formatValue(props.width),
       height: formatValue(props.height)
     }));
+    const moveHandle = () => {
+      return false;
+    };
     const formatValue = (val) => {
       if (typeof val === "number") {
         return `${val}px`;
@@ -66,7 +69,8 @@ const _sfc_main = {
           ["mode-class"]: common_vendor.unref(modeClass),
           show: __props.visible
         }),
-        e: common_vendor.o(closeModal)
+        e: common_vendor.o(closeModal),
+        f: common_vendor.o(moveHandle)
       } : {});
     };
   }

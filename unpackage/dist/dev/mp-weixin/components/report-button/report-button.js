@@ -36,7 +36,7 @@ const _sfc_main = {
     },
     // 图标大小
     iconSize: {
-      type: Number,
+      type: String,
       default: 24
     },
     // 图标颜色
@@ -182,7 +182,7 @@ const _sfc_main = {
         a: common_vendor.p({
           ["v-if"]: __props.iconType !== "",
           type: __props.iconType,
-          size: __props.iconSize,
+          size: parseInt(__props.iconSize),
           color: __props.iconColor
         }),
         b: common_vendor.t(__props.buttonText),

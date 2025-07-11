@@ -5,7 +5,7 @@
 		</meta>
 		<!-- 分类管理弹窗 -->
 		<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="100rpx"
-			height="60%">
+			>
 			<view class="type-modal">
 				<view class="add-type-form">
 					<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
@@ -174,7 +174,7 @@
 
 				<!-- 附加值 -->
 				<view class="form-item">
-					<text class="form-label">附加值</text>
+					<text class="form-label">附加值（妆费或h了多少入）</text>
 					<input v-model="moreInfo.additionalValue" placeholder="请输入附加值" class="form-input" type="digit" />
 				</view>
 				<!-- 新增字段结束 -->
@@ -289,7 +289,7 @@
 	const typeModalVisible = ref(false);
 	const newTypeName = ref('');
 	const customTypes = ref([]);
-	const defaultTypes = ['请选择', '娃衣', '娃头', '眼珠', '假发', '娃鞋', '其它'];
+	const defaultTypes = [];
 
 	// 组合分类选项
 	const typeOptions = computed(() => [
@@ -1174,7 +1174,7 @@
 		padding: 30rpx;
 		box-sizing: border-box;
 		width: 80vw;
-		// height: 50vh;
+		height: 50vh;
 
 		.type-list {
 			max-height: 500rpx;

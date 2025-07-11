@@ -5,7 +5,7 @@
 	<view class="search_tab" :class="$attrs.class" :style="{ background: background || '#fff' }">
 		<image v-if="!hiddenIcon" class="icon_image" src="../../static/search.png"></image>
 		<input class="common_search_input" placeholder="请输入娃物名称 (ㅇㅅㅇ❀)..." :value="inputValue" @input="onSearchInput"
-			:style="{ fontSize: fontSize || '22rpx' }" />
+			:style="{ fontSize: fontSize || '23rpx' }" />
 		<image class="icon_image" src="../../static/cancel.png" @tap="cancel" v-if="results.length > 0"></image>
 	</view>
 
@@ -138,13 +138,13 @@
 
 <style lang="less" scoped>
 	.search_tab {
-		display: flex;
-		align-items: center;
-		padding: 0 20rpx;
-		border-radius: 12rpx;
-		background: #fff;
-		height: 72rpx;
-		width: 95%;
+		  display: flex;
+		  align-items: center;
+		  padding: 0 20rpx; /* 统一内边距 */
+		  border-radius: 12rpx;
+		  background: #fff;
+		  height: 72rpx; /* 统一高度 */
+		  width: 95%;
 
 		.icon_image {
 			width: 36rpx;
@@ -161,10 +161,10 @@
 		}
 
 		.common_search_input {
-			flex: 1;
-			height: 100%;
-			padding: 0;
-			font-size: inherit;
+		    flex: 1;
+		    height: 100%;
+		    padding: 0; /* 统一内边距 */
+		    font-size: 23rpx; /* 统一字体大小 */
 		}
 	}
 
@@ -176,6 +176,7 @@
 		max-height: 60vh;
 		position: absolute;
 		z-index: 1001;
+		top: 80rpx;
 
 		.result_item {
 			display: flex;
@@ -223,7 +224,7 @@
 		right: 0;
 		bottom: 0;
 		background: rgba(0, 0, 0, 0);
-		z-index: 1000;
+		z-index: 20;
 		/* 确保在搜索结果下方 */
 	}
 </style>

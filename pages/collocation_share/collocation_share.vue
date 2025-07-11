@@ -37,15 +37,16 @@
 						icon-color="#999" />
 				</view>
 			</view>
-			
+
 			<text class="content">{{ detailData.content }}</text>
-			
+
 		</view>
 
 		<!-- 关联商品列表 -->
 		<view class="goods-list">
 			<!-- <text class="about">相关商品</text> -->
-			<view v-for="item in detailData.collocation_relation_list" :key="item.id" class="goods-item" @click="navigateToRelated(item)">
+			<view v-for="item in detailData.collocation_relation_list" :key="item.id" class="goods-item"
+				@click="navigateToRelated(item)">
 				<!-- 商品图片 -->
 				<view class="image-container">
 					<template v-if="item.relation_goods_id === 0">
@@ -288,28 +289,28 @@
 		}
 	}
 
-// 商品点击跳转方法
-const navigateToRelated = (item) => {
-  // 如果有有效的商品ID，跳转到商品页面
-  if (item.relation_goods_id > 0) {
-    uni.navigateTo({
-      url: `/pages/goods/goods?goods_id=${item.relation_goods_id}`
-    })
-  } 
-  // 如果有有效的品牌ID，跳转到品牌页面
-  else if (item.relation_brand_id > 0) {
-    uni.navigateTo({
-      url: `/pages/brand/brand?brand_id=${item.relation_brand_id}`
-    })
-  } 
-  // 都没有时提示
-  else {
-    uni.showToast({
-      title: '暂无商品和品牌信息',
-      icon: 'none'
-    })
-  }
-}
+	// 商品点击跳转方法
+	const navigateToRelated = (item) => {
+		// 如果有有效的商品ID，跳转到商品页面
+		if (item.relation_goods_id > 0) {
+			uni.navigateTo({
+				url: `/pages/goods/goods?goods_id=${item.relation_goods_id}`
+			})
+		}
+		// 如果有有效的品牌ID，跳转到品牌页面
+		else if (item.relation_brand_id > 0) {
+			uni.navigateTo({
+				url: `/pages/brand/brand?brand_id=${item.relation_brand_id}`
+			})
+		}
+		// 都没有时提示
+		else {
+			uni.showToast({
+				title: '暂无商品和品牌信息',
+				icon: 'none'
+			})
+		}
+	}
 	// 新增获取用户信息方法
 	const getAuthorInfo = async (uid) => {
 		try {
@@ -493,72 +494,162 @@ const navigateToRelated = (item) => {
 			wxpath: '/pages/index/index.html'
 		}
 	})
-	const handleCommentSubmit = ({
-		content,
-		replyInfo,
-		origin
-	}) => {
-		let token = uni.getStorageSync('token');
-		if (!global.isLogin) {
-			uni.showToast({
-				title: '请先登录',
-				icon: 'none'
-			})
-			return
-		}
-		console.log("reply_info", replyInfo)
-
-		const requestData = {
-			content,
-			origin,
-			target_id: parseInt(pageId.value),
-			type: props.origin == 1 ? 3 : 6,
-			...(replyInfo.id && {
-				reply_id: replyInfo.id,
-				reply_for: replyInfo.comment,
-				reply_user_id: replyInfo.user_id,
-				parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id,
-			})
-		}
-
-		uni.request({
-			url: websiteUrl + '/with-state/add-comment',
-			method: 'POST',
-			header: {
-				'Authorization': token
-			},
-			data: requestData,
-			success: (res) => {
-				if (res.data.status == "success") {
-					const newComment = res.data.data
-					if (newComment.parent_id === 0) {
-						// 主评论
-						commentListRef.value?.addNewComment(newComment)
-					} else {
-						// 子评论
-						commentListRef.value?.addReplyComment(newComment)
-					}
-
-					uni.showToast({
-						title: '评论成功',
-						icon: 'success'
-					})
-
-				} else {
-					uni.showToast({
-						title: res.data.msg,
-						icon: 'none'
-					})
-				}
-			},
-			fail: (err) => {
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			}
-		});
-	}
+	
+	
+	
+	  // 评论提交处理
+	  const handleCommentSubmit = (submitData) => {
+	    let token = uni.getStorageSync('token');
+	    if (!global.isLogin) {
+	      uni.showToast({
+	        title: '请先登录',
+	        icon: 'none'
+	      })
+	      return
+	    }
+	    
+	    // 确定评论类型
+	    const commentType = origin.value == 1 ? 3 : 6;
+	    
+	    const requestData = {
+	      content: submitData.content,
+	      origin: submitData.origin,
+	      target_id: parseInt(pageId.value),
+	      type: commentType,
+	      image_url: submitData.image_url || "",
+	      association_id: submitData.association_id || 0,
+	      association_type: submitData.association_type || 0,
+	      is_anonymous: submitData.is_anonymous || 0,
+	      ...(replyForItem.value.id && {
+	        reply_id: replyForItem.value.id,
+	        reply_for: replyForItem.value.comment,
+	        reply_uid: replyForItem.value.user_id,
+	        parent_id: replyForItem.value.parent_id > 0 ? 
+	          replyForItem.value.parent_id : replyForItem.value.id,
+	      })
+	    }
+	    
+	    // 创建临时评论对象
+	    const tempComment = {
+	      id: Date.now(), // 临时ID
+	      content: submitData.content,
+	      created_at: Math.floor(Date.now() / 1000),
+	      like_count: 0,
+	      reply_count: 0,
+	      is_liked: false,
+	      floor: 0, // 临时楼层数
+	      
+	      // 匿名处理
+	      ...(submitData.is_anonymous ? {
+	        avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+	        username: "匿名用户",
+	        is_anonymous: 1
+	      } : {
+	        avatar: global.userInfo.avatar,
+	        username: global.userInfo.nickname,
+	        is_anonymous: 0
+	      }),
+	      
+	      // 关联信息
+	      ...(submitData.association_id && {
+	        association_id: submitData.association_id,
+	        association_type: submitData.association_type
+	      }),
+	      
+	      // 图片信息
+	      ...(submitData.image_url && {
+	        image_url: submitData.image_url
+	      }),
+	      
+	      // 回复信息
+	      ...(replyForItem.value.id && {
+	        reply_id: replyForItem.value.id,
+	        reply_for: replyForItem.value.comment,
+	        reply_uid: replyForItem.value.user_id,
+	        parent_id: replyForItem.value.parent_id > 0 ? 
+	          replyForItem.value.parent_id : replyForItem.value.id,
+	        // 处理被回复者的匿名状态
+	        reply_username: replyForItem.value.is_anonymous ? 
+	          "匿名用户" : replyForItem.value.username
+	      })
+	    }
+	    
+	    // 添加临时评论
+	    if (!replyForItem.value.id) {
+	      // 主评论
+	      commentListRef.value?.addNewComment(tempComment)
+	    } else if (replyForItem.value.parent_id === 0) {
+	      // 回复主评论
+	      commentListRef.value?.addReplyComment({
+	        ...tempComment,
+	        parent_id: replyForItem.value.id
+	      })
+	    } else {
+	      // 回复楼中楼评论
+	      commentListRef.value?.addReplyComment({
+	        ...tempComment,
+	        parent_id: replyForItem.value.parent_id
+	      })
+	    }
+	  
+	    uni.request({
+	      url: websiteUrl + '/with-state/add-comment',
+	      method: 'POST',
+	      header: {
+	        'Authorization': token
+	      },
+	      data: requestData,
+	      success: (res) => {
+	        if (res.data.status == "success") {
+	          const newComment = res.data.data
+	          
+	          // 处理匿名状态
+	          const finalComment = {
+	            ...newComment,
+	            ...(submitData.is_anonymous ? {
+	              avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+	              username: "匿名用户",
+	              is_anonymous: 1
+	            } : {
+	              avatar: global.userInfo.avatar,
+	              username: global.userInfo.nickname,
+	              is_anonymous: 0
+	            })
+	          }
+	          
+	          // 处理被回复者的匿名状态
+	          if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+	            finalComment.reply_username = "匿名用户"
+	          }
+	  
+	          // 更新临时评论为真实评论
+	          commentListRef.value?.updateTempComment(tempComment.id, finalComment)
+	  
+	          uni.showToast({
+	            title: '评论成功',
+	            icon: 'success'
+	          })
+	  
+	        } else {
+	          // 请求失败，移除临时评论
+	          commentListRef.value?.removeTempComment(tempComment.id)
+	          uni.showToast({
+	            title: res.data.msg,
+	            icon: 'none'
+	          })
+	        }
+	      },
+	      fail: (err) => {
+	        // 请求失败，移除临时评论
+	        commentListRef.value?.removeTempComment(tempComment.id)
+	        uni.showToast({
+	          title: '网络请求失败',
+	          icon: 'none'
+	        })
+	      }
+	    });
+	  }
+	
 
 	//格式化时间戳
 	function formatTimestamp(timestamp) {
@@ -665,7 +756,7 @@ const navigateToRelated = (item) => {
 		}
 	}
 
-	
+
 	/* 页面主体 */
 
 	.content-box {
@@ -678,6 +769,7 @@ const navigateToRelated = (item) => {
 		margin-bottom: 20rpx;
 		padding: 30rpx 30rpx 0rpx 30rpx;
 	}
+
 	.report-container {
 		margin: 15rpx 0 0 0;
 		display: inline-block;

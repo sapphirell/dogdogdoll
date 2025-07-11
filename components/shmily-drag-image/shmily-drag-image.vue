@@ -5,7 +5,7 @@
 				@mouseleave="mouseleave">
 				<movable-view v-for="(item, index) in imageList" :key="item.id" class="view" direction="all" :y="item.y"
 					:x="item.x" :damping="40" :disabled="item.disable || !item.ready" @change="onChange($event, item)"
-					@touchstart="onLongPressStart(item, $event)" @touchend="touchend(item)" @tap="go2editor(item.id)"
+					@touchstart="onLongPressStart(item, $event)" @touchend="touchend(item)" @tap="go2preview(item.id)"
 					@touchmove="onTouchMove($event, item)" :style="{
 						width: viewWidth + 'px', 
 						height: viewHeight + 'px', 
@@ -105,7 +105,7 @@
 	})
 
 	// 定义 emits
-	const emit = defineEmits(['input', 'update:modelValue'])
+	const emit = defineEmits(['input', 'update:modelValue', 'sort-change']);
 
 	// 响应式变量
 	const imageList = ref([])
@@ -192,6 +192,10 @@
 						}, 0)
 					}
 				})
+
+				// 移动数组元素到新位置
+				moveItem(item, index);
+
 				item.index = index
 				item.absX = x
 				item.absY = y
@@ -206,6 +210,22 @@
 				sortList()
 			}
 		}
+	}
+
+	// 移动数组元素到新位置
+	const moveItem = (item, newIndex) => {
+		const oldIndex = imageList.value.findIndex(i => i.id === item.id);
+		if (oldIndex === -1 || oldIndex === newIndex) return;
+
+		// 移动元素到新位置
+		imageList.value.splice(newIndex, 0, imageList.value.splice(oldIndex, 1)[0]);
+
+		// 更新所有元素的 index
+		imageList.value.forEach((item, idx) => {
+			item.index = idx;
+		});
+
+		sortList();
 	}
 
 	const changeObj = (obj, i) => {
@@ -286,6 +306,16 @@
 			item.ready = false
 			item.disable = true
 		})
+		if (isDragging.value == true) {
+			console.log("来自于拖拽的结束,上报排序事件")
+
+			// 直接使用当前顺序的ID
+			const sortedIds = imageList.value.map(item => item.id);
+
+			emit('sort-change', sortedIds);
+			// console.log("排序后的ID", sortedIds)
+
+		}
 
 		isDragging.value = false
 		// 清除之前的计时器
@@ -433,6 +463,12 @@
 		})
 	}
 
+	function go2preview(id) {
+		uni.navigateTo({
+			url: '/pages/account_book_preview/account_book_preview?account_book_id=' + id
+		})
+	}
+
 	// 长按取消
 	const onLongPressCancel = () => {
 		if (longPressTimer.value) {
@@ -505,7 +541,7 @@
 			zIndex: 9,
 			opacity: 1,
 			index: imageList.value.length,
-			id: guid(16),
+			id: item.id,
 			disable: false,
 			offset: 0,
 			moveEnd: false

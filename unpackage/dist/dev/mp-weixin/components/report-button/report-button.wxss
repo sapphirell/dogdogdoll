@@ -25,6 +25,7 @@
   margin-left: 8rpx;
   /* 图标和文字间距 */
   font-weight: 500;
+  width: 50rpx;
 }
 .report-button.data-v-b620d6d3::after {
   border: none;

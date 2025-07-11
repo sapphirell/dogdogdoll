@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "",
-  "usingComponents": {}
+  "usingComponents": {
+    "view-logs": "../../../components/view-logs/view-logs"
+  }
 }

@@ -44,7 +44,6 @@ const _sfc_main = {
     const loading = common_vendor.ref(true);
     const error = common_vendor.ref(false);
     const errorMsg = common_vendor.ref("");
-    const props = __props;
     const pageId = common_vendor.ref(0);
     const origin = common_vendor.ref(0);
     let hasLike = common_vendor.ref(false);
@@ -78,7 +77,7 @@ const _sfc_main = {
             }
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:213", err);
+            common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:214", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -89,7 +88,7 @@ const _sfc_main = {
       });
     };
     function viewFullImage(index) {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:226", detailData);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:227", detailData);
       common_vendor.index.previewImage({
         current: detailData.value.image_url_list[index],
         urls: detailData.value.image_url_list
@@ -119,7 +118,7 @@ const _sfc_main = {
                   imageError: !goodsInfo
                 };
               } catch (error2) {
-                common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:265", "商品信息获取失败:", error2);
+                common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:266", "商品信息获取失败:", error2);
                 return {
                   ...item,
                   goodsInfo: null,
@@ -165,10 +164,10 @@ const _sfc_main = {
         if (res.data.status === "success") {
           authorInfo.value = res.data.data;
         } else {
-          common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:324", "获取用户信息失败:", res.data.msg);
+          common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:325", "获取用户信息失败:", res.data.msg);
         }
       } catch (error2) {
-        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:327", "用户信息请求失败:", error2);
+        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:328", "用户信息请求失败:", error2);
         common_vendor.index.showToast({
           title: "作者信息加载失败",
           icon: "none"
@@ -206,7 +205,7 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:382", res.data);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:383", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "操作成功",
@@ -225,7 +224,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:401", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:402", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -261,7 +260,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:441", err);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:442", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -282,8 +281,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:465", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:466", "target", target);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:466", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:467", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -292,15 +291,12 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:477", "item", item);
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:478", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
-    const handleCommentSubmit = ({
-      content,
-      replyInfo,
-      origin: origin2
-    }) => {
+    const handleCommentSubmit = (submitData) => {
+      var _a, _b, _c;
       let token = common_vendor.index.getStorageSync("token");
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
@@ -309,19 +305,75 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:509", "reply_info", replyInfo);
+      const commentType = origin.value == 1 ? 3 : 6;
       const requestData = {
-        content,
-        origin: origin2,
+        content: submitData.content,
+        origin: submitData.origin,
         target_id: parseInt(pageId.value),
-        type: props.origin == 1 ? 3 : 6,
-        ...replyInfo.id && {
-          reply_id: replyInfo.id,
-          reply_for: replyInfo.comment,
-          reply_user_id: replyInfo.user_id,
-          parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+        type: commentType,
+        image_url: submitData.image_url || "",
+        association_id: submitData.association_id || 0,
+        association_type: submitData.association_type || 0,
+        is_anonymous: submitData.is_anonymous || 0,
+        ...replyForItem.value.id && {
+          reply_id: replyForItem.value.id,
+          reply_for: replyForItem.value.comment,
+          reply_uid: replyForItem.value.user_id,
+          parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
         }
       };
+      const tempComment = {
+        id: Date.now(),
+        // 临时ID
+        content: submitData.content,
+        created_at: Math.floor(Date.now() / 1e3),
+        like_count: 0,
+        reply_count: 0,
+        is_liked: false,
+        floor: 0,
+        // 临时楼层数
+        // 匿名处理
+        ...submitData.is_anonymous ? {
+          avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+          username: "匿名用户",
+          is_anonymous: 1
+        } : {
+          avatar: common_config.global.userInfo.avatar,
+          username: common_config.global.userInfo.nickname,
+          is_anonymous: 0
+        },
+        // 关联信息
+        ...submitData.association_id && {
+          association_id: submitData.association_id,
+          association_type: submitData.association_type
+        },
+        // 图片信息
+        ...submitData.image_url && {
+          image_url: submitData.image_url
+        },
+        // 回复信息
+        ...replyForItem.value.id && {
+          reply_id: replyForItem.value.id,
+          reply_for: replyForItem.value.comment,
+          reply_uid: replyForItem.value.user_id,
+          parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+          // 处理被回复者的匿名状态
+          reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+        }
+      };
+      if (!replyForItem.value.id) {
+        (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+      } else if (replyForItem.value.parent_id === 0) {
+        (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+          ...tempComment,
+          parent_id: replyForItem.value.id
+        });
+      } else {
+        (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+          ...tempComment,
+          parent_id: replyForItem.value.parent_id
+        });
+      }
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -330,19 +382,31 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          var _a, _b;
+          var _a2, _b2;
           if (res.data.status == "success") {
             const newComment = res.data.data;
-            if (newComment.parent_id === 0) {
-              (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-            } else {
-              (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+            const finalComment = {
+              ...newComment,
+              ...submitData.is_anonymous ? {
+                avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                username: "匿名用户",
+                is_anonymous: 1
+              } : {
+                avatar: common_config.global.userInfo.avatar,
+                username: common_config.global.userInfo.nickname,
+                is_anonymous: 0
+              }
+            };
+            if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+              finalComment.reply_username = "匿名用户";
             }
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
             common_vendor.index.showToast({
               title: "评论成功",
               icon: "success"
             });
           } else {
+            (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
             common_vendor.index.showToast({
               title: res.data.msg,
               icon: "none"
@@ -350,6 +414,8 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
+          var _a2;
+          (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -368,7 +434,7 @@ const _sfc_main = {
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
     common_vendor.onShow(() => {
-      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:583", "注册键盘弹出事件");
+      common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:674", "注册键盘弹出事件");
       common_vendor.index.onKeyboardHeightChange(keyboardHeightChangeHandler);
     });
     common_vendor.onLoad((options) => {
@@ -387,11 +453,11 @@ const _sfc_main = {
         origin.value = options.origin;
         fetchData(options.collocation_id, options.origin);
         common_config.asyncGetUserInfo().then((userInfo) => {
-          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:606", userInfo);
+          common_vendor.index.__f__("log", "at pages/collocation_share/collocation_share.vue:697", userInfo);
           getHasLike(options.collocation_id);
         });
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:612", "onLoad Error:", err);
+        common_vendor.index.__f__("error", "at pages/collocation_share/collocation_share.vue:703", "onLoad Error:", err);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"

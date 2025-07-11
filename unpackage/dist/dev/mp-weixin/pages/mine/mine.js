@@ -374,7 +374,7 @@ const _sfc_main = {
         k: common_assets._imports_1$3,
         l: common_vendor.t(common_vendor.unref(unreadCount)),
         m: common_vendor.o(jump2message),
-        n: common_assets._imports_2$1,
+        n: common_assets._imports_2$2,
         o: common_vendor.t(common_vendor.unref(myCollocationCount)),
         p: common_vendor.o(jump2collocation),
         q: common_vendor.p({
@@ -411,10 +411,10 @@ const _sfc_main = {
         }),
         z: common_vendor.o(logout)
       } : common_vendor.e({
-        A: common_assets._imports_3$1,
+        A: common_assets._imports_3$2,
         B: common_vendor.unref(inputPhone),
         C: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
-        D: common_assets._imports_4,
+        D: common_assets._imports_4$1,
         E: common_vendor.unref(inputPassword),
         F: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
         G: common_vendor.o(jump2register),

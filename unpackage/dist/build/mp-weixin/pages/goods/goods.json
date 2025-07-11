@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "商品页面",
   "usingComponents": {
+    "view-logs": "../../components/view-logs/view-logs",
     "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
     "item-impression": "../../components/item-impression/item-impression",
     "comment-list": "../../components/comment-list/comment-list",

@@ -5,13 +5,66 @@
 
 	<!-- 评论框 -->
 	<view class="bottom_tab" :adjust-position="false" :style="{ paddingBottom: footerBottomHeight }">
-		<!-- 输入框 -->
-		<textarea  :disable-default-padding=true :focus="isFocused" class="comment_input unified-textarea" :class="{ expanded: isFocused }" ref="inputRef"
-			v-model="commentText" @focus="handleFocus" @blur="handleBlur" :adjust-position="false"
-			:placeholder="replyInfo.username ? '回复@' + replyInfo.username + ' ' : '写评论...'"></textarea>
+		<view class="about_info">
+			<view v-if="selectedAssociation" class="association-container">
+				<view class="association-item">
+					<uni-icons type="paperclip" size="20" color="#fff"></uni-icons>
+					<text class="association-text">{{ selectedAssociation.name }}</text>
+					<uni-icons type="close" size="20" color="#fff" @tap.stop="selectedAssociation = null"
+						class="close-icon"></uni-icons>
+				</view>
+			</view>
+			<view v-if="uploadedImageUrl" class="image-container">
+				<view class="image-item">
+					<image :src="uploadedImageUrl" mode="aspectFill" class="uploaded-image"></image>
+					<view class="delete-icon" @tap.stop="uploadedImageUrl = ''">
+						<uni-icons type="close" size="18" color="#fff"></uni-icons>
+					</view>
+				</view>
+			</view>
+		</view>
+		<view class="bottom_input">
+			<!-- 输入框 -->
+			<textarea :disable-default-padding="true" :focus="isFocused" class="comment_input unified-textarea"
+				:class="{ expanded: isFocused }" ref="inputRef" v-model="commentText" @focus="handleFocus"
+				@blur="handleBlur" :adjust-position="false"
+				:placeholder="replyInfo.username ? '回复@' + replyInfo.username + ' ' : '写评论...'"></textarea>
 
-		<!-- 按钮 -->
-		<button @click="handleSubmit">写评论</button>
+			<!-- 按钮 -->
+			<button @click="handleSubmit">写评论</button>
+		</view>
+
+
+		<view v-show="showActionBar" class="action-bar">
+			<view @tap.stop="toggleAnonymous">
+				<uni-icons v-if="isAnonymous" type="eye-slash" size="22"
+					:color="isAnonymous ? '#007aff' : ''"></uni-icons>
+				<uni-icons v-else type="eye" size="22" color="#696a6c"></uni-icons>
+			</view>
+			<view @tap.stop="showPopup = true">
+				<uni-icons type="plus" size="22" color="#696a6c"></uni-icons>
+			</view>
+			<view @tap.stop="selectImage">
+				<uni-icons type="image" size="22" color="#696a6c"></uni-icons>
+			</view>
+
+			<!-- 操作栏 ： 1是否匿名发帖，点击后变为高亮蓝色，且发帖传匿名参数 -->
+			<!-- 加号：内容选择区域出现多个按钮，1：关联 ,点击后从底部弹窗，-->
+			<!-- 键盘按钮，点击关闭下方菜单，并聚焦输入框 -->
+		</view>
+
+
+		<view>
+			<!-- 内容选择区域，在输入框下方，会把输入框顶起来 -->
+		</view>
+
+		<!-- 底部弹窗组件 -->
+		<bottom-popup :show="showPopup" @close="showPopup = false">
+			<!-- 关联商品或是品牌，点击后获取商品id和名称，关闭弹窗组件，并在输入框下方显示刚刚选择的品牌或商品，提交的时候需要携带这些信息 -->
+			<switch-search :target-id="props.targetId" :reply-info="props.replyInfo" mode="fill"
+				@submit="handleSearchSelect" v-if="showPopup"></switch-search>
+			<view style="height: 900rpx;"></view>
+		</bottom-popup>
 	</view>
 </template>
 
@@ -25,12 +78,24 @@
 	import {
 		onLoad,
 		onShow,
-		
+
 	} from "@dcloudio/uni-app";
 
 	import {
-		getScene
+		getScene,
+		websiteUrl,
+		image1Url,
 	} from "@/common/config.js"
+
+	import {
+		chooseImage,
+		jumpToCroper,
+		getQiniuToken,
+		uploadImageToQiniu
+	} from "@/common/image.js";
+
+
+	const showPopup = ref(false)
 	const props = defineProps({
 		replyInfo: {
 			type: Object,
@@ -54,6 +119,18 @@
 	const instance = getCurrentInstance()
 	const commentText = ref('')
 	const displayMask = ref(false)
+	const clickedInside = ref(false)
+	// 显示操作栏
+	const showActionBar = ref(false)
+	// 是否隐身回复
+	const isAnonymous = ref(false)
+	// 选择的品牌或商品信息
+	const selectedAssociation = ref(null)
+	// 上传的图片地址
+	const uploadedImageUrl = ref("")
+
+
+
 	const keyboardHeight = ref(0)
 	const systemInfo = uni.getSystemInfoSync()
 	const footerBottomHeight = computed(() => {
@@ -70,42 +147,150 @@
 		keyboardHeight.value = res.height
 	}
 
+	const toggleAnonymous = (event) => {
+		console.log("切换匿名状态", isAnonymous.value)
+
+		// event.stopPropagation()
+		isAnonymous.value = !isAnonymous.value
+		if (isAnonymous.value) {
+			uni.showToast({
+				title: "进入匿名状态",
+				icon: 'none'
+			})
+		} else {
+			uni.showToast({
+				title: "退出匿名状态",
+				icon: 'none'
+			})
+		}
+
+	}
+
 	const handleFocus = () => {
 		displayMask.value = true
 		isFocused.value = true
+		// 输入框聚焦时显示操作栏
+		showActionBar.value = true
 	}
 
 	const handleBlur = () => {
-		displayMask.value = false
-		isFocused.value = false
+		setTimeout(() => {
+			if (!clickedInside.value) {
+				// 在操作栏打开的时候不关闭蒙版
+				if (!showActionBar.value) {
+					displayMask.value = false
+				}
+				isFocused.value = false
+			}
+			clickedInside.value = false
+		}, 200)
+	}
+
+	// 选择图片
+	async function selectImage() {
+		uni.chooseImage({
+			count: 1,
+			success: async (res) => {
+				const tempFilePaths = res.tempFilePaths;
+
+				// 依次上传所有图片（每张图片使用独立的 token）
+				for (const filePath of tempFilePaths) {
+					try {
+						// 为每张图片获取独立的 token
+						const tokenData = await getQiniuToken();
+						const uploadRes = await uploadImageToQiniu(filePath, tokenData.token, tokenData
+							.path);
+						console.log("res:", uploadRes)
+						if (uploadRes.qiniuRes.statusCode === 200) {
+							const imageUrl = image1Url + tokenData.path;
+							uploadedImageUrl.value = imageUrl;
+						} else {
+							console.error('上传失败:', filePath);
+						}
+					} catch (error) {
+						console.error('上传错误:', error);
+					}
+				}
+
+
+			}
+		});
 	}
 
 	const handleMaskTap = () => {
+		console.log("蒙版被点击")
 		displayMask.value = false
 		isFocused.value = false
+		showActionBar.value = false
 		uni.hideKeyboard()
 	}
 
+	const handleActionBarClick = () => {
+		clickedInside.value = true
+	}
+
+	function handleSearchSelect(event) {
+		let edata = {}
+		if (event.type === 'goods') {
+			console.log('选择了商品:', event.data);
+			// 添加：关闭弹窗
+			showPopup.value = false;
+			edata.type = 1
+			edata.id = event.data.id
+			edata.name = event.data.name
+
+		} else if (event.type === 'brand') {
+			console.log('选择了品牌:', event.data);
+			// 添加：关闭弹窗
+			showPopup.value = false;
+			edata.type = 2
+			edata.id = event.data.id
+			edata.name = event.data.name
+		}
+		selectedAssociation.value = edata
+	}
+
+	const openAssociationPopup = () => {
+		handleActionBarClick() // 标记为内部点击
+		// ...其他逻辑
+	}
 	const handleSubmit = () => {
-		if (!commentText.value.trim()) {
+		if (!commentText.value.trim() && !uploadedImageUrl.value) {
 			uni.showToast({
-				title: '请输入评论内容',
+				title: '请输入评论内容或上传图片',
 				icon: 'none'
 			})
 			return
 		}
+		
 		let scene = getScene()
 		console.log("scene", scene)
-		emit('submit', {
+		
+		// 构建提交数据
+		const submitData = {
 			content: commentText.value,
 			target_id: props.targetId,
 			type: 4,
 			replyInfo: props.replyInfo,
 			origin: scene,
-		})
+			// 添加图片和关联信息
+			image_url: uploadedImageUrl.value || "",
+			association_id: selectedAssociation.value ? selectedAssociation.value.id : 0,
+			association_type: selectedAssociation.value ? selectedAssociation.value.type : 0,
+			is_anonymous: isAnonymous.value ? 1 : 0  // 1表示匿名，0表示正常
+		}
+		
+		emit('submit', submitData)
 
+		// 重置表单
 		commentText.value = ''
+		uploadedImageUrl.value = ''
+		selectedAssociation.value = null
+		isAnonymous.value = false 
 		emit('update:replyInfo', {})
+		
+		// 关闭蒙版和键盘
+		handleMaskTap()
 	}
 
 
@@ -146,7 +331,7 @@
 
 	// 底部tab
 	.bottom_tab {
-		display: flex;
+
 		align-items: center;
 		/* 垂直居中 */
 		gap: 8px;
@@ -156,9 +341,16 @@
 		left: 0px;
 		position: fixed;
 		bottom: 0px;
-		z-index: 100;
+		z-index: 1001;
 		width: 100vw;
 		background: #fff;
+
+
+		.bottom_input {
+			display: flex;
+			/* 添加顶部对齐，防止按钮被拉伸 */
+			align-items: flex-start;
+		}
 
 		.replyInfo {
 			flex-shrink: 0;
@@ -214,5 +406,105 @@
 
 	uni-button:after {
 		border: none;
+	}
+
+	.action-bar {
+		display: flex;
+		gap: 16px;
+		margin: 30rpx 0 0 0;
+		justify-content: flex-start;
+	}
+
+	/* 关联信息容器 */
+	.about_info {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12rpx;
+		margin-bottom: 10rpx;
+		align-items: center;
+		/* 添加垂直居中 */
+	}
+
+	/* 关联项容器 */
+	.association-container {
+		background-color: #3f4449;
+		border-radius: 12rpx;
+		padding: 0 10rpx;
+		height: 60rpx;
+		/* 固定高度 */
+		display: flex;
+		align-items: center;
+		/* 垂直居中 */
+	}
+
+	/* 关联项样式 */
+	.association-item {
+		display: flex;
+		align-items: center;
+		padding: 8rpx 12rpx;
+		/* 移除 transform: translate(0, 20%) */
+	}
+
+	/* 关联文本样式 */
+	.association-text {
+		margin: 0 12rpx;
+		font-size: 26rpx;
+		color: #fff;
+		max-width: 400rpx;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* 关闭图标样式 */
+	.close-icon {
+		padding: 8rpx;
+		border-radius: 50%;
+	}
+
+	/* 图片容器 */
+	.image-container {
+		border-radius: 12rpx;
+		padding: 5rpx;
+		height: 80rpx;
+		/* 固定高度 */
+		display: flex;
+		align-items: center;
+		/* 垂直居中 */
+	}
+
+	/* 图片项样式 */
+	.image-item {
+		position: relative;
+		width: 90rpx;
+		height: 90rpx;
+	}
+
+	/* 上传的图片样式 */
+	.uploaded-image {
+		width: 80rpx;
+		height: 80rpx;
+		border: 2px solid #a5eeff;
+		border-radius: 10rpx;
+	}
+
+	/* 删除图标样式 */
+	.delete-icon {
+		position: absolute;
+		top: -10rpx;
+		right: -10rpx;
+		width: 36rpx;
+		height: 36rpx;
+		background-color: #ff5a5f;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/deep/ .search_results {
+		box-shadow: none;
+		background: #fff;
+		width: 600rpx;
 	}
 </style>

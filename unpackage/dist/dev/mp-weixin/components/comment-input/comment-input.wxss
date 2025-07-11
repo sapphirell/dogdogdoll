@@ -12,7 +12,6 @@
   height: 100vh;
 }
 .bottom_tab.data-v-88f35a0c {
-  display: flex;
   align-items: center;
   /* 垂直居中 */
   gap: 8px;
@@ -22,9 +21,14 @@
   left: 0px;
   position: fixed;
   bottom: 0px;
-  z-index: 100;
+  z-index: 1001;
   width: 100vw;
   background: #fff;
+}
+.bottom_tab .bottom_input.data-v-88f35a0c {
+  display: flex;
+  /* 添加顶部对齐，防止按钮被拉伸 */
+  align-items: flex-start;
 }
 .bottom_tab .replyInfo.data-v-88f35a0c {
   /* 禁止缩小 */
@@ -67,4 +71,93 @@
 }
 uni-button.data-v-88f35a0c:after {
   border: none;
+}
+.action-bar.data-v-88f35a0c {
+  display: flex;
+  gap: 16px;
+  margin: 30rpx 0 0 0;
+  justify-content: flex-start;
+}
+/* 关联信息容器 */
+.about_info.data-v-88f35a0c {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 10rpx;
+  align-items: center;
+  /* 添加垂直居中 */
+}
+/* 关联项容器 */
+.association-container.data-v-88f35a0c {
+  background-color: #3f4449;
+  border-radius: 12rpx;
+  padding: 0 10rpx;
+  height: 60rpx;
+  /* 固定高度 */
+  display: flex;
+  align-items: center;
+  /* 垂直居中 */
+}
+/* 关联项样式 */
+.association-item.data-v-88f35a0c {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 12rpx;
+  /* 移除 transform: translate(0, 20%) */
+}
+/* 关联文本样式 */
+.association-text.data-v-88f35a0c {
+  margin: 0 12rpx;
+  font-size: 26rpx;
+  color: #fff;
+  max-width: 400rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 关闭图标样式 */
+.close-icon.data-v-88f35a0c {
+  padding: 8rpx;
+  border-radius: 50%;
+}
+/* 图片容器 */
+.image-container.data-v-88f35a0c {
+  border-radius: 12rpx;
+  padding: 5rpx;
+  height: 80rpx;
+  /* 固定高度 */
+  display: flex;
+  align-items: center;
+  /* 垂直居中 */
+}
+/* 图片项样式 */
+.image-item.data-v-88f35a0c {
+  position: relative;
+  width: 90rpx;
+  height: 90rpx;
+}
+/* 上传的图片样式 */
+.uploaded-image.data-v-88f35a0c {
+  width: 80rpx;
+  height: 80rpx;
+  border: 2px solid #a5eeff;
+  border-radius: 10rpx;
+}
+/* 删除图标样式 */
+.delete-icon.data-v-88f35a0c {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 36rpx;
+  height: 36rpx;
+  background-color: #ff5a5f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.data-v-88f35a0c .search_results {
+  box-shadow: none;
+  background: #fff;
+  width: 600rpx;
 }

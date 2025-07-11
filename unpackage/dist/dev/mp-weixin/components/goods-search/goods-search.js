@@ -101,7 +101,7 @@ const _sfc_main = {
       } : {}, {
         e: inputValue.value,
         f: common_vendor.o(onSearchInput),
-        g: __props.fontSize || "22rpx",
+        g: __props.fontSize || "23rpx",
         h: results.value.length > 0
       }, results.value.length > 0 ? {
         i: common_assets._imports_1$5,

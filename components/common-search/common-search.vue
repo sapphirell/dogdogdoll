@@ -16,7 +16,7 @@
 		
 		<view style="position: relative;">
 			<!-- 显示搜索结果 -->
-			<scroll-view v-if="results.length > 0" class="search_results" :style="{width: width}" scroll-y>
+			<scroll-view v-if="results.length > 0" class="search_results" style="height: 600rpx;" :style="{width: width}" scroll-y >
 				<view v-for="item in results" :key="item.id" class="result_item" @tap="onTap(item.id, item.name)">
 					{{ item.name }}
 				</view>
@@ -124,77 +124,82 @@
 	}
 </script>
 
+<!-- common-search -->
 <style lang="less" scoped>
-	.search_tab {
-		box-sizing: border-box;
-		display: flex;
-		align-items: center;
-		background: #fff;
-		border-radius: 10px;
-		width: 100%;
-		position: relative;
+.search_tab {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  position: relative;
+  height: 72rpx; /* 统一高度 */
+  padding: 0 20rpx; /* 统一内边距 */
 
-		image {
-			position: relative;
-			margin-left: 5px;
-		}
+  .icon_image {
+    width: 36rpx; /* 统一图标大小 */
+    height: 36rpx; /* 统一图标大小 */
+    margin-right: 16rpx; /* 统一图标间距 */
+  }
 
-		.common_search_input {
-			display: inline-block;
-			// margin-left: 15px;
-			padding: 10px 15px;
-			width: calc(100% - 85px);
-			// text-align: center;
-			top: 2rpx;
-			position: relative;
-			font-size: 22rpx;
-		}
-	}
+  .common_search_input {
+    flex: 1;
+    height: 100%;
+    padding: 0; /* 统一内边距 */
+    font-size: 23rpx; /* 统一字体大小 */
+  }
+}
 
-	.search_results {
-		padding: 10px;
-		background-color: #f8f8f8;
-		border-radius: 5px;
-		position: absolute;
-		top: 0px;
-		z-index: 12;
-		box-shadow: 0 0 15px #0000002b;
-		max-height: 400rpx;
-		font-size: 22rpx;
+.search_results {
+  padding: 10px;
+  background-color: #f8f8f8;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 120;
+  box-shadow: 0 0 15px #0000002b;
+  max-height: 400rpx;
+  font-size: 22rpx;
 
-		.result_item {
-			font-size: 22rpx;
-			padding: 15px 0;
-			cursor: pointer;
-			color: #333;
-			border-bottom: 1px solid #ececec;
+  .result_item {
+    font-size: 22rpx;
+    padding: 15px 0;
+    cursor: pointer;
+    color: #333;
+    border-bottom: 1px solid #ececec;
 
-			&:last-child {
-				border-bottom: none;
-			}
+    &:last-child {
+      border-bottom: none;
+    }
 
-			&:hover {
-				color: #007aff;
-			}
-		}
-	}
+    &:hover {
+      color: #007aff;
+    }
+  }
+}
 
-	.search-info-tap {
-		position: absolute;
-		right: 10rpx;
-		vertical-align: middle;
-		bottom: 0px;
-		text {
-			color: #fff;
-			background: linear-gradient(135deg, #a494b2, #fad0c4);
-			font-size: 20rpx;
-			width: 260px;
-			padding: 3px 5px;
-			border-radius: 3px;
-			font-weight: 900;
-			position: relative;
-			bottom: 15rpx;
-		}
-	
-	}
+.search-info-tap {
+  display: flex;
+  align-items: center;
+  position: relative; /* 改为相对定位 */
+  margin-left: 10rpx; /* 添加左边距 */
+  
+  text {
+    color: #fff;
+    background: linear-gradient(135deg, #a494b2, #fad0c4);
+    font-size: 20rpx;
+    padding: 3px 5px;
+    border-radius: 3px;
+    font-weight: 900;
+    position: relative;
+    bottom: 0; /* 取消垂直偏移 */
+    margin-right: 8rpx; /* 添加右边距 */
+  }
+  
+  .icon_image {
+    width: 36rpx;
+    height: 36rpx;
+    margin-left: 0; /* 重置左边距 */
+  }
+}
 </style>

@@ -1,6 +1,6 @@
 <!-- components/common-modal.vue -->
 <template>
-	<view class="modal-mask" v-if="visible" @tap="closeModal">
+	<view class="modal-mask" v-if="visible" @tap.stop="closeModal" @touchmove.stop.prevent="moveHandle">
 		<uni-transition :mode-class="modeClass" :show="visible">
 			<view class="modal-container" :style="containerStyle" @tap.stop>
 				<view class="modal-content">
@@ -50,6 +50,10 @@
 		// width: formatValue(props.width),
 		height: formatValue(props.height)
 	}))
+	const moveHandle = () => {
+		return false;
+	};
+
 
 	// 值格式化方法
 	const formatValue = (val) => {

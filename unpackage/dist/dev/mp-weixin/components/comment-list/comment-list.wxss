@@ -20,7 +20,6 @@
   border-radius: 16rpx;
   margin-bottom: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 22rpx rgba(0, 0, 0, 0.05);
 }
 .main-comment,
 .sub-comment {
@@ -289,4 +288,71 @@ to {
 }
 .sub-comment .footer .like-btn {
   padding: 4rpx 12rpx;
+}
+/* 新增：评论图片样式 */
+.comment-images {
+  margin: 15rpx 0;
+}
+.comment-images .comment-image {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 10rpx;
+}
+/* 新增：关联链接样式 */
+.association-card {
+  display: flex;
+  align-items: center;
+  padding: 16rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  margin: 16rpx 0;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  border: 1rpx solid #f0f0f0;
+}
+.association-card .association-image {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  background: #f8f8f8;
+}
+.association-card .association-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.association-card .association-info .association-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 6rpx;
+}
+.association-card .association-info .association-type {
+  font-size: 22rpx;
+  color: #999;
+  background: #f7f7f7;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  align-self: flex-start;
+}
+.association-card .association-arrow {
+  margin-left: 10rpx;
+  flex-shrink: 0;
+}
+/* 删除原有的关联链接样式 */
+.association-link {
+  display: none;
+}
+/* 调整原有样式，确保新卡片布局协调 */
+.comment-card {
+  padding-bottom: 10rpx;
+  /* 减少底部内边距 */
+}
+.footer {
+  margin-top: 10rpx;
+  /* 减少顶部间距 */
 }

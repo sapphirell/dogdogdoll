@@ -35,32 +35,17 @@ const _sfc_main = {
     const commentInputRef = common_vendor.ref(null);
     common_vendor.ref(1);
     let replyForItem = common_vendor.ref({});
+    common_vendor.ref({});
     const hasLiked = common_vendor.ref(false);
     const props = __props;
-    const handleReplyComment = ({
-      parent,
-      target
-    }) => {
+    const handleReplyComment = ({ parent, target }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:124", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:125", "target", target);
-      let item = parent;
-      if (target != null) {
-        item = target;
-      }
-      if (replyForItem.value.id == item.id) {
-        replyForItem.value = {};
-        return;
-      }
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:136", "item", item);
+      const item = target || parent;
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
-    const handleCommentSubmit = ({
-      content,
-      replyInfo,
-      origin
-    }) => {
+    const handleCommentSubmit = (submitData) => {
+      var _a, _b, _c;
       let token = common_vendor.index.getStorageSync("token");
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
@@ -69,19 +54,76 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:154", "reply_info", replyInfo);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:136", "reply_info", replyForItem.value);
       const requestData = {
-        content,
-        origin,
+        content: submitData.content,
+        origin: submitData.origin,
         target_id: parseInt(pageId.value),
         type: 5,
-        ...replyInfo.id && {
-          reply_id: replyInfo.id,
-          reply_for: replyInfo.comment,
-          reply_user_id: replyInfo.user_id,
-          parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+        // 树洞类型
+        image_url: submitData.image_url || "",
+        association_id: submitData.association_id || 0,
+        association_type: submitData.association_type || 0,
+        is_anonymous: submitData.is_anonymous || 0,
+        ...replyForItem.value.id && {
+          reply_id: replyForItem.value.id,
+          reply_for: replyForItem.value.comment,
+          reply_uid: replyForItem.value.user_id,
+          parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
         }
       };
+      const tempComment = {
+        id: Date.now(),
+        // 临时ID
+        content: submitData.content,
+        created_at: Math.floor(Date.now() / 1e3),
+        like_count: 0,
+        reply_count: 0,
+        is_liked: false,
+        floor: 0,
+        // 临时楼层数，后续用真实数据更新
+        // 如果是匿名评论，使用匿名信息
+        ...submitData.is_anonymous ? {
+          avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+          username: "匿名用户",
+          is_anonymous: 1
+        } : {
+          avatar: common_config.global.userInfo.avatar,
+          username: common_config.global.userInfo.nickname,
+          is_anonymous: 0
+        },
+        // 关联信息
+        ...submitData.association_id && {
+          association_id: submitData.association_id,
+          association_type: submitData.association_type
+        },
+        // 图片信息
+        ...submitData.image_url && {
+          image_url: submitData.image_url
+        },
+        // 回复信息
+        ...replyForItem.value.id && {
+          reply_id: replyForItem.value.id,
+          reply_for: replyForItem.value.comment,
+          reply_uid: replyForItem.value.user_id,
+          parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+          // 处理被回复者的匿名状态
+          reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+        }
+      };
+      if (!replyForItem.value.id) {
+        (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+      } else if (replyForItem.value.parent_id === 0) {
+        (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+          ...tempComment,
+          parent_id: replyForItem.value.id
+        });
+      } else {
+        (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+          ...tempComment,
+          parent_id: replyForItem.value.parent_id
+        });
+      }
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-comment",
         method: "POST",
@@ -90,21 +132,32 @@ const _sfc_main = {
         },
         data: requestData,
         success: (res) => {
-          var _a, _b;
+          var _a2, _b2;
           if (res.data.status == "success") {
             const newComment = res.data.data;
-            if (newComment.parent_id === 0) {
-              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:179", "添加主评论");
-              (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-            } else {
-              common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:183", "添加子评论");
-              (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+            const finalComment = {
+              ...newComment,
+              // 如果是匿名评论，保持匿名信息
+              ...submitData.is_anonymous ? {
+                avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                username: "匿名用户",
+                is_anonymous: 1
+              } : {
+                avatar: common_config.global.userInfo.avatar,
+                username: common_config.global.userInfo.nickname,
+                is_anonymous: 0
+              }
+            };
+            if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+              finalComment.reply_username = "匿名用户";
             }
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
             common_vendor.index.showToast({
               title: "评论成功",
               icon: "success"
             });
           } else {
+            (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
             common_vendor.index.showToast({
               title: res.data.msg,
               icon: "none"
@@ -112,6 +165,8 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
+          var _a2;
+          (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -178,7 +233,7 @@ const _sfc_main = {
           "Authorization": token
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:277", res.data);
+          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:343", res.data);
           if (res.data.status == "success") {
             if (res.data.data.id > 0) {
               hasLiked.value = true;
@@ -194,7 +249,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:295", err);
+          common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:361", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -237,7 +292,7 @@ const _sfc_main = {
     };
     common_vendor.onMounted(async () => {
       pageId.value = props.id;
-      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:361", "pageId", pageId.value);
+      common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:427", "pageId", pageId.value);
       try {
         const res = await common_vendor.index.request({
           url: `${common_config.websiteUrl}/treehole-detail?id=${props.id}`
@@ -246,7 +301,7 @@ const _sfc_main = {
           detailData.value = res.data.data;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:372", error);
+        common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:438", error);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"

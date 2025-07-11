@@ -37,6 +37,7 @@ if (!Math) {
   "./pages/private/private.js";
   "./pages/permission/permission.js";
   "./pages/drag-image-test/drag-image-test.js";
+  "./pages/account_book_preview/account_book_preview.js";
 }
 const _sfc_main = {
   __name: "App",

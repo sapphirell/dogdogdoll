@@ -35,7 +35,7 @@ const _sfc_main = {
     const typeModalVisible = common_vendor.ref(false);
     const newTypeName = common_vendor.ref("");
     const customTypes = common_vendor.ref([]);
-    const defaultTypes = ["请选择", "娃衣", "娃头", "眼珠", "假发", "娃鞋", "其它"];
+    const defaultTypes = [];
     const typeOptions = common_vendor.computed(() => [
       ...defaultTypes,
       ...customTypes.value.map((t) => t.name)
@@ -638,8 +638,7 @@ const _sfc_main = {
         f: common_vendor.o((val) => typeModalVisible.value = val),
         g: common_vendor.p({
           visible: typeModalVisible.value,
-          top: "100rpx",
-          height: "60%"
+          top: "100rpx"
         }),
         h: common_vendor.t(typeOptions.value[selectedType.value] || "请选择分类"),
         i: selectedType.value,

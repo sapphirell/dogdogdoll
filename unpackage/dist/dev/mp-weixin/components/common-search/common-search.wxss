@@ -6,26 +6,33 @@
   border-radius: 10px;
   width: 100%;
   position: relative;
+  height: 72rpx;
+  /* 统一高度 */
+  padding: 0 20rpx;
+  /* 统一内边距 */
 }
-.search_tab image.data-v-e5a069da {
-  position: relative;
-  margin-left: 5px;
+.search_tab .icon_image.data-v-e5a069da {
+  width: 36rpx;
+  /* 统一图标大小 */
+  height: 36rpx;
+  /* 统一图标大小 */
+  margin-right: 16rpx;
+  /* 统一图标间距 */
 }
 .search_tab .common_search_input.data-v-e5a069da {
-  display: inline-block;
-  padding: 10px 15px;
-  width: calc(100% - 85px);
-  top: 2rpx;
-  position: relative;
-  font-size: 22rpx;
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  /* 统一内边距 */
+  font-size: 23rpx;
+  /* 统一字体大小 */
 }
 .search_results.data-v-e5a069da {
   padding: 10px;
   background-color: #f8f8f8;
   border-radius: 5px;
   position: absolute;
-  top: 0px;
-  z-index: 12;
+  z-index: 120;
   box-shadow: 0 0 15px #0000002b;
   max-height: 400rpx;
   font-size: 22rpx;
@@ -44,19 +51,29 @@
   color: #007aff;
 }
 .search-info-tap.data-v-e5a069da {
-  position: absolute;
-  right: 10rpx;
-  vertical-align: middle;
-  bottom: 0px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  /* 改为相对定位 */
+  margin-left: 10rpx;
+  /* 添加左边距 */
 }
 .search-info-tap text.data-v-e5a069da {
   color: #fff;
   background: linear-gradient(135deg, #a494b2, #fad0c4);
   font-size: 20rpx;
-  width: 260px;
   padding: 3px 5px;
   border-radius: 3px;
   font-weight: 900;
   position: relative;
-  bottom: 15rpx;
+  bottom: 0;
+  /* 取消垂直偏移 */
+  margin-right: 8rpx;
+  /* 添加右边距 */
+}
+.search-info-tap .icon_image.data-v-e5a069da {
+  width: 36rpx;
+  height: 36rpx;
+  margin-left: 0;
+  /* 重置左边距 */
 }

@@ -248,7 +248,7 @@ const _sfc_main = {
         f: common_vendor.o(($event) => title.value = $event.detail.value),
         g: content.value,
         h: common_vendor.o(($event) => content.value = $event.detail.value),
-        i: common_assets._imports_2$2,
+        i: common_assets._imports_2$3,
         j: common_vendor.o(showRelationPicker),
         k: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
           return common_vendor.e({

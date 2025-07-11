@@ -57,7 +57,7 @@ const _sfc_main = {
       // 图片区域占总高度的70%
     }
   },
-  emits: ["input", "update:modelValue"],
+  emits: ["input", "update:modelValue", "sort-change"],
   setup(__props, { emit: __emit }) {
     const props = __props;
     const emit = __emit;
@@ -138,6 +138,7 @@ const _sfc_main = {
               }, 0);
             }
           });
+          moveItem(item, index);
           item.index = index;
           item.absX = x;
           item.absY = y;
@@ -152,6 +153,16 @@ const _sfc_main = {
           sortList();
         }
       }
+    };
+    const moveItem = (item, newIndex) => {
+      const oldIndex = imageList.value.findIndex((i) => i.id === item.id);
+      if (oldIndex === -1 || oldIndex === newIndex)
+        return;
+      imageList.value.splice(newIndex, 0, imageList.value.splice(oldIndex, 1)[0]);
+      imageList.value.forEach((item2, idx) => {
+        item2.index = idx;
+      });
+      sortList();
     };
     const changeObj = (obj, i) => {
       obj.index += i;
@@ -177,12 +188,12 @@ const _sfc_main = {
         item2.ready = false;
         item2.disable = true;
       });
-      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:241", "长按开始");
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:261", "长按开始");
       longPressTimer.value = setTimeout(() => {
-        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:245", "长按成功！");
+        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:265", "长按成功！");
         common_vendor.index.vibrateShort({
           success: () => {
-            common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:248", "触感反馈");
+            common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:268", "触感反馈");
           }
         });
         item.ready = true;
@@ -192,7 +203,7 @@ const _sfc_main = {
       }, 240);
     };
     const touchstart = (item, e) => {
-      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:259", "进入touchstart");
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:279", "进入touchstart");
       imageList.value.forEach((v) => {
         v.zIndex = v.index + 9;
       });
@@ -213,11 +224,16 @@ const _sfc_main = {
       item.y = item.oldY;
       item.offset = 0;
       item.moveEnd = false;
-      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:284", "结束点击，清理ready");
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:304", "结束点击，清理ready");
       imageList.value.forEach((item2) => {
         item2.ready = false;
         item2.disable = true;
       });
+      if (isDragging.value == true) {
+        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:310", "来自于拖拽的结束,上报排序事件");
+        const sortedIds = imageList.value.map((item2) => item2.id);
+        emit("sort-change", sortedIds);
+      }
       isDragging.value = false;
       if (longPressTimer.value) {
         clearTimeout(longPressTimer.value);
@@ -257,9 +273,9 @@ const _sfc_main = {
         longPressTimer.value = null;
       }
     };
-    function go2editor(id) {
+    function go2preview(id) {
       common_vendor.index.navigateTo({
-        url: "/pages/stock/account_book_form/account_book_form?account_book_id=" + id
+        url: "/pages/account_book_preview/account_book_preview?account_book_id=" + id
       });
     }
     const sortList = () => {
@@ -301,7 +317,7 @@ const _sfc_main = {
         zIndex: 9,
         opacity: 1,
         index: imageList.value.length,
-        id: guid(16),
+        id: item.id,
         disable: false,
         offset: 0,
         moveEnd: false
@@ -312,15 +328,6 @@ const _sfc_main = {
     const rpx2px = (v) => {
       return width.value * v / 750;
     };
-    const guid = (len = 32) => {
-      const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");
-      const uuid = [];
-      const radix = chars.length;
-      for (let i = 0; i < len; i++)
-        uuid[i] = chars[0 | Math.random() * radix];
-      uuid.shift();
-      return `u${uuid.join("")}`;
-    };
     common_vendor.onMounted(() => {
       width.value = common_vendor.index.getSystemInfoSync().windowWidth;
       const instance = common_vendor.getCurrentInstance();
@@ -328,7 +335,7 @@ const _sfc_main = {
         const query = common_vendor.index.createSelectorQuery().in(instance.proxy);
         query.select(".con").boundingClientRect((data) => {
           if (!data) {
-            common_vendor.index.__f__("error", "at components/shmily-drag-image/shmily-drag-image.vue:543", "未找到 .con 元素");
+            common_vendor.index.__f__("error", "at components/shmily-drag-image/shmily-drag-image.vue:579", "未找到 .con 元素");
             return;
           }
           colsValue.value = props.cols;
@@ -394,7 +401,7 @@ const _sfc_main = {
             k: common_vendor.o(($event) => onChange($event, item), item.id),
             l: common_vendor.o(($event) => onLongPressStart(item, $event), item.id),
             m: common_vendor.o(($event) => touchend(item), item.id),
-            n: common_vendor.o(($event) => go2editor(item.id), item.id),
+            n: common_vendor.o(($event) => go2preview(item.id), item.id),
             o: common_vendor.o(($event) => onTouchMove($event), item.id),
             p: item.zIndex,
             q: item.opacity

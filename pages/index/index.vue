@@ -23,8 +23,8 @@
 							style="width: 400rpx;max-height: 180rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;">
 						</image>
 					</view>
-					<goods-search width="720rpx" :hiddenIcon="false"></goods-search>
-
+					<!-- <goods-search width="720rpx" :hiddenIcon="false"></goods-search> -->
+					<switch-search @select="handleSearchSelect"  mode="jump" width="95%" background="#f8f8f8" />
 				</view>
 				<view style="margin: 20rpx 0rpx 0rpx 0rpx; padding: 5px 10px 0px 10px;border-radius: 20px 20px 0 0;">
 					<!-- 四个小方块按钮 -->
@@ -162,13 +162,15 @@
 						<view v-for="item in hotList" :key="item.collocation_id" class="hot-item"
 							@tap="jumpToCollocationDetail(item)">
 							<view class="images-box">
+								
 								<swiper v-if="item.image_urls.length > 0" class="image-swiper" :autoplay="true"
 									:circular="true">
 									<swiper-item v-for="(img, idx) in item.image_urls" :key="idx">
-										<image :src="img" mode="aspectFill" class="swiper-image" />
+										<image :src="img" mode="aspectFill" class="swiper-image" :class="{loaded: item.imagesLoaded}" @load="handleHotImageLoad(item)" />
 									</swiper-item>
 								</swiper>
 							</view>
+							
 							<view class="content-box">
 								<text class="title">{{ item.title }}</text>
 								<text class="desc">{{ item.content }}</text>
@@ -760,13 +762,31 @@
 
 	// 图片加载完成处理
 	const handleImageLoad = (item) => {
-		console.log("图片加载完成", item)
+		// console.log("图片加载完成", item)
 		item.loadCount++;
 		// 所有图片加载完成后再启用轮播
 		if (item.loadCount >= item.images.length) {
 			item.imagesLoaded = true;
 		}
 	}
+	// 热门搭配图片加载完成处理
+	const handleHotImageLoad = (item) => {
+		console.log("搭配图片加载完成", item)
+		if (!item.loadCount) {
+			item.loadCount = 0
+		}
+		item.loadCount++;
+		console.log(item.id, "加载进度:",item.loadCount  , "/" ,item.image_urls.length)
+		// 所有图片加载完成后再启用轮播
+		// if (item.loadCount >= item.image_urls.length) {
+		// 	item.imagesLoaded = true;
+		// }
+		setTimeout(() => {
+			item.imagesLoaded = true;
+		}, 300)
+	}
+	
+
 
 	// 图片加载失败处理
 	const handleImageError = (item, idx) => {
@@ -784,6 +804,7 @@
 	const handleNewsImageLoad = (item) => {
 		item.loadCount++;
 		// 所有图片加载完成后再启用轮播
+
 		if (item.loadCount >= item.image_list.length) {
 			item.imagesLoaded = true;
 		}
@@ -793,6 +814,9 @@
 	const handleNewsImageError = (item, idx) => {
 		console.error(`新闻图片加载失败: ${item.image_list[idx]}`);
 		// 标记为加载完成（即使失败也要继续）
+		if (!item.loadCount) {
+			item.loadCount = 0
+		}
 		item.loadCount++;
 		if (item.loadCount >= item.image_list.length) {
 			item.imagesLoaded = true;
