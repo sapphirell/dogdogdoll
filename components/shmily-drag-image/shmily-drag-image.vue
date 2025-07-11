@@ -576,17 +576,17 @@
 		uuid.shift()
 		return `u${uuid.join('')}`
 	}
-
+	const instanceRef = ref(null); // 保存组件实例引用
 	// 初始化
 	onMounted(() => {
 		width.value = uni.getSystemInfoSync().windowWidth
 
 		// 获取当前组件实例
-		// const instance = getCurrentInstance()
+		instanceRef.value = getCurrentInstance(); // 在挂载时保存实例
 
 		// 使用 nextTick 确保元素已渲染
 		nextTick(() => {
-			const query = uni.createSelectorQuery().in(getCurrentInstance().proxy)
+			const query = uni.createSelectorQuery().in(instanceRef.value.proxy)
 			query.select('.con').boundingClientRect(data => {
 				if (!data) {
 					console.error('未找到 .con 元素')
@@ -619,7 +619,15 @@
 	})
 	const initViewSize = () => {
 		return new Promise(resolve => {
-			const query = uni.createSelectorQuery().in(getCurrentInstance().proxy);
+			// 检查实例是否可用
+			if (!instanceRef.value || !instanceRef.value.proxy) {
+				console.warn('Component instance not available for selector query');
+				return resolve();
+			}
+
+
+
+			const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
 			query.select('.con').boundingClientRect(data => {
 				if (!data) return resolve();
 

@@ -337,10 +337,12 @@ const _sfc_main = {
     const rpx2px = (v) => {
       return width.value * v / 750;
     };
+    const instanceRef = common_vendor.ref(null);
     common_vendor.onMounted(() => {
       width.value = common_vendor.index.getSystemInfoSync().windowWidth;
+      instanceRef.value = common_vendor.getCurrentInstance();
       common_vendor.nextTick$1(() => {
-        const query = common_vendor.index.createSelectorQuery().in(common_vendor.getCurrentInstance().proxy);
+        const query = common_vendor.index.createSelectorQuery().in(instanceRef.value.proxy);
         query.select(".con").boundingClientRect((data) => {
           if (!data) {
             common_vendor.index.__f__("error", "at components/shmily-drag-image/shmily-drag-image.vue:592", "未找到 .con 元素");
@@ -365,7 +367,11 @@ const _sfc_main = {
     });
     const initViewSize = () => {
       return new Promise((resolve) => {
-        const query = common_vendor.index.createSelectorQuery().in(common_vendor.getCurrentInstance().proxy);
+        if (!instanceRef.value || !instanceRef.value.proxy) {
+          common_vendor.index.__f__("warn", "at components/shmily-drag-image/shmily-drag-image.vue:624", "Component instance not available for selector query");
+          return resolve();
+        }
+        const query = common_vendor.index.createSelectorQuery().in(instanceRef.value.proxy);
         query.select(".con").boundingClientRect((data) => {
           if (!data)
             return resolve();
