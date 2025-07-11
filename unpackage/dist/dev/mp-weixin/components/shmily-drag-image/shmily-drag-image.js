@@ -365,10 +365,23 @@ const _sfc_main = {
       });
       isMounted.value = true;
     });
+    const updateItemsPosition = () => {
+      imageList.value.forEach((item, index) => {
+        item.index = index;
+        const newAbsX = index % colsValue.value;
+        const newAbsY = Math.floor(index / colsValue.value);
+        item.x = newAbsX * viewWidth.value;
+        item.y = newAbsY * viewHeight.value;
+        item.oldX = item.x;
+        item.oldY = item.y;
+        item.absX = newAbsX;
+        item.absY = newAbsY;
+      });
+    };
     const initViewSize = () => {
       return new Promise((resolve) => {
         if (!instanceRef.value || !instanceRef.value.proxy) {
-          common_vendor.index.__f__("warn", "at components/shmily-drag-image/shmily-drag-image.vue:624", "Component instance not available for selector query");
+          common_vendor.index.__f__("warn", "at components/shmily-drag-image/shmily-drag-image.vue:643", "Component instance not available for selector query");
           return resolve();
         }
         const query = common_vendor.index.createSelectorQuery().in(instanceRef.value.proxy);
@@ -396,7 +409,8 @@ const _sfc_main = {
         });
       }
     }, {
-      deep: true
+      deep: true,
+      immediate: true
     });
     const updateImageList = (newList) => {
       const oldItems = imageList.value.reduce((map, item) => {
@@ -414,6 +428,7 @@ const _sfc_main = {
         }
         return createNewItem(item);
       });
+      updateItemsPosition();
     };
     const createNewItem = (item) => {
       const data = getItemData(item);

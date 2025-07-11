@@ -2,8 +2,8 @@
     "name" : "DogDogDoll",
     "appid" : "__UNI__5D7AAEE",
     "description" : "娃圈狗狗助手",
-    "versionName" : "1.0.40",
-    "versionCode" : 1040,
+    "versionName" : "1.0.41",
+    "versionCode" : 1041,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {

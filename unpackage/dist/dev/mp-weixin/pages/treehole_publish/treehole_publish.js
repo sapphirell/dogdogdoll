@@ -6,14 +6,12 @@ const common_image = require("../../common/image.js");
 if (!Array) {
   const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
-  const _easycom_common_page2 = common_vendor.resolveComponent("common-page");
-  (_easycom_view_logs2 + _easycom_uni_icons2 + _easycom_common_page2)();
+  (_easycom_view_logs2 + _easycom_uni_icons2)();
 }
 const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
-const _easycom_common_page = () => "../../components/common-page/common-page.js";
 if (!Math) {
-  (_easycom_view_logs + _easycom_uni_icons + _easycom_common_page)();
+  (_easycom_view_logs + _easycom_uni_icons)();
 }
 const _sfc_main = {
   __name: "treehole_publish",
@@ -181,10 +179,7 @@ const _sfc_main = {
         m: isAnonymous.value === 1,
         n: common_vendor.o(handleAnonymous),
         o: !canSubmit.value ? 1 : "",
-        p: common_vendor.o(handleSubmit),
-        q: common_vendor.p({
-          title: "发布树洞"
-        })
+        p: common_vendor.o(handleSubmit)
       };
     };
   }

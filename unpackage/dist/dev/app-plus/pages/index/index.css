@@ -848,6 +848,7 @@
   max-height: 60vh;
   position: absolute;
   z-index: 1001;
+  top: 2.5rem;
 }
 .search_results .result_item[data-v-445b599f] {
   display: flex;
@@ -903,6 +904,8 @@
   position: relative;
   height: 2.25rem;
   /* 统一高度 */
+  padding: 0 0.625rem;
+  /* 统一内边距 */
 }
 .search_tab .icon_image[data-v-e5a069da] {
   width: 1.125rem;
@@ -925,7 +928,6 @@
   background-color: #f8f8f8;
   border-radius: 5px;
   position: absolute;
-  top: 0px;
   z-index: 120;
   box-shadow: 0 0 15px #0000002b;
   max-height: 12.5rem;
@@ -945,30 +947,31 @@
   color: #007aff;
 }
 .search-info-tap[data-v-e5a069da] {
-  position: absolute;
-  right: 0.3125rem;
-  vertical-align: middle;
-  bottom: 0px;
   display: flex;
   align-items: center;
+  position: relative;
+  /* 改为相对定位 */
+  margin-left: 0.3125rem;
+  /* 添加左边距 */
 }
 .search-info-tap uni-text[data-v-e5a069da] {
   color: #fff;
   background: linear-gradient(135deg, #a494b2, #fad0c4);
   font-size: 0.625rem;
-  width: 260px;
   padding: 3px 5px;
   border-radius: 3px;
   font-weight: 900;
   position: relative;
-  bottom: 0.46875rem;
+  bottom: 0;
+  /* 取消垂直偏移 */
+  margin-right: 0.25rem;
+  /* 添加右边距 */
 }
-.icon_image[data-v-e5a069da] {
-  margin-left: 15px;
-  margin-left: 0.5rem;
-  /* 统一图标间距 */
-  margin-right: 0;
-  /* 覆盖原有样式 */
+.search-info-tap .icon_image[data-v-e5a069da] {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-left: 0;
+  /* 重置左边距 */
 }
 
 .integrated-search-container[data-v-946fdc68] {
@@ -978,11 +981,15 @@
 .search-header[data-v-946fdc68] {
   display: flex;
   align-items: center;
-  gap: 0.46875rem;
+  gap: 1.09375rem;
+}
+.search-wrapper[data-v-946fdc68] {
+  flex: 1;
+  padding-left: 0.625rem;
 }
 .toggle-button[data-v-946fdc68] {
   flex-shrink: 0;
-  background: linear-gradient(135deg, #a494b2, #fad0c4);
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
   color: #fff;
   padding: 0.3125rem 0.625rem;
   border-radius: 1.5625rem;
@@ -990,6 +997,9 @@
   font-weight: bold;
   box-shadow: 0 0.125rem 0.375rem rgba(164, 148, 178, 0.3);
   transition: all 0.3s ease;
+}
+.toggle-button uni-text[data-v-946fdc68] {
+  color: #fff;
 }
 .toggle-button[data-v-946fdc68]:active {
   transform: scale(0.95);
@@ -1047,13 +1057,6 @@
 .brand-results .result-item[data-v-946fdc68]:before {
   content: '🏷️';
   margin-right: 0.375rem;
-}
-/* 无搜索结果时的样式 */
-.no-results[data-v-946fdc68] {
-  text-align: center;
-  padding: 0.9375rem;
-  color: #999;
-  font-size: 0.8125rem;
 }
 
 /**

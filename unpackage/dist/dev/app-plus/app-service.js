@@ -56,7 +56,7 @@ if (uni.restoreGlobal) {
   const onPullDownRefresh = /* @__PURE__ */ createHook(ON_PULL_DOWN_REFRESH);
   const websiteUrl = "https://api.fantuanpu.com";
   const image1Url = "https://images1.fantuanpu.com/";
-  const dogdogdollVersion = "1.0.40";
+  const dogdogdollVersion = "1.0.41";
   let global$1 = vue.reactive({
     isLogin: false,
     userInfo: {}
@@ -228,7 +228,7 @@ if (uni.restoreGlobal) {
     }
     return target;
   };
-  const _sfc_main$16 = {
+  const _sfc_main$17 = {
     __name: "view-logs",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -294,10 +294,10 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$15(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$16(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.createCommentVNode(" 这是一个无UI组件，不需要渲染任何内容 ");
   }
-  const __easycom_0$5 = /* @__PURE__ */ _export_sfc(_sfc_main$16, [["render", _sfc_render$15], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/view-logs/view-logs.vue"]]);
+  const __easycom_0$4 = /* @__PURE__ */ _export_sfc(_sfc_main$17, [["render", _sfc_render$16], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/view-logs/view-logs.vue"]]);
   const fontData = [
     {
       "font_class": "arrow-down",
@@ -948,7 +948,7 @@ if (uni.restoreGlobal) {
     const reg = /^[0-9]*$/g;
     return typeof val === "number" || reg.test(val) ? val + "px" : val;
   };
-  const _sfc_main$15 = {
+  const _sfc_main$16 = {
     name: "UniIcons",
     emits: ["click"],
     props: {
@@ -1002,7 +1002,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render$14(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$15(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       "text",
       {
@@ -1017,7 +1017,7 @@ if (uni.restoreGlobal) {
       /* CLASS, STYLE */
     );
   }
-  const __easycom_0$4 = /* @__PURE__ */ _export_sfc(_sfc_main$15, [["render", _sfc_render$14], ["__scopeId", "data-v-d31e1c47"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-icons/components/uni-icons/uni-icons.vue"]]);
+  const __easycom_0$3 = /* @__PURE__ */ _export_sfc(_sfc_main$16, [["render", _sfc_render$15], ["__scopeId", "data-v-d31e1c47"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-icons/components/uni-icons/uni-icons.vue"]]);
   class MPAnimation {
     constructor(options, _this) {
       this.options = options;
@@ -1130,7 +1130,7 @@ if (uni.restoreGlobal) {
     clearTimeout(_this.timer);
     return new MPAnimation(option, _this);
   }
-  const _sfc_main$14 = {
+  const _sfc_main$15 = {
     name: "uniTransition",
     emits: ["click", "change"],
     props: {
@@ -1384,7 +1384,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render$13(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$14(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.withDirectives((vue.openBlock(), vue.createElementBlock("view", {
       ref: "ani",
       animation: $data.animationData,
@@ -1397,8 +1397,8 @@ if (uni.restoreGlobal) {
       [vue.vShow, $data.isShow]
     ]);
   }
-  const __easycom_3$2 = /* @__PURE__ */ _export_sfc(_sfc_main$14, [["render", _sfc_render$13], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-transition/components/uni-transition/uni-transition.vue"]]);
-  const _sfc_main$13 = {
+  const __easycom_3$2 = /* @__PURE__ */ _export_sfc(_sfc_main$15, [["render", _sfc_render$14], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-transition/components/uni-transition/uni-transition.vue"]]);
+  const _sfc_main$14 = {
     __name: "common-modal",
     props: {
       visible: Boolean,
@@ -1458,7 +1458,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$12(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$13(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_uni_transition = resolveEasycom(vue.resolveDynamicComponent("uni-transition"), __easycom_3$2);
     return $props.visible ? (vue.openBlock(), vue.createElementBlock(
       "view",
@@ -1499,10 +1499,10 @@ if (uni.restoreGlobal) {
       /* NEED_HYDRATION */
     )) : vue.createCommentVNode("v-if", true);
   }
-  const __easycom_4$1 = /* @__PURE__ */ _export_sfc(_sfc_main$13, [["render", _sfc_render$12], ["__scopeId", "data-v-d7656854"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-modal/common-modal.vue"]]);
+  const __easycom_4$1 = /* @__PURE__ */ _export_sfc(_sfc_main$14, [["render", _sfc_render$13], ["__scopeId", "data-v-d7656854"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-modal/common-modal.vue"]]);
   const _imports_4$2 = "/static/new-icon/write.gif";
   const storageKey = "privacyAgreementStatus";
-  const _sfc_main$12 = {
+  const _sfc_main$13 = {
     __name: "privacy-permission-modal",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -1561,8 +1561,8 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$11(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+  function _sfc_render$12(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
     return vue.openBlock(), vue.createBlock(_component_common_modal, {
       visible: $setup.showModal,
@@ -1631,8 +1631,8 @@ if (uni.restoreGlobal) {
       /* STABLE */
     }, 8, ["visible"]);
   }
-  const __easycom_1$a = /* @__PURE__ */ _export_sfc(_sfc_main$12, [["render", _sfc_render$11], ["__scopeId", "data-v-c6b543e1"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/privacy-permission-modal/privacy-permission-modal.vue"]]);
-  const _sfc_main$11 = {
+  const __easycom_1$b = /* @__PURE__ */ _export_sfc(_sfc_main$13, [["render", _sfc_render$12], ["__scopeId", "data-v-c6b543e1"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/privacy-permission-modal/privacy-permission-modal.vue"]]);
+  const _sfc_main$12 = {
     __name: "version-check",
     props: {
       // 是否显示已是最新版本的提示
@@ -1751,7 +1751,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$10(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$11(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
@@ -1830,9 +1830,9 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
     );
   }
-  const __easycom_2$7 = /* @__PURE__ */ _export_sfc(_sfc_main$11, [["render", _sfc_render$10], ["__scopeId", "data-v-3cade7b0"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/version-check/version-check.vue"]]);
+  const __easycom_2$7 = /* @__PURE__ */ _export_sfc(_sfc_main$12, [["render", _sfc_render$11], ["__scopeId", "data-v-3cade7b0"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/version-check/version-check.vue"]]);
   const _imports_0$c = "/static/loading.gif";
-  const _sfc_main$10 = {
+  const _sfc_main$11 = {
     __name: "loading-toast",
     props: {
       show: {
@@ -1852,7 +1852,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$$(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$10(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -1888,10 +1888,10 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
     );
   }
-  const __easycom_1$9 = /* @__PURE__ */ _export_sfc(_sfc_main$10, [["render", _sfc_render$$], ["__scopeId", "data-v-3ed615fd"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/loading-toast/loading-toast.vue"]]);
+  const __easycom_1$a = /* @__PURE__ */ _export_sfc(_sfc_main$11, [["render", _sfc_render$10], ["__scopeId", "data-v-3ed615fd"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/loading-toast/loading-toast.vue"]]);
   const _imports_0$b = "/static/search.png";
   const _imports_0$a = "/static/cancel.png";
-  const _sfc_main$$ = {
+  const _sfc_main$10 = {
     __name: "goods-search",
     props: {
       modelValue: {
@@ -1986,7 +1986,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$_(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$$(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -2076,8 +2076,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const __easycom_1$8 = /* @__PURE__ */ _export_sfc(_sfc_main$$, [["render", _sfc_render$_], ["__scopeId", "data-v-445b599f"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/goods-search/goods-search.vue"]]);
-  const _sfc_main$_ = /* @__PURE__ */ Object.assign({
+  const __easycom_1$9 = /* @__PURE__ */ _export_sfc(_sfc_main$10, [["render", _sfc_render$$], ["__scopeId", "data-v-445b599f"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/goods-search/goods-search.vue"]]);
+  const _sfc_main$$ = /* @__PURE__ */ Object.assign({
     inheritAttrs: false
   }, {
     __name: "common-search",
@@ -2163,7 +2163,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   });
-  function _sfc_render$Z(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$_(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", { style: { "width": "100%" } }, [
       vue.createElementVNode(
         "view",
@@ -2240,8 +2240,8 @@ if (uni.restoreGlobal) {
       ])
     ]);
   }
-  const __easycom_2$6 = /* @__PURE__ */ _export_sfc(_sfc_main$_, [["render", _sfc_render$Z], ["__scopeId", "data-v-e5a069da"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-search/common-search.vue"]]);
-  const _sfc_main$Z = {
+  const __easycom_2$6 = /* @__PURE__ */ _export_sfc(_sfc_main$$, [["render", _sfc_render$_], ["__scopeId", "data-v-e5a069da"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-search/common-search.vue"]]);
+  const _sfc_main$_ = {
     __name: "switch-search",
     props: {
       mode: {
@@ -2262,7 +2262,7 @@ if (uni.restoreGlobal) {
         default: "28rpx"
       }
     },
-    emits: ["select-goods", "select-brand"],
+    emits: ["submit"],
     setup(__props, { expose: __expose, emit: __emit }) {
       __expose();
       vue.useCssVars((_ctx) => ({
@@ -2286,12 +2286,28 @@ if (uni.restoreGlobal) {
       };
       const handleGoodsSelect = (goods2) => {
         goodsResults.value = goods2 ? [goods2] : [];
+        if (goods2) {
+          emit("submit", {
+            type: "goods",
+            data: goods2
+          });
+        }
       };
       const handleBrandSelect = (id, name) => {
         if (id === 0) {
           brandResults.value = [];
         } else {
-          brandResults.value = [{ id, name }];
+          brandResults.value = [{
+            id,
+            name
+          }];
+          emit("submit", {
+            type: "brand",
+            data: {
+              id,
+              name
+            }
+          });
         }
       };
       const selectGoods = (goods2) => {
@@ -2299,8 +2315,6 @@ if (uni.restoreGlobal) {
           uni.navigateTo({
             url: `/pages/goods/goods?goods_id=${goods2.id}`
           });
-        } else if (props.mode === "fill") {
-          emit("select-goods", goods2);
         }
       };
       const selectBrand = (brand) => {
@@ -2308,17 +2322,11 @@ if (uni.restoreGlobal) {
           uni.navigateTo({
             url: `/pages/brand/brand?brand_id=${brand.id}`
           });
-        } else if (props.mode === "fill") {
-          emit("select-brand", brand);
         }
       };
       const props = __props;
       const searchWidth = vue.computed(() => {
-        const containerWidth = props.width;
-        if (containerWidth.includes("%")) {
-          return `calc(${containerWidth} - 120rpx)`;
-        }
-        return containerWidth;
+        return "700rpx";
       });
       const emit = __emit;
       const __returned__ = { searchType, goodsResults, brandResults, goodsSearchRef, commonSearchRef, hasResults, toggleSearchType, handleGoodsSelect, handleBrandSelect, selectGoods, selectBrand, props, searchWidth, emit, ref: vue.ref, computed: vue.computed };
@@ -2326,38 +2334,50 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$Y(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$8);
+  function _sfc_render$Z(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$9);
     const _component_common_search = resolveEasycom(vue.resolveDynamicComponent("common-search"), __easycom_2$6);
     return vue.openBlock(), vue.createElementBlock("view", { class: "integrated-search-container" }, [
       vue.createCommentVNode(" 搜索框区域 "),
       vue.createElementVNode("view", { class: "search-header" }, [
-        vue.createCommentVNode(" 商品搜索组件 "),
-        $setup.searchType === "goods" ? (vue.openBlock(), vue.createBlock(_component_goods_search, {
-          key: 0,
-          ref: "goodsSearchRef",
-          width: $setup.searchWidth,
-          background: $props.background,
-          "hidden-icon": false,
-          mode: $props.mode,
-          onSelect: $setup.handleGoodsSelect
-        }, null, 8, ["width", "background", "mode"])) : (vue.openBlock(), vue.createElementBlock(
-          vue.Fragment,
-          { key: 1 },
+        vue.createElementVNode(
+          "view",
+          {
+            class: "search-wrapper",
+            style: vue.normalizeStyle({ width: $setup.searchWidth })
+          },
           [
-            vue.createCommentVNode(" 品牌搜索组件 "),
-            vue.createVNode(_component_common_search, {
-              ref: "commonSearchRef",
+            vue.createCommentVNode(" 商品搜索组件 "),
+            $setup.searchType === "goods" ? (vue.openBlock(), vue.createBlock(_component_goods_search, {
+              key: 0,
+              ref: "goodsSearchRef",
               width: $setup.searchWidth,
               background: $props.background,
-              fontSize: $props.fontSize,
+              "hidden-icon": false,
               mode: $props.mode,
-              onSelect: $setup.handleBrandSelect
-            }, null, 8, ["width", "background", "fontSize", "mode"])
+              onSelect: $setup.handleGoodsSelect
+            }, null, 8, ["width", "background", "mode"])) : (vue.openBlock(), vue.createElementBlock(
+              vue.Fragment,
+              { key: 1 },
+              [
+                vue.createCommentVNode(" 品牌搜索组件 "),
+                vue.createVNode(_component_common_search, {
+                  ref: "commonSearchRef",
+                  width: $setup.searchWidth,
+                  background: $props.background,
+                  fontSize: $props.fontSize,
+                  hidenIcon: false,
+                  mode: $props.mode,
+                  onSelect: $setup.handleBrandSelect
+                }, null, 8, ["width", "background", "fontSize", "mode"])
+              ],
+              2112
+              /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
+            ))
           ],
-          2112
-          /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
-        )),
+          4
+          /* STYLE */
+        ),
         vue.createCommentVNode(" 切换按钮 "),
         vue.createElementVNode("view", {
           class: "toggle-button",
@@ -2366,7 +2386,7 @@ if (uni.restoreGlobal) {
           vue.createElementVNode(
             "text",
             null,
-            vue.toDisplayString($setup.searchType === "goods" ? "搜品牌" : "搜商品"),
+            vue.toDisplayString($setup.searchType === "goods" ? "娃物" : "娃店"),
             1
             /* TEXT */
           )
@@ -2437,8 +2457,8 @@ if (uni.restoreGlobal) {
       ])) : vue.createCommentVNode("v-if", true)
     ]);
   }
-  const __easycom_0$3 = /* @__PURE__ */ _export_sfc(_sfc_main$Z, [["render", _sfc_render$Y], ["__scopeId", "data-v-946fdc68"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/switch-search/switch-search.vue"]]);
-  const _sfc_main$Y = {
+  const __easycom_1$8 = /* @__PURE__ */ _export_sfc(_sfc_main$_, [["render", _sfc_render$Z], ["__scopeId", "data-v-946fdc68"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/switch-search/switch-search.vue"]]);
+  const _sfc_main$Z = {
     __name: "index-brand",
     props: ["brand", "key"],
     setup(__props, { expose: __expose }) {
@@ -2459,7 +2479,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$X(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$Y(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", {
       class: "brand-card",
       key: $props.key
@@ -2550,8 +2570,8 @@ if (uni.restoreGlobal) {
       ])
     ]);
   }
-  const __easycom_8 = /* @__PURE__ */ _export_sfc(_sfc_main$Y, [["render", _sfc_render$X], ["__scopeId", "data-v-aa9d9d58"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/index-brand/index-brand.vue"]]);
-  const _sfc_main$X = {
+  const __easycom_8 = /* @__PURE__ */ _export_sfc(_sfc_main$Z, [["render", _sfc_render$Y], ["__scopeId", "data-v-aa9d9d58"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/index-brand/index-brand.vue"]]);
+  const _sfc_main$Y = {
     name: "swiper-dynamic-bullets",
     props: {
       // 轮播图数据
@@ -2583,7 +2603,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render$W(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$X(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       "view",
       {
@@ -2615,14 +2635,14 @@ if (uni.restoreGlobal) {
       /* STYLE */
     );
   }
-  const sdp = /* @__PURE__ */ _export_sfc(_sfc_main$X, [["render", _sfc_render$W], ["__scopeId", "data-v-1fb386b0"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue"]]);
+  const sdp = /* @__PURE__ */ _export_sfc(_sfc_main$Y, [["render", _sfc_render$X], ["__scopeId", "data-v-1fb386b0"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue"]]);
   const _imports_0$9 = "/static/new-icon/title.gif";
   const _imports_1$7 = "/static/new-icon/telphone.gif";
   const _imports_2$3 = "/static/new-icon/read.gif";
   const _imports_3$2 = "/static/new-icon/collocation.gif";
   const _imports_5$1 = "/static/default-banner.jpg";
   const _imports_6 = "/static/noname.png";
-  const _sfc_main$W = {
+  const _sfc_main$X = {
     __name: "index",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -2686,10 +2706,10 @@ if (uni.restoreGlobal) {
         path: "/pages/news/news",
         imageUrl: "/static/share",
         success(res) {
-          formatAppLog("log", "at pages/index/index.vue:406", "分享成功", res);
+          formatAppLog("log", "at pages/index/index.vue:408", "分享成功", res);
         },
         fail(err) {
-          formatAppLog("log", "at pages/index/index.vue:409", "分享失败", err);
+          formatAppLog("log", "at pages/index/index.vue:411", "分享失败", err);
         },
         mp: {
           wxpath: "/pages/index/index.html"
@@ -2769,7 +2789,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("error", "at pages/index/index.vue:507", "获取Banner失败:", err);
+            formatAppLog("error", "at pages/index/index.vue:509", "获取Banner失败:", err);
             data.value = {};
           }
         });
@@ -2838,7 +2858,7 @@ if (uni.restoreGlobal) {
             newsPage.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:582", err);
+            formatAppLog("log", "at pages/index/index.vue:584", err);
             uni.showToast({
               title: "加载失败",
               icon: "none"
@@ -2881,7 +2901,7 @@ if (uni.restoreGlobal) {
             hotPage.value++;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:628", err);
+            formatAppLog("log", "at pages/index/index.vue:630", err);
             uni.showToast({
               title: "加载失败",
               icon: "none"
@@ -2930,7 +2950,7 @@ if (uni.restoreGlobal) {
             }
             const response = res.data.data;
             const newData = response.data;
-            formatAppLog("log", "at pages/index/index.vue:689", "newData:", newData);
+            formatAppLog("log", "at pages/index/index.vue:691", "newData:", newData);
             cursor.value = response.next_cursor || "";
             if (newData.length === 0) {
               hasMore.value = false;
@@ -2940,7 +2960,7 @@ if (uni.restoreGlobal) {
             hasMore.value = response.has_more;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/index/index.vue:702", err);
+            formatAppLog("log", "at pages/index/index.vue:704", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -2994,14 +3014,24 @@ if (uni.restoreGlobal) {
         });
       };
       const handleImageLoad = (item) => {
-        formatAppLog("log", "at pages/index/index.vue:763", "图片加载完成", item);
         item.loadCount++;
         if (item.loadCount >= item.images.length) {
           item.imagesLoaded = true;
         }
       };
+      const handleHotImageLoad = (item) => {
+        formatAppLog("log", "at pages/index/index.vue:774", "搭配图片加载完成", item);
+        if (!item.loadCount) {
+          item.loadCount = 0;
+        }
+        item.loadCount++;
+        formatAppLog("log", "at pages/index/index.vue:779", item.id, "加载进度:", item.loadCount, "/", item.image_urls.length);
+        setTimeout(() => {
+          item.imagesLoaded = true;
+        }, 300);
+      };
       const handleImageError = (item, idx) => {
-        formatAppLog("error", "at pages/index/index.vue:773", `图片加载失败: ${item.images[idx]}`);
+        formatAppLog("error", "at pages/index/index.vue:793", `图片加载失败: ${item.images[idx]}`);
         item.loadCount++;
         if (item.loadCount >= item.images.length) {
           item.imagesLoaded = true;
@@ -3014,7 +3044,10 @@ if (uni.restoreGlobal) {
         }
       };
       const handleNewsImageError = (item, idx) => {
-        formatAppLog("error", "at pages/index/index.vue:794", `新闻图片加载失败: ${item.image_list[idx]}`);
+        formatAppLog("error", "at pages/index/index.vue:815", `新闻图片加载失败: ${item.image_list[idx]}`);
+        if (!item.loadCount) {
+          item.loadCount = 0;
+        }
         item.loadCount++;
         if (item.loadCount >= item.image_list.length) {
           item.imagesLoaded = true;
@@ -3138,7 +3171,7 @@ if (uni.restoreGlobal) {
         return treeholeList;
       }, set treeholeList(v2) {
         treeholeList = v2;
-      }, treeholePage, treeholePageSize, treeholeHasMore, treeholeLoading, activeTab, switchTab, navBarHeight, headerHeight, onShareAppMessage, refreshData, jump2collocationSquare, handleBannerClick, jump2saleNews, getArticles, onChange, handleTabClick, jump2userWhenNotAnonymous, copyUrl, getNews, jump2treeholeDetail, getHotCollocations, jumpToCollocationDetail, getBrands, getTreeholeList, handleImageLoad, handleImageError, handleNewsImageLoad, handleNewsImageError, handlePublish, previewImage, handleLike, formatTime, get onLoad() {
+      }, treeholePage, treeholePageSize, treeholeHasMore, treeholeLoading, activeTab, switchTab, navBarHeight, headerHeight, onShareAppMessage, refreshData, jump2collocationSquare, handleBannerClick, jump2saleNews, getArticles, onChange, handleTabClick, jump2userWhenNotAnonymous, copyUrl, getNews, jump2treeholeDetail, getHotCollocations, jumpToCollocationDetail, getBrands, getTreeholeList, handleImageLoad, handleHotImageLoad, handleImageError, handleNewsImageLoad, handleNewsImageError, handlePublish, previewImage, handleLike, formatTime, get onLoad() {
         return onLoad;
       }, get onReachBottom() {
         return onReachBottom;
@@ -3157,13 +3190,13 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$V(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_privacy_permission_modal = resolveEasycom(vue.resolveDynamicComponent("privacy-permission-modal"), __easycom_1$a);
+  function _sfc_render$W(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_privacy_permission_modal = resolveEasycom(vue.resolveDynamicComponent("privacy-permission-modal"), __easycom_1$b);
     const _component_version_check = resolveEasycom(vue.resolveDynamicComponent("version-check"), __easycom_2$7);
-    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$9);
-    const _component_switch_search = resolveEasycom(vue.resolveDynamicComponent("switch-search"), __easycom_0$3);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$a);
+    const _component_switch_search = resolveEasycom(vue.resolveDynamicComponent("switch-search"), __easycom_1$8);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_uni_transition = resolveEasycom(vue.resolveDynamicComponent("uni-transition"), __easycom_3$2);
     const _component_common_search = resolveEasycom(vue.resolveDynamicComponent("common-search"), __easycom_2$6);
     const _component_index_brand = resolveEasycom(vue.resolveDynamicComponent("index-brand"), __easycom_8);
@@ -3186,9 +3219,9 @@ if (uni.restoreGlobal) {
               vue.createElementVNode("view", { class: "header-placeholders" }),
               vue.createElementVNode("view", null, [
                 vue.createCommentVNode(' <image src="/static/new-icon/logo-with-img.jpg" style="width: 380rpx;height: 120rpx;"></image> '),
-                vue.createCommentVNode(' <image src="/static/main/2.png"\r\n						style="width: 170rpx;height: 170rpx;display: inline-block;  vertical-align: top; "\r\n						mode="aspectFill"></image> '),
+                vue.createCommentVNode(' <image src="/static/main/2.png"\n						style="width: 170rpx;height: 170rpx;display: inline-block;  vertical-align: top; "\n						mode="aspectFill"></image> '),
                 vue.createElementVNode("view", { style: { "display": "inline-block", "margin-left": "20rpx" } }, [
-                  vue.createCommentVNode(' <text class="font-alimamashuhei logo"\r\n							style="">娃圈狗狗助手</text> '),
+                  vue.createCommentVNode(' <text class="font-alimamashuhei logo"\n							style="">娃圈狗狗助手</text> '),
                   vue.createElementVNode("image", {
                     src: _imports_0$9,
                     mode: "widthFix",
@@ -3530,8 +3563,9 @@ if (uni.restoreGlobal) {
                                     vue.createElementVNode("image", {
                                       src: img,
                                       mode: "aspectFill",
-                                      class: "swiper-image"
-                                    }, null, 8, ["src"])
+                                      class: vue.normalizeClass(["swiper-image", { loaded: item.imagesLoaded }]),
+                                      onLoad: ($event) => $setup.handleHotImageLoad(item)
+                                    }, null, 42, ["src", "onLoad"])
                                   ]);
                                 }),
                                 128
@@ -3823,11 +3857,11 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$W, [["render", _sfc_render$V], ["__scopeId", "data-v-1cf27b2a"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/index/index.vue"]]);
+  const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$X, [["render", _sfc_render$W], ["__scopeId", "data-v-1cf27b2a"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/index/index.vue"]]);
   const _imports_0$8 = "/static/message.png";
   const _imports_1$6 = "/static/like.png";
-  const _sfc_main$V = {};
-  function _sfc_render$U(_ctx, _cache) {
+  const _sfc_main$W = {};
+  function _sfc_render$V(_ctx, _cache) {
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createElementVNode("view", { class: "list_item_main_info" }, [
         vue.createElementVNode("text", null, "Puypoodoll - momo"),
@@ -3853,10 +3887,10 @@ if (uni.restoreGlobal) {
       ])
     ]);
   }
-  const __easycom_2$5 = /* @__PURE__ */ _export_sfc(_sfc_main$V, [["render", _sfc_render$U], ["__scopeId", "data-v-704f716d"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/homepage-list-item/homepage-list-item.vue"]]);
+  const __easycom_2$5 = /* @__PURE__ */ _export_sfc(_sfc_main$W, [["render", _sfc_render$V], ["__scopeId", "data-v-704f716d"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/homepage-list-item/homepage-list-item.vue"]]);
   const _imports_0$7 = "/static/pixsun.png";
   const _imports_1$5 = "/static/arrow_down.png";
-  const _sfc_main$U = {
+  const _sfc_main$V = {
     __name: "homepage",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -3920,8 +3954,8 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$T(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+  function _sfc_render$U(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_common_search = resolveEasycom(vue.resolveDynamicComponent("common-search"), __easycom_2$6);
     const _component_homepage_list_item = resolveEasycom(vue.resolveDynamicComponent("homepage-list-item"), __easycom_2$5);
     return vue.openBlock(), vue.createElementBlock(
@@ -4018,8 +4052,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const PagesHomepageHomepage = /* @__PURE__ */ _export_sfc(_sfc_main$U, [["render", _sfc_render$T], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/homepage/homepage.vue"]]);
-  const _sfc_main$T = {
+  const PagesHomepageHomepage = /* @__PURE__ */ _export_sfc(_sfc_main$V, [["render", _sfc_render$U], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/homepage/homepage.vue"]]);
+  const _sfc_main$U = {
     __name: "shmily-drag-image",
     props: {
       value: {
@@ -4097,6 +4131,7 @@ if (uni.restoreGlobal) {
       const touchStartY = vue.ref(0);
       const longPressTimer = vue.ref(null);
       const isDragging = vue.ref(false);
+      const isMounted = vue.ref(false);
       const areaHeight = vue.computed(() => {
         if (imageList.value.length < props.number) {
           return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + "px";
@@ -4207,12 +4242,12 @@ if (uni.restoreGlobal) {
           item2.ready = false;
           item2.disable = true;
         });
-        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:261", "长按开始");
+        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:263", "长按开始");
         longPressTimer.value = setTimeout(() => {
-          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:265", "长按成功！");
+          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:267", "长按成功！");
           uni.vibrateShort({
             success: () => {
-              formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:268", "触感反馈");
+              formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:270", "触感反馈");
             }
           });
           item.ready = true;
@@ -4222,7 +4257,7 @@ if (uni.restoreGlobal) {
         }, 240);
       };
       const touchstart = (item, e2) => {
-        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:279", "进入touchstart");
+        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:281", "进入touchstart");
         imageList.value.forEach((v2) => {
           v2.zIndex = v2.index + 9;
         });
@@ -4243,13 +4278,13 @@ if (uni.restoreGlobal) {
         item.y = item.oldY;
         item.offset = 0;
         item.moveEnd = false;
-        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:304", "结束点击，清理ready");
+        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:306", "结束点击，清理ready");
         imageList.value.forEach((item2) => {
           item2.ready = false;
           item2.disable = true;
         });
         if (isDragging.value == true) {
-          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:310", "来自于拖拽的结束,上报排序事件");
+          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:312", "来自于拖拽的结束,上报排序事件");
           const sortedIds = imageList.value.map((item2) => item2.id);
           emit("sort-change", sortedIds);
         }
@@ -4259,13 +4294,21 @@ if (uni.restoreGlobal) {
           longPressTimer.value = null;
         }
         setTimeout(() => {
+          imageList.value.forEach((obj) => {
+            if (obj.ready)
+              return;
+            obj.x = obj.absX * viewWidth.value;
+            obj.y = obj.absY * viewHeight.value;
+            obj.offset = 0;
+            obj.moveEnd = false;
+          });
           vue.nextTick(() => {
             item.x = item.absX * viewWidth.value;
             item.y = item.absY * viewHeight.value;
             tempItem.value = null;
             changeStatus.value = true;
           });
-        }, 0);
+        }, 50);
       };
       const getFirstImage = (imageUrls) => {
         var _a;
@@ -4294,7 +4337,7 @@ if (uni.restoreGlobal) {
               }, 600);
             },
             fail: (e2) => {
-              formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:369", e2);
+              formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:382", e2);
             }
           });
         } else if (timer.value) {
@@ -4426,14 +4469,15 @@ if (uni.restoreGlobal) {
         uuid.shift();
         return `u${uuid.join("")}`;
       };
+      const instanceRef = vue.ref(null);
       vue.onMounted(() => {
         width.value = uni.getSystemInfoSync().windowWidth;
-        const instance = vue.getCurrentInstance();
+        instanceRef.value = vue.getCurrentInstance();
         vue.nextTick(() => {
-          const query = uni.createSelectorQuery().in(instance.proxy);
+          const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
           query.select(".con").boundingClientRect((data) => {
             if (!data) {
-              formatAppLog("error", "at components/shmily-drag-image/shmily-drag-image.vue:579", "未找到 .con 元素");
+              formatAppLog("error", "at components/shmily-drag-image/shmily-drag-image.vue:592", "未找到 .con 元素");
               return;
             }
             colsValue.value = props.cols;
@@ -4451,36 +4495,96 @@ if (uni.restoreGlobal) {
             first.value = false;
           }).exec();
         });
+        isMounted.value = true;
       });
-      vue.watch(() => props.value, (n2) => {
-        if (!first.value && changeStatus.value) {
-          updateImageList(n2);
+      const updateItemsPosition = () => {
+        imageList.value.forEach((item, index) => {
+          item.index = index;
+          const newAbsX = index % colsValue.value;
+          const newAbsY = Math.floor(index / colsValue.value);
+          item.x = newAbsX * viewWidth.value;
+          item.y = newAbsY * viewHeight.value;
+          item.oldX = item.x;
+          item.oldY = item.y;
+          item.absX = newAbsX;
+          item.absY = newAbsY;
+        });
+      };
+      const initViewSize = () => {
+        return new Promise((resolve) => {
+          if (!instanceRef.value || !instanceRef.value.proxy) {
+            formatAppLog("warn", "at components/shmily-drag-image/shmily-drag-image.vue:643", "Component instance not available for selector query");
+            return resolve();
+          }
+          const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
+          query.select(".con").boundingClientRect((data) => {
+            if (!data)
+              return resolve();
+            colsValue.value = props.cols;
+            viewWidth.value = data.width / props.cols;
+            viewHeight.value = viewWidth.value * 1.3;
+            if (props.imageWidth > 0) {
+              viewWidth.value = rpx2px(props.imageWidth);
+              viewHeight.value = viewWidth.value * 1.3;
+              colsValue.value = Math.floor(data.width / viewWidth.value);
+            }
+            resolve();
+          }).exec();
+        });
+      };
+      vue.watch(() => props.modelValue, (newVal) => {
+        if (isMounted.value) {
+          vue.nextTick(() => {
+            initViewSize().then(() => {
+              updateImageList(newVal);
+            });
+          });
         }
       }, {
-        deep: true
-      });
-      vue.watch(() => props.modelValue, (n2) => {
-        if (!first.value && changeStatus.value) {
-          updateImageList(n2);
-        }
-      }, {
-        deep: true
+        deep: true,
+        immediate: true
       });
       const updateImageList = (newList) => {
-        let flag = false;
-        for (let i2 = 0; i2 < newList.length; i2++) {
-          if (flag) {
-            addProperties(getSrc(newList[i2]));
-            continue;
+        const oldItems = imageList.value.reduce((map, item) => {
+          map[item.id] = item;
+          return map;
+        }, {});
+        imageList.value = newList.map((item) => {
+          const existing = oldItems[item.id];
+          if (existing) {
+            return {
+              ...existing,
+              ...getItemData(item)
+              // 更新可能变化的数据
+            };
           }
-          if (imageList.value.length === i2 || imageList.value[i2].src !== getSrc(newList[i2])) {
-            flag = true;
-            imageList.value.splice(i2);
-            addProperties(getSrc(newList[i2]));
-          }
-        }
+          return createNewItem(item);
+        });
+        updateItemsPosition();
       };
-      const __returned__ = { props, emit, imageList, width, add, colsValue, viewWidth, viewHeight, tempItem, timer, changeStatus, preStatus, first, touchStartY, longPressTimer, isDragging, areaHeight, childWidth, childHeight, getSrc, getItemData, onChange, moveItem, changeObj, onLongPressStart, touchstart, touchend, getFirstImage, previewImage, mouseenter, mouseleave, onTouchMove, delImageHandle, delImageMp, go2editor, go2preview, onLongPressCancel, updateAllItemsPosition, sortList, addProperties, rpx2px, guid, updateImageList, ref: vue.ref, computed: vue.computed, watch: vue.watch, onMounted: vue.onMounted, nextTick: vue.nextTick, getCurrentInstance: vue.getCurrentInstance, get websiteUrl() {
+      const createNewItem = (item) => {
+        const data = getItemData(item);
+        const absX = imageList.value.length % colsValue.value;
+        const absY = Math.floor(imageList.value.length / colsValue.value);
+        return {
+          ...data,
+          x: absX * viewWidth.value,
+          y: absY * viewHeight.value,
+          oldX: absX * viewWidth.value,
+          oldY: absY * viewHeight.value,
+          absX,
+          absY,
+          scale: 1,
+          zIndex: 9,
+          opacity: 1,
+          index: imageList.value.length,
+          disable: false,
+          offset: 0,
+          moveEnd: false,
+          ready: false
+        };
+      };
+      const __returned__ = { props, emit, imageList, width, add, colsValue, viewWidth, viewHeight, tempItem, timer, changeStatus, preStatus, first, touchStartY, longPressTimer, isDragging, isMounted, areaHeight, childWidth, childHeight, getSrc, getItemData, onChange, moveItem, changeObj, onLongPressStart, touchstart, touchend, getFirstImage, previewImage, mouseenter, mouseleave, onTouchMove, delImageHandle, delImageMp, go2editor, go2preview, onLongPressCancel, updateAllItemsPosition, sortList, addProperties, rpx2px, guid, instanceRef, updateItemsPosition, initViewSize, updateImageList, createNewItem, ref: vue.ref, computed: vue.computed, watch: vue.watch, onMounted: vue.onMounted, nextTick: vue.nextTick, getCurrentInstance: vue.getCurrentInstance, get websiteUrl() {
         return websiteUrl;
       }, get wechatSignLogin() {
         return wechatSignLogin;
@@ -4495,7 +4599,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$S(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$T(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", { class: "con" }, [
       $setup.viewWidth ? (vue.openBlock(), vue.createElementBlock(
         "movable-area",
@@ -4588,11 +4692,11 @@ if (uni.restoreGlobal) {
       )) : vue.createCommentVNode("v-if", true)
     ]);
   }
-  const __easycom_0$2 = /* @__PURE__ */ _export_sfc(_sfc_main$T, [["render", _sfc_render$S], ["__scopeId", "data-v-96f535cf"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/shmily-drag-image/shmily-drag-image.vue"]]);
+  const __easycom_0$2 = /* @__PURE__ */ _export_sfc(_sfc_main$U, [["render", _sfc_render$T], ["__scopeId", "data-v-96f535cf"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/shmily-drag-image/shmily-drag-image.vue"]]);
   const _imports_5 = "/static/empty.jpg";
   const _imports_1$4 = "/static/folder-empty.png";
   const PRICE_VISIBLE_KEY = "accountBookPriceVisible";
-  const _sfc_main$S = {
+  const _sfc_main$T = {
     __name: "stock-myitems",
     props: {
       accountBookData: Object
@@ -4764,9 +4868,9 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$R(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$S(_ctx, _cache, $props, $setup, $data, $options) {
     var _a;
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_shmily_drag_image = resolveEasycom(vue.resolveDynamicComponent("shmily-drag-image"), __easycom_0$2);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
     return vue.openBlock(), vue.createElementBlock(
@@ -4982,8 +5086,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const __easycom_1$7 = /* @__PURE__ */ _export_sfc(_sfc_main$S, [["render", _sfc_render$R], ["__scopeId", "data-v-30803138"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/stock-myitems/stock-myitems.vue"]]);
-  const _sfc_main$R = {
+  const __easycom_1$7 = /* @__PURE__ */ _export_sfc(_sfc_main$T, [["render", _sfc_render$S], ["__scopeId", "data-v-30803138"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/stock-myitems/stock-myitems.vue"]]);
+  const _sfc_main$S = {
     __name: "common-page",
     props: {
       head_color: {
@@ -5022,7 +5126,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$Q(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$R(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -5056,13 +5160,13 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
     );
   }
-  const __easycom_2$4 = /* @__PURE__ */ _export_sfc(_sfc_main$R, [["render", _sfc_render$Q], ["__scopeId", "data-v-957ceee2"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-page/common-page.vue"]]);
+  const __easycom_6 = /* @__PURE__ */ _export_sfc(_sfc_main$S, [["render", _sfc_render$R], ["__scopeId", "data-v-957ceee2"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/common-page/common-page.vue"]]);
   const _imports_0$6 = "/static/new-icon/myitems.png";
   const _imports_1$3 = "/static/new-icon/showcase.png";
   const _imports_2$2 = "/static/new-icon/calendar.png";
   const _imports_3$1 = "/static/eye.png";
   const _imports_4$1 = "/static/6.png";
-  const _sfc_main$Q = {
+  const _sfc_main$R = {
     __name: "stock",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -5280,13 +5384,13 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$P(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+  function _sfc_render$Q(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_stock_myitems = resolveEasycom(vue.resolveDynamicComponent("stock-myitems"), __easycom_1$7);
     const _component_uni_transition = resolveEasycom(vue.resolveDynamicComponent("uni-transition"), __easycom_3$2);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
-    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_2$4);
+    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_6);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -5688,13 +5792,13 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const PagesStockStock = /* @__PURE__ */ _export_sfc(_sfc_main$Q, [["render", _sfc_render$P], ["__scopeId", "data-v-4829e7f4"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/stock/stock.vue"]]);
+  const PagesStockStock = /* @__PURE__ */ _export_sfc(_sfc_main$R, [["render", _sfc_render$Q], ["__scopeId", "data-v-4829e7f4"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/stock/stock.vue"]]);
   const _imports_0$5 = "/static/new-icon/minefollow.gif";
   const _imports_1$2 = "/static/new-icon/minemessage.gif";
   const _imports_2$1 = "/static/new-icon/minecollocation.gif";
   const _imports_3 = "/static/user.png";
   const _imports_4 = "/static/key.png";
-  const _sfc_main$P = {
+  const _sfc_main$Q = {
     __name: "mine",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -6094,9 +6198,9 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$O(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+  function _sfc_render$P(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -6374,8 +6478,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const PagesMineMine = /* @__PURE__ */ _export_sfc(_sfc_main$P, [["render", _sfc_render$O], ["__scopeId", "data-v-7c2ebfa5"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/mine/mine.vue"]]);
-  const _sfc_main$O = {
+  const PagesMineMine = /* @__PURE__ */ _export_sfc(_sfc_main$Q, [["render", _sfc_render$P], ["__scopeId", "data-v-7c2ebfa5"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/mine/mine.vue"]]);
+  const _sfc_main$P = {
     __name: "watch_demo",
     setup(__props, { expose: __expose }) {
       __expose();
@@ -6389,7 +6493,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$N(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$O(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.withDirectives(vue.createElementVNode(
         "input",
@@ -6413,8 +6517,8 @@ if (uni.restoreGlobal) {
       vue.createElementVNode("footer")
     ]);
   }
-  const PagesWatchDemoWatchDemo = /* @__PURE__ */ _export_sfc(_sfc_main$O, [["render", _sfc_render$N], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/watch_demo/watch_demo.vue"]]);
-  const _sfc_main$N = {
+  const PagesWatchDemoWatchDemo = /* @__PURE__ */ _export_sfc(_sfc_main$P, [["render", _sfc_render$O], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/watch_demo/watch_demo.vue"]]);
+  const _sfc_main$O = {
     __name: "item-impression",
     props: {
       target_id: {
@@ -6714,7 +6818,7 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$M(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$N(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
@@ -6814,8 +6918,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
     );
   }
-  const __easycom_2$3 = /* @__PURE__ */ _export_sfc(_sfc_main$N, [["render", _sfc_render$M], ["__scopeId", "data-v-883b6a8c"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/item-impression/item-impression.vue"]]);
-  const _sfc_main$M = {
+  const __easycom_2$4 = /* @__PURE__ */ _export_sfc(_sfc_main$O, [["render", _sfc_render$N], ["__scopeId", "data-v-883b6a8c"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/item-impression/item-impression.vue"]]);
+  const _sfc_main$N = {
     __name: "report-button",
     props: {
       // 举报类型（1=展示柜,2=搭配,3=树洞发帖,4=用户，5=回帖）
@@ -6840,7 +6944,7 @@ if (uni.restoreGlobal) {
       },
       // 图标大小
       iconSize: {
-        type: Number,
+        type: String,
         default: 24
       },
       // 图标颜色
@@ -6995,8 +7099,8 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$L(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+  function _sfc_render$M(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
@@ -7012,7 +7116,7 @@ if (uni.restoreGlobal) {
               vue.createVNode(_component_uni_icons, {
                 "v-if": $props.iconType !== "",
                 type: $props.iconType,
-                size: $props.iconSize,
+                size: parseInt($props.iconSize),
                 color: $props.iconColor
               }, null, 8, ["v-if", "type", "size", "color"]),
               vue.createElementVNode(
@@ -7115,8 +7219,8 @@ if (uni.restoreGlobal) {
       /* STABLE_FRAGMENT */
     );
   }
-  const __easycom_1$6 = /* @__PURE__ */ _export_sfc(_sfc_main$M, [["render", _sfc_render$L], ["__scopeId", "data-v-b620d6d3"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/report-button/report-button.vue"]]);
-  const _sfc_main$L = {
+  const __easycom_1$6 = /* @__PURE__ */ _export_sfc(_sfc_main$N, [["render", _sfc_render$M], ["__scopeId", "data-v-b620d6d3"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/report-button/report-button.vue"]]);
+  const _sfc_main$M = {
     __name: "attitude-widget",
     props: {
       targetId: Number,
@@ -7250,8 +7354,8 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$K(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+  function _sfc_render$L(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock("view", { class: "attitude-container" }, [
       $setup.showPanel ? (vue.openBlock(), vue.createElementBlock(
         "view",
@@ -7362,8 +7466,8 @@ if (uni.restoreGlobal) {
       ])) : vue.createCommentVNode("v-if", true)
     ]);
   }
-  const __easycom_2$2 = /* @__PURE__ */ _export_sfc(_sfc_main$L, [["render", _sfc_render$K], ["__scopeId", "data-v-f15d1ff3"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/attitude-widget/attitude-widget.vue"]]);
-  const _sfc_main$K = {
+  const __easycom_2$3 = /* @__PURE__ */ _export_sfc(_sfc_main$M, [["render", _sfc_render$L], ["__scopeId", "data-v-f15d1ff3"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/attitude-widget/attitude-widget.vue"]]);
+  const _sfc_main$L = {
     __name: "comment-list",
     props: {
       type: {
@@ -7385,6 +7489,7 @@ if (uni.restoreGlobal) {
       const subCommentPages = vue.reactive({});
       const emit = __emit;
       const loading = vue.ref(false);
+      const tempCommentMap = vue.ref({});
       const handleAttitudeChange = (comment2, {
         status,
         counts
@@ -7393,29 +7498,86 @@ if (uni.restoreGlobal) {
         comment2.attitudeCounts = counts;
       };
       __expose({
-        // 添加主评论
+        // 添加主评论（支持临时评论）
         addNewComment: (comment2) => {
-          commentList.value.unshift({
+          const tempComment = {
             ...comment2,
+            isTemp: true,
             showAll: false,
             localChildren: [],
             childTotal: 0
-          });
+          };
+          tempCommentMap.value[comment2.id] = tempComment;
+          commentList.value.unshift(tempComment);
         },
-        // 添加子评论
+        // 添加回复评论（支持临时评论）
         addReplyComment: (reply) => {
-          const parent = commentList.value.find((c2) => c2.id === reply.parent_id);
+          const parentId = reply.parent_id;
+          const parent = commentList.value.find((c2) => c2.id === parentId);
           if (parent) {
+            const tempReply = {
+              ...reply,
+              isTemp: true
+            };
+            tempCommentMap.value[reply.id] = tempReply;
             if (!parent.localChildren) {
               parent.localChildren = [];
             }
             if (typeof parent.childTotal !== "number") {
               parent.childTotal = 0;
             }
-            parent.localChildren.unshift(reply);
+            parent.localChildren.unshift(tempReply);
             parent.childTotal += 1;
             if (!parent.showAll && parent.childTotal <= 5) {
               parent.showAll = true;
+            }
+          }
+        },
+        // 更新临时评论为真实评论
+        updateTempComment: (tempId, newComment) => {
+          const mainIndex = commentList.value.findIndex((c2) => c2.id === tempId);
+          if (mainIndex !== -1) {
+            commentList.value[mainIndex] = {
+              ...newComment,
+              showAll: commentList.value[mainIndex].showAll,
+              localChildren: commentList.value[mainIndex].localChildren || [],
+              childTotal: commentList.value[mainIndex].childTotal || 0
+            };
+            delete tempCommentMap.value[tempId];
+            return;
+          }
+          for (const parent of commentList.value) {
+            if (parent.localChildren && parent.localChildren.length) {
+              const childIndex = parent.localChildren.findIndex((c2) => c2.id === tempId);
+              if (childIndex !== -1) {
+                parent.localChildren[childIndex] = {
+                  ...newComment,
+                  // 保留原有的临时属性
+                  parent_id: parent.localChildren[childIndex].parent_id
+                };
+                delete tempCommentMap.value[tempId];
+                return;
+              }
+            }
+          }
+        },
+        // 移除临时评论
+        removeTempComment: (tempId) => {
+          const mainIndex = commentList.value.findIndex((c2) => c2.id === tempId);
+          if (mainIndex !== -1) {
+            commentList.value.splice(mainIndex, 1);
+            delete tempCommentMap.value[tempId];
+            return;
+          }
+          for (const parent of commentList.value) {
+            if (parent.localChildren && parent.localChildren.length) {
+              const childIndex = parent.localChildren.findIndex((c2) => c2.id === tempId);
+              if (childIndex !== -1) {
+                parent.localChildren.splice(childIndex, 1);
+                parent.childTotal = Math.max(0, parent.childTotal - 1);
+                delete tempCommentMap.value[tempId];
+                return;
+              }
             }
           }
         }
@@ -7440,6 +7602,12 @@ if (uni.restoreGlobal) {
         } finally {
           loading.value = false;
         }
+      };
+      const previewImage = (url) => {
+        uni.previewImage({
+          urls: [url],
+          current: url
+        });
       };
       const handleLike = async (comment2) => {
         if (!global$1.isLogin) {
@@ -7482,7 +7650,7 @@ if (uni.restoreGlobal) {
             });
           }
         } catch (err) {
-          formatAppLog("error", "at components/comment-list/comment-list.vue:285", "点赞失败:", err);
+          formatAppLog("error", "at components/comment-list/comment-list.vue:398", "点赞失败:", err);
           uni.showToast({
             title: "操作失败",
             icon: "none"
@@ -7499,6 +7667,8 @@ if (uni.restoreGlobal) {
         return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`;
       };
       const formatUsername = (name) => {
+        if (!name)
+          return "未知用户";
         return name.length > 12 ? name.slice(0, 12) + "..." : name;
       };
       const loadMainComments = async () => {
@@ -7541,10 +7711,10 @@ if (uni.restoreGlobal) {
             } else {
               commentList.value.push(...newComments);
             }
-            formatAppLog("log", "at components/comment-list/comment-list.vue:350", "total", data.total);
+            formatAppLog("log", "at components/comment-list/comment-list.vue:464", "total", data.total);
             hasMore.value = data.total > commentList.value.length;
             mainCommentsTotal.value = data.total;
-            formatAppLog("log", "at components/comment-list/comment-list.vue:354", "是否还有更多?", hasMore.value);
+            formatAppLog("log", "at components/comment-list/comment-list.vue:468", "是否还有更多?", hasMore.value);
           }
         } catch (err) {
           uni.showToast({
@@ -7561,6 +7731,22 @@ if (uni.restoreGlobal) {
           target,
           relationId: props.relationId
         });
+      };
+      const getAssociationTypeText = (type) => {
+        return type === 1 ? "娃物" : type === 2 ? "店铺" : "关联内容";
+      };
+      const navigateToAssociation = (comment2) => {
+        if (!comment2.association_id)
+          return;
+        if (comment2.association_type === 1) {
+          uni.navigateTo({
+            url: `/pages/goods/goods?goods_id=${comment2.association_id}`
+          });
+        } else if (comment2.association_type === 2) {
+          uni.navigateTo({
+            url: `/pages/brand/brand?brand_id=${comment2.association_id}`
+          });
+        }
       };
       const shouldShowMore = (comment2) => {
         return comment2.childTotal > 5 && !comment2.showAll;
@@ -7599,7 +7785,7 @@ if (uni.restoreGlobal) {
           comment2.showAll = !comment2.showAll;
         }
       };
-      const __returned__ = { props, commentList, currentPage, mainCommentsTotal, hasMore, subCommentPages, emit, loading, handleAttitudeChange, visibleChildren, loadMoreMainComments, handleLike, jump2user, formatTime, formatUsername, loadMainComments, handleReply, shouldShowMore, remainingCount, loadMore, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, reactive: vue.reactive, get websiteUrl() {
+      const __returned__ = { props, commentList, currentPage, mainCommentsTotal, hasMore, subCommentPages, emit, loading, tempCommentMap, handleAttitudeChange, visibleChildren, loadMoreMainComments, previewImage, handleLike, jump2user, formatTime, formatUsername, loadMainComments, handleReply, getAssociationTypeText, navigateToAssociation, shouldShowMore, remainingCount, loadMore, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, reactive: vue.reactive, get websiteUrl() {
         return websiteUrl;
       }, get asyncGetUserInfo() {
         return asyncGetUserInfo;
@@ -7614,10 +7800,10 @@ if (uni.restoreGlobal) {
       return __returned__;
     }
   };
-  function _sfc_render$J(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$K(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_report_button = resolveEasycom(vue.resolveDynamicComponent("report-button"), __easycom_1$6);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
-    const _component_attitude_widget = resolveEasycom(vue.resolveDynamicComponent("attitude-widget"), __easycom_2$2);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
+    const _component_attitude_widget = resolveEasycom(vue.resolveDynamicComponent("attitude-widget"), __easycom_2$3);
     return vue.openBlock(), vue.createElementBlock("view", { class: "comment-container" }, [
       $setup.commentList.length > 0 ? (vue.openBlock(), vue.createElementBlock(
         "view",
@@ -7653,29 +7839,78 @@ if (uni.restoreGlobal) {
               }, null, 8, ["onClick", "src"]),
               vue.createElementVNode("view", { class: "content" }, [
                 vue.createElementVNode("view", { class: "header" }, [
-                  vue.createElementVNode("text", {
-                    class: "username",
-                    onClick: ($event) => $setup.jump2user(comment2.uid)
-                  }, vue.toDisplayString($setup.formatUsername(comment2.username)), 9, ["onClick"]),
-                  vue.createElementVNode(
-                    "text",
-                    { class: "floor" },
-                    "#" + vue.toDisplayString(comment2.floor),
-                    1
-                    /* TEXT */
-                  ),
+                  vue.createElementVNode("view", null, [
+                    vue.createElementVNode("text", {
+                      class: "username",
+                      onClick: ($event) => $setup.jump2user(comment2.uid)
+                    }, vue.toDisplayString($setup.formatUsername(comment2.username)), 9, ["onClick"]),
+                    vue.createElementVNode(
+                      "text",
+                      { class: "floor" },
+                      "#" + vue.toDisplayString(comment2.floor),
+                      1
+                      /* TEXT */
+                    )
+                  ]),
                   vue.createVNode(_component_report_button, {
                     "report-type": 5,
                     "relation-id": comment2.id,
                     "button-text": "举报",
                     "icon-color": "#999",
-                    "theme-color": "#64c6dc"
+                    "theme-color": "#64c6dc",
+                    "icon-size": "24"
                   }, null, 8, ["relation-id"])
                 ]),
+                vue.createCommentVNode(" 新增：评论图片展示 "),
+                comment2.image_url ? (vue.openBlock(), vue.createElementBlock("view", {
+                  key: 0,
+                  class: "comment-images"
+                }, [
+                  vue.createElementVNode("image", {
+                    src: comment2.image_url,
+                    mode: "aspectFill",
+                    class: "comment-image",
+                    onClick: ($event) => $setup.previewImage(comment2.image_url)
+                  }, null, 8, ["src", "onClick"])
+                ])) : vue.createCommentVNode("v-if", true),
                 vue.createElementVNode("text", {
                   class: "comment-text",
                   onClick: ($event) => $setup.handleReply(comment2)
                 }, vue.toDisplayString(comment2.comment), 9, ["onClick"]),
+                vue.createCommentVNode(" 新增：关联信息展示 "),
+                comment2.association_id ? (vue.openBlock(), vue.createElementBlock("view", {
+                  key: 1,
+                  class: "association-card",
+                  onClick: ($event) => $setup.navigateToAssociation(comment2)
+                }, [
+                  vue.createElementVNode("image", {
+                    src: comment2.association_image,
+                    mode: "aspectFill",
+                    class: "association-image"
+                  }, null, 8, ["src"]),
+                  vue.createElementVNode("view", { class: "association-info" }, [
+                    vue.createElementVNode(
+                      "text",
+                      { class: "association-name" },
+                      vue.toDisplayString(comment2.association_name),
+                      1
+                      /* TEXT */
+                    ),
+                    vue.createElementVNode(
+                      "text",
+                      { class: "association-type" },
+                      vue.toDisplayString($setup.getAssociationTypeText(comment2.association_type)),
+                      1
+                      /* TEXT */
+                    )
+                  ]),
+                  vue.createVNode(_component_uni_icons, {
+                    type: "arrow-right",
+                    size: "20",
+                    color: "#999",
+                    class: "association-arrow"
+                  })
+                ], 8, ["onClick"])) : vue.createCommentVNode("v-if", true),
                 vue.createElementVNode("view", { class: "footer" }, [
                   vue.createElementVNode("view", { class: "left-actions" }, [
                     vue.createElementVNode(
@@ -7749,16 +7984,7 @@ if (uni.restoreGlobal) {
                           onClick: ($event) => $setup.jump2user(child.uid),
                           class: "username"
                         }, vue.toDisplayString($setup.formatUsername(child.username)), 9, ["onClick"]),
-                        child.reply_for ? (vue.openBlock(), vue.createElementBlock(
-                          "text",
-                          {
-                            key: 0,
-                            class: "reply-to"
-                          },
-                          "@" + vue.toDisplayString(child.reply_for),
-                          1
-                          /* TEXT */
-                        )) : vue.createCommentVNode("v-if", true),
+                        vue.createCommentVNode(' <text v-if="child.reply_for" class="reply-to">@{{ child.reply_for }}</text> '),
                         vue.createVNode(_component_report_button, {
                           "report-type": 5,
                           "relation-id": child.id,
@@ -7767,10 +7993,55 @@ if (uni.restoreGlobal) {
                           "theme-color": "#64c6dc"
                         }, null, 8, ["relation-id"])
                       ]),
+                      vue.createCommentVNode(" 评论图片 "),
+                      child.image_url ? (vue.openBlock(), vue.createElementBlock("view", {
+                        key: 0,
+                        class: "comment-images"
+                      }, [
+                        vue.createElementVNode("image", {
+                          src: child.image_url,
+                          mode: "aspectFill",
+                          class: "comment-image",
+                          onClick: ($event) => $setup.previewImage(child.image_url)
+                        }, null, 8, ["src", "onClick"])
+                      ])) : vue.createCommentVNode("v-if", true),
                       vue.createElementVNode("text", {
                         class: "comment-text",
                         onClick: ($event) => $setup.handleReply(comment2)
                       }, vue.toDisplayString(child.comment), 9, ["onClick"]),
+                      child.association_id ? (vue.openBlock(), vue.createElementBlock("view", {
+                        key: 1,
+                        class: "association-card",
+                        onClick: ($event) => $setup.navigateToAssociation(child)
+                      }, [
+                        vue.createElementVNode("image", {
+                          src: child.association_image,
+                          mode: "aspectFill",
+                          class: "association-image"
+                        }, null, 8, ["src"]),
+                        vue.createElementVNode("view", { class: "association-info" }, [
+                          vue.createElementVNode(
+                            "text",
+                            { class: "association-name" },
+                            vue.toDisplayString(child.association_name),
+                            1
+                            /* TEXT */
+                          ),
+                          vue.createElementVNode(
+                            "text",
+                            { class: "association-type" },
+                            vue.toDisplayString($setup.getAssociationTypeText(child.association_type)),
+                            1
+                            /* TEXT */
+                          )
+                        ]),
+                        vue.createVNode(_component_uni_icons, {
+                          type: "arrow-right",
+                          size: "20",
+                          color: "#999",
+                          class: "association-arrow"
+                        })
+                      ], 8, ["onClick"])) : vue.createCommentVNode("v-if", true),
                       vue.createElementVNode("view", { class: "footer" }, [
                         vue.createElementVNode("view", { class: "left-actions" }, [
                           vue.createElementVNode(
@@ -7887,7 +8158,166 @@ if (uni.restoreGlobal) {
       ])) : vue.createCommentVNode("v-if", true)
     ]);
   }
-  const __easycom_2$1 = /* @__PURE__ */ _export_sfc(_sfc_main$K, [["render", _sfc_render$J], ["__scopeId", "data-v-ea2f609f"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/comment-list/comment-list.vue"]]);
+  const __easycom_2$2 = /* @__PURE__ */ _export_sfc(_sfc_main$L, [["render", _sfc_render$K], ["__scopeId", "data-v-ea2f609f"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/comment-list/comment-list.vue"]]);
+  const _sfc_main$K = {
+    name: "BottomPopup",
+    props: {
+      show: {
+        type: Boolean,
+        default: false
+      }
+    },
+    methods: {
+      closePopup() {
+        this.$emit("close");
+      }
+    }
+  };
+  function _sfc_render$J(_ctx, _cache, $props, $setup, $data, $options) {
+    return vue.openBlock(), vue.createElementBlock("view", null, [
+      vue.createCommentVNode(" 遮罩层 "),
+      $props.show ? (vue.openBlock(), vue.createElementBlock(
+        "view",
+        {
+          key: 0,
+          class: vue.normalizeClass(["mask", { "mask-show": $props.show }]),
+          onClick: _cache[0] || (_cache[0] = (...args) => $options.closePopup && $options.closePopup(...args))
+        },
+        null,
+        2
+        /* CLASS */
+      )) : vue.createCommentVNode("v-if", true),
+      vue.createCommentVNode(" 弹窗内容 "),
+      vue.createElementVNode(
+        "view",
+        {
+          class: vue.normalizeClass(["popup-container", { "popup-show": $props.show }])
+        },
+        [
+          vue.createCommentVNode(" 关闭按钮 "),
+          vue.createCommentVNode('    <view class="close-btn" @tap="closePopup">\n        <uni-icons type="closeempty" size="24" color="#666"></uni-icons>\n      </view> '),
+          vue.createCommentVNode(" 插槽内容 "),
+          vue.renderSlot(_ctx.$slots, "default", {}, void 0, true)
+        ],
+        2
+        /* CLASS */
+      )
+    ]);
+  }
+  const __easycom_2$1 = /* @__PURE__ */ _export_sfc(_sfc_main$K, [["render", _sfc_render$J], ["__scopeId", "data-v-f4186061"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/components/bottom-popup/bottom-popup.vue"]]);
+  function chooseImage() {
+    return new Promise((resolve) => {
+      uni.chooseImage({
+        count: 1,
+        success: (res) => {
+          resolve(res.tempFilePaths[0]);
+        }
+      });
+    });
+  }
+  function chooseImageList(count = 9) {
+    return new Promise((resolve, reject) => {
+      uni.chooseImage({
+        count,
+        success: (res) => {
+          resolve(res.tempFilePaths);
+        },
+        fail: (err) => {
+          reject(err);
+        }
+      });
+    });
+  }
+  function jumpToCroper() {
+    chooseImage().then((src) => {
+      uni.navigateTo({
+        url: `/pages/pop_croper/pop_croper?src=${decodeURIComponent(src)}`
+      });
+    });
+  }
+  function getQiniuToken() {
+    return new Promise((resolve, reject) => {
+      let token = uni.getStorageSync("token");
+      uni.request({
+        url: websiteUrl + "/with-state/qiniu-token",
+        method: "POST",
+        header: {
+          "Authorization": token
+        },
+        success: (res) => {
+          if (res.data.data && res.data.data.token) {
+            formatAppLog("log", "at common/image.js:54", "获取到的七牛token：" + res.data.data.token);
+            resolve(res.data.data);
+          } else {
+            uni.showToast({
+              title: "获取上传凭证失败",
+              icon: "none"
+            });
+            reject("获取上传凭证失败");
+          }
+        },
+        fail: (err) => {
+          uni.showToast({
+            title: "获取上传凭证失败",
+            icon: "none"
+          });
+          reject("获取上传凭证失败");
+        }
+      });
+    });
+  }
+  function uploadImageToQiniu(croperPath, qnToken, fileName) {
+    let authorization = uni.getStorageSync("token");
+    return new Promise((resolve, reject) => {
+      uni.uploadFile({
+        url: "https://up-cn-east-2.qiniup.com",
+        name: "file",
+        method: "POST",
+        filePath: croperPath,
+        fileType: "image",
+        formData: {
+          token: qnToken,
+          key: fileName,
+          scope: "hobby-box:" + fileName
+        },
+        success: async (res) => {
+          try {
+            const fullUrl = image1Url + fileName;
+            const logRes = await uni.request({
+              url: `${websiteUrl}/with-state/add-image-log`,
+              method: "POST",
+              header: {
+                "Content-Type": "application/json",
+                "Authorization": authorization
+              },
+              data: {
+                image_url: fullUrl
+              }
+            });
+            formatAppLog("log", "at common/image.js:108", logRes);
+            if (logRes.data.status !== "success") {
+              throw new Error("上传图片失败");
+            }
+            resolve({ qiniuRes: res, imageUrl: fullUrl });
+          } catch (logErr) {
+            formatAppLog("error", "at common/image.js:115", "日志记录失败:", logErr);
+            uni.showToast({
+              title: "日志记录失败",
+              icon: "none"
+            });
+            reject("日志记录失败");
+          }
+        },
+        fail: (err) => {
+          uni.showToast({
+            title: "上传失败",
+            icon: "none"
+          });
+          reject("上传失败");
+        }
+      });
+    });
+  }
   const _sfc_main$J = {
     __name: "comment-input",
     props: {
@@ -7906,6 +8336,7 @@ if (uni.restoreGlobal) {
     },
     emits: ["submit", "update:replyInfo"],
     setup(__props, { expose: __expose, emit: __emit }) {
+      const showPopup = vue.ref(false);
       const props = __props;
       const inputRef = vue.ref(null);
       const isFocused = vue.ref(false);
@@ -7913,59 +8344,139 @@ if (uni.restoreGlobal) {
       const instance = vue.getCurrentInstance();
       const commentText = vue.ref("");
       const displayMask = vue.ref(false);
+      const clickedInside = vue.ref(false);
+      const showActionBar = vue.ref(false);
+      const isAnonymous = vue.ref(false);
+      const selectedAssociation = vue.ref(null);
+      const uploadedImageUrl = vue.ref("");
       const keyboardHeight = vue.ref(0);
       const systemInfo2 = uni.getSystemInfoSync();
       const footerBottomHeight = vue.computed(() => {
         var _a, _b;
         let safeBottomVar = ((_a = systemInfo2.safeAreaInsets) == null ? void 0 : _a.bottom) || 10;
-        formatAppLog("log", "at components/comment-input/comment-input.vue:62", "底部安全距离1:", (_b = systemInfo2.safeAreaInsets) == null ? void 0 : _b.bottom, "=>", safeBottomVar);
+        formatAppLog("log", "at components/comment-input/comment-input.vue:138", "底部安全距离1:", (_b = systemInfo2.safeAreaInsets) == null ? void 0 : _b.bottom, "=>", safeBottomVar);
         let safeBottom = safeBottomVar + keyboardHeight.value;
-        formatAppLog("log", "at components/comment-input/comment-input.vue:65", "底部最终距离2:", safeBottom);
+        formatAppLog("log", "at components/comment-input/comment-input.vue:141", "底部最终距离2:", safeBottom);
         return `${safeBottom}px`;
       });
       const keyboardHeightChangeHandler2 = (res) => {
-        formatAppLog("log", "at components/comment-input/comment-input.vue:70", "键盘高度变化", res);
+        formatAppLog("log", "at components/comment-input/comment-input.vue:146", "键盘高度变化", res);
         keyboardHeight.value = res.height;
+      };
+      const toggleAnonymous = (event) => {
+        formatAppLog("log", "at components/comment-input/comment-input.vue:151", "切换匿名状态", isAnonymous.value);
+        isAnonymous.value = !isAnonymous.value;
+        if (isAnonymous.value) {
+          uni.showToast({
+            title: "进入匿名状态",
+            icon: "none"
+          });
+        } else {
+          uni.showToast({
+            title: "退出匿名状态",
+            icon: "none"
+          });
+        }
       };
       const handleFocus = () => {
         displayMask.value = true;
         isFocused.value = true;
+        showActionBar.value = true;
       };
       const handleBlur = () => {
-        displayMask.value = false;
-        isFocused.value = false;
+        setTimeout(() => {
+          if (!clickedInside.value) {
+            if (!showActionBar.value) {
+              displayMask.value = false;
+            }
+            isFocused.value = false;
+          }
+          clickedInside.value = false;
+        }, 200);
       };
+      async function selectImage() {
+        uni.chooseImage({
+          count: 1,
+          success: async (res) => {
+            const tempFilePaths = res.tempFilePaths;
+            for (const filePath of tempFilePaths) {
+              try {
+                const tokenData = await getQiniuToken();
+                const uploadRes = await uploadImageToQiniu(filePath, tokenData.token, tokenData.path);
+                formatAppLog("log", "at components/comment-input/comment-input.vue:203", "res:", uploadRes);
+                if (uploadRes.qiniuRes.statusCode === 200) {
+                  const imageUrl = image1Url + tokenData.path;
+                  uploadedImageUrl.value = imageUrl;
+                } else {
+                  formatAppLog("error", "at components/comment-input/comment-input.vue:208", "上传失败:", filePath);
+                }
+              } catch (error) {
+                formatAppLog("error", "at components/comment-input/comment-input.vue:211", "上传错误:", error);
+              }
+            }
+          }
+        });
+      }
       const handleMaskTap = () => {
+        formatAppLog("log", "at components/comment-input/comment-input.vue:221", "蒙版被点击");
         displayMask.value = false;
         isFocused.value = false;
+        showActionBar.value = false;
         uni.hideKeyboard();
       };
-      const handleSearchSelect = (result) => {
-        if (result.type === "goods") {
-          formatAppLog("log", "at components/comment-input/comment-input.vue:91", "选中商品:", result.data);
-        } else if (result.type === "brand") {
-          formatAppLog("log", "at components/comment-input/comment-input.vue:94", "选中品牌:", result.data);
+      const handleActionBarClick = () => {
+        clickedInside.value = true;
+      };
+      function handleSearchSelect(event) {
+        let edata = {};
+        if (event.type === "goods") {
+          formatAppLog("log", "at components/comment-input/comment-input.vue:235", "选择了商品:", event.data);
+          showPopup.value = false;
+          edata.type = 1;
+          edata.id = event.data.id;
+          edata.name = event.data.name;
+        } else if (event.type === "brand") {
+          formatAppLog("log", "at components/comment-input/comment-input.vue:243", "选择了品牌:", event.data);
+          showPopup.value = false;
+          edata.type = 2;
+          edata.id = event.data.id;
+          edata.name = event.data.name;
         }
+        selectedAssociation.value = edata;
+      }
+      const openAssociationPopup = () => {
+        handleActionBarClick();
       };
       const handleSubmit = () => {
-        if (!commentText.value.trim()) {
+        if (!commentText.value.trim() && !uploadedImageUrl.value) {
           uni.showToast({
-            title: "请输入评论内容",
+            title: "请输入评论内容或上传图片",
             icon: "none"
           });
           return;
         }
         let scene = getScene();
-        formatAppLog("log", "at components/comment-input/comment-input.vue:107", "scene", scene);
-        emit("submit", {
+        formatAppLog("log", "at components/comment-input/comment-input.vue:267", "scene", scene);
+        const submitData = {
           content: commentText.value,
           target_id: props.targetId,
           type: 4,
           replyInfo: props.replyInfo,
-          origin: scene
-        });
+          origin: scene,
+          // 添加图片和关联信息
+          image_url: uploadedImageUrl.value || "",
+          association_id: selectedAssociation.value ? selectedAssociation.value.id : 0,
+          association_type: selectedAssociation.value ? selectedAssociation.value.type : 0,
+          is_anonymous: isAnonymous.value ? 1 : 0
+          // 1表示匿名，0表示正常
+        };
+        emit("submit", submitData);
         commentText.value = "";
+        uploadedImageUrl.value = "";
+        selectedAssociation.value = null;
+        isAnonymous.value = false;
         emit("update:replyInfo", {});
+        handleMaskTap();
       };
       const focusInput = () => {
         isFocused.value = true;
@@ -7974,22 +8485,36 @@ if (uni.restoreGlobal) {
         focusInput
       });
       vue.onMounted(() => {
-        formatAppLog("log", "at components/comment-input/comment-input.vue:136", "注册键盘弹出事件");
+        formatAppLog("log", "at components/comment-input/comment-input.vue:312", "注册键盘弹出事件");
         uni.onKeyboardHeightChange(keyboardHeightChangeHandler2);
       });
-      const __returned__ = { props, inputRef, isFocused, emit, instance, commentText, displayMask, keyboardHeight, systemInfo: systemInfo2, footerBottomHeight, keyboardHeightChangeHandler: keyboardHeightChangeHandler2, handleFocus, handleBlur, handleMaskTap, handleSearchSelect, handleSubmit, focusInput, ref: vue.ref, computed: vue.computed, getCurrentInstance: vue.getCurrentInstance, onMounted: vue.onMounted, get onLoad() {
+      const __returned__ = { showPopup, props, inputRef, isFocused, emit, instance, commentText, displayMask, clickedInside, showActionBar, isAnonymous, selectedAssociation, uploadedImageUrl, keyboardHeight, systemInfo: systemInfo2, footerBottomHeight, keyboardHeightChangeHandler: keyboardHeightChangeHandler2, toggleAnonymous, handleFocus, handleBlur, selectImage, handleMaskTap, handleActionBarClick, handleSearchSelect, openAssociationPopup, handleSubmit, focusInput, ref: vue.ref, computed: vue.computed, getCurrentInstance: vue.getCurrentInstance, onMounted: vue.onMounted, get onLoad() {
         return onLoad;
       }, get onShow() {
         return onShow;
       }, get getScene() {
         return getScene;
+      }, get websiteUrl() {
+        return websiteUrl;
+      }, get image1Url() {
+        return image1Url;
+      }, get chooseImage() {
+        return chooseImage;
+      }, get jumpToCroper() {
+        return jumpToCroper;
+      }, get getQiniuToken() {
+        return getQiniuToken;
+      }, get uploadImageToQiniu() {
+        return uploadImageToQiniu;
       } };
       Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
       return __returned__;
     }
   };
   function _sfc_render$I(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_switch_search = resolveEasycom(vue.resolveDynamicComponent("switch-search"), __easycom_0$3);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
+    const _component_switch_search = resolveEasycom(vue.resolveDynamicComponent("switch-search"), __easycom_1$8);
+    const _component_bottom_popup = resolveEasycom(vue.resolveDynamicComponent("bottom-popup"), __easycom_2$1);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -8016,23 +8541,142 @@ if (uni.restoreGlobal) {
             style: vue.normalizeStyle({ paddingBottom: $setup.footerBottomHeight })
           },
           [
-            vue.createCommentVNode(" 输入框 "),
-            vue.withDirectives(vue.createElementVNode("textarea", {
-              "disable-default-padding": true,
-              focus: $setup.isFocused,
-              class: vue.normalizeClass(["comment_input unified-textarea", { expanded: $setup.isFocused }]),
-              ref: "inputRef",
-              "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.commentText = $event),
-              onFocus: $setup.handleFocus,
-              onBlur: $setup.handleBlur,
-              "adjust-position": false,
-              placeholder: $props.replyInfo.username ? "回复@" + $props.replyInfo.username + " " : "写评论..."
-            }, null, 42, ["focus", "placeholder"]), [
-              [vue.vModelText, $setup.commentText]
+            vue.createElementVNode("view", { class: "about_info" }, [
+              $setup.selectedAssociation ? (vue.openBlock(), vue.createElementBlock("view", {
+                key: 0,
+                class: "association-container"
+              }, [
+                vue.createElementVNode("view", { class: "association-item" }, [
+                  vue.createVNode(_component_uni_icons, {
+                    type: "paperclip",
+                    size: "20",
+                    color: "#fff"
+                  }),
+                  vue.createElementVNode(
+                    "text",
+                    { class: "association-text" },
+                    vue.toDisplayString($setup.selectedAssociation.name),
+                    1
+                    /* TEXT */
+                  ),
+                  vue.createVNode(_component_uni_icons, {
+                    type: "close",
+                    size: "20",
+                    color: "#fff",
+                    onClick: _cache[0] || (_cache[0] = vue.withModifiers(($event) => $setup.selectedAssociation = null, ["stop"])),
+                    class: "close-icon"
+                  })
+                ])
+              ])) : vue.createCommentVNode("v-if", true),
+              $setup.uploadedImageUrl ? (vue.openBlock(), vue.createElementBlock("view", {
+                key: 1,
+                class: "image-container"
+              }, [
+                vue.createElementVNode("view", { class: "image-item" }, [
+                  vue.createElementVNode("image", {
+                    src: $setup.uploadedImageUrl,
+                    mode: "aspectFill",
+                    class: "uploaded-image"
+                  }, null, 8, ["src"]),
+                  vue.createElementVNode("view", {
+                    class: "delete-icon",
+                    onClick: _cache[1] || (_cache[1] = vue.withModifiers(($event) => $setup.uploadedImageUrl = "", ["stop"]))
+                  }, [
+                    vue.createVNode(_component_uni_icons, {
+                      type: "close",
+                      size: "18",
+                      color: "#fff"
+                    })
+                  ])
+                ])
+              ])) : vue.createCommentVNode("v-if", true)
             ]),
-            vue.createCommentVNode(" 按钮 "),
-            vue.createElementVNode("button", { onClick: $setup.handleSubmit }, "写评论"),
-            vue.createVNode(_component_switch_search, { onSelect: $setup.handleSearchSelect })
+            vue.createElementVNode("view", { class: "bottom_input" }, [
+              vue.createCommentVNode(" 输入框 "),
+              vue.withDirectives(vue.createElementVNode("textarea", {
+                "disable-default-padding": true,
+                focus: $setup.isFocused,
+                class: vue.normalizeClass(["comment_input unified-textarea", { expanded: $setup.isFocused }]),
+                ref: "inputRef",
+                "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => $setup.commentText = $event),
+                onFocus: $setup.handleFocus,
+                onBlur: $setup.handleBlur,
+                "adjust-position": false,
+                placeholder: $props.replyInfo.username ? "回复@" + $props.replyInfo.username + " " : "写评论..."
+              }, null, 42, ["focus", "placeholder"]), [
+                [vue.vModelText, $setup.commentText]
+              ]),
+              vue.createCommentVNode(" 按钮 "),
+              vue.createElementVNode("button", { onClick: $setup.handleSubmit }, "写评论")
+            ]),
+            vue.withDirectives(vue.createElementVNode(
+              "view",
+              { class: "action-bar" },
+              [
+                vue.createElementVNode("view", {
+                  onClick: vue.withModifiers($setup.toggleAnonymous, ["stop"])
+                }, [
+                  $setup.isAnonymous ? (vue.openBlock(), vue.createBlock(_component_uni_icons, {
+                    key: 0,
+                    type: "eye-slash",
+                    size: "22",
+                    color: $setup.isAnonymous ? "#007aff" : ""
+                  }, null, 8, ["color"])) : (vue.openBlock(), vue.createBlock(_component_uni_icons, {
+                    key: 1,
+                    type: "eye",
+                    size: "22",
+                    color: "#696a6c"
+                  }))
+                ]),
+                vue.createElementVNode("view", {
+                  onClick: _cache[3] || (_cache[3] = vue.withModifiers(($event) => $setup.showPopup = true, ["stop"]))
+                }, [
+                  vue.createVNode(_component_uni_icons, {
+                    type: "plus",
+                    size: "22",
+                    color: "#696a6c"
+                  })
+                ]),
+                vue.createElementVNode("view", {
+                  onClick: vue.withModifiers($setup.selectImage, ["stop"])
+                }, [
+                  vue.createVNode(_component_uni_icons, {
+                    type: "image",
+                    size: "22",
+                    color: "#696a6c"
+                  })
+                ]),
+                vue.createCommentVNode(" 操作栏 ： 1是否匿名发帖，点击后变为高亮蓝色，且发帖传匿名参数 "),
+                vue.createCommentVNode(" 加号：内容选择区域出现多个按钮，1：关联 ,点击后从底部弹窗，"),
+                vue.createCommentVNode(" 键盘按钮，点击关闭下方菜单，并聚焦输入框 ")
+              ],
+              512
+              /* NEED_PATCH */
+            ), [
+              [vue.vShow, $setup.showActionBar]
+            ]),
+            vue.createElementVNode("view", null, [
+              vue.createCommentVNode(" 内容选择区域，在输入框下方，会把输入框顶起来 ")
+            ]),
+            vue.createCommentVNode(" 底部弹窗组件 "),
+            vue.createVNode(_component_bottom_popup, {
+              show: $setup.showPopup,
+              onClose: _cache[4] || (_cache[4] = ($event) => $setup.showPopup = false)
+            }, {
+              default: vue.withCtx(() => [
+                vue.createCommentVNode(" 关联商品或是品牌，点击后获取商品id和名称，关闭弹窗组件，并在输入框下方显示刚刚选择的品牌或商品，提交的时候需要携带这些信息 "),
+                $setup.showPopup ? (vue.openBlock(), vue.createBlock(_component_switch_search, {
+                  key: 0,
+                  "target-id": $setup.props.targetId,
+                  "reply-info": $setup.props.replyInfo,
+                  mode: "fill",
+                  onSubmit: $setup.handleSearchSelect
+                }, null, 8, ["target-id", "reply-info"])) : vue.createCommentVNode("v-if", true),
+                vue.createElementVNode("view", { style: { "height": "900rpx" } })
+              ]),
+              _: 1
+              /* STABLE */
+            }, 8, ["show"])
           ],
           4
           /* STYLE */
@@ -8087,11 +8731,8 @@ if (uni.restoreGlobal) {
         replyForItem.value = item;
         (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
       };
-      const handleCommentSubmit = ({
-        content,
-        replyInfo,
-        origin
-      }) => {
+      const handleCommentSubmit = (submitData) => {
+        var _a, _b, _c;
         let token = uni.getStorageSync("token");
         if (!global$1.isLogin) {
           uni.showToast({
@@ -8100,19 +8741,76 @@ if (uni.restoreGlobal) {
           });
           return;
         }
-        formatAppLog("log", "at pages/goods/goods.vue:306", "reply_info", replyInfo);
+        formatAppLog("log", "at pages/goods/goods.vue:304", "reply_info", replyForItem.value);
         const requestData = {
-          content,
-          origin,
+          content: submitData.content,
+          origin: submitData.origin,
           target_id: parseInt(props.goods_id),
           type: 2,
-          ...replyInfo.id && {
-            reply_id: replyInfo.id,
-            reply_for: replyInfo.comment,
-            reply_user_id: replyInfo.user_id,
-            parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+          // 商品类型
+          image_url: submitData.image_url || "",
+          association_id: submitData.association_id || 0,
+          association_type: submitData.association_type || 0,
+          is_anonymous: submitData.is_anonymous || 0,
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
           }
         };
+        const tempComment = {
+          id: Date.now(),
+          // 临时ID
+          content: submitData.content,
+          created_at: Math.floor(Date.now() / 1e3),
+          like_count: 0,
+          reply_count: 0,
+          is_liked: false,
+          floor: 0,
+          // 临时楼层数
+          // 匿名处理
+          ...submitData.is_anonymous ? {
+            avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+            username: "匿名用户",
+            is_anonymous: 1
+          } : {
+            avatar: global$1.userInfo.avatar,
+            username: global$1.userInfo.nickname,
+            is_anonymous: 0
+          },
+          // 关联信息
+          ...submitData.association_id && {
+            association_id: submitData.association_id,
+            association_type: submitData.association_type
+          },
+          // 图片信息
+          ...submitData.image_url && {
+            image_url: submitData.image_url
+          },
+          // 回复信息
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+            // 处理被回复者的匿名状态
+            reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+          }
+        };
+        if (!replyForItem.value.id) {
+          (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+        } else if (replyForItem.value.parent_id === 0) {
+          (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.id
+          });
+        } else {
+          (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.parent_id
+          });
+        }
         uni.request({
           url: websiteUrl + "/with-state/add-comment",
           method: "POST",
@@ -8121,19 +8819,31 @@ if (uni.restoreGlobal) {
           },
           data: requestData,
           success: (res) => {
-            var _a, _b;
+            var _a2, _b2;
             if (res.data.status == "success") {
               const newComment = res.data.data;
-              if (newComment.parent_id === 0) {
-                (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-              } else {
-                (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+              const finalComment = {
+                ...newComment,
+                ...submitData.is_anonymous ? {
+                  avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                  username: "匿名用户",
+                  is_anonymous: 1
+                } : {
+                  avatar: global$1.userInfo.avatar,
+                  username: global$1.userInfo.nickname,
+                  is_anonymous: 0
+                }
+              };
+              if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+                finalComment.reply_username = "匿名用户";
               }
+              (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
               uni.showToast({
                 title: "评论成功",
                 icon: "success"
               });
             } else {
+              (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
               uni.showToast({
                 title: res.data.msg,
                 icon: "none"
@@ -8141,6 +8851,8 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
+            var _a2;
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -8152,26 +8864,26 @@ if (uni.restoreGlobal) {
         title: "BJD娃圈你想知道的这里都有~",
         path: "/pages/news/news",
         success(res) {
-          formatAppLog("log", "at pages/goods/goods.vue:364", "分享成功", res);
+          formatAppLog("log", "at pages/goods/goods.vue:449", "分享成功", res);
         },
         fail(err) {
-          formatAppLog("log", "at pages/goods/goods.vue:367", "分享失败", err);
+          formatAppLog("log", "at pages/goods/goods.vue:452", "分享失败", err);
         },
         mp: {
           wxpath: "/pages/index/index.html"
         }
       });
       function onImageLoad(index) {
-        formatAppLog("log", "at pages/goods/goods.vue:377", "图片加载完成", index);
+        formatAppLog("log", "at pages/goods/goods.vue:462", "图片加载完成", index);
         const query = uni.createSelectorQuery();
         setTimeout(() => {
           query.select(`.swiper-image-${index}`).boundingClientRect((rect) => {
             try {
               if (!rect) {
-                formatAppLog("warn", "at pages/goods/goods.vue:384", "未找到图片元素");
+                formatAppLog("warn", "at pages/goods/goods.vue:469", "未找到图片元素");
                 return;
               }
-              formatAppLog("log", "at pages/goods/goods.vue:387", rect);
+              formatAppLog("log", "at pages/goods/goods.vue:472", rect);
               imageHeights.value[index] = rect.height;
               const validHeights = imageHeights.value.filter((h2) => h2 > 0);
               if (validHeights.length === 0)
@@ -8179,7 +8891,7 @@ if (uni.restoreGlobal) {
               const calculatedHeight = Math.max(...validHeights);
               swiperHeight.value = Math.min(calculatedHeight, maxHeight.value);
             } catch (e2) {
-              formatAppLog("error", "at pages/goods/goods.vue:396", "高度计算异常:", e2);
+              formatAppLog("error", "at pages/goods/goods.vue:481", "高度计算异常:", e2);
             }
           }).exec();
         }, 20);
@@ -8193,7 +8905,7 @@ if (uni.restoreGlobal) {
         });
       }
       function onChange(e2) {
-        formatAppLog("log", "at pages/goods/goods.vue:413", e2.detail.current);
+        formatAppLog("log", "at pages/goods/goods.vue:498", e2.detail.current);
         swiperIndex.value = e2.detail.current + 1;
       }
       function getGoods() {
@@ -8202,12 +8914,12 @@ if (uni.restoreGlobal) {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            formatAppLog("log", "at pages/goods/goods.vue:423", res.data.data);
+            formatAppLog("log", "at pages/goods/goods.vue:508", res.data.data);
             goods2.value = res.data.data;
             getWishInfo();
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/goods/goods.vue:429", err);
+            formatAppLog("log", "at pages/goods/goods.vue:514", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -8266,7 +8978,7 @@ if (uni.restoreGlobal) {
           },
           data: requestData,
           success: (res) => {
-            formatAppLog("log", "at pages/goods/goods.vue:499", res.data);
+            formatAppLog("log", "at pages/goods/goods.vue:584", res.data);
             if (res.data.status == "success") {
               uni.showToast({
                 title: "操作成功",
@@ -8285,7 +8997,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/goods/goods.vue:518", err);
+            formatAppLog("log", "at pages/goods/goods.vue:603", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -8305,7 +9017,7 @@ if (uni.restoreGlobal) {
             "Authorization": token
           },
           success: (res) => {
-            formatAppLog("log", "at pages/goods/goods.vue:540", res.data);
+            formatAppLog("log", "at pages/goods/goods.vue:625", res.data);
             if (res.data.status == "success") {
               if (res.data.data.id > 0) {
                 hasLike.value = true;
@@ -8321,7 +9033,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/goods/goods.vue:558", err);
+            formatAppLog("log", "at pages/goods/goods.vue:643", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -8369,11 +9081,11 @@ if (uni.restoreGlobal) {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            formatAppLog("log", "at pages/goods/goods.vue:654", res.data.data);
+            formatAppLog("log", "at pages/goods/goods.vue:739", res.data.data);
             collocationList.value = res.data.data;
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/goods/goods.vue:658", err);
+            formatAppLog("log", "at pages/goods/goods.vue:743", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -8454,7 +9166,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("error", "at pages/goods/goods.vue:761", "许愿请求失败:", err);
+            formatAppLog("error", "at pages/goods/goods.vue:846", "许愿请求失败:", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -8482,7 +9194,7 @@ if (uni.restoreGlobal) {
       getGoods();
       getCollocation();
       asyncGetUserInfo().then((userInfo) => {
-        formatAppLog("log", "at pages/goods/goods.vue:797", userInfo);
+        formatAppLog("log", "at pages/goods/goods.vue:882", userInfo);
         getHasLike();
       });
       const __returned__ = { props, systemInfo: systemInfo2, loading, error, errorMsg, commentListRef, commentInputRef, get commentsPage() {
@@ -8543,10 +9255,10 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$H(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
-    const _component_item_impression = resolveEasycom(vue.resolveDynamicComponent("item-impression"), __easycom_2$3);
-    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$1);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
+    const _component_item_impression = resolveEasycom(vue.resolveDynamicComponent("item-impression"), __easycom_2$4);
+    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$2);
     const _component_comment_input = resolveEasycom(vue.resolveDynamicComponent("comment-input"), __easycom_3$1);
     return $setup.goods.name ? (vue.openBlock(), vue.createElementBlock("view", {
       key: 0,
@@ -9162,7 +9874,7 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$G(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createElementVNode(
         "view",
@@ -9270,11 +9982,8 @@ if (uni.restoreGlobal) {
         replyForItem.value = item;
         (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
       };
-      const handleCommentSubmit = ({
-        content,
-        replyInfo,
-        origin
-      }) => {
+      const handleCommentSubmit = (submitData) => {
+        var _a, _b, _c;
         let token = uni.getStorageSync("token");
         if (!global$1.isLogin) {
           uni.showToast({
@@ -9283,19 +9992,76 @@ if (uni.restoreGlobal) {
           });
           return;
         }
-        formatAppLog("log", "at pages/brand/brand.vue:183", "reply_info", replyInfo);
+        formatAppLog("log", "at pages/brand/brand.vue:181", "reply_info", replyForItem.value);
         const requestData = {
-          content,
-          origin,
+          content: submitData.content,
+          origin: submitData.origin,
           target_id: parseInt(props.brand_id),
           type: 1,
-          ...replyInfo.id && {
-            reply_id: replyInfo.id,
-            reply_for: replyInfo.comment,
-            reply_user_id: replyInfo.user_id,
-            parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+          // 品牌评论类型
+          image_url: submitData.image_url || "",
+          association_id: submitData.association_id || 0,
+          association_type: submitData.association_type || 0,
+          is_anonymous: submitData.is_anonymous || 0,
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
           }
         };
+        const tempComment = {
+          id: Date.now(),
+          // 临时ID
+          content: submitData.content,
+          created_at: Math.floor(Date.now() / 1e3),
+          like_count: 0,
+          reply_count: 0,
+          is_liked: false,
+          floor: 0,
+          // 临时楼层数
+          // 匿名处理
+          ...submitData.is_anonymous ? {
+            avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+            username: "匿名用户",
+            is_anonymous: 1
+          } : {
+            avatar: global$1.userInfo.avatar,
+            username: global$1.userInfo.nickname,
+            is_anonymous: 0
+          },
+          // 关联信息
+          ...submitData.association_id && {
+            association_id: submitData.association_id,
+            association_type: submitData.association_type
+          },
+          // 图片信息
+          ...submitData.image_url && {
+            image_url: submitData.image_url
+          },
+          // 回复信息
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+            // 处理被回复者的匿名状态
+            reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+          }
+        };
+        if (!replyForItem.value.id) {
+          (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+        } else if (replyForItem.value.parent_id === 0) {
+          (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.id
+          });
+        } else {
+          (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.parent_id
+          });
+        }
         uni.request({
           url: websiteUrl + "/with-state/add-comment",
           method: "POST",
@@ -9304,19 +10070,31 @@ if (uni.restoreGlobal) {
           },
           data: requestData,
           success: (res) => {
-            var _a, _b;
+            var _a2, _b2;
             if (res.data.status == "success") {
               const newComment = res.data.data;
-              if (newComment.parent_id === 0) {
-                (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-              } else {
-                (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+              const finalComment = {
+                ...newComment,
+                ...submitData.is_anonymous ? {
+                  avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                  username: "匿名用户",
+                  is_anonymous: 1
+                } : {
+                  avatar: global$1.userInfo.avatar,
+                  username: global$1.userInfo.nickname,
+                  is_anonymous: 0
+                }
+              };
+              if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+                finalComment.reply_username = "匿名用户";
               }
+              (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
               uni.showToast({
                 title: "评论成功",
                 icon: "success"
               });
             } else {
+              (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
               uni.showToast({
                 title: res.data.msg,
                 icon: "none"
@@ -9324,6 +10102,8 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
+            var _a2;
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -9332,7 +10112,7 @@ if (uni.restoreGlobal) {
         });
       };
       const onRateChange = (e2) => {
-        formatAppLog("log", "at pages/brand/brand.vue:237", e2);
+        formatAppLog("log", "at pages/brand/brand.vue:322", e2);
         if (!global$1.isLogin) {
           uni.showToast({
             title: "请先登录",
@@ -9393,7 +10173,7 @@ if (uni.restoreGlobal) {
           }
         } catch (err) {
           uni.hideLoading();
-          formatAppLog("error", "at pages/brand/brand.vue:309", "评分失败:", err);
+          formatAppLog("error", "at pages/brand/brand.vue:394", "评分失败:", err);
           uni.showToast({
             title: "评分失败，请重试",
             icon: "none"
@@ -9431,10 +10211,10 @@ if (uni.restoreGlobal) {
         title: "BJD娃圈你想知道的这里都有~",
         path: "/pages/news/news",
         success(res) {
-          formatAppLog("log", "at pages/brand/brand.vue:352", "分享成功", res);
+          formatAppLog("log", "at pages/brand/brand.vue:437", "分享成功", res);
         },
         fail(err) {
-          formatAppLog("log", "at pages/brand/brand.vue:355", "分享失败", err);
+          formatAppLog("log", "at pages/brand/brand.vue:440", "分享失败", err);
         },
         mp: {
           wxpath: "/pages/index/index.html"
@@ -9446,7 +10226,7 @@ if (uni.restoreGlobal) {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            formatAppLog("log", "at pages/brand/brand.vue:368", res.data.data);
+            formatAppLog("log", "at pages/brand/brand.vue:453", res.data.data);
             brand.value = res.data.data;
             uni.setNavigationBarTitle({
               title: res.data.data.brand_name
@@ -9454,7 +10234,7 @@ if (uni.restoreGlobal) {
             getHasLikeBrand();
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/brand/brand.vue:378", err);
+            formatAppLog("log", "at pages/brand/brand.vue:463", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -9502,7 +10282,7 @@ if (uni.restoreGlobal) {
             });
           }
         } catch (err) {
-          formatAppLog("error", "at pages/brand/brand.vue:430", err);
+          formatAppLog("error", "at pages/brand/brand.vue:515", err);
           uni.showToast({
             title: "操作失败",
             icon: "none"
@@ -9521,7 +10301,7 @@ if (uni.restoreGlobal) {
           });
           hasLikeBrand.value = ((_a = res.data.data) == null ? void 0 : _a.id) > 0;
         } catch (err) {
-          formatAppLog("error", "at pages/brand/brand.vue:452", "获取关注状态失败:", err);
+          formatAppLog("error", "at pages/brand/brand.vue:537", "获取关注状态失败:", err);
         }
       };
       function formatTimestamp(timestamp) {
@@ -9540,7 +10320,7 @@ if (uni.restoreGlobal) {
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            formatAppLog("log", "at pages/brand/brand.vue:477", res.data.data);
+            formatAppLog("log", "at pages/brand/brand.vue:562", res.data.data);
             goods2.value.page_index = res.data.data.page_index;
             goods2.value.total = res.data.data.total;
             goods2.value.goods_list = goods2.value.goods_list ? goods2.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
@@ -9555,7 +10335,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/brand/brand.vue:495", err);
+            formatAppLog("log", "at pages/brand/brand.vue:580", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -9594,7 +10374,7 @@ if (uni.restoreGlobal) {
             origin: scene
           },
           success: (res) => {
-            formatAppLog("log", "at pages/brand/brand.vue:541", res.data);
+            formatAppLog("log", "at pages/brand/brand.vue:626", res.data);
             if (res.data.status == "success") {
               uni.showToast({
                 title: "评论成功",
@@ -9614,7 +10394,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/brand/brand.vue:563", err);
+            formatAppLog("log", "at pages/brand/brand.vue:648", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -9648,7 +10428,7 @@ if (uni.restoreGlobal) {
             type
           },
           success: (res) => {
-            formatAppLog("log", "at pages/brand/brand.vue:601", res.data.data);
+            formatAppLog("log", "at pages/brand/brand.vue:686", res.data.data);
             if (res.data.status == "success") {
               myRateValue.value = res.data.data.score;
               return res.data.data.score;
@@ -9661,7 +10441,7 @@ if (uni.restoreGlobal) {
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/brand/brand.vue:614", err);
+            formatAppLog("log", "at pages/brand/brand.vue:699", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -9753,9 +10533,9 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$F(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_uni_rate = resolveEasycom(vue.resolveDynamicComponent("uni-rate"), __easycom_1$5);
-    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$1);
+    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$2);
     const _component_comment_input = resolveEasycom(vue.resolveDynamicComponent("comment-input"), __easycom_3$1);
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createElementVNode("meta", {
@@ -10195,10 +10975,10 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$E(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_common_search = resolveEasycom(vue.resolveDynamicComponent("common-search"), __easycom_2$6);
-    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$9);
-    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_2$4);
+    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$a);
+    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_6);
     return vue.openBlock(), vue.createBlock(_component_common_page, { head_color: "rgb(185 195 253)" }, {
       default: vue.withCtx(() => [
         vue.createVNode(_component_view_logs),
@@ -11514,7 +12294,7 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$B(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -11690,8 +12470,8 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$A(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -11998,7 +12778,7 @@ if (uni.restoreGlobal) {
     }
   };
   function _sfc_render$z(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -16627,7 +17407,7 @@ ${i3}
   };
   function _sfc_render$w(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_uni_load_more = resolveEasycom(vue.resolveDynamicComponent("uni-load-more"), __easycom_1$4);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_data_picker_view = vue.resolveComponent("data-picker-view");
     return vue.openBlock(), vue.createElementBlock("view", { class: "uni-data-tree" }, [
       vue.createElementVNode("view", {
@@ -16792,119 +17572,6 @@ ${i3}
     ]);
   }
   const __easycom_4 = /* @__PURE__ */ _export_sfc(_sfc_main$x, [["render", _sfc_render$w], ["__scopeId", "data-v-2653531e"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/uni_modules/uni-data-picker/components/uni-data-picker/uni-data-picker.vue"]]);
-  function chooseImage() {
-    return new Promise((resolve) => {
-      uni.chooseImage({
-        count: 1,
-        success: (res) => {
-          resolve(res.tempFilePaths[0]);
-        }
-      });
-    });
-  }
-  function chooseImageList(count = 9) {
-    return new Promise((resolve, reject) => {
-      uni.chooseImage({
-        count,
-        success: (res) => {
-          resolve(res.tempFilePaths);
-        },
-        fail: (err) => {
-          reject(err);
-        }
-      });
-    });
-  }
-  function jumpToCroper() {
-    chooseImage().then((src) => {
-      uni.navigateTo({
-        url: `/pages/pop_croper/pop_croper?src=${decodeURIComponent(src)}`
-      });
-    });
-  }
-  function getQiniuToken() {
-    return new Promise((resolve, reject) => {
-      let token = uni.getStorageSync("token");
-      uni.request({
-        url: websiteUrl + "/with-state/qiniu-token",
-        method: "POST",
-        header: {
-          "Authorization": token
-        },
-        success: (res) => {
-          if (res.data.data && res.data.data.token) {
-            formatAppLog("log", "at common/image.js:54", "获取到的七牛token：" + res.data.data.token);
-            resolve(res.data.data);
-          } else {
-            uni.showToast({
-              title: "获取上传凭证失败",
-              icon: "none"
-            });
-            reject("获取上传凭证失败");
-          }
-        },
-        fail: (err) => {
-          uni.showToast({
-            title: "获取上传凭证失败",
-            icon: "none"
-          });
-          reject("获取上传凭证失败");
-        }
-      });
-    });
-  }
-  function uploadImageToQiniu(croperPath, qnToken, fileName) {
-    let authorization = uni.getStorageSync("token");
-    return new Promise((resolve, reject) => {
-      uni.uploadFile({
-        url: "https://up-cn-east-2.qiniup.com",
-        name: "file",
-        method: "POST",
-        filePath: croperPath,
-        fileType: "image",
-        formData: {
-          token: qnToken,
-          key: fileName,
-          scope: "hobby-box:" + fileName
-        },
-        success: async (res) => {
-          try {
-            const fullUrl = image1Url + fileName;
-            const logRes = await uni.request({
-              url: `${websiteUrl}/with-state/add-image-log`,
-              method: "POST",
-              header: {
-                "Content-Type": "application/json",
-                "Authorization": authorization
-              },
-              data: {
-                image_url: fullUrl
-              }
-            });
-            formatAppLog("log", "at common/image.js:108", logRes);
-            if (logRes.data.status !== "success") {
-              throw new Error("上传图片失败");
-            }
-            resolve({ qiniuRes: res, imageUrl: fullUrl });
-          } catch (logErr) {
-            formatAppLog("error", "at common/image.js:115", "日志记录失败:", logErr);
-            uni.showToast({
-              title: "日志记录失败",
-              icon: "none"
-            });
-            reject("日志记录失败");
-          }
-        },
-        fail: (err) => {
-          uni.showToast({
-            title: "上传失败",
-            icon: "none"
-          });
-          reject("上传失败");
-        }
-      });
-    });
-  }
   const _imports_0$2 = "/static/info-circle.png";
   const _sfc_main$w = {
     __name: "account_book_form",
@@ -16927,7 +17594,7 @@ ${i3}
       const typeModalVisible = vue.ref(false);
       const newTypeName = vue.ref("");
       const customTypes = vue.ref([]);
-      const defaultTypes = ["请选择", "娃衣", "娃头", "眼珠", "假发", "娃鞋", "其它"];
+      const defaultTypes = [];
       const typeOptions = vue.computed(() => [
         ...defaultTypes,
         ...customTypes.value.map((t2) => t2.name)
@@ -17547,10 +18214,10 @@ ${i3}
     }
   };
   function _sfc_render$v(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
-    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$8);
+    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$9);
     const _component_uni_data_picker = resolveEasycom(vue.resolveDynamicComponent("uni-data-picker"), __easycom_4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
@@ -17566,8 +18233,7 @@ ${i3}
           vue.createVNode(_component_common_modal, {
             visible: $setup.typeModalVisible,
             "onUpdate:visible": _cache[1] || (_cache[1] = (val) => $setup.typeModalVisible = val),
-            top: "100rpx",
-            height: "60%"
+            top: "100rpx"
           }, {
             default: vue.withCtx(() => [
               vue.createElementVNode("view", { class: "type-modal" }, [
@@ -18141,7 +18807,7 @@ ${i3}
     }
   };
   function _sfc_render$u(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock(
       "view",
       {
@@ -18649,11 +19315,11 @@ ${i3}
     }
   };
   function _sfc_render$s(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_common_name_picker = resolveEasycom(vue.resolveDynamicComponent("common-name-picker"), __easycom_1$3);
     const _component_common_search = resolveEasycom(vue.resolveDynamicComponent("common-search"), __easycom_2$6);
     const _component_custom_picker = resolveEasycom(vue.resolveDynamicComponent("custom-picker"), __easycom_3);
-    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$8);
+    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$9);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
     return vue.openBlock(), vue.createBlock(_component_common_modal, {
       visible: $setup.internalVisible,
@@ -19155,7 +19821,7 @@ ${i3}
     }
   };
   function _sfc_render$r(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_relation_picker = resolveEasycom(vue.resolveDynamicComponent("relation-picker"), __easycom_1$2);
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createElementVNode("meta", {
@@ -19496,7 +20162,7 @@ ${i3}
     }
   };
   function _sfc_render$q(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -19944,7 +20610,7 @@ ${i3}
     }
   };
   function _sfc_render$p(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_relation_picker = resolveEasycom(vue.resolveDynamicComponent("relation-picker"), __easycom_1$2);
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createVNode(_component_view_logs),
@@ -20155,7 +20821,7 @@ ${i3}
               }
             },
             fail: (err) => {
-              formatAppLog("error", "at pages/collocation_share/collocation_share.vue:213", err);
+              formatAppLog("error", "at pages/collocation_share/collocation_share.vue:214", err);
               uni.showToast({
                 title: "网络请求失败",
                 icon: "none"
@@ -20166,7 +20832,7 @@ ${i3}
         });
       };
       function viewFullImage(index) {
-        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:226", detailData);
+        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:227", detailData);
         uni.previewImage({
           current: detailData.value.image_url_list[index],
           urls: detailData.value.image_url_list
@@ -20196,7 +20862,7 @@ ${i3}
                     imageError: !goodsInfo
                   };
                 } catch (error2) {
-                  formatAppLog("error", "at pages/collocation_share/collocation_share.vue:265", "商品信息获取失败:", error2);
+                  formatAppLog("error", "at pages/collocation_share/collocation_share.vue:266", "商品信息获取失败:", error2);
                   return {
                     ...item,
                     goodsInfo: null,
@@ -20242,10 +20908,10 @@ ${i3}
           if (res.data.status === "success") {
             authorInfo.value = res.data.data;
           } else {
-            formatAppLog("error", "at pages/collocation_share/collocation_share.vue:324", "获取用户信息失败:", res.data.msg);
+            formatAppLog("error", "at pages/collocation_share/collocation_share.vue:325", "获取用户信息失败:", res.data.msg);
           }
         } catch (error2) {
-          formatAppLog("error", "at pages/collocation_share/collocation_share.vue:327", "用户信息请求失败:", error2);
+          formatAppLog("error", "at pages/collocation_share/collocation_share.vue:328", "用户信息请求失败:", error2);
           uni.showToast({
             title: "作者信息加载失败",
             icon: "none"
@@ -20290,7 +20956,7 @@ ${i3}
           },
           data: requestData,
           success: (res) => {
-            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:382", res.data);
+            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:383", res.data);
             if (res.data.status == "success") {
               uni.showToast({
                 title: "操作成功",
@@ -20309,7 +20975,7 @@ ${i3}
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:401", err);
+            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:402", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -20345,7 +21011,7 @@ ${i3}
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:441", err);
+            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:442", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -20366,8 +21032,8 @@ ${i3}
         target
       }) => {
         var _a;
-        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:465", "parent", parent);
-        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:466", "target", target);
+        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:466", "parent", parent);
+        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:467", "target", target);
         let item = parent;
         if (target != null) {
           item = target;
@@ -20376,7 +21042,7 @@ ${i3}
           replyForItem.value = {};
           return;
         }
-        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:477", "item", item);
+        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:478", "item", item);
         replyForItem.value = item;
         (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
       };
@@ -20384,20 +21050,17 @@ ${i3}
         title: "BJD娃圈你想知道的这里都有~",
         path: "/pages/news/news",
         success(res) {
-          formatAppLog("log", "at pages/collocation_share/collocation_share.vue:487", "分享成功", res);
+          formatAppLog("log", "at pages/collocation_share/collocation_share.vue:488", "分享成功", res);
         },
         fail(err) {
-          formatAppLog("log", "at pages/collocation_share/collocation_share.vue:490", "分享失败", err);
+          formatAppLog("log", "at pages/collocation_share/collocation_share.vue:491", "分享失败", err);
         },
         mp: {
           wxpath: "/pages/index/index.html"
         }
       });
-      const handleCommentSubmit = ({
-        content,
-        replyInfo,
-        origin: origin2
-      }) => {
+      const handleCommentSubmit = (submitData) => {
+        var _a, _b, _c;
         let token = uni.getStorageSync("token");
         if (!global$1.isLogin) {
           uni.showToast({
@@ -20406,19 +21069,75 @@ ${i3}
           });
           return;
         }
-        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:509", "reply_info", replyInfo);
+        const commentType = origin.value == 1 ? 3 : 6;
         const requestData = {
-          content,
-          origin: origin2,
+          content: submitData.content,
+          origin: submitData.origin,
           target_id: parseInt(pageId.value),
-          type: props.origin == 1 ? 3 : 6,
-          ...replyInfo.id && {
-            reply_id: replyInfo.id,
-            reply_for: replyInfo.comment,
-            reply_user_id: replyInfo.user_id,
-            parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+          type: commentType,
+          image_url: submitData.image_url || "",
+          association_id: submitData.association_id || 0,
+          association_type: submitData.association_type || 0,
+          is_anonymous: submitData.is_anonymous || 0,
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
           }
         };
+        const tempComment = {
+          id: Date.now(),
+          // 临时ID
+          content: submitData.content,
+          created_at: Math.floor(Date.now() / 1e3),
+          like_count: 0,
+          reply_count: 0,
+          is_liked: false,
+          floor: 0,
+          // 临时楼层数
+          // 匿名处理
+          ...submitData.is_anonymous ? {
+            avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+            username: "匿名用户",
+            is_anonymous: 1
+          } : {
+            avatar: global$1.userInfo.avatar,
+            username: global$1.userInfo.nickname,
+            is_anonymous: 0
+          },
+          // 关联信息
+          ...submitData.association_id && {
+            association_id: submitData.association_id,
+            association_type: submitData.association_type
+          },
+          // 图片信息
+          ...submitData.image_url && {
+            image_url: submitData.image_url
+          },
+          // 回复信息
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+            // 处理被回复者的匿名状态
+            reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+          }
+        };
+        if (!replyForItem.value.id) {
+          (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+        } else if (replyForItem.value.parent_id === 0) {
+          (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.id
+          });
+        } else {
+          (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.parent_id
+          });
+        }
         uni.request({
           url: websiteUrl + "/with-state/add-comment",
           method: "POST",
@@ -20427,19 +21146,31 @@ ${i3}
           },
           data: requestData,
           success: (res) => {
-            var _a, _b;
+            var _a2, _b2;
             if (res.data.status == "success") {
               const newComment = res.data.data;
-              if (newComment.parent_id === 0) {
-                (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-              } else {
-                (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+              const finalComment = {
+                ...newComment,
+                ...submitData.is_anonymous ? {
+                  avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                  username: "匿名用户",
+                  is_anonymous: 1
+                } : {
+                  avatar: global$1.userInfo.avatar,
+                  username: global$1.userInfo.nickname,
+                  is_anonymous: 0
+                }
+              };
+              if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+                finalComment.reply_username = "匿名用户";
               }
+              (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
               uni.showToast({
                 title: "评论成功",
                 icon: "success"
               });
             } else {
+              (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
               uni.showToast({
                 title: res.data.msg,
                 icon: "none"
@@ -20447,6 +21178,8 @@ ${i3}
             }
           },
           fail: (err) => {
+            var _a2;
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -20465,7 +21198,7 @@ ${i3}
         return `${year}-${month}-${day} ${hours}:${minutes}`;
       }
       onShow(() => {
-        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:583", "注册键盘弹出事件");
+        formatAppLog("log", "at pages/collocation_share/collocation_share.vue:674", "注册键盘弹出事件");
         uni.onKeyboardHeightChange(keyboardHeightChangeHandler);
       });
       onLoad((options) => {
@@ -20484,11 +21217,11 @@ ${i3}
           origin.value = options.origin;
           fetchData(options.collocation_id, options.origin);
           asyncGetUserInfo().then((userInfo) => {
-            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:606", userInfo);
+            formatAppLog("log", "at pages/collocation_share/collocation_share.vue:697", userInfo);
             getHasLike(options.collocation_id);
           });
         } catch (err) {
-          formatAppLog("error", "at pages/collocation_share/collocation_share.vue:612", "onLoad Error:", err);
+          formatAppLog("error", "at pages/collocation_share/collocation_share.vue:703", "onLoad Error:", err);
           uni.showToast({
             title: "加载失败",
             icon: "none"
@@ -20542,10 +21275,10 @@ ${i3}
   };
   function _sfc_render$o(_ctx, _cache, $props, $setup, $data, $options) {
     var _a;
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_report_button = resolveEasycom(vue.resolveDynamicComponent("report-button"), __easycom_1$6);
-    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$1);
+    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$2);
     const _component_comment_input = resolveEasycom(vue.resolveDynamicComponent("comment-input"), __easycom_3$1);
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createVNode(_component_view_logs),
@@ -21012,8 +21745,8 @@ ${i3}
     }
   };
   function _sfc_render$n(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock("view", { class: "page-container" }, [
       vue.createElementVNode("meta", {
         name: "theme-color",
@@ -21695,7 +22428,7 @@ ${i3}
     }
   };
   function _sfc_render$k(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_uni_swipe_action_item = resolveEasycom(vue.resolveDynamicComponent("uni-swipe-action-item"), __easycom_1$1);
     const _component_uni_swipe_action = resolveEasycom(vue.resolveDynamicComponent("uni-swipe-action"), __easycom_2);
     return vue.openBlock(), vue.createElementBlock("view", { class: "container" }, [
@@ -21868,9 +22601,9 @@ ${i3}
     }
   };
   function _sfc_render$j(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_uni_load_more = resolveEasycom(vue.resolveDynamicComponent("uni-load-more"), __easycom_1$4);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock("view", { class: "container" }, [
       vue.createVNode(_component_view_logs),
       vue.createCommentVNode(" 加载状态 "),
@@ -22122,7 +22855,7 @@ ${i3}
     }
   };
   function _sfc_render$i(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -22456,7 +23189,7 @@ ${i3}
     }
   };
   function _sfc_render$h(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock("view", { class: "container" }, [
       vue.createElementVNode("meta", {
         name: "theme-color",
@@ -23116,13 +23849,13 @@ ${i3}
     }
   };
   function _sfc_render$g(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$8);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_goods_search = resolveEasycom(vue.resolveDynamicComponent("goods-search"), __easycom_1$9);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     const _component_uni_transition = resolveEasycom(vue.resolveDynamicComponent("uni-transition"), __easycom_3$2);
     const _component_common_modal = resolveEasycom(vue.resolveDynamicComponent("common-modal"), __easycom_4$1);
-    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$9);
-    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_2$4);
+    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$a);
+    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_6);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -23712,11 +24445,8 @@ ${i3}
           loading.value = false;
         }
       };
-      const handleCommentSubmit = ({
-        content,
-        replyInfo,
-        origin
-      }) => {
+      const handleCommentSubmit = (submitData) => {
+        var _a, _b, _c;
         let token = uni.getStorageSync("token");
         if (!global$1.isLogin) {
           uni.showToast({
@@ -23725,19 +24455,76 @@ ${i3}
           });
           return;
         }
-        formatAppLog("log", "at pages/sale_news/sale_news.vue:209", "reply_info", replyInfo);
+        formatAppLog("log", "at pages/sale_news/sale_news.vue:209", "reply_info", replyForItem.value);
         const requestData = {
-          content,
-          origin,
+          content: submitData.content,
+          origin: submitData.origin,
           target_id: parseInt(pageId.value),
           type: 4,
-          ...replyInfo.id && {
-            reply_id: replyInfo.id,
-            reply_for: replyInfo.comment,
-            reply_user_id: replyInfo.user_id,
-            parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+          // 图透类型
+          image_url: submitData.image_url || "",
+          association_id: submitData.association_id || 0,
+          association_type: submitData.association_type || 0,
+          is_anonymous: submitData.is_anonymous || 0,
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
           }
         };
+        const tempComment = {
+          id: Date.now(),
+          // 临时ID
+          content: submitData.content,
+          created_at: Math.floor(Date.now() / 1e3),
+          like_count: 0,
+          reply_count: 0,
+          is_liked: false,
+          floor: 0,
+          // 临时楼层数
+          // 匿名处理
+          ...submitData.is_anonymous ? {
+            avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+            username: "匿名用户",
+            is_anonymous: 1
+          } : {
+            avatar: global$1.userInfo.avatar,
+            username: global$1.userInfo.nickname,
+            is_anonymous: 0
+          },
+          // 关联信息
+          ...submitData.association_id && {
+            association_id: submitData.association_id,
+            association_type: submitData.association_type
+          },
+          // 图片信息
+          ...submitData.image_url && {
+            image_url: submitData.image_url
+          },
+          // 回复信息
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+            // 处理被回复者的匿名状态
+            reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+          }
+        };
+        if (!replyForItem.value.id) {
+          (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+        } else if (replyForItem.value.parent_id === 0) {
+          (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.id
+          });
+        } else {
+          (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.parent_id
+          });
+        }
         uni.request({
           url: websiteUrl + "/with-state/add-comment",
           method: "POST",
@@ -23746,19 +24533,31 @@ ${i3}
           },
           data: requestData,
           success: (res) => {
-            var _a, _b;
+            var _a2, _b2;
             if (res.data.status == "success") {
               const newComment = res.data.data;
-              if (newComment.parent_id === 0) {
-                (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-              } else {
-                (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+              const finalComment = {
+                ...newComment,
+                ...submitData.is_anonymous ? {
+                  avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                  username: "匿名用户",
+                  is_anonymous: 1
+                } : {
+                  avatar: global$1.userInfo.avatar,
+                  username: global$1.userInfo.nickname,
+                  is_anonymous: 0
+                }
+              };
+              if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+                finalComment.reply_username = "匿名用户";
               }
+              (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
               uni.showToast({
                 title: "评论成功",
                 icon: "success"
               });
             } else {
+              (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
               uni.showToast({
                 title: res.data.msg,
                 icon: "none"
@@ -23766,6 +24565,8 @@ ${i3}
             }
           },
           fail: (err) => {
+            var _a2;
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -23877,8 +24678,8 @@ ${i3}
     }
   };
   function _sfc_render$f(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$1);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$2);
     const _component_comment_input = resolveEasycom(vue.resolveDynamicComponent("comment-input"), __easycom_3$1);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
@@ -24180,136 +24981,131 @@ ${i3}
     }
   };
   function _sfc_render$e(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
-    const _component_common_page = resolveEasycom(vue.resolveDynamicComponent("common-page"), __easycom_2$4);
-    return vue.openBlock(), vue.createBlock(_component_common_page, { title: "发布树洞" }, {
-      default: vue.withCtx(() => [
-        vue.createElementVNode("meta", {
-          name: "theme-color",
-          content: "#F8F8F8"
-        }),
-        vue.createVNode(_component_view_logs),
-        vue.createElementVNode("view", { class: "publish-box" }, [
-          vue.createCommentVNode(" 分类选择 "),
-          vue.createElementVNode("picker", {
-            class: "category-picker",
-            range: $setup.categories,
-            "range-key": "label",
-            onChange: $setup.handleCategoryChange,
-            value: $setup.selectedIndex
-          }, [
-            vue.createElementVNode("view", { class: "picker-content" }, [
-              vue.createElementVNode(
-                "text",
-                {
-                  class: vue.normalizeClass(["picker-text", $setup.selectedCategory ? "" : "placeholder"])
-                },
-                vue.toDisplayString($setup.selectedCategoryLabel || "请选择分类（必选）"),
-                3
-                /* TEXT, CLASS */
-              ),
-              vue.createVNode(_component_uni_icons, {
-                type: "right",
-                size: "22",
-                color: "#888"
-              })
-            ])
-          ], 40, ["range", "value"]),
-          vue.createCommentVNode(" 上传图片列表 "),
-          vue.createElementVNode("scroll-view", {
-            "scroll-x": "true",
-            class: "upload_box",
-            "ll-with-animation": "true",
-            "show-scrollbar": false
-          }, [
-            (vue.openBlock(true), vue.createElementBlock(
-              vue.Fragment,
-              null,
-              vue.renderList($setup.uploadList, (item, index) => {
-                return vue.openBlock(), vue.createElementBlock("view", {
-                  class: "upload_item",
-                  key: index
-                }, [
-                  vue.createElementVNode("image", {
-                    src: item,
-                    class: "uploaded_image",
-                    onClick: $setup.viewFullImage,
-                    mode: "aspectFill"
-                  }, null, 8, ["src"]),
-                  vue.createElementVNode("image", {
-                    src: _imports_0$a,
-                    class: "close_icon",
-                    onClick: ($event) => _ctx.deleteImage(index)
-                  }, null, 8, ["onClick"])
-                ]);
-              }),
-              128
-              /* KEYED_FRAGMENT */
-            )),
-            vue.createElementVNode("view", {
-              class: "uploadImageBox",
-              style: { "background": "#f8f8f8" }
-            }, [
-              vue.createElementVNode("image", {
-                src: _imports_1$1,
-                class: "upload_img",
-                onClick: _cache[0] || (_cache[0] = ($event) => $setup.selectImage(_ctx.index)),
-                style: { "width": "50px", "height": "50px", "margin": "25px" }
-              })
-            ])
-          ]),
-          vue.withDirectives(vue.createElementVNode(
-            "textarea",
-            {
-              "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $setup.content = $event),
-              placeholder: "写下你想说的话...",
-              class: "textarea",
-              maxlength: "500"
-            },
-            null,
-            512
-            /* NEED_PATCH */
-          ), [
-            [vue.vModelText, $setup.content]
-          ]),
-          vue.createElementVNode("view", { class: "anonymous" }, [
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
+    return vue.openBlock(), vue.createElementBlock("view", { title: "发布树洞" }, [
+      vue.createElementVNode("meta", {
+        name: "theme-color",
+        content: "#F8F8F8"
+      }),
+      vue.createVNode(_component_view_logs),
+      vue.createElementVNode("view", { class: "publish-box" }, [
+        vue.createCommentVNode(" 分类选择 "),
+        vue.createElementVNode("picker", {
+          class: "category-picker",
+          range: $setup.categories,
+          "range-key": "label",
+          onChange: $setup.handleCategoryChange,
+          value: $setup.selectedIndex
+        }, [
+          vue.createElementVNode("view", { class: "picker-content" }, [
             vue.createElementVNode(
-              "checkbox-group",
-              { onChange: $setup.handleAnonymous },
-              [
-                vue.createElementVNode("label", null, [
-                  vue.createElementVNode("checkbox", {
-                    checked: $setup.isAnonymous === 1,
-                    color: "#4cbbd0"
-                  }, null, 8, ["checked"]),
-                  vue.createElementVNode("text", null, "匿名发布")
-                ])
-              ],
-              32
-              /* NEED_HYDRATION */
-            )
-          ]),
-          vue.createElementVNode("view", { class: "publish-detail" }, [
-            vue.createElementVNode("text", null, "* 目前树洞为非审稿发布，只接受娃圈相关内容。"),
-            vue.createCommentVNode(" <text>* 我们会在工作时间进行审稿，您可以在个人投稿中心查看投稿状态，审核通过后稿件才被可见。</text> "),
-            vue.createElementVNode("text", null, "* 如果勾选匿名发布，他人将无法通过稿件进入您的主页。如果稿件遭到过多点踩或投诉，我们可能会隐藏这封稿件。")
-          ]),
+              "text",
+              {
+                class: vue.normalizeClass(["picker-text", $setup.selectedCategory ? "" : "placeholder"])
+              },
+              vue.toDisplayString($setup.selectedCategoryLabel || "请选择分类（必选）"),
+              3
+              /* TEXT, CLASS */
+            ),
+            vue.createVNode(_component_uni_icons, {
+              type: "right",
+              size: "22",
+              color: "#888"
+            })
+          ])
+        ], 40, ["range", "value"]),
+        vue.createCommentVNode(" 上传图片列表 "),
+        vue.createElementVNode("scroll-view", {
+          "scroll-x": "true",
+          class: "upload_box",
+          "ll-with-animation": "true",
+          "show-scrollbar": false
+        }, [
+          (vue.openBlock(true), vue.createElementBlock(
+            vue.Fragment,
+            null,
+            vue.renderList($setup.uploadList, (item, index) => {
+              return vue.openBlock(), vue.createElementBlock("view", {
+                class: "upload_item",
+                key: index
+              }, [
+                vue.createElementVNode("image", {
+                  src: item,
+                  class: "uploaded_image",
+                  onClick: $setup.viewFullImage,
+                  mode: "aspectFill"
+                }, null, 8, ["src"]),
+                vue.createElementVNode("image", {
+                  src: _imports_0$a,
+                  class: "close_icon",
+                  onClick: ($event) => _ctx.deleteImage(index)
+                }, null, 8, ["onClick"])
+              ]);
+            }),
+            128
+            /* KEYED_FRAGMENT */
+          )),
+          vue.createElementVNode("view", {
+            class: "uploadImageBox",
+            style: { "background": "#f8f8f8" }
+          }, [
+            vue.createElementVNode("image", {
+              src: _imports_1$1,
+              class: "upload_img",
+              onClick: _cache[0] || (_cache[0] = ($event) => $setup.selectImage(_ctx.index)),
+              style: { "width": "50px", "height": "50px", "margin": "25px" }
+            })
+          ])
+        ]),
+        vue.withDirectives(vue.createElementVNode(
+          "textarea",
+          {
+            "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $setup.content = $event),
+            placeholder: "写下你想说的话...",
+            class: "textarea",
+            maxlength: "500"
+          },
+          null,
+          512
+          /* NEED_PATCH */
+        ), [
+          [vue.vModelText, $setup.content]
+        ]),
+        vue.createElementVNode("view", { class: "anonymous" }, [
           vue.createElementVNode(
-            "button",
-            {
-              class: vue.normalizeClass(["submit-btn", { disabled: !$setup.canSubmit }]),
-              onClick: $setup.handleSubmit
-            },
-            " 提交 ",
-            2
-            /* CLASS */
+            "checkbox-group",
+            { onChange: $setup.handleAnonymous },
+            [
+              vue.createElementVNode("label", null, [
+                vue.createElementVNode("checkbox", {
+                  checked: $setup.isAnonymous === 1,
+                  color: "#4cbbd0"
+                }, null, 8, ["checked"]),
+                vue.createElementVNode("text", null, "匿名发布")
+              ])
+            ],
+            32
+            /* NEED_HYDRATION */
           )
-        ])
-      ]),
-      _: 1
-      /* STABLE */
-    });
+        ]),
+        vue.createElementVNode("view", { class: "publish-detail" }, [
+          vue.createElementVNode("text", null, "* 目前树洞为非审稿发布，只接受娃圈相关内容。"),
+          vue.createCommentVNode(" <text>* 我们会在工作时间进行审稿，您可以在个人投稿中心查看投稿状态，审核通过后稿件才被可见。</text> "),
+          vue.createElementVNode("text", null, "* 如果勾选匿名发布，他人将无法通过稿件进入您的主页。如果稿件遭到过多点踩或投诉，我们可能会隐藏这封稿件。")
+        ]),
+        vue.createElementVNode(
+          "button",
+          {
+            class: vue.normalizeClass(["submit-btn", { disabled: !$setup.canSubmit }]),
+            onClick: $setup.handleSubmit
+          },
+          " 提交 ",
+          2
+          /* CLASS */
+        )
+      ])
+    ]);
   }
   const PagesTreeholePublishTreeholePublish = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["render", _sfc_render$e], ["__scopeId", "data-v-07f0d6e5"], ["__file", "/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/treehole_publish/treehole_publish.vue"]]);
   const _sfc_main$e = {
@@ -24331,32 +25127,17 @@ ${i3}
       const commentInputRef = vue.ref(null);
       let commentsPage = vue.ref(1);
       let replyForItem = vue.ref({});
+      const selectedAssociation = vue.ref({});
       const hasLiked = vue.ref(false);
       const props = __props;
-      const handleReplyComment = ({
-        parent,
-        target
-      }) => {
+      const handleReplyComment = ({ parent, target }) => {
         var _a;
-        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:124", "parent", parent);
-        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:125", "target", target);
-        let item = parent;
-        if (target != null) {
-          item = target;
-        }
-        if (replyForItem.value.id == item.id) {
-          replyForItem.value = {};
-          return;
-        }
-        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:136", "item", item);
+        const item = target || parent;
         replyForItem.value = item;
         (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
       };
-      const handleCommentSubmit = ({
-        content,
-        replyInfo,
-        origin
-      }) => {
+      const handleCommentSubmit = (submitData) => {
+        var _a, _b, _c;
         let token = uni.getStorageSync("token");
         if (!global$1.isLogin) {
           uni.showToast({
@@ -24365,19 +25146,76 @@ ${i3}
           });
           return;
         }
-        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:154", "reply_info", replyInfo);
+        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:136", "reply_info", replyForItem.value);
         const requestData = {
-          content,
-          origin,
+          content: submitData.content,
+          origin: submitData.origin,
           target_id: parseInt(pageId.value),
           type: 5,
-          ...replyInfo.id && {
-            reply_id: replyInfo.id,
-            reply_for: replyInfo.comment,
-            reply_user_id: replyInfo.user_id,
-            parent_id: replyInfo.parent_id > 0 ? replyInfo.parent_id : replyInfo.id
+          // 树洞类型
+          image_url: submitData.image_url || "",
+          association_id: submitData.association_id || 0,
+          association_type: submitData.association_type || 0,
+          is_anonymous: submitData.is_anonymous || 0,
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
           }
         };
+        const tempComment = {
+          id: Date.now(),
+          // 临时ID
+          content: submitData.content,
+          created_at: Math.floor(Date.now() / 1e3),
+          like_count: 0,
+          reply_count: 0,
+          is_liked: false,
+          floor: 0,
+          // 临时楼层数，后续用真实数据更新
+          // 如果是匿名评论，使用匿名信息
+          ...submitData.is_anonymous ? {
+            avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+            username: "匿名用户",
+            is_anonymous: 1
+          } : {
+            avatar: global$1.userInfo.avatar,
+            username: global$1.userInfo.nickname,
+            is_anonymous: 0
+          },
+          // 关联信息
+          ...submitData.association_id && {
+            association_id: submitData.association_id,
+            association_type: submitData.association_type
+          },
+          // 图片信息
+          ...submitData.image_url && {
+            image_url: submitData.image_url
+          },
+          // 回复信息
+          ...replyForItem.value.id && {
+            reply_id: replyForItem.value.id,
+            reply_for: replyForItem.value.comment,
+            reply_uid: replyForItem.value.user_id,
+            parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+            // 处理被回复者的匿名状态
+            reply_username: replyForItem.value.is_anonymous ? "匿名用户" : replyForItem.value.username
+          }
+        };
+        if (!replyForItem.value.id) {
+          (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(tempComment);
+        } else if (replyForItem.value.parent_id === 0) {
+          (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.id
+          });
+        } else {
+          (_c = commentListRef.value) == null ? void 0 : _c.addReplyComment({
+            ...tempComment,
+            parent_id: replyForItem.value.parent_id
+          });
+        }
         uni.request({
           url: websiteUrl + "/with-state/add-comment",
           method: "POST",
@@ -24386,21 +25224,32 @@ ${i3}
           },
           data: requestData,
           success: (res) => {
-            var _a, _b;
+            var _a2, _b2;
             if (res.data.status == "success") {
               const newComment = res.data.data;
-              if (newComment.parent_id === 0) {
-                formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:179", "添加主评论");
-                (_a = commentListRef.value) == null ? void 0 : _a.addNewComment(newComment);
-              } else {
-                formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:183", "添加子评论");
-                (_b = commentListRef.value) == null ? void 0 : _b.addReplyComment(newComment);
+              const finalComment = {
+                ...newComment,
+                // 如果是匿名评论，保持匿名信息
+                ...submitData.is_anonymous ? {
+                  avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+                  username: "匿名用户",
+                  is_anonymous: 1
+                } : {
+                  avatar: global$1.userInfo.avatar,
+                  username: global$1.userInfo.nickname,
+                  is_anonymous: 0
+                }
+              };
+              if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+                finalComment.reply_username = "匿名用户";
               }
+              (_a2 = commentListRef.value) == null ? void 0 : _a2.updateTempComment(tempComment.id, finalComment);
               uni.showToast({
                 title: "评论成功",
                 icon: "success"
               });
             } else {
+              (_b2 = commentListRef.value) == null ? void 0 : _b2.removeTempComment(tempComment.id);
               uni.showToast({
                 title: res.data.msg,
                 icon: "none"
@@ -24408,6 +25257,8 @@ ${i3}
             }
           },
           fail: (err) => {
+            var _a2;
+            (_a2 = commentListRef.value) == null ? void 0 : _a2.removeTempComment(tempComment.id);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -24474,7 +25325,7 @@ ${i3}
             "Authorization": token
           },
           success: (res) => {
-            formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:277", res.data);
+            formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:343", res.data);
             if (res.data.status == "success") {
               if (res.data.data.id > 0) {
                 hasLiked.value = true;
@@ -24490,7 +25341,7 @@ ${i3}
             }
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:295", err);
+            formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:361", err);
             uni.showToast({
               title: "网络请求失败",
               icon: "none"
@@ -24543,7 +25394,7 @@ ${i3}
       };
       vue.onMounted(async () => {
         pageId.value = props.id;
-        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:361", "pageId", pageId.value);
+        formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:427", "pageId", pageId.value);
         try {
           const res = await uni.request({
             url: `${websiteUrl}/treehole-detail?id=${props.id}`
@@ -24552,7 +25403,7 @@ ${i3}
             detailData.value = res.data.data;
           }
         } catch (error2) {
-          formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:372", error2);
+          formatAppLog("log", "at pages/treehole_detail/treehole_detail.vue:438", error2);
           uni.showToast({
             title: "加载失败",
             icon: "none"
@@ -24569,7 +25420,7 @@ ${i3}
         return replyForItem;
       }, set replyForItem(v2) {
         replyForItem = v2;
-      }, hasLiked, props, handleReplyComment, handleCommentSubmit, copyUrl, handleLike, getHasLike, displayImages, remainingCount, showOverlay, formatTimestamp, layoutClass, formatTime, previewImage, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, get websiteUrl() {
+      }, selectedAssociation, hasLiked, props, handleReplyComment, handleCommentSubmit, copyUrl, handleLike, getHasLike, displayImages, remainingCount, showOverlay, formatTimestamp, layoutClass, formatTime, previewImage, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, get websiteUrl() {
         return websiteUrl;
       }, get image1Url() {
         return image1Url;
@@ -24583,10 +25434,10 @@ ${i3}
     }
   };
   function _sfc_render$d(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_report_button = resolveEasycom(vue.resolveDynamicComponent("report-button"), __easycom_1$6);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
-    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$1);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
+    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$2);
     const _component_comment_input = resolveEasycom(vue.resolveDynamicComponent("comment-input"), __easycom_3$1);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
@@ -24924,7 +25775,7 @@ ${i3}
     }
   };
   function _sfc_render$c(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -25149,8 +26000,8 @@ ${i3}
     }
   };
   function _sfc_render$b(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -25358,7 +26209,7 @@ ${i3}
     }
   };
   function _sfc_render$a(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock("view", { class: "page-container" }, [
       vue.createVNode(_component_view_logs),
       vue.createCommentVNode(" 列表区域 "),
@@ -25539,7 +26390,7 @@ ${i3}
     }
   };
   function _sfc_render$9(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock("view", { class: "container" }, [
       vue.createElementVNode("meta", {
         name: "theme-color",
@@ -27573,9 +28424,9 @@ ${i3}
     }
   };
   function _sfc_render$6(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     const _component_mp_html = resolveEasycom(vue.resolveDynamicComponent("mp-html"), __easycom_1);
-    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$1);
+    const _component_comment_list = resolveEasycom(vue.resolveDynamicComponent("comment-list"), __easycom_2$2);
     const _component_comment_input = resolveEasycom(vue.resolveDynamicComponent("comment-input"), __easycom_3$1);
     return vue.openBlock(), vue.createElementBlock("view", { class: "article-container" }, [
       vue.createVNode(_component_view_logs),
@@ -27878,7 +28729,7 @@ ${i3}
     }
   };
   function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock("view", null, [
       vue.createVNode(_component_view_logs),
       vue.createElementVNode("view", { class: "container" }, [
@@ -27990,7 +28841,7 @@ ${i3}
     }
   };
   function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$5);
+    const _component_view_logs = resolveEasycom(vue.resolveDynamicComponent("view-logs"), __easycom_0$4);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,
@@ -28234,8 +29085,8 @@ ${i3}
     }
   };
   function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$4);
-    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$9);
+    const _component_uni_icons = resolveEasycom(vue.resolveDynamicComponent("uni-icons"), __easycom_0$3);
+    const _component_loading_toast = resolveEasycom(vue.resolveDynamicComponent("loading-toast"), __easycom_1$a);
     return vue.openBlock(), vue.createElementBlock(
       vue.Fragment,
       null,

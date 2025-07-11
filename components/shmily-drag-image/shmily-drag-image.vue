@@ -617,6 +617,25 @@
 		})
 		isMounted.value = true;
 	})
+	
+	// 更新所有项目的位置（根据当前索引）
+	const updateItemsPosition = () => {
+	  imageList.value.forEach((item, index) => {
+	    // 根据新的索引计算网格位置
+	    item.index = index;
+	    const newAbsX = index % colsValue.value;
+	    const newAbsY = Math.floor(index / colsValue.value);
+	    
+	    // 确保位置精确对齐网格
+	    item.x = newAbsX * viewWidth.value;
+	    item.y = newAbsY * viewHeight.value;
+	    item.oldX = item.x;
+	    item.oldY = item.y;
+	    item.absX = newAbsX;
+	    item.absY = newAbsY;
+	  });
+	};
+	
 	const initViewSize = () => {
 		return new Promise(resolve => {
 			// 检查实例是否可用
@@ -654,7 +673,8 @@
 			});
 		}
 	}, {
-		deep: true
+		deep: true,
+		 immediate: true 
 	});
 
 	// 更新图片列表的公共方法
@@ -676,31 +696,32 @@
 			}
 			return createNewItem(item);
 		});
+		 updateItemsPosition();
 	};
 
 	// 创建新项目的方法
 	const createNewItem = (item) => {
-		const data = getItemData(item);
-		const absX = imageList.value.length % colsValue.value;
-		const absY = Math.floor(imageList.value.length / colsValue.value);
-
-		return {
-			...data,
-			x: absX * viewWidth.value,
-			y: absY * viewHeight.value,
-			oldX: absX * viewWidth.value,
-			oldY: absY * viewHeight.value,
-			absX,
-			absY,
-			scale: 1,
-			zIndex: 9,
-			opacity: 1,
-			index: imageList.value.length,
-			disable: false,
-			offset: 0,
-			moveEnd: false,
-			ready: false
-		};
+	  const data = getItemData(item);
+	  const absX = imageList.value.length % colsValue.value;
+	  const absY = Math.floor(imageList.value.length / colsValue.value);
+	  
+	  return {
+	    ...data,
+	    x: absX * viewWidth.value,
+	    y: absY * viewHeight.value,
+	    oldX: absX * viewWidth.value,
+	    oldY: absY * viewHeight.value,
+	    absX,
+	    absY,
+	    scale: 1,
+	    zIndex: 9,
+	    opacity: 1,
+	    index: imageList.value.length,
+	    disable: false,
+	    offset: 0,
+	    moveEnd: false,
+	    ready: false
+	  };
 	};
 </script>
 

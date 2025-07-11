@@ -7,8 +7,8 @@
   "id": "__UNI__5D7AAEE",
   "name": "DogDogDoll",
   "version": {
-    "name": "1.0.40",
-    "code": 1040
+    "name": "1.0.41",
+    "code": 1041
   },
   "description": "娃圈狗狗助手",
   "developer": {
@@ -133,13 +133,14 @@
         }
       }
     },
+    "uniStatistics": {
+      "enable": false,
+      "version": "2"
+    },
     "statusbar": {
       "immersed": "supportedDevice",
       "style": "dark",
       "background": "#F8F8F8"
-    },
-    "uniStatistics": {
-      "enable": false
     },
     "allowsInlineMediaPlayback": true,
     "safearea": {
@@ -219,7 +220,8 @@
       "concatenate": true
     },
     "uniStatistics": {
-      "enable": false
+      "enable": false,
+      "version": "2"
     },
     "safearea": {
       "background": "#fefefe",

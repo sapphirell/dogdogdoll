@@ -595,6 +595,7 @@
   max-height: 60vh;
   position: absolute;
   z-index: 1001;
+  top: 2.5rem;
 }
 .search_results .result_item[data-v-445b599f] {
   display: flex;
@@ -1373,6 +1374,7 @@
   padding: 0.9375rem;
   box-sizing: border-box;
   width: 80vw;
+  height: 50vh;
 }
 .type-modal .type-list[data-v-0299c5b6] {
   max-height: 15.625rem;

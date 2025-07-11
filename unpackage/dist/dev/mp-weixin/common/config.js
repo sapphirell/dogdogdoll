@@ -2,7 +2,7 @@
 const common_vendor = require("./vendor.js");
 const websiteUrl = "https://api.fantuanpu.com";
 const image1Url = "https://images1.fantuanpu.com/";
-const dogdogdollVersion = "1.0.40";
+const dogdogdollVersion = "1.0.41";
 let global = common_vendor.reactive({
   isLogin: false,
   userInfo: {}

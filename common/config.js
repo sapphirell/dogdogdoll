@@ -8,7 +8,7 @@ export const websiteUrl = 'https://api.fantuanpu.com';
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
 // 客户端版本号
-export const dogdogdollVersion = "1.0.40"
+export const dogdogdollVersion = "1.0.41"
 
 // 全局状态
 export let global = reactive({
