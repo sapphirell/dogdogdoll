@@ -54,7 +54,7 @@ if (uni.restoreGlobal) {
   const onLoad = /* @__PURE__ */ createHook(ON_LOAD);
   const onReachBottom = /* @__PURE__ */ createHook(ON_REACH_BOTTOM);
   const onPullDownRefresh = /* @__PURE__ */ createHook(ON_PULL_DOWN_REFRESH);
-  const websiteUrl = "https://api.fantuanpu.com";
+  const websiteUrl = "http://localhost:8080";
   const image1Url = "https://images1.fantuanpu.com/";
   const dogdogdollVersion = "1.0.41";
   let global$1 = vue.reactive({
@@ -17807,6 +17807,14 @@ ${i3}
               finalPrice: res.data.data.final_price,
               finalTime: res.data.data.final_time
             };
+            const typeName = res.data.data.type;
+            const index = typeOptions.value.findIndex((option) => option === typeName);
+            if (index !== -1) {
+              selectedType.value = index;
+            } else {
+              formatAppLog("warn", "at pages/stock/account_book_form/account_book_form.vue:547", `未找到分类: ${typeName}`);
+              selectedType.value = 0;
+            }
             moreInfo.value = {
               sizeDetail: res.data.data.size_detail || "",
               color: res.data.data.color || "",
@@ -17828,10 +17836,10 @@ ${i3}
                 res.data.data.size_detail || ""
               ];
             }
-            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:565", "f:", form);
+            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:576", "f:", form);
           },
           fail: (err) => {
-            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:568", err);
+            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:579", err);
           }
         });
       }
@@ -17852,7 +17860,7 @@ ${i3}
             }
           }
         } catch (error) {
-          formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:596", "获取商品详情失败:", error);
+          formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:607", "获取商品详情失败:", error);
           uni.showToast({
             title: "获取商品信息失败",
             icon: "none"
@@ -17886,7 +17894,7 @@ ${i3}
                 },
                 // 改为JSON格式传参
                 success: (res2) => {
-                  formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:634", res2.data.status);
+                  formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:645", res2.data.status);
                   if (res2.data.status === "success") {
                     uni.showToast({
                       title: "删除成功",
@@ -17901,7 +17909,7 @@ ${i3}
                   }
                 },
                 fail: (err) => {
-                  formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:649", "请求失败:", err);
+                  formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:660", "请求失败:", err);
                   uni.showToast({
                     title: "网络错误",
                     icon: "none"
@@ -17921,15 +17929,15 @@ ${i3}
               try {
                 const tokenData = await getQiniuToken();
                 const uploadRes = await uploadImageToQiniu(filePath, tokenData.token, tokenData.path);
-                formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:675", "res:", uploadRes);
+                formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:686", "res:", uploadRes);
                 if (uploadRes.qiniuRes.statusCode === 200) {
                   const imageUrl = image1Url + tokenData.path;
                   imageList.value.push(imageUrl);
                 } else {
-                  formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:680", "上传失败:", filePath);
+                  formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:691", "上传失败:", filePath);
                 }
               } catch (error) {
-                formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:683", "上传错误:", error);
+                formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:694", "上传错误:", error);
               }
             }
             uni.showToast({
@@ -18022,7 +18030,7 @@ ${i3}
           arrival_date: moreInfo.value.arrivalDate,
           additional_value: moreInfo.value.additionalValue
         };
-        formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:793", "提交数据:", postData);
+        formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:804", "提交数据:", postData);
         uni.request({
           url: websiteUrl + "/with-state/add-account-book",
           method: "POST",
@@ -18031,7 +18039,7 @@ ${i3}
           },
           data: postData,
           success: (res) => {
-            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:803", res.data);
+            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:814", res.data);
             if (res.data.status == "success") {
               uni.showToast({
                 title: "提交成功",
@@ -18088,7 +18096,7 @@ ${i3}
           },
           data: postData,
           success: (res) => {
-            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:858", res.data);
+            formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:869", res.data);
             if (res.data.status == "success") {
               uni.showToast({
                 title: "提交成功",
@@ -18112,11 +18120,20 @@ ${i3}
           urls: imageList.value
         });
       }
-      onShow(() => {
-        asyncGetUserInfo().then(() => {
-          getAccountTypes();
-          fetchSizes();
-        });
+      onShow(async () => {
+        await asyncGetUserInfo();
+        await getAccountTypes();
+        await fetchSizes();
+        if (isEdit) {
+          await getAccountBookById(props.account_book_id);
+          uni.setNavigationBarTitle({
+            title: "编辑账本"
+          });
+        } else {
+          uni.setNavigationBarTitle({
+            title: "新增账本"
+          });
+        }
       });
       const getGoodsInfo = (id) => {
         return new Promise((resolve, reject) => {
@@ -18132,7 +18149,7 @@ ${i3}
               }
             },
             fail: (err) => {
-              formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:909", "商品详情获取失败", err);
+              formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:934", "商品详情获取失败", err);
               reject(err);
             }
           });
@@ -18162,13 +18179,13 @@ ${i3}
         }
       };
       onLoad(async (options) => {
-        formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:957", "接收到的参数:", options);
+        formatAppLog("log", "at pages/stock/account_book_form/account_book_form.vue:982", "接收到的参数:", options);
         if (options.goods_id) {
           try {
             const goodsInfo = await getGoodsInfo(options.goods_id);
             fillFormWithGoodsInfo(goodsInfo);
           } catch (error) {
-            formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:965", "获取商品信息失败:", error);
+            formatAppLog("error", "at pages/stock/account_book_form/account_book_form.vue:990", "获取商品信息失败:", error);
             uni.showToast({
               title: "获取商品信息失败",
               icon: "none"
@@ -29026,6 +29043,28 @@ ${i3}
       const props = __props;
       const loadingSuccess = vue.ref(false);
       const detail = vue.ref({});
+      const swiperHeight = vue.ref(500);
+      const imageHeights = vue.ref([]);
+      const screenWidth = vue.ref(0);
+      const handleImageLoad = (event, index) => {
+        if (!screenWidth.value)
+          return;
+        const { width: originWidth, height: originHeight } = event.detail;
+        const renderHeight = originHeight / originWidth * screenWidth.value;
+        imageHeights.value[index] = renderHeight;
+        const currentHeights = imageHeights.value.filter((h2) => h2);
+        if (currentHeights.length > 0) {
+          const maxHeight = Math.max(...currentHeights);
+          if (maxHeight > swiperHeight.value) {
+            swiperHeight.value = maxHeight;
+          }
+        }
+      };
+      const imageList = vue.computed(() => {
+        if (!detail.value.image_url)
+          return [];
+        return detail.value.image_url.split(",").map((url) => url.trim());
+      });
       const fetchDetail = async (id) => {
         const token = uni.getStorageSync("token");
         try {
@@ -29063,11 +29102,15 @@ ${i3}
         });
       };
       onShow(() => {
+        swiperHeight.value = 300;
+        imageHeights.value = [];
+        const systemInfo2 = uni.getSystemInfoSync();
+        screenWidth.value = systemInfo2.windowWidth;
         asyncGetUserInfo().then((userInfo) => {
           fetchDetail(props.account_book_id);
         });
       });
-      const __returned__ = { props, loadingSuccess, detail, fetchDetail, navigateToEdit, ref: vue.ref, computed: vue.computed, get onShow() {
+      const __returned__ = { props, loadingSuccess, detail, swiperHeight, imageHeights, screenWidth, handleImageLoad, imageList, fetchDetail, navigateToEdit, ref: vue.ref, computed: vue.computed, get onShow() {
         return onShow;
       }, get websiteUrl() {
         return websiteUrl;
@@ -29097,11 +29140,41 @@ ${i3}
         }, [
           vue.createCommentVNode(" 头图区域 "),
           vue.createElementVNode("view", { class: "header-image-container" }, [
-            vue.createElementVNode("image", {
-              src: $setup.detail.image_url,
-              mode: "widthFix",
-              class: "header-image"
-            }, null, 8, ["src"]),
+            vue.createCommentVNode(" 使用swiper组件支持多图轮播 "),
+            vue.createElementVNode(
+              "swiper",
+              {
+                class: "swiper",
+                autoplay: true,
+                interval: 3e3,
+                circular: true,
+                "indicator-dots": "",
+                style: vue.normalizeStyle({ height: $setup.swiperHeight + "px" })
+              },
+              [
+                (vue.openBlock(true), vue.createElementBlock(
+                  vue.Fragment,
+                  null,
+                  vue.renderList($setup.imageList, (img, index) => {
+                    return vue.openBlock(), vue.createElementBlock("swiper-item", { key: index }, [
+                      vue.createCommentVNode(" 添加外层容器实现垂直居中 "),
+                      vue.createElementVNode("view", { class: "image-container" }, [
+                        vue.createElementVNode("image", {
+                          src: img,
+                          mode: "widthFix",
+                          class: "header-image",
+                          onLoad: ($event) => $setup.handleImageLoad($event, index)
+                        }, null, 40, ["src", "onLoad"])
+                      ])
+                    ]);
+                  }),
+                  128
+                  /* KEYED_FRAGMENT */
+                ))
+              ],
+              4
+              /* STYLE */
+            ),
             vue.createElementVNode("view", { class: "image-overlay" })
           ]),
           vue.createCommentVNode(" 标题区域 "),
@@ -29167,13 +29240,14 @@ ${i3}
                   vue.createElementVNode("text", null, "价格")
                 ]),
                 vue.createElementVNode("view", { class: "info-value" }, [
+                  vue.createCommentVNode(" 新增总价显示 "),
                   $setup.detail.final_price > 0 ? (vue.openBlock(), vue.createElementBlock(
                     "text",
                     {
                       key: 0,
                       class: "highlight"
                     },
-                    vue.toDisplayString($setup.detail.final_price) + "元",
+                    "总价: " + vue.toDisplayString($setup.detail.price) + "元",
                     1
                     /* TEXT */
                   )) : (vue.openBlock(), vue.createElementBlock(
@@ -29182,11 +29256,34 @@ ${i3}
                     vue.toDisplayString($setup.detail.price) + "元",
                     1
                     /* TEXT */
-                  )),
-                  $setup.detail.final_price > 0 && $setup.detail.final_time ? (vue.openBlock(), vue.createElementBlock(
+                  ))
+                ])
+              ])) : vue.createCommentVNode("v-if", true),
+              vue.createCommentVNode(" 新增尾款金额行 "),
+              $setup.detail.final_price > 0 ? (vue.openBlock(), vue.createElementBlock("view", {
+                key: 2,
+                class: "info-line"
+              }, [
+                vue.createElementVNode("view", { class: "info-label" }, [
+                  vue.createVNode(_component_uni_icons, {
+                    type: "money",
+                    size: "14",
+                    color: "#5db7ff"
+                  }),
+                  vue.createElementVNode("text", null, "尾款金额")
+                ]),
+                vue.createElementVNode("view", { class: "info-value" }, [
+                  vue.createElementVNode(
+                    "text",
+                    { class: "highlight" },
+                    vue.toDisplayString($setup.detail.final_price) + "元",
+                    1
+                    /* TEXT */
+                  ),
+                  $setup.detail.final_time ? (vue.openBlock(), vue.createElementBlock(
                     "text",
                     {
-                      key: 2,
+                      key: 0,
                       class: "time-tag"
                     },
                     "（" + vue.toDisplayString($setup.detail.final_time) + "）",
@@ -29197,7 +29294,7 @@ ${i3}
               ])) : vue.createCommentVNode("v-if", true),
               vue.createCommentVNode(" 店铺 "),
               $setup.detail.shop_name ? (vue.openBlock(), vue.createElementBlock("view", {
-                key: 2,
+                key: 3,
                 class: "info-line"
               }, [
                 vue.createElementVNode("view", { class: "info-label" }, [
@@ -29218,7 +29315,7 @@ ${i3}
               ])) : vue.createCommentVNode("v-if", true),
               vue.createCommentVNode(" 尺寸 "),
               $setup.detail.size || $setup.detail.size_detail ? (vue.openBlock(), vue.createElementBlock("view", {
-                key: 3,
+                key: 4,
                 class: "info-line"
               }, [
                 vue.createElementVNode("view", { class: "info-label" }, [
@@ -29239,7 +29336,7 @@ ${i3}
               ])) : vue.createCommentVNode("v-if", true),
               vue.createCommentVNode(" 头围 "),
               $setup.detail.head_circumference ? (vue.openBlock(), vue.createElementBlock("view", {
-                key: 4,
+                key: 5,
                 class: "info-line"
               }, [
                 vue.createElementVNode("view", { class: "info-label" }, [
@@ -29260,7 +29357,7 @@ ${i3}
               ])) : vue.createCommentVNode("v-if", true),
               vue.createCommentVNode(" 肩宽 "),
               $setup.detail.shoulder_width ? (vue.openBlock(), vue.createElementBlock("view", {
-                key: 5,
+                key: 6,
                 class: "info-line"
               }, [
                 vue.createElementVNode("view", { class: "info-label" }, [
@@ -29281,7 +29378,7 @@ ${i3}
               ])) : vue.createCommentVNode("v-if", true),
               vue.createCommentVNode(" 妆师 "),
               $setup.detail.makeup_artist ? (vue.openBlock(), vue.createElementBlock("view", {
-                key: 6,
+                key: 7,
                 class: "info-line"
               }, [
                 vue.createElementVNode("view", { class: "info-label" }, [
@@ -29302,7 +29399,7 @@ ${i3}
               ])) : vue.createCommentVNode("v-if", true),
               vue.createCommentVNode(" 颜色 "),
               $setup.detail.color ? (vue.openBlock(), vue.createElementBlock("view", {
-                key: 7,
+                key: 8,
                 class: "info-line"
               }, [
                 vue.createElementVNode("view", { class: "info-label" }, [

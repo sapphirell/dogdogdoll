@@ -18,6 +18,28 @@ const _sfc_main = {
     const props = __props;
     const loadingSuccess = common_vendor.ref(false);
     const detail = common_vendor.ref({});
+    const swiperHeight = common_vendor.ref(500);
+    const imageHeights = common_vendor.ref([]);
+    const screenWidth = common_vendor.ref(0);
+    const handleImageLoad = (event, index) => {
+      if (!screenWidth.value)
+        return;
+      const { width: originWidth, height: originHeight } = event.detail;
+      const renderHeight = originHeight / originWidth * screenWidth.value;
+      imageHeights.value[index] = renderHeight;
+      const currentHeights = imageHeights.value.filter((h) => h);
+      if (currentHeights.length > 0) {
+        const maxHeight = Math.max(...currentHeights);
+        if (maxHeight > swiperHeight.value) {
+          swiperHeight.value = maxHeight;
+        }
+      }
+    };
+    const imageList = common_vendor.computed(() => {
+      if (!detail.value.image_url)
+        return [];
+      return detail.value.image_url.split(",").map((url) => url.trim());
+    });
     const fetchDetail = async (id) => {
       const token = common_vendor.index.getStorageSync("token");
       try {
@@ -55,6 +77,10 @@ const _sfc_main = {
       });
     };
     common_vendor.onShow(() => {
+      swiperHeight.value = 300;
+      imageHeights.value = [];
+      const systemInfo = common_vendor.index.getSystemInfoSync();
+      screenWidth.value = systemInfo.windowWidth;
       common_config.asyncGetUserInfo().then((userInfo) => {
         fetchDetail(props.account_book_id);
       });
@@ -63,167 +89,182 @@ const _sfc_main = {
       return common_vendor.e({
         a: loadingSuccess.value
       }, loadingSuccess.value ? common_vendor.e({
-        b: detail.value.image_url,
-        c: common_vendor.t(detail.value.name),
-        d: common_vendor.t(detail.value.type),
-        e: common_vendor.p({
+        b: common_vendor.f(imageList.value, (img, index, i0) => {
+          return {
+            a: img,
+            b: common_vendor.o(($event) => handleImageLoad($event, index), index),
+            c: index
+          };
+        }),
+        c: swiperHeight.value + "px",
+        d: common_vendor.t(detail.value.name),
+        e: common_vendor.t(detail.value.type),
+        f: common_vendor.p({
           type: "list",
           size: "16",
           color: "#5db7ff"
         }),
-        f: detail.value.count
+        g: detail.value.count
       }, detail.value.count ? {
-        g: common_vendor.p({
+        h: common_vendor.p({
           type: "number",
           size: "14",
           color: "#5db7ff"
         }),
-        h: common_vendor.t(detail.value.count)
+        i: common_vendor.t(detail.value.count)
       } : {}, {
-        i: detail.value.price || detail.value.final_price > 0
+        j: detail.value.price || detail.value.final_price > 0
       }, detail.value.price || detail.value.final_price > 0 ? common_vendor.e({
-        j: common_vendor.p({
+        k: common_vendor.p({
           type: "money",
           size: "14",
           color: "#5db7ff"
         }),
-        k: detail.value.final_price > 0
+        l: detail.value.final_price > 0
       }, detail.value.final_price > 0 ? {
-        l: common_vendor.t(detail.value.final_price)
-      } : {
         m: common_vendor.t(detail.value.price)
-      }, {
-        n: detail.value.final_price > 0 && detail.value.final_time
-      }, detail.value.final_price > 0 && detail.value.final_time ? {
-        o: common_vendor.t(detail.value.final_time)
+      } : {
+        n: common_vendor.t(detail.value.price)
+      }) : {}, {
+        o: detail.value.final_price > 0
+      }, detail.value.final_price > 0 ? common_vendor.e({
+        p: common_vendor.p({
+          type: "money",
+          size: "14",
+          color: "#5db7ff"
+        }),
+        q: common_vendor.t(detail.value.final_price),
+        r: detail.value.final_time
+      }, detail.value.final_time ? {
+        s: common_vendor.t(detail.value.final_time)
       } : {}) : {}, {
-        p: detail.value.shop_name
+        t: detail.value.shop_name
       }, detail.value.shop_name ? {
-        q: common_vendor.p({
+        v: common_vendor.p({
           type: "shop",
           size: "14",
           color: "#5db7ff"
         }),
-        r: common_vendor.t(detail.value.shop_name)
+        w: common_vendor.t(detail.value.shop_name)
       } : {}, {
-        s: detail.value.size || detail.value.size_detail
+        x: detail.value.size || detail.value.size_detail
       }, detail.value.size || detail.value.size_detail ? {
-        t: common_vendor.p({
+        y: common_vendor.p({
           type: "compose",
           size: "14",
           color: "#5db7ff"
         }),
-        v: common_vendor.t(detail.value.size),
-        w: common_vendor.t(detail.value.size_detail)
+        z: common_vendor.t(detail.value.size),
+        A: common_vendor.t(detail.value.size_detail)
       } : {}, {
-        x: detail.value.head_circumference
+        B: detail.value.head_circumference
       }, detail.value.head_circumference ? {
-        y: common_vendor.p({
+        C: common_vendor.p({
           type: "circle",
           size: "14",
           color: "#5db7ff"
         }),
-        z: common_vendor.t(detail.value.head_circumference)
+        D: common_vendor.t(detail.value.head_circumference)
       } : {}, {
-        A: detail.value.shoulder_width
+        E: detail.value.shoulder_width
       }, detail.value.shoulder_width ? {
-        B: common_vendor.p({
+        F: common_vendor.p({
           type: "arrowright",
           size: "14",
           color: "#5db7ff"
         }),
-        C: common_vendor.t(detail.value.shoulder_width)
+        G: common_vendor.t(detail.value.shoulder_width)
       } : {}, {
-        D: detail.value.makeup_artist
+        H: detail.value.makeup_artist
       }, detail.value.makeup_artist ? {
-        E: common_vendor.p({
+        I: common_vendor.p({
           type: "person",
           size: "14",
           color: "#5db7ff"
         }),
-        F: common_vendor.t(detail.value.makeup_artist)
+        J: common_vendor.t(detail.value.makeup_artist)
       } : {}, {
-        G: detail.value.color
+        K: detail.value.color
       }, detail.value.color ? {
-        H: common_vendor.p({
+        L: common_vendor.p({
           type: "color",
           size: "14",
           color: "#5db7ff"
         }),
-        I: common_vendor.t(detail.value.color),
-        J: detail.value.color
+        M: common_vendor.t(detail.value.color),
+        N: detail.value.color
       } : {}, {
-        K: detail.value.buy_date || detail.value.arrival_date
+        O: detail.value.buy_date || detail.value.arrival_date
       }, detail.value.buy_date || detail.value.arrival_date ? common_vendor.e({
-        L: common_vendor.p({
+        P: common_vendor.p({
           type: "calendar",
           size: "16",
           color: "#5db7ff"
         }),
-        M: detail.value.buy_date
+        Q: detail.value.buy_date
       }, detail.value.buy_date ? {
-        N: common_vendor.p({
+        R: common_vendor.p({
           type: "cart",
           size: "14",
           color: "#5db7ff"
         }),
-        O: common_vendor.t(detail.value.buy_date)
+        S: common_vendor.t(detail.value.buy_date)
       } : {}, {
-        P: detail.value.arrival_date
+        T: detail.value.arrival_date
       }, detail.value.arrival_date ? {
-        Q: common_vendor.p({
+        U: common_vendor.p({
           type: "home",
           size: "14",
           color: "#5db7ff"
         }),
-        R: common_vendor.t(detail.value.arrival_date)
+        V: common_vendor.t(detail.value.arrival_date)
       } : {}) : {}, {
-        S: detail.value.position
+        W: detail.value.position
       }, detail.value.position ? {
-        T: common_vendor.p({
+        X: common_vendor.p({
           type: "location",
           size: "16",
           color: "#5db7ff"
         }),
-        U: common_vendor.p({
+        Y: common_vendor.p({
           type: "map",
           size: "14",
           color: "#5db7ff"
         }),
-        V: common_vendor.t(detail.value.position)
+        Z: common_vendor.t(detail.value.position)
       } : {}, {
-        W: detail.value.additional_value || detail.value.remark
+        aa: detail.value.additional_value || detail.value.remark
       }, detail.value.additional_value || detail.value.remark ? common_vendor.e({
-        X: common_vendor.p({
+        ab: common_vendor.p({
           type: "info",
           size: "16",
           color: "#5db7ff"
         }),
-        Y: detail.value.additional_value
+        ac: detail.value.additional_value
       }, detail.value.additional_value ? {
-        Z: common_vendor.p({
+        ad: common_vendor.p({
           type: "plus",
           size: "14",
           color: "#5db7ff"
         }),
-        aa: common_vendor.t(detail.value.additional_value)
+        ae: common_vendor.t(detail.value.additional_value)
       } : {}, {
-        ab: detail.value.remark
+        af: detail.value.remark
       }, detail.value.remark ? {
-        ac: common_vendor.p({
+        ag: common_vendor.p({
           type: "chat",
           size: "14",
           color: "#5db7ff"
         }),
-        ad: common_vendor.t(detail.value.remark)
+        ah: common_vendor.t(detail.value.remark)
       } : {}) : {}) : {}, {
-        ae: common_vendor.p({
+        ai: common_vendor.p({
           type: "compose",
           size: "22",
           color: "#fff"
         }),
-        af: common_vendor.o(navigateToEdit),
-        ag: common_vendor.p({
+        aj: common_vendor.o(navigateToEdit),
+        ak: common_vendor.p({
           show: !loadingSuccess.value
         })
       });

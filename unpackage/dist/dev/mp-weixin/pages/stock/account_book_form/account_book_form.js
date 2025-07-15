@@ -248,6 +248,14 @@ const _sfc_main = {
             finalPrice: res.data.data.final_price,
             finalTime: res.data.data.final_time
           };
+          const typeName = res.data.data.type;
+          const index = typeOptions.value.findIndex((option) => option === typeName);
+          if (index !== -1) {
+            selectedType.value = index;
+          } else {
+            common_vendor.index.__f__("warn", "at pages/stock/account_book_form/account_book_form.vue:547", `未找到分类: ${typeName}`);
+            selectedType.value = 0;
+          }
           moreInfo.value = {
             sizeDetail: res.data.data.size_detail || "",
             color: res.data.data.color || "",
@@ -269,10 +277,10 @@ const _sfc_main = {
               res.data.data.size_detail || ""
             ];
           }
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:565", "f:", form);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:576", "f:", form);
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:568", err);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:579", err);
         }
       });
     }
@@ -293,7 +301,7 @@ const _sfc_main = {
           }
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:596", "获取商品详情失败:", error);
+        common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:607", "获取商品详情失败:", error);
         common_vendor.index.showToast({
           title: "获取商品信息失败",
           icon: "none"
@@ -327,7 +335,7 @@ const _sfc_main = {
               },
               // 改为JSON格式传参
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:634", res2.data.status);
+                common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:645", res2.data.status);
                 if (res2.data.status === "success") {
                   common_vendor.index.showToast({
                     title: "删除成功",
@@ -342,7 +350,7 @@ const _sfc_main = {
                 }
               },
               fail: (err) => {
-                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:649", "请求失败:", err);
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:660", "请求失败:", err);
                 common_vendor.index.showToast({
                   title: "网络错误",
                   icon: "none"
@@ -362,15 +370,15 @@ const _sfc_main = {
             try {
               const tokenData = await common_image.getQiniuToken();
               const uploadRes = await common_image.uploadImageToQiniu(filePath, tokenData.token, tokenData.path);
-              common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:675", "res:", uploadRes);
+              common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:686", "res:", uploadRes);
               if (uploadRes.qiniuRes.statusCode === 200) {
                 const imageUrl = common_config.image1Url + tokenData.path;
                 imageList.value.push(imageUrl);
               } else {
-                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:680", "上传失败:", filePath);
+                common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:691", "上传失败:", filePath);
               }
             } catch (error) {
-              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:683", "上传错误:", error);
+              common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:694", "上传错误:", error);
             }
           }
           common_vendor.index.showToast({
@@ -463,7 +471,7 @@ const _sfc_main = {
         arrival_date: moreInfo.value.arrivalDate,
         additional_value: moreInfo.value.additionalValue
       };
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:793", "提交数据:", postData);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:804", "提交数据:", postData);
       common_vendor.index.request({
         url: common_config.websiteUrl + "/with-state/add-account-book",
         method: "POST",
@@ -472,7 +480,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:803", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:814", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -529,7 +537,7 @@ const _sfc_main = {
         },
         data: postData,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:858", res.data);
+          common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:869", res.data);
           if (res.data.status == "success") {
             common_vendor.index.showToast({
               title: "提交成功",
@@ -553,11 +561,20 @@ const _sfc_main = {
         urls: imageList.value
       });
     }
-    common_vendor.onShow(() => {
-      common_config.asyncGetUserInfo().then(() => {
-        getAccountTypes();
-        fetchSizes();
-      });
+    common_vendor.onShow(async () => {
+      await common_config.asyncGetUserInfo();
+      await getAccountTypes();
+      await fetchSizes();
+      if (isEdit) {
+        await getAccountBookById(props.account_book_id);
+        common_vendor.index.setNavigationBarTitle({
+          title: "编辑账本"
+        });
+      } else {
+        common_vendor.index.setNavigationBarTitle({
+          title: "新增账本"
+        });
+      }
     });
     const getGoodsInfo = (id) => {
       return new Promise((resolve, reject) => {
@@ -573,7 +590,7 @@ const _sfc_main = {
             }
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:909", "商品详情获取失败", err);
+            common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:934", "商品详情获取失败", err);
             reject(err);
           }
         });
@@ -603,13 +620,13 @@ const _sfc_main = {
       }
     };
     common_vendor.onLoad(async (options) => {
-      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:957", "接收到的参数:", options);
+      common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:982", "接收到的参数:", options);
       if (options.goods_id) {
         try {
           const goodsInfo = await getGoodsInfo(options.goods_id);
           fillFormWithGoodsInfo(goodsInfo);
         } catch (error) {
-          common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:965", "获取商品信息失败:", error);
+          common_vendor.index.__f__("error", "at pages/stock/account_book_form/account_book_form.vue:990", "获取商品信息失败:", error);
           common_vendor.index.showToast({
             title: "获取商品信息失败",
             icon: "none"

@@ -2,9 +2,26 @@
 	<view v-if="loadingSuccess" class="detail-container">
 		<!-- 头图区域 -->
 		<view class="header-image-container">
-			<image :src="detail.image_url" mode="widthFix" class="header-image"></image>
-			<view class="image-overlay"></view>
-		</view>
+			    <!-- 使用swiper组件支持多图轮播 -->
+			    <swiper class="swiper" 
+					:autoplay="true" 
+					:interval="3000" 
+					:circular="true" 
+					indicator-dots
+					:style="{ height: swiperHeight + 'px' }">
+			        <swiper-item v-for="(img, index) in imageList" :key="index">
+			            <!-- 添加外层容器实现垂直居中 -->
+			            <view class="image-container">
+			                <image 
+								:src="img" 
+								mode="widthFix" 
+								class="header-image"
+								@load="handleImageLoad($event, index)"></image>
+			            </view>
+			        </swiper-item>
+			    </swiper>
+			    <view class="image-overlay"></view>
+			</view>
 
 		<!-- 标题区域 -->
 		<view class="title-container">
@@ -38,10 +55,21 @@
 						<text>价格</text>
 					</view>
 					<view class="info-value">
-						<text v-if="detail.final_price > 0" class="highlight">{{detail.final_price}}元</text>
+						<!-- 新增总价显示 -->
+						<text v-if="detail.final_price > 0" class="highlight">总价: {{detail.price}}元</text>
 						<text v-else>{{detail.price}}元</text>
-						<text v-if="detail.final_price > 0 && detail.final_time"
-							class="time-tag">（{{detail.final_time}}）</text>
+					</view>
+				</view>
+
+				<!-- 新增尾款金额行 -->
+				<view class="info-line" v-if="detail.final_price > 0">
+					<view class="info-label">
+						<uni-icons type="money" size="14" color="#5db7ff"></uni-icons>
+						<text>尾款金额</text>
+					</view>
+					<view class="info-value">
+						<text class="highlight">{{detail.final_price}}元</text>
+						<text v-if="detail.final_time" class="time-tag">（{{detail.final_time}}）</text>
 					</view>
 				</view>
 
@@ -236,6 +264,40 @@
 
 	const loadingSuccess = ref(false)
 	const detail = ref({})
+
+	const swiperHeight = ref(500); // 默认高度
+	const imageHeights = ref([]); // 存储每张图片的高度
+		const screenWidth = ref(0); // 屏幕宽度
+	// 图片加载处理函数
+	const handleImageLoad = (event, index) => {
+			if (!screenWidth.value) return;
+			
+			// 获取图片原始宽高
+			const { width: originWidth, height: originHeight } = event.detail;
+			
+			// 计算等比例缩放后的高度
+			const renderHeight = (originHeight / originWidth) * screenWidth.value;
+			
+			// 存储计算后的高度
+			imageHeights.value[index] = renderHeight;
+			
+			// 计算当前所有已加载图片中的最大高度
+			const currentHeights = imageHeights.value.filter(h => h);
+			if (currentHeights.length > 0) {
+				const maxHeight = Math.max(...currentHeights);
+				
+				// 如果计算出的最大高度大于当前swiper高度，则更新
+				if (maxHeight > swiperHeight.value) {
+					swiperHeight.value = maxHeight;
+				}
+			}
+		};
+	// 在script部分添加计算属性
+	const imageList = computed(() => {
+		if (!detail.value.image_url) return [];
+		// 使用逗号分割图片字符串
+		return detail.value.image_url.split(',').map(url => url.trim());
+	});
 	// 获取账本详情
 	const fetchDetail = async (id) => {
 		const token = uni.getStorageSync('token');
@@ -277,6 +339,13 @@
 		});
 	};
 	onShow(() => {
+		swiperHeight.value = 300; // 重置为默认高度
+		imageHeights.value = [];
+		
+		// 重新获取屏幕宽度（考虑横竖屏切换）
+		const systemInfo = uni.getSystemInfoSync();
+		screenWidth.value = systemInfo.windowWidth;
+				
 		asyncGetUserInfo().then((userInfo) => {
 
 			fetchDetail(props.account_book_id)
@@ -470,7 +539,7 @@
 		width: 100rpx;
 		height: 100rpx;
 		border-radius: 50%;
-	    background: linear-gradient(135deg, #97e7f7, #d5acd6);
+		background: linear-gradient(135deg, #97e7f7, #d5acd6);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -484,4 +553,26 @@
 
 
 	}
+
+	.swiper {
+			width: 100%;
+			// transition: height 0.1s ease; /* 添加高度过渡效果 */
+		}
+		
+		/* 新增图片容器样式 */
+		.image-container {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			width: 100%;
+			overflow: hidden;
+		}
+		
+		.header-image {
+			width: 100%;
+			max-height: 100%;
+			display: block;
+		}
+	
 </style>

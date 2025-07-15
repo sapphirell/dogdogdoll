@@ -536,6 +536,17 @@
 					finalPrice: res.data.data.final_price,
 					finalTime: res.data.data.final_time
 				}
+				
+				// 修复：确保在分类数据加载后设置选中值
+				const typeName = res.data.data.type;
+				const index = typeOptions.value.findIndex(option => option === typeName);
+				
+				if (index !== -1) {
+				  selectedType.value = index;
+				} else {
+				  console.warn(`未找到分类: ${typeName}`);
+				  selectedType.value = 0; // 默认选择"请选择分类"
+				}
 
 				// 设置更多信息字段
 				moreInfo.value = {
@@ -884,12 +895,26 @@
 	}
 
 	// 在原有onShow中添加
-	onShow(() => {
-		asyncGetUserInfo().then(() => {
-			getAccountTypes();
-			// 获取尺寸数据
-			fetchSizes();
-		});
+	onShow(async () => {
+	  await asyncGetUserInfo();
+	  
+	  // 1. 确保分类数据优先加载
+	  await getAccountTypes();
+	  
+	  // 2. 加载尺寸数据
+	  await fetchSizes();
+	  
+	  // 3. 如果是编辑模式，再加载账本详情
+	  if (isEdit) {
+	    await getAccountBookById(props.account_book_id);
+	    uni.setNavigationBarTitle({
+	      title: '编辑账本'
+	    });
+	  } else {
+	    uni.setNavigationBarTitle({
+	      title: '新增账本'
+	    });
+	  }
 	});
 	// 获取商品信息
 	const getGoodsInfo = (id) => {

@@ -7,8 +7,8 @@
   "id": "__UNI__5D7AAEE",
   "name": "DogDogDoll",
   "version": {
-    "name": "1.0.41",
-    "code": 1041
+    "name": "1.0.42",
+    "code": 1042
   },
   "description": "娃圈狗狗助手",
   "developer": {
@@ -109,7 +109,8 @@
         "abiFilters": [
           "arm64-v8a",
           "x86"
-        ]
+        ],
+        "targetSdkVersion": 30
       },
       "apple": {
         "dSYMs": false,
