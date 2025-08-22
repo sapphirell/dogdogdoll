@@ -14,14 +14,6 @@ app.$mount()
 // #endif
 
 
-uni.loadFontFace({
-	family: 'cutefont',
-	source: `url("https://images1.fantuanpu.com/font/ry-super-less-rokk.ttf")`
-})
-uni.loadFontFace({
-	family: 'alimamamshuhei',
-	source: `url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")`
-})
 
 
 // #ifdef VUE3

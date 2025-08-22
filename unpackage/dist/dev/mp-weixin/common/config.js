@@ -1,8 +1,11 @@
 "use strict";
 const common_vendor = require("./vendor.js");
-const websiteUrl = "http://localhost:8080";
+const websiteUrl = common_vendor.ref("http://localhost:8080");
+const devUrl = "http://localhost:8080";
+const cnURL = "https://api.fantuanpu.com";
+const usURL = "https://us-api.dogdogdoll.com";
 const image1Url = "https://images1.fantuanpu.com/";
-const dogdogdollVersion = "1.0.41";
+const dogdogdollVersion = "1.0.43";
 let global = common_vendor.reactive({
   isLogin: false,
   userInfo: {}
@@ -23,14 +26,14 @@ function wechatSignLogin() {
         return;
       }
       common_vendor.index.request({
-        url: `${websiteUrl}/login-with-wechat`,
+        url: `${websiteUrl.value}/login-with-wechat`,
         method: "POST",
         data: {
           js_token: code
         },
         success: (res) => {
           const data = res.data.data;
-          common_vendor.index.__f__("log", "at common/config.js:52", data);
+          common_vendor.index.__f__("log", "at common/config.js:59", data);
           if (res.data.status != "success") {
             common_vendor.index.showToast({
               title: data.msg,
@@ -39,7 +42,7 @@ function wechatSignLogin() {
             return;
           }
           if (data.jwt_token) {
-            common_vendor.index.__f__("log", "at common/config.js:62", "data.token:", data.jwt_token);
+            common_vendor.index.__f__("log", "at common/config.js:69", "data.token:", data.jwt_token);
             common_vendor.index.setStorageSync("token", data.jwt_token);
             getUserInfo();
           }
@@ -79,7 +82,7 @@ function bindWechat() {
           return;
         }
         common_vendor.index.request({
-          url: `${websiteUrl}/with-state/bind-wechat`,
+          url: `${websiteUrl.value}/with-state/bind-wechat`,
           method: "POST",
           header: {
             Authorization: token
@@ -119,15 +122,15 @@ function bindWechat() {
 }
 function getUserInfo() {
   const token = common_vendor.index.getStorageSync("token");
-  common_vendor.index.__f__("log", "at common/config.js:167", "token:", token);
+  common_vendor.index.__f__("log", "at common/config.js:174", "token:", token);
   if (!token) {
-    common_vendor.index.__f__("log", "at common/config.js:169", "没有token，无法获取用户信息");
+    common_vendor.index.__f__("log", "at common/config.js:176", "没有token，无法获取用户信息");
     clearUserInfo();
     return;
   }
-  common_vendor.index.__f__("log", "at common/config.js:173", "请求接口");
+  common_vendor.index.__f__("log", "at common/config.js:180", "请求接口");
   common_vendor.index.request({
-    url: `${websiteUrl}/with-state/mine`,
+    url: `${websiteUrl.value}/with-state/mine`,
     method: "GET",
     header: {
       Authorization: token
@@ -135,10 +138,10 @@ function getUserInfo() {
     success: (res) => {
       const data = res.data.data;
       if (data) {
-        common_vendor.index.__f__("log", "at common/config.js:183", "获取用户信息成功,进行存储", data);
+        common_vendor.index.__f__("log", "at common/config.js:190", "获取用户信息成功,进行存储", data);
         saveUserInfo(data);
       } else {
-        common_vendor.index.__f__("log", "at common/config.js:186", "无法获取，清理用户状态");
+        common_vendor.index.__f__("log", "at common/config.js:193", "无法获取，清理用户状态");
         clearUserInfo();
       }
     },
@@ -156,7 +159,7 @@ function asyncGetUserInfo() {
       return;
     }
     common_vendor.index.request({
-      url: `${websiteUrl}/with-state/mine`,
+      url: `${websiteUrl.value}/with-state/mine`,
       method: "GET",
       header: {
         Authorization: token
@@ -164,7 +167,7 @@ function asyncGetUserInfo() {
       success: (res) => {
         const data = res.data.data;
         if (data) {
-          common_vendor.index.__f__("log", "at common/config.js:217", "返回：", data);
+          common_vendor.index.__f__("log", "at common/config.js:224", "返回：", data);
           saveUserInfo(data);
           resolve(data);
         } else {
@@ -182,7 +185,7 @@ function asyncGetUserInfo() {
 }
 function getScene() {
   const platform = "mp-weixin";
-  common_vendor.index.__f__("log", "at common/config.js:289", "platform:", platform);
+  common_vendor.index.__f__("log", "at common/config.js:297", "platform:", platform);
   {
     return 4;
   }
@@ -199,7 +202,7 @@ function clearUserInfo() {
   global.isLogin = false;
 }
 function handleRequestError(error, message = "请求失败") {
-  common_vendor.index.__f__("error", "at common/config.js:352", error);
+  common_vendor.index.__f__("error", "at common/config.js:394", error);
   common_vendor.index.showToast({
     title: message,
     icon: "none"
@@ -207,11 +210,14 @@ function handleRequestError(error, message = "请求失败") {
 }
 exports.asyncGetUserInfo = asyncGetUserInfo;
 exports.bindWechat = bindWechat;
+exports.cnURL = cnURL;
+exports.devUrl = devUrl;
 exports.dogdogdollVersion = dogdogdollVersion;
 exports.getScene = getScene;
 exports.getUserInfo = getUserInfo;
 exports.global = global;
 exports.image1Url = image1Url;
+exports.usURL = usURL;
 exports.websiteUrl = websiteUrl;
 exports.wechatSignLogin = wechatSignLogin;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/common/config.js.map

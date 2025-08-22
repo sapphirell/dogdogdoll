@@ -137,7 +137,7 @@
 	const fetchCategories = async () => {
 		try {
 			const res = await uni.request({
-				url: websiteUrl + '/treehole-typelist',
+				url: websiteUrl.value + '/treehole-typelist',
 				method: 'GET'
 			})
 			if (res.data.status === "success") {
@@ -203,7 +203,7 @@
 			}
 
 			const res = await uni.request({
-				url: websiteUrl + '/with-state/add-submission',
+				url: websiteUrl.value + '/with-state/add-submission',
 				method: 'POST',
 				data: postData,
 				header: {

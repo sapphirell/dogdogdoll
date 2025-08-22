@@ -77,7 +77,7 @@ const _sfc_main = {
     function getGoodsInfo(id) {
       return new Promise((resolve, reject) => {
         common_vendor.index.request({
-          url: common_config.websiteUrl + "/goods?id=" + id,
+          url: common_config.websiteUrl.value + "/goods?id=" + id,
           method: "GET",
           timeout: 5e3,
           success: (res) => {
@@ -105,7 +105,7 @@ const _sfc_main = {
         return;
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/showcase-detail?id=${props.showcase_id}`,
+          url: `${common_config.websiteUrl.value}/with-state/showcase-detail?id=${props.showcase_id}`,
           method: "GET",
           header: {
             "Authorization": common_vendor.index.getStorageSync("token")
@@ -168,7 +168,7 @@ const _sfc_main = {
           if (res.confirm) {
             try {
               const res2 = await common_vendor.index.request({
-                url: `${common_config.websiteUrl}/with-state/delete-showcase?id=` + props.showcase_id,
+                url: `${common_config.websiteUrl.value}/with-state/delete-showcase?id=` + props.showcase_id,
                 method: "POST",
                 header: {
                   "Authorization": common_vendor.index.getStorageSync("token")
@@ -231,9 +231,9 @@ const _sfc_main = {
         }))
       };
       try {
-        let url = `${common_config.websiteUrl}/with-state/add-showcase`;
+        let url = `${common_config.websiteUrl.value}/with-state/add-showcase`;
         if (props.showcase_id) {
-          url = `${common_config.websiteUrl}/with-state/update-showcase`;
+          url = `${common_config.websiteUrl.value}/with-state/update-showcase`;
           postData = {
             ...postData,
             id: parseInt(props.showcase_id, 10)
@@ -270,7 +270,7 @@ const _sfc_main = {
     }
     function getTypes() {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/goods-types",
+        url: common_config.websiteUrl.value + "/goods-types",
         method: "GET",
         timeout: 5e3,
         success: (res) => {
@@ -345,7 +345,7 @@ const _sfc_main = {
         l: common_vendor.o(($event) => description.value = $event.detail.value),
         m: isEditable.value
       }, isEditable.value ? {
-        n: common_assets._imports_2$3,
+        n: common_assets._imports_2$2,
         o: common_vendor.o(showRelationPicker)
       } : {}, {
         p: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
@@ -382,5 +382,6 @@ const _sfc_main = {
     };
   }
 };
-wx.createPage(_sfc_main);
+const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["__scopeId", "data-v-a7b48a64"]]);
+wx.createPage(MiniProgramPage);
 //# sourceMappingURL=../../../../.sourcemap/mp-weixin/pages/stock/showcase_form/showcase_form.js.map

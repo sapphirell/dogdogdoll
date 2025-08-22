@@ -14,42 +14,45 @@
 
 			<swiper :interval="3000" :duration="200" @change="onChange" class="banner-swiper"
 				:style="{ height: swiperHeight + 'px', 'min-height': '200px', 'max-height': maxHeight + 'px' }">
-				<block v-for="(item, key) in goods.goods_images" :key="key">
+				<block v-for="(item, key) in goods.goods_images" :key="key" @tap="viewFullImage(key)">
 					<swiper-item class="swiper-item-container">
 						<view class="swiper-item">
-							<image :src="item" mode="widthFix" :class="'swiper-image-'+key" @tap="viewFullImage(key)"
-								@load="onImageLoad(key)"></image>
+							<image :src="item" mode="widthFix" :class="'swiper-image-'+key" @load="onImageLoad(key)">
+							</image>
 						</view>
 					</swiper-item>
 				</block>
 			</swiper>
 
 			<view class="swiper-index">
-				<text>{{swiperIndex}} / {{goods.goods_images.length}}</text>
+				<text style="color: #fff;">{{swiperIndex}} / {{goods.goods_images.length}}</text>
 			</view>
 		</view>
 
 		<!-- 商品基本信息 -->
 		<view class="goods-info">
 			<view class="action-buttons">
-			  <button class="action-btn add-to-stock" @click="addToStock">
-			    <view class="btn-content">
-			      <uni-icons type="plus" size="18" color="#fff" style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
-			      <text>放入物品栏</text>
-			    </view>
-			  </button>
-			  <button class="action-btn wish-resale" @click="wishResale">
-			    <view class="btn-content">
-			      <uni-icons type="star" size="18" color="#fff" style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
-			      <text>期望再贩</text>
-			    </view>
-			  </button>
-			  <button class="action-btn add-showcase" @click="addToShowcase">
-			    <view class="btn-content">
-			      <uni-icons type="vip" size="18" color="#fff" style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
-			      <text>加入展示柜</text>
-			    </view>
-			  </button>
+				<button class="action-btn add-to-stock" @click="addToStock">
+					<view class="btn-content">
+						<uni-icons type="plus" size="18" color="#fff"
+							style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
+						<text>放入物品栏</text>
+					</view>
+				</button>
+				<button class="action-btn wish-resale" @click="wishResale">
+					<view class="btn-content">
+						<uni-icons type="star" size="18" color="#fff"
+							style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
+						<text>期望再贩</text>
+					</view>
+				</button>
+				<button class="action-btn add-showcase" @click="addToShowcase">
+					<view class="btn-content">
+						<uni-icons type="vip" size="18" color="#fff"
+							style="height: 36rpx;margin-bottom: 10rpx;"></uni-icons>
+						<text>加入展示柜</text>
+					</view>
+				</button>
 			</view>
 
 			<view class="info-item">
@@ -80,11 +83,28 @@
 				<text class="value">{{goods.sub_time1 > 0 ? formatTimestamp(goods.sub_time1) : "未知"}}</text>
 			</view>
 
-			<view class="info-item" @click="selectSize(goods.size)">
+			<!-- <view class="info-item" @click="selectSize(goods.size)">
 				<text class="label">尺寸</text>
 				<text class="value">
 					{{goods.size}} / {{goods.size_detail}}
 				</text>
+			</view> -->
+			
+			<view class="info-item" @click="selectSize(goods.size)">
+			  <text class="label">尺寸</text>
+			  <view class="value">
+			    <!-- 如果有sizes数组，显示分组后的尺寸 -->
+			    <view v-if="goods.sizes && goods.sizes.length > 0">
+			      <view v-for="(group, index) in groupedSizes" :key="index" class="size-group">
+			        <text class="size-category">{{ group.category }}：</text>
+			        <text class="size-details">{{ group.details.join('、') }}</text>
+			      </view>
+			    </view>
+			    <!-- 如果没有sizes数组，显示旧的单个尺寸信息 -->
+			    <text v-else>
+			      {{ goods.size }} / {{ goods.size_detail }}
+			    </text>
+			  </view>
 			</view>
 
 			<view v-if="goods.type==='单体' || goods.type === '整体' || goods.type === '单头'" class="info-item">
@@ -191,6 +211,25 @@
 			</view>
 		</view>
 
+		<!-- 新增：妆图展示区域 -->
+		<view v-if="showFaceupSection" class="faceup-section">
+			<view class="section-header">
+				<text class="section-title">妆图展示</text>
+				<view class="refresh-btn" @click="refreshFaceupList">
+					<text>换一批</text>
+					<uni-icons type="refreshempty" size="16" color="#64c6dc" style="margin-left: 8rpx;"></uni-icons>
+				</view>
+			</view>
+			<scroll-view scroll-x="true" class="faceup-list">
+				<view v-for="(faceup, index) in faceupList" :key="index" class="faceup-item"
+					@click="jump2faceup(faceup.id)">
+					<image :src="getFirstImage(faceup.face_up_image_urls)" mode="aspectFill"></image>
+					<view class="faceup-title">{{ faceup.title }}</view>
+				</view>
+			</scroll-view>
+		</view>
+
+
 		<!-- 评论区 -->
 		<view class="comment-section">
 			<comment-list ref="commentListRef" :type="2" :relation-id="parseInt(props.goods_id)"
@@ -267,7 +306,61 @@
 
 	const maxHeight = ref(uni.upx2px(1000)); // 将1000rpx转换为px单位
 
+	// 新增：妆图相关状态
+	const faceupList = ref([]); // 妆图列表
+	const faceupPage = ref(1); // 当前页码
+	const faceupLoading = ref(false); // 加载状态
+	// 计算属性：是否显示妆图区域
+	const showFaceupSection = computed(() => {
+		return goods.value.type === "单头" || goods.value.type === "整体";
+	});
+	// 获取妆图列表
+	const getFaceupList = async () => {
+		if (!showFaceupSection.value) return;
 
+		faceupLoading.value = true;
+
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl.value}/rand-bjd-faceup?goods_id=${props.goods_id}&page=${faceupPage.value}`,
+				method: 'GET',
+				timeout: 5000
+			});
+
+			if (res.data.status === "success") {
+				// 如果是第一页，直接赋值
+				if (faceupPage.value === 1) {
+					faceupList.value = res.data.data || [];
+				} else {
+					// 后续页面，合并结果
+					faceupList.value = [...faceupList.value, ...(res.data.data || [])];
+				}
+			} else {
+				uni.showToast({
+					title: res.data.msg || '获取妆图失败',
+					icon: 'none'
+				});
+			}
+		} catch (err) {
+			console.log(err);
+			uni.showToast({
+				title: '网络请求失败',
+				icon: 'none'
+			});
+		} finally {
+			faceupLoading.value = false;
+		}
+	};
+	// 换一批妆图
+	const refreshFaceupList = () => {
+		getFaceupList();
+	};
+	// 获取第一张图片
+	const getFirstImage = (imageUrls) => {
+		if (!imageUrls) return '';
+		const urls = imageUrls.split(',');
+		return urls[0].trim();
+	};
 	// 引用回复
 	const handleReplyComment = ({
 		parent,
@@ -290,157 +383,177 @@
 		// 聚焦输入框
 		commentInputRef.value?.focusInput()
 	}
-	
- const handleCommentSubmit = (submitData) => {
-    let token = uni.getStorageSync('token');
-    if (!global.isLogin) {
-      uni.showToast({
-        title: '请先登录',
-        icon: 'none'
-      })
-      return
-    }
-    
-    console.log("reply_info", replyForItem.value)
-    const requestData = {
-      content: submitData.content,
-      origin: submitData.origin,
-      target_id: parseInt(props.goods_id),
-      type: 2, // 商品类型
-      image_url: submitData.image_url || "",
-      association_id: submitData.association_id || 0,
-      association_type: submitData.association_type || 0,
-      is_anonymous: submitData.is_anonymous || 0,
-      ...(replyForItem.value.id && {
-        reply_id: replyForItem.value.id,
-        reply_for: replyForItem.value.comment,
-        reply_uid: replyForItem.value.user_id,
-        parent_id: replyForItem.value.parent_id > 0 ? 
-          replyForItem.value.parent_id : replyForItem.value.id,
-      })
-    }
-    
-    // 创建临时评论对象
-    const tempComment = {
-      id: Date.now(), // 临时ID
-      content: submitData.content,
-      created_at: Math.floor(Date.now() / 1000),
-      like_count: 0,
-      reply_count: 0,
-      is_liked: false,
-      floor: 0, // 临时楼层数
-      
-      // 匿名处理
-      ...(submitData.is_anonymous ? {
-        avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
-        username: "匿名用户",
-        is_anonymous: 1
-      } : {
-        avatar: global.userInfo.avatar,
-        username: global.userInfo.nickname,
-        is_anonymous: 0
-      }),
-      
-      // 关联信息
-      ...(submitData.association_id && {
-        association_id: submitData.association_id,
-        association_type: submitData.association_type
-      }),
-      
-      // 图片信息
-      ...(submitData.image_url && {
-        image_url: submitData.image_url
-      }),
-      
-      // 回复信息
-      ...(replyForItem.value.id && {
-        reply_id: replyForItem.value.id,
-        reply_for: replyForItem.value.comment,
-        reply_uid: replyForItem.value.user_id,
-        parent_id: replyForItem.value.parent_id > 0 ? 
-          replyForItem.value.parent_id : replyForItem.value.id,
-        // 处理被回复者的匿名状态
-        reply_username: replyForItem.value.is_anonymous ? 
-          "匿名用户" : replyForItem.value.username
-      })
-    }
-    
-    // 添加临时评论
-    if (!replyForItem.value.id) {
-      // 主评论
-      commentListRef.value?.addNewComment(tempComment)
-    } else if (replyForItem.value.parent_id === 0) {
-      // 回复主评论
-      commentListRef.value?.addReplyComment({
-        ...tempComment,
-        parent_id: replyForItem.value.id
-      })
-    } else {
-      // 回复楼中楼评论
-      commentListRef.value?.addReplyComment({
-        ...tempComment,
-        parent_id: replyForItem.value.parent_id
-      })
-    }
-  
-    uni.request({
-      url: websiteUrl + '/with-state/add-comment',
-      method: 'POST',
-      header: {
-        'Authorization': token
-      },
-      data: requestData,
-      success: (res) => {
-        if (res.data.status == "success") {
-          const newComment = res.data.data
-          
-          // 处理匿名状态
-          const finalComment = {
-            ...newComment,
-            ...(submitData.is_anonymous ? {
-              avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
-              username: "匿名用户",
-              is_anonymous: 1
-            } : {
-              avatar: global.userInfo.avatar,
-              username: global.userInfo.nickname,
-              is_anonymous: 0
-            })
-          }
-          
-          // 处理被回复者的匿名状态
-          if (newComment.reply_uid && replyForItem.value.is_anonymous) {
-            finalComment.reply_username = "匿名用户"
-          }
-  
-          // 更新临时评论为真实评论
-          commentListRef.value?.updateTempComment(tempComment.id, finalComment)
-  
-          uni.showToast({
-            title: '评论成功',
-            icon: 'success'
-          })
-  
-        } else {
-          // 请求失败，移除临时评论
-          commentListRef.value?.removeTempComment(tempComment.id)
-          uni.showToast({
-            title: res.data.msg,
-            icon: 'none'
-          })
-        }
-      },
-      fail: (err) => {
-        // 请求失败，移除临时评论
-        commentListRef.value?.removeTempComment(tempComment.id)
-        uni.showToast({
-          title: '网络请求失败',
-          icon: 'none'
-        })
-      }
-    });
-  }
 
+	const handleCommentSubmit = (submitData) => {
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+
+		console.log("reply_info", replyForItem.value)
+		const requestData = {
+			content: submitData.content,
+			origin: submitData.origin,
+			target_id: parseInt(props.goods_id),
+			type: 2, // 商品类型
+			image_url: submitData.image_url || "",
+			association_id: submitData.association_id || 0,
+			association_type: submitData.association_type || 0,
+			is_anonymous: submitData.is_anonymous || 0,
+			...(replyForItem.value.id && {
+				reply_id: replyForItem.value.id,
+				reply_for: replyForItem.value.comment,
+				reply_uid: replyForItem.value.user_id,
+				parent_id: replyForItem.value.parent_id > 0 ?
+					replyForItem.value.parent_id : replyForItem.value.id,
+			})
+		}
+
+		// 创建临时评论对象
+		const tempComment = {
+			id: Date.now(), // 临时ID
+			content: submitData.content,
+			created_at: Math.floor(Date.now() / 1000),
+			like_count: 0,
+			reply_count: 0,
+			is_liked: false,
+			floor: 0, // 临时楼层数
+
+			// 匿名处理
+			...(submitData.is_anonymous ? {
+				avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+				username: "匿名用户",
+				is_anonymous: 1
+			} : {
+				avatar: global.userInfo.avatar,
+				username: global.userInfo.nickname,
+				is_anonymous: 0
+			}),
+
+			// 关联信息
+			...(submitData.association_id && {
+				association_id: submitData.association_id,
+				association_type: submitData.association_type
+			}),
+
+			// 图片信息
+			...(submitData.image_url && {
+				image_url: submitData.image_url
+			}),
+
+			// 回复信息
+			...(replyForItem.value.id && {
+				reply_id: replyForItem.value.id,
+				reply_for: replyForItem.value.comment,
+				reply_uid: replyForItem.value.user_id,
+				parent_id: replyForItem.value.parent_id > 0 ?
+					replyForItem.value.parent_id : replyForItem.value.id,
+				// 处理被回复者的匿名状态
+				reply_username: replyForItem.value.is_anonymous ?
+					"匿名用户" : replyForItem.value.username
+			})
+		}
+
+		// 添加临时评论
+		if (!replyForItem.value.id) {
+			// 主评论
+			commentListRef.value?.addNewComment(tempComment)
+		} else if (replyForItem.value.parent_id === 0) {
+			// 回复主评论
+			commentListRef.value?.addReplyComment({
+				...tempComment,
+				parent_id: replyForItem.value.id
+			})
+		} else {
+			// 回复楼中楼评论
+			commentListRef.value?.addReplyComment({
+				...tempComment,
+				parent_id: replyForItem.value.parent_id
+			})
+		}
+
+		uni.request({
+			url: websiteUrl.value + '/with-state/add-comment',
+			method: 'POST',
+			header: {
+				'Authorization': token
+			},
+			data: requestData,
+			success: (res) => {
+				if (res.data.status == "success") {
+					const newComment = res.data.data
+
+					// 处理匿名状态
+					const finalComment = {
+						...newComment,
+						...(submitData.is_anonymous ? {
+							avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+							username: "匿名用户",
+							is_anonymous: 1
+						} : {
+							avatar: global.userInfo.avatar,
+							username: global.userInfo.nickname,
+							is_anonymous: 0
+						})
+					}
+
+					// 处理被回复者的匿名状态
+					if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+						finalComment.reply_username = "匿名用户"
+					}
+
+					// 更新临时评论为真实评论
+					commentListRef.value?.updateTempComment(tempComment.id, finalComment)
+
+					uni.showToast({
+						title: '评论成功',
+						icon: 'success'
+					})
+
+				} else {
+					// 请求失败，移除临时评论
+					commentListRef.value?.removeTempComment(tempComment.id)
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+				}
+			},
+			fail: (err) => {
+				// 请求失败，移除临时评论
+				commentListRef.value?.removeTempComment(tempComment.id)
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			}
+		});
+	}
+	const groupedSizes = computed(() => {
+	  if (!goods.value.sizes || goods.value.sizes.length === 0) return [];
+	  
+	  // 按大尺寸分组
+	  const groups = {};
+	  goods.value.sizes.forEach(item => {
+		const category = item.goods_size;
+		if (!groups[category]) {
+		  groups[category] = [];
+		}
+		if (item.size_detail) {
+		  groups[category].push(item.size_detail);
+		}
+	  });
+	  
+	  // 转换为数组格式
+	  return Object.keys(groups).map(category => ({
+		category,
+		details: groups[category]
+	  }));
+	});
 
 	const onShareAppMessage = () => ({
 		title: 'BJD娃圈你想知道的这里都有~',
@@ -501,7 +614,7 @@
 	//获取商品详情
 	function getGoods() {
 		uni.request({
-			url: websiteUrl + '/goods?id=' + props.goods_id,
+			url: websiteUrl.value + '/goods?id=' + props.goods_id,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
@@ -509,6 +622,11 @@
 				goods.value = res.data.data;
 				// 获取祈愿状态
 				getWishInfo();
+				// 获取妆图列表
+				if (showFaceupSection.value) {
+					faceupPage.value = 1;
+					getFaceupList();
+				}
 			},
 			fail: (err) => {
 				console.log(err);
@@ -574,7 +692,7 @@
 		// 判断是请求点赞接口还是取消点赞接口 add-like unlike
 		let url = hasLike.value ? '/with-state/unlike' : '/with-state/add-like';
 		uni.request({
-			url: websiteUrl + url,
+			url: websiteUrl.value + url,
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -616,7 +734,7 @@
 		}
 
 		uni.request({
-			url: websiteUrl + '/with-state/hasLike?id=' + props.goods_id + '&type=1',
+			url: websiteUrl.value + '/with-state/hasLike?id=' + props.goods_id + '&type=1',
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -686,53 +804,60 @@
 		};
 
 		const query = Object.keys(params)
-			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+			.map(key => `${(key)}=${(params[key])}`)
 			.join('&');
 
 		uni.navigateTo({
 			url: `/pages/stock/showcase_form/showcase_form?${query}`
 		});
 	}
+
+	function jump2faceup(id) {
+		uni.navigateTo({
+			url: '/pages/artwork/artwork?id=' + id
+		})
+	}
+
 	// 选择类型跳转
 	function selectType(type) {
-	 //  if (!type || type === '未知') {
+		//  if (!type || type === '未知') {
 		// uni.showToast({
 		//   title: '暂无类型信息',
 		//   icon: 'none'
 		// });
 		// return;
-	 //  }
-	  
-	 //  // 使用 switchTab 替代 navigateTo
-	 //  uni.switchTab({
+		//  }
+
+		//  // 使用 switchTab 替代 navigateTo
+		//  uni.switchTab({
 		// url: `/pages/collocation_square/collocation_square?type=${encodeURIComponent(type)}`
-	 //  });
+		//  });
 	}
 
 	// 选择尺寸跳转
 	function selectSize(size) {
-	 //  if (!size || size === '未知') {
+		//  if (!size || size === '未知') {
 		// uni.showToast({
 		//   title: '暂无尺寸信息',
 		//   icon: 'none'
 		// });
 		// return;
-	 //  }
+		//  }
 
-	 //  const sizeValue = size.replace('分体', '')
+		//  const sizeValue = size.replace('分体', '')
 		// .replace('分', '')
 		// .replace('体', '')
 		// .trim();
 
-	 //  // 使用 switchTab 替代 navigateTo
-	 //  uni.switchTab({
+		//  // 使用 switchTab 替代 navigateTo
+		//  uni.switchTab({
 		// url: `/pages/collocation_square/collocation_square?size=${encodeURIComponent(sizeValue)}`
-	 //  });
+		//  });
 	}
 	//获取搭配集合
 	function getCollocation() {
 		uni.request({
-			url: websiteUrl + '/goods-collocation?goods_id=' + props.goods_id,
+			url: websiteUrl.value + '/goods-collocation?goods_id=' + props.goods_id,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
@@ -792,86 +917,88 @@
 
 		// 编码参数
 		const query = Object.keys(params)
-			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+			.map(key => `${(key)}=${(params[key])}`)
 			.join('&');
 
 		uni.navigateTo({
 			url: `/pages/stock/bill_form/bill_form?${query}`
 		});
 	}
-	
+
 	// 期望再贩功能
 	function wishResale() {
-	  if (wishLoading.value) return;
-	  
-	  let token = uni.getStorageSync('token');
-	  if (!global.isLogin) {
-	    uni.showToast({
-	      title: '请先登录',
-	      icon: 'none'
-	    });
-	    return;
-	  }
-	  
-	  wishLoading.value = true;
-	  
-	  uni.request({
-	    url: websiteUrl + '/with-state/wish-restock',
-	    method: 'POST',
-	    header: {
-	      'Authorization': token,
-	      'Content-Type': 'application/json'
-	    },
-	    data: {
-	      goods_id: parseInt(props.goods_id)
-	    },
-	    success: (res) => {
-	      if (res.data.status === "success") {
-	        uni.showToast({
-	          title: '许愿成功',
-	          icon: 'success'
-	        });
-	        
-	        // 更新UI状态
-	        hasWish.value = true;
-	        wishCount.value = res.data.data.wish_count || wishCount.value + 1;
-	      } else {
-	        uni.showToast({
-	          title: res.data.msg || '许愿失败',
-	          icon: 'none'
-	        });
-	      }
-	    },
-	    fail: (err) => {
-	      console.error('许愿请求失败:', err);
-	      uni.showToast({
-	        title: '网络请求失败',
-	        icon: 'none'
-	      });
-	    },
-	    complete: () => {
-	      wishLoading.value = false;
-	    }
-	  });
+		if (wishLoading.value) return;
+
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			});
+			return;
+		}
+
+		wishLoading.value = true;
+
+		uni.request({
+			url: websiteUrl.value + '/with-state/wish-restock',
+			method: 'POST',
+			header: {
+				'Authorization': token,
+				'Content-Type': 'application/json'
+			},
+			data: {
+				goods_id: parseInt(props.goods_id)
+			},
+			success: (res) => {
+				if (res.data.status === "success") {
+					uni.showToast({
+						title: '许愿成功',
+						icon: 'success'
+					});
+
+					// 更新UI状态
+					hasWish.value = true;
+					wishCount.value = res.data.data.wish_count || wishCount.value + 1;
+				} else {
+					uni.showToast({
+						title: res.data.msg || '许愿失败',
+						icon: 'none'
+					});
+				}
+			},
+			fail: (err) => {
+				console.error('许愿请求失败:', err);
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				});
+			},
+			complete: () => {
+				wishLoading.value = false;
+			}
+		});
 	}
-	
+
 	// 获取许愿信息
 	function getWishInfo() {
-	  let token = uni.getStorageSync('token');
-	  
-	  uni.request({
-	    url: websiteUrl + '/with-state/wish-info?goods_id=' + props.goods_id,
-	    method: 'GET',
-	    header: token ? { 'Authorization': token } : {},
-	    success: (res) => {
-	      if (res.data.status === "success") {
-	        hasWish.value = res.data.data.user_has_wished;
-	        wishCount.value = res.data.data.wish_count;
-	      }
-	    }
-	  });
+		let token = uni.getStorageSync('token');
+
+		uni.request({
+			url: websiteUrl.value + '/with-state/wish-info?goods_id=' + props.goods_id,
+			method: 'GET',
+			header: token ? {
+				'Authorization': token
+			} : {},
+			success: (res) => {
+				if (res.data.status === "success") {
+					hasWish.value = res.data.data.user_has_wished;
+					wishCount.value = res.data.data.wish_count;
+				}
+			}
+		});
 	}
-	
+
 	//加载商品
 	getGoods();
 
@@ -1253,8 +1380,8 @@
 	}
 
 	.action-btn {
-		  /* 添加这行解决按钮高度问题 */
-		  line-height: normal !important;
+		/* 添加这行解决按钮高度问题 */
+		line-height: normal !important;
 		flex: 1;
 		/* 等宽分布 */
 		height: 100rpx;
@@ -1309,13 +1436,14 @@
 			/* 图标阴影 */
 		}
 	}
+
 	/* 新增的按钮内容容器 */
 	.btn-content {
-	  display: flex;
-	  flex-direction: column;
-	  align-items: center;
-	  justify-content: center;
-	  height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
 	}
 
 	/* 糖果配色方案 */
@@ -1347,5 +1475,90 @@
 	/* 确保按钮与上方内容有间距 */
 	.swiper-container {
 		margin-bottom: 0;
+	}
+
+	/* 新增：妆图展示区域样式 */
+	.faceup-section {
+		background: #fff;
+		border-radius: 20rpx;
+		margin: 20rpx;
+		padding: 30rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+
+		.section-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 25rpx;
+		}
+
+		.section-title {
+			font-size: 28rpx;
+			font-weight: bold;
+			color: #64c6dc;
+			padding-left: 10rpx;
+			border-left: 8rpx solid #64c6dc;
+		}
+
+		.refresh-btn {
+			display: flex;
+			align-items: center;
+			color: #64c6dc;
+			font-size: 24rpx;
+			padding: 8rpx 16rpx;
+			border-radius: 30rpx;
+
+			&:active {
+				background-color: #f0f9ff;
+			}
+		}
+
+		.faceup-list {
+			width: 100%;
+			white-space: nowrap;
+			margin-top: 15rpx;
+			padding: 8rpx 0;
+		}
+
+		.faceup-item {
+			display: inline-block;
+			width: 200rpx;
+			height: 280rpx;
+			border-radius: 12rpx;
+			overflow: hidden;
+			margin-right: 18rpx;
+			box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+			position: relative;
+
+			image {
+				width: 100%;
+				height: 100%;
+			}
+
+			.faceup-title {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: rgba(0, 0, 0, 0.6);
+				color: #fff;
+				font-size: 22rpx;
+				padding: 10rpx;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
+	}
+	
+	.size-group {
+	  margin-bottom: 8rpx;
+	}
+	.size-category {
+	  font-weight: bold;
+	  color: #333;
+	}
+	.size-details {
+	  color: #666;
 	}
 </style>

@@ -556,7 +556,7 @@ to {
   font-weight: bold;
 }
 .summary-container .total-text.data-v-4829e7f4::before {
-  content: "💰 ";
+  content: " ";
 }
 .loading-overlay.data-v-4829e7f4 {
   position: absolute;

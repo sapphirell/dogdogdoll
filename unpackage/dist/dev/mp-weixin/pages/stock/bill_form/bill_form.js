@@ -34,7 +34,7 @@ const _sfc_main = {
     function getBillById(id) {
       let token = common_vendor.index.getStorageSync("token");
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/tail-bill-detail",
+        url: common_config.websiteUrl.value + "/with-state/tail-bill-detail",
         method: "GET",
         header: { "Authorization": token },
         data: { id },
@@ -63,7 +63,7 @@ const _sfc_main = {
         success: (res) => {
           if (res.confirm) {
             common_vendor.index.request({
-              url: common_config.websiteUrl + "/with-state/delete-tail-bill?id=" + parseInt(props.bill_id, 10),
+              url: common_config.websiteUrl.value + "/with-state/delete-tail-bill?id=" + parseInt(props.bill_id, 10),
               method: "POST",
               header: { "Authorization": common_vendor.index.getStorageSync("token") },
               success: (res2) => {
@@ -125,7 +125,7 @@ const _sfc_main = {
         status: status.value
       };
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-tail-bill",
+        url: common_config.websiteUrl.value + "/with-state/add-tail-bill",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")
@@ -159,7 +159,7 @@ const _sfc_main = {
         status: status.value
       };
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/update-tail-bill",
+        url: common_config.websiteUrl.value + "/with-state/update-tail-bill",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")

@@ -92,9 +92,9 @@ const _sfc_main = {
         return;
       }
       let token = common_vendor.index.getStorageSync("token");
-      let url = common_config.websiteUrl + "/with-state/account-book";
+      let url = common_config.websiteUrl.value + "/with-state/account-book";
       if (type && type !== "全部") {
-        url = common_config.websiteUrl + "/with-state/account-book?type=" + type;
+        url = common_config.websiteUrl.value + "/with-state/account-book?type=" + type;
       }
       common_vendor.index.request({
         url,
@@ -118,7 +118,7 @@ const _sfc_main = {
       }
       let token = common_vendor.index.getStorageSync("token");
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/showcase",
+        url: common_config.websiteUrl.value + "/with-state/showcase",
         method: "GET",
         header: {
           "Authorization": token
@@ -139,7 +139,7 @@ const _sfc_main = {
       }
       let token = common_vendor.index.getStorageSync("token");
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/tail-bill",
+        url: common_config.websiteUrl.value + "/with-state/tail-bill",
         method: "GET",
         header: {
           "Authorization": token

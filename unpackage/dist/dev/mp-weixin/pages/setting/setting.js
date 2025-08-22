@@ -97,7 +97,7 @@ const _sfc_main = {
       if (common_vendor.index.getSystemInfoSync().platform === "app" || true) {
         click.value++;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/latest-version?version=${common_config.dogdogdollVersion}`,
+          url: `${common_config.websiteUrl.value}/latest-version?version=${common_config.dogdogdollVersion}`,
           method: "GET"
         });
         if (res && res.data) {
@@ -160,7 +160,7 @@ const _sfc_main = {
       });
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/apply-delete`,
+          url: `${common_config.websiteUrl.value}/with-state/apply-delete`,
           method: "POST",
           header: {
             "Authorization": token
@@ -210,7 +210,7 @@ const _sfc_main = {
       });
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/cancel-delete`,
+          url: `${common_config.websiteUrl.value}/with-state/cancel-delete`,
           method: "POST",
           header: {
             "Authorization": token

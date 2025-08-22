@@ -2,26 +2,19 @@
 	<view v-if="loadingSuccess" class="detail-container">
 		<!-- 头图区域 -->
 		<view class="header-image-container">
-			    <!-- 使用swiper组件支持多图轮播 -->
-			    <swiper class="swiper" 
-					:autoplay="true" 
-					:interval="3000" 
-					:circular="true" 
-					indicator-dots
-					:style="{ height: swiperHeight + 'px' }">
-			        <swiper-item v-for="(img, index) in imageList" :key="index">
-			            <!-- 添加外层容器实现垂直居中 -->
-			            <view class="image-container">
-			                <image 
-								:src="img" 
-								mode="widthFix" 
-								class="header-image"
-								@load="handleImageLoad($event, index)"></image>
-			            </view>
-			        </swiper-item>
-			    </swiper>
-			    <view class="image-overlay"></view>
-			</view>
+			<!-- 使用swiper组件支持多图轮播 -->
+			<swiper class="swiper" :autoplay="true" :interval="3000" :circular="true" indicator-dots
+				:style="{ height: swiperHeight + 'px' }">
+				<swiper-item v-for="(img, index) in imageList" :key="index">
+					<!-- 添加外层容器实现垂直居中 -->
+					<view class="image-container">
+						<image :src="img" mode="widthFix" class="header-image" @load="handleImageLoad($event, index)">
+						</image>
+					</view>
+				</swiper-item>
+			</swiper>
+			<view class="image-overlay"></view>
+		</view>
 
 		<!-- 标题区域 -->
 		<view class="title-container">
@@ -267,31 +260,45 @@
 
 	const swiperHeight = ref(500); // 默认高度
 	const imageHeights = ref([]); // 存储每张图片的高度
-		const screenWidth = ref(0); // 屏幕宽度
+	const screenWidth = ref(0); // 屏幕宽度
+
+	const STORAGE_KEY = `account_book_heights_${props.account_book_id}`;
 	// 图片加载处理函数
 	const handleImageLoad = (event, index) => {
-			if (!screenWidth.value) return;
-			
-			// 获取图片原始宽高
-			const { width: originWidth, height: originHeight } = event.detail;
-			
-			// 计算等比例缩放后的高度
-			const renderHeight = (originHeight / originWidth) * screenWidth.value;
-			
-			// 存储计算后的高度
-			imageHeights.value[index] = renderHeight;
-			
-			// 计算当前所有已加载图片中的最大高度
-			const currentHeights = imageHeights.value.filter(h => h);
-			if (currentHeights.length > 0) {
-				const maxHeight = Math.max(...currentHeights);
-				
-				// 如果计算出的最大高度大于当前swiper高度，则更新
-				if (maxHeight > swiperHeight.value) {
-					swiperHeight.value = maxHeight;
-				}
+		if (!screenWidth.value) return;
+
+		// 获取图片原始宽高
+		const {
+			width: originWidth,
+			height: originHeight
+		} = event.detail;
+
+		// 计算等比例缩放后的高度
+		const renderHeight = (originHeight / originWidth) * screenWidth.value;
+
+		// 存储计算后的高度
+		imageHeights.value[index] = renderHeight;
+
+		// 计算当前所有已加载图片中的最大高度
+		const currentHeights = imageHeights.value.filter(h => h);
+		if (currentHeights.length > 0) {
+			const maxHeight = Math.max(...currentHeights);
+
+			// 如果计算出的最大高度大于当前swiper高度，则更新
+			if (maxHeight > swiperHeight.value) {
+				swiperHeight.value = maxHeight;
+				saveHeightsToStorage();
 			}
-		};
+		}
+	};
+
+	const saveHeightsToStorage = () => {
+		uni.setStorageSync(STORAGE_KEY, {
+			heights: imageHeights.value,
+			screenWidth: screenWidth.value
+		});
+	};
+
 	// 在script部分添加计算属性
 	const imageList = computed(() => {
 		if (!detail.value.image_url) return [];
@@ -303,7 +310,7 @@
 		const token = uni.getStorageSync('token');
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/account-book-detail?id=${id}`,
+				url: `${websiteUrl.value}/with-state/account-book-detail?id=${id}`,
 				method: 'GET',
 				header: {
 					'Authorization': token
@@ -339,18 +346,35 @@
 		});
 	};
 	onShow(() => {
-		swiperHeight.value = 300; // 重置为默认高度
-		imageHeights.value = [];
-		
-		// 重新获取屏幕宽度（考虑横竖屏切换）
 		const systemInfo = uni.getSystemInfoSync();
-		screenWidth.value = systemInfo.windowWidth;
-				
-		asyncGetUserInfo().then((userInfo) => {
+		const currentScreenWidth = systemInfo.windowWidth;
+		screenWidth.value = currentScreenWidth;
 
-			fetchDetail(props.account_book_id)
-		})
-	})
+		// 尝试从本地存储获取高度数据
+		const storedData = uni.getStorageSync(STORAGE_KEY);
+
+		// 重置高度相关状态
+		swiperHeight.value = 300; // 默认高度
+		imageHeights.value = [];
+
+		if (storedData) {
+			// 检查屏幕宽度是否变化
+			const isScreenSizeChanged = storedData.screenWidth !== currentScreenWidth;
+
+			if (!isScreenSizeChanged && storedData.heights.length > 0) {
+				// 屏幕尺寸未变化且存在存储的高度
+				imageHeights.value = storedData.heights;
+				const maxStoredHeight = Math.max(...storedData.heights.filter(h => h));
+
+				// 使用存储高度（确保不小于默认高度）
+				swiperHeight.value = Math.max(maxStoredHeight, 300);
+			}
+		}
+
+		asyncGetUserInfo().then(() => {
+			fetchDetail(props.account_book_id);
+		});
+	});
 </script>
 
 <style lang="less">
@@ -555,24 +579,23 @@
 	}
 
 	.swiper {
-			width: 100%;
-			// transition: height 0.1s ease; /* 添加高度过渡效果 */
-		}
-		
-		/* 新增图片容器样式 */
-		.image-container {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: 100%;
-			width: 100%;
-			overflow: hidden;
-		}
-		
-		.header-image {
-			width: 100%;
-			max-height: 100%;
-			display: block;
-		}
-	
+		width: 100%;
+		// transition: height 0.1s ease; /* 添加高度过渡效果 */
+	}
+
+	/* 新增图片容器样式 */
+	.image-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
+	}
+
+	.header-image {
+		width: 100%;
+		max-height: 100%;
+		display: block;
+	}
 </style>

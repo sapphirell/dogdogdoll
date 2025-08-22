@@ -1,4 +1,32 @@
-/* 顶部区域 */
+/* ======================== 顶部Tab样式 ======================== */
+.tab-container.data-v-6e8913ab {
+  display: flex;
+  padding: 20rpx 30rpx 0;
+  background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
+}
+.tab-container .tab-item.data-v-6e8913ab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  font-size: 32rpx;
+  color: #666;
+  position: relative;
+}
+.tab-container .tab-item.active.data-v-6e8913ab {
+  color: #7dc3d3;
+  font-weight: bold;
+}
+.tab-container .tab-item .tab-indicator.data-v-6e8913ab {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80rpx;
+  height: 6rpx;
+  background: #7dc3d3;
+  border-radius: 3rpx;
+}
+/* ======================== 顶部区域 ======================== */
 .header-container.data-v-6e8913ab {
   background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
   padding-bottom: 20rpx;
@@ -9,7 +37,8 @@
   padding: 20rpx 30rpx;
 }
 .category-container.data-v-6e8913ab {
-  padding: 20rpx 20rpx 10rpx;
+  padding: 20rpx 20rpx 0rpx;
+  background: rgb(211 245 255);
 }
 .category-scroll.data-v-6e8913ab {
   white-space: nowrap;
@@ -38,9 +67,9 @@
   box-shadow: 0 4rpx 10rpx rgba(125, 195, 211, 0.4);
   transform: translateY(-4rpx);
 }
-/* 日期选择区域 */
+/* ======================== 日期选择区域 ======================== */
 .date-picker-container.data-v-6e8913ab {
-  padding: 20rpx 0;
+  padding: 20rpx 20rpx;
   background: white;
   margin: -20rpx 20rpx 0;
   border-radius: 30rpx;
@@ -107,7 +136,36 @@
   transform: scale(1.1);
   box-shadow: 0 5rpx 15rpx rgba(125, 195, 211, 0.3);
 }
-/* 商品展示区域 */
+/* ======================== 尺寸筛选区域样式 ======================== */
+.size-container.data-v-6e8913ab {
+  padding: 0 20rpx 10rpx;
+  background: rgb(211 245 255);
+}
+.size-scroll.data-v-6e8913ab {
+  white-space: nowrap;
+  height: 80rpx;
+}
+.size-item.data-v-6e8913ab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  margin: 0 12rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 50rpx;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+  color: #666;
+  font-weight: 500;
+}
+.size-item.active.data-v-6e8913ab {
+  background: #ff9ab2;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4rpx 10rpx rgba(255, 154, 178, 0.4);
+}
+/* ======================== 内容展示区域 ======================== */
 .goods-container.data-v-6e8913ab {
   padding: 40rpx 30rpx;
   background: #f8faff;
@@ -126,6 +184,7 @@
   font-weight: bold;
   margin-right: 10rpx;
 }
+/* ======================== 空状态样式 ======================== */
 .empty-tip.data-v-6e8913ab {
   display: flex;
   flex-direction: column;
@@ -141,6 +200,7 @@
   margin-bottom: 30rpx;
   opacity: 0.6;
 }
+/* ======================== 贩售商品卡片样式 ======================== */
 .goods-card.data-v-6e8913ab {
   display: flex;
   background: white;
@@ -242,7 +302,7 @@
   border-radius: 50%;
   margin-right: 12rpx;
 }
-/* 价格信息样式 */
+/* ======================== 价格信息样式 ======================== */
 .price-info.data-v-6e8913ab {
   margin-top: auto;
   display: flex;
@@ -281,9 +341,317 @@
   color: #999;
   transform: translateY(-2rpx);
 }
+/* ======================== 约妆计划卡片样式 ======================== */
+.plan-card.data-v-6e8913ab {
+  background: white;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 8rpx 25rpx rgba(125, 195, 211, 0.15);
+  /* 蓝色阴影 */
+  position: relative;
+}
+/* 艺术家头部区域 */
+.artist-header.data-v-6e8913ab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+.artist-info.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+}
+.artist-info .artist-avatar.data-v-6e8913ab {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  border: 2rpx solid #e6f7ff;
+}
+.artist-info .artist-details.data-v-6e8913ab {
+  display: flex;
+  flex-direction: column;
+  /* 妆费区间样式 */
+}
+.artist-info .artist-details .artist-name.data-v-6e8913ab {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5rpx;
+  padding-left: 8rpx;
+}
+.artist-info .artist-details .makeup-price-range.data-v-6e8913ab {
+  font-weight: bold;
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  align-self: flex-start;
+}
+.artist-info .artist-details .makeup-price-range text.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #fff;
+}
+.artist-status.data-v-6e8913ab {
+  background: linear-gradient(90deg, #7dc3d3, #5da8c0);
+  /* 蓝色渐变 */
+  color: white;
+  font-size: 24rpx;
+  padding: 6rpx 15rpx;
+  border-radius: 20rpx;
+}
+/* 艺术家描述 */
+.artist-description.data-v-6e8913ab {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+  padding: 15rpx;
+  background: #f8f9ff;
+  /* 浅蓝色背景 */
+  border-radius: 12rpx;
+}
+/* 基础价格 */
+.base-price.data-v-6e8913ab {
+  font-size: 0.8125rem;
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 0.625rem;
+  text-align: center;
+  padding: 0.3125rem;
+  background: #95a5ac;
+  border-radius: 0.3125rem;
+}
+/* ======================== 计划信息区域 ======================== */
+.plan-info.data-v-6e8913ab {
+  background: #f0f9ff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+.plan-info .info-row.data-v-6e8913ab {
+  display: flex;
+  margin-bottom: 15rpx;
+  font-size: 26rpx;
+}
+.plan-info .info-row.data-v-6e8913ab:last-child {
+  margin-bottom: 0;
+}
+.plan-info .info-row .label.data-v-6e8913ab {
+  color: #5da8c0;
+  font-weight: bold;
+  width: 140rpx;
+}
+.plan-info .info-row .value.data-v-6e8913ab {
+  color: #333;
+  flex: 1;
+}
+/* 配置部分 */
+.config-section.data-v-6e8913ab {
+  margin-bottom: 25rpx;
+}
+.config-section .section-title.data-v-6e8913ab {
+  display: block;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #5da8c0;
+  /* 深蓝色 */
+  margin-bottom: 15rpx;
+  padding-bottom: 8rpx;
+  border-bottom: 1rpx solid #e6f7ff;
+  /* 浅蓝色 */
+}
+.config-section .tier-item.data-v-6e8913ab,
+.config-section .addon-item.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 0;
+  border-bottom: 1rpx dashed #e6f7ff;
+  /* 浅蓝色虚线 */
+}
+.config-section .tier-item.data-v-6e8913ab:last-child,
+.config-section .addon-item.data-v-6e8913ab:last-child {
+  border-bottom: none;
+}
+.config-section .tier-item .tier-title.data-v-6e8913ab,
+.config-section .addon-item .tier-title.data-v-6e8913ab,
+.config-section .tier-item .addon-title.data-v-6e8913ab,
+.config-section .addon-item .addon-title.data-v-6e8913ab {
+  font-size: 26rpx;
+  color: #333;
+  width: 140rpx;
+  font-weight: 500;
+}
+.config-section .tier-item .tier-price.data-v-6e8913ab,
+.config-section .addon-item .tier-price.data-v-6e8913ab,
+.config-section .tier-item .addon-price.data-v-6e8913ab,
+.config-section .addon-item .addon-price.data-v-6e8913ab {
+  font-size: 26rpx;
+  color: #5da8c0;
+  /* 深蓝色 */
+  font-weight: bold;
+  width: 120rpx;
+  text-align: right;
+}
+.config-section .tier-item .tier-desc.data-v-6e8913ab,
+.config-section .addon-item .tier-desc.data-v-6e8913ab,
+.config-section .tier-item .addon-desc.data-v-6e8913ab,
+.config-section .addon-item .addon-desc.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #888;
+  flex: 1;
+  margin-left: 20rpx;
+}
+/* 操作按钮 - 优化版 */
+.plan-actions.data-v-6e8913ab {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #e6f7ff;
+  /* 浅蓝色分割线 */
+}
+.plan-actions button.data-v-6e8913ab {
+  height: 70rpx;
+  line-height: 70rpx;
+  font-size: 26rpx;
+  border-radius: 35rpx;
+  background: none;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  background: white;
+  /* 移除默认按钮样式 */
+  /* 按钮悬浮效果 */
+}
+.plan-actions button.data-v-6e8913ab::after {
+  border: none;
+}
+.plan-actions button.btn-view-detail.data-v-6e8913ab {
+  color: #5da8c0;
+  /* 深蓝色文字 */
+  box-shadow: 0 2rpx 8rpx rgba(93, 168, 192, 0.2);
+  /* 点击效果 */
+}
+.plan-actions button.btn-view-detail.data-v-6e8913ab:active {
+  background: #f0f9ff;
+  box-shadow: 0 1rpx 4rpx rgba(93, 168, 192, 0.1);
+}
+.plan-actions button.btn-book.data-v-6e8913ab {
+  color: #5da8c0;
+  /* 深蓝色文字 */
+  box-shadow: 0 2rpx 8rpx rgba(93, 168, 192, 0.2);
+  /* 点击效果 */
+}
+.plan-actions button.btn-book.data-v-6e8913ab:active {
+  background: #f0f9ff;
+  box-shadow: 0 1rpx 4rpx rgba(93, 168, 192, 0.1);
+}
+.plan-actions button.data-v-6e8913ab:not([disabled]):hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+/* 响应式调整 */
+@media (max-width: 480px) {
+.artist-header.data-v-6e8913ab {
+    flex-direction: column;
+    align-items: flex-start;
+}
+.artist-header .artist-status.data-v-6e8913ab {
+    margin-top: 10rpx;
+    align-self: flex-start;
+}
+.plan-actions.data-v-6e8913ab {
+    flex-direction: column;
+}
+.plan-actions button.data-v-6e8913ab {
+    width: 100%;
+    margin-bottom: 15rpx;
+}
+.plan-actions button.btn-view-detail.data-v-6e8913ab {
+    margin-right: 0;
+    margin-bottom: 15rpx;
+}
+}
+/* ======================== 例图展示区域 ======================== */
+.highlight-images.data-v-6e8913ab {
+  margin: 20rpx 0;
+  padding: 10rpx 0;
+  overflow: hidden;
+}
+.highlight-images .image-scroll.data-v-6e8913ab {
+  white-space: nowrap;
+}
+.highlight-images .highlight-image.data-v-6e8913ab {
+  display: inline-block;
+  width: 240rpx;
+  height: 300rpx;
+  border-radius: 12rpx;
+  margin-right: 15rpx;
+  background: #f5f9ff;
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+.highlight-images .highlight-image.data-v-6e8913ab:active {
+  transform: scale(0.95);
+}
+.highlight-images .highlight-image.data-v-6e8913ab:last-child {
+  margin-right: 0;
+}
+/* ======================== 折叠区域 ======================== */
+.foldable-section.data-v-6e8913ab {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+.foldable-section.expanded.data-v-6e8913ab {
+  max-height: 1500rpx;
+  /* 足够大的值容纳内容 */
+  opacity: 1;
+}
+.fold-toggle.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 0;
+  color: #81D8cf;
+  font-size: 26rpx;
+  font-weight: 500;
+  margin-top: 10rpx;
+}
+.fold-toggle text.data-v-6e8913ab {
+  margin-right: 10rpx;
+}
+.fold-toggle.data-v-6e8913ab:active {
+  opacity: 0.8;
+}
+/* ======================== 其他通用样式 ======================== */
 .data-v-6e8913ab::-webkit-scrollbar {
-  width: 0!important;
-  height: 0!important;
-  background-color: transparent!important;
-  display: none!important;
+  width: 0 !important;
+  height: 0 !important;
+  background-color: transparent !important;
+  display: none !important;
+}
+/* 响应式调整 */
+@media (max-width: 480px) {
+.artist-header.data-v-6e8913ab {
+    flex-direction: column;
+    align-items: flex-start;
+}
+.artist-header .artist-status.data-v-6e8913ab {
+    margin-top: 10rpx;
+    align-self: flex-start;
+}
+.plan-actions.data-v-6e8913ab {
+    flex-direction: column;
+}
+.plan-actions button.data-v-6e8913ab {
+    width: 100%;
+    margin-bottom: 15rpx;
+}
+.plan-actions button.btn-view-detail.data-v-6e8913ab {
+    margin-right: 0;
+}
 }

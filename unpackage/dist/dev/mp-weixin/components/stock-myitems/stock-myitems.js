@@ -45,7 +45,7 @@ const _sfc_main = {
       const token = common_vendor.index.getStorageSync("token");
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/account-types",
+          url: common_config.websiteUrl.value + "/with-state/account-types",
           method: "GET",
           header: {
             "Authorization": token
@@ -67,7 +67,7 @@ const _sfc_main = {
       const token = common_vendor.index.getStorageSync("token");
       try {
         await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/add-account-type",
+          url: common_config.websiteUrl.value + "/with-state/add-account-type",
           method: "POST",
           header: {
             "Authorization": token
@@ -91,7 +91,7 @@ const _sfc_main = {
     const handleSortChange = (sortedIds) => {
       const token = common_vendor.index.getStorageSync("token");
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/sort-account-book",
+        url: common_config.websiteUrl.value + "/with-state/sort-account-book",
         method: "POST",
         header: {
           "Authorization": token,
@@ -115,7 +115,7 @@ const _sfc_main = {
             const token = common_vendor.index.getStorageSync("token");
             try {
               const response = await common_vendor.index.request({
-                url: common_config.websiteUrl + "/with-state/delete-account-type",
+                url: common_config.websiteUrl.value + "/with-state/delete-account-type",
                 method: "POST",
                 header: {
                   "Authorization": token,

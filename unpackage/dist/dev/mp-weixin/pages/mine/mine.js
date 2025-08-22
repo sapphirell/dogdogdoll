@@ -18,8 +18,8 @@ const _sfc_main = {
     common_vendor.useCssVars((_ctx) => ({
       "cb11d27e": headerHeight.value
     }));
-    common_vendor.index.__f__("log", "at pages/mine/mine.vue:154", common_config.global.isLogin);
-    common_vendor.index.__f__("log", "at pages/mine/mine.vue:155", common_config.global.userInfo);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:181", common_config.global.isLogin);
+    common_vendor.index.__f__("log", "at pages/mine/mine.vue:182", common_config.global.userInfo);
     let inputPhone = common_vendor.ref("");
     let inputPassword = common_vendor.ref("");
     let unreadCount = common_vendor.ref(0);
@@ -104,7 +104,7 @@ const _sfc_main = {
     const fetchUnreadCount = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/unread-message-count`,
+          url: `${common_config.websiteUrl.value}/with-state/unread-message-count`,
           header: {
             Authorization: common_vendor.index.getStorageSync("token")
           }
@@ -113,17 +113,22 @@ const _sfc_main = {
           unreadCount.value = res.data.data.count;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:280", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:307", error);
         common_vendor.index.showToast({
           title: "未读数获取失败",
           icon: "none"
         });
       }
     };
+    const jumpBrandBase = async () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/creator_base/creator_base"
+      });
+    };
     const fetchLikeCount = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/user-likes-count`,
+          url: `${common_config.websiteUrl.value}/with-state/user-likes-count`,
           header: {
             Authorization: common_vendor.index.getStorageSync("token")
           }
@@ -132,7 +137,7 @@ const _sfc_main = {
           likeCount.value = res.data.data.count;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:301", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:334", error);
         common_vendor.index.showToast({
           title: "关注数获取失败",
           icon: "none"
@@ -142,7 +147,7 @@ const _sfc_main = {
     const fetchMyCollocationCount = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/my-collocation-count`,
+          url: `${common_config.websiteUrl.value}/with-state/my-collocation-count`,
           header: {
             Authorization: common_vendor.index.getStorageSync("token")
           }
@@ -151,7 +156,7 @@ const _sfc_main = {
           myCollocationCount.value = res.data.data;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:323", error);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:356", error);
         common_vendor.index.showToast({
           title: "搭配数获取失败",
           icon: "none"
@@ -159,12 +164,12 @@ const _sfc_main = {
       }
     };
     function selectAvatar(croperPath) {
-      common_vendor.index.__f__("log", "at pages/mine/mine.vue:332", "croperPath:" + croperPath);
+      common_vendor.index.__f__("log", "at pages/mine/mine.vue:365", "croperPath:" + croperPath);
       let token = common_vendor.index.getStorageSync("token");
       let qnToken = "";
       common_vendor.index.request(
         {
-          url: common_config.websiteUrl + "/with-state/qiniu-token",
+          url: common_config.websiteUrl.value + "/with-state/qiniu-token",
           method: "POST",
           header: {
             "Authorization": token
@@ -178,11 +183,11 @@ const _sfc_main = {
               return;
             }
             qnToken = res.data.data.token;
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:352", "获取到的七牛token：" + res.data.data.token);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:385", "获取到的七牛token：" + res.data.data.token);
             let userInfo = common_vendor.index.getStorageSync("userInfo");
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:354", userInfo);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:387", userInfo);
             let fileName = res.data.data.path;
-            common_vendor.index.__f__("log", "at pages/mine/mine.vue:357", "fileName:" + fileName);
+            common_vendor.index.__f__("log", "at pages/mine/mine.vue:390", "fileName:" + fileName);
             common_vendor.index.uploadFile({
               url: "https://up-cn-east-2.qiniup.com",
               name: "file",
@@ -197,11 +202,11 @@ const _sfc_main = {
                 scope: "hobby-box:" + fileName
               },
               success: (res2) => {
-                common_vendor.index.__f__("log", "at pages/mine/mine.vue:372", "上传成功");
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:405", "上传成功");
                 updateUserInfo("avatar", "https://images1.fantuanpu.com/" + fileName);
               },
               fail: (res2) => {
-                common_vendor.index.__f__("log", "at pages/mine/mine.vue:379", res2);
+                common_vendor.index.__f__("log", "at pages/mine/mine.vue:412", res2);
                 common_vendor.index.showToast({
                   title: "上传失败",
                   icon: "none"
@@ -223,7 +228,7 @@ const _sfc_main = {
       let token = common_vendor.index.getStorageSync("token");
       common_vendor.index.getStorageSync("userInfo");
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/update-profile",
+        url: common_config.websiteUrl.value + "/with-state/update-profile",
         method: "POST",
         header: {
           "Authorization": token
@@ -232,7 +237,7 @@ const _sfc_main = {
           "avatar": value
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:412", "更新成功");
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:445", "更新成功");
           common_config.getUserInfo();
         },
         fail: (res) => {
@@ -275,14 +280,14 @@ const _sfc_main = {
       let phone = inputPhone.value;
       let password = inputPassword.value;
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/login",
+        url: common_config.websiteUrl.value + "/login",
         method: "POST",
         data: {
           account: phone,
           password
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:472", res);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:505", res);
           let data = res.data.data;
           let status = res.data.status;
           if (status != "success") {
@@ -295,7 +300,7 @@ const _sfc_main = {
           common_vendor.index.setStorageSync("token", data.jwt_token);
           common_vendor.index.setStorageSync("openid", data.open_id);
           common_vendor.index.setStorageSync("session_key", data.session_key);
-          common_vendor.index.__f__("log", "at pages/mine/mine.vue:487", "jwt:" + data.jwt_token);
+          common_vendor.index.__f__("log", "at pages/mine/mine.vue:520", "jwt:" + data.jwt_token);
           if (data.jwt_token != null && data.jwt_token != "") {
             common_config.getUserInfo();
           }
@@ -322,11 +327,16 @@ const _sfc_main = {
     const headerHeight = common_vendor.computed(() => {
       return navBarHeight.value + "px";
     });
+    function jumpToAnnouncement() {
+      common_vendor.index.navigateTo({
+        url: "/pages/article_detail/article_detail?id=3"
+      });
+    }
     common_vendor.watch(
       () => common_config.global.isLogin,
       // 使用函数返回要监听的值
       (newVal) => {
-        common_vendor.index.__f__("log", "at pages/mine/mine.vue:544", "watch", newVal);
+        common_vendor.index.__f__("log", "at pages/mine/mine.vue:582", "watch", newVal);
         if (newVal) {
           common_vendor.index.showTabBar({
             animation: false
@@ -368,17 +378,25 @@ const _sfc_main = {
         e: common_vendor.o(jumpToCroper),
         f: common_vendor.t(common_vendor.unref(common_config.global).userInfo.username),
         g: common_vendor.t(common_vendor.unref(common_config.global).userInfo.id),
-        h: common_assets._imports_0$5,
-        i: common_vendor.t(common_vendor.unref(likeCount)),
-        j: common_vendor.o(jump2like),
-        k: common_assets._imports_1$3,
-        l: common_vendor.t(common_vendor.unref(unreadCount)),
-        m: common_vendor.o(jump2message),
-        n: common_assets._imports_2$2,
-        o: common_vendor.t(common_vendor.unref(myCollocationCount)),
-        p: common_vendor.o(jump2collocation),
-        q: common_vendor.p({
+        h: common_vendor.t(common_vendor.unref(likeCount)),
+        i: common_vendor.o(jump2like),
+        j: common_vendor.t(common_vendor.unref(unreadCount)),
+        k: common_vendor.o(jump2message),
+        l: common_vendor.t(common_vendor.unref(myCollocationCount)),
+        m: common_vendor.o(jump2collocation),
+        n: common_vendor.p({
           type: "chatboxes",
+          size: "24",
+          color: "#606060"
+        }),
+        o: common_vendor.p({
+          type: "right",
+          size: "24",
+          color: "#c0c0c0"
+        }),
+        p: common_vendor.o(jump2myComment),
+        q: common_vendor.p({
+          type: "gear",
           size: "24",
           color: "#606060"
         }),
@@ -387,9 +405,9 @@ const _sfc_main = {
           size: "24",
           color: "#c0c0c0"
         }),
-        s: common_vendor.o(jump2myComment),
+        s: common_vendor.o(jumpSetting),
         t: common_vendor.p({
-          type: "gear",
+          type: "shop",
           size: "24",
           color: "#606060"
         }),
@@ -398,7 +416,7 @@ const _sfc_main = {
           size: "24",
           color: "#c0c0c0"
         }),
-        w: common_vendor.o(jumpSetting),
+        w: common_vendor.o(jumpBrandBase),
         x: common_vendor.p({
           type: "arrow-right",
           size: "24",
@@ -409,28 +427,29 @@ const _sfc_main = {
           size: "24",
           color: "#c0c0c0"
         }),
-        z: common_vendor.o(logout)
+        z: common_vendor.o(logout),
+        A: common_vendor.o(jumpToAnnouncement)
       } : common_vendor.e({
-        A: common_assets._imports_3$2,
-        B: common_vendor.unref(inputPhone),
-        C: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
-        D: common_assets._imports_4$1,
-        E: common_vendor.unref(inputPassword),
-        F: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
-        G: common_vendor.o(jump2register),
-        H: common_vendor.o(jump2forgetPassword),
-        I: common_vendor.o(login),
-        J: common_vendor.unref(scene) == 4
+        B: common_assets._imports_0$5,
+        C: common_vendor.unref(inputPhone),
+        D: common_vendor.o(($event) => common_vendor.isRef(inputPhone) ? inputPhone.value = $event.detail.value : inputPhone = $event.detail.value),
+        E: common_assets._imports_1$3,
+        F: common_vendor.unref(inputPassword),
+        G: common_vendor.o(($event) => common_vendor.isRef(inputPassword) ? inputPassword.value = $event.detail.value : inputPassword = $event.detail.value),
+        H: common_vendor.o(jump2register),
+        I: common_vendor.o(jump2forgetPassword),
+        J: common_vendor.o(login),
+        K: common_vendor.unref(scene) == 4
       }, common_vendor.unref(scene) == 4 ? {
-        K: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
+        L: common_vendor.o((...args) => common_vendor.unref(common_config.wechatSignLogin) && common_vendor.unref(common_config.wechatSignLogin)(...args))
       } : {}, {
-        L: common_vendor.o(jump2index),
-        M: common_vendor.unref(agree),
-        N: common_vendor.o(handleAgreeChange),
-        O: common_vendor.o(goToPrivacy),
-        P: common_vendor.o(goToPermissions)
+        M: common_vendor.o(jump2index),
+        N: common_vendor.unref(agree),
+        O: common_vendor.o(handleAgreeChange),
+        P: common_vendor.o(goToPrivacy),
+        Q: common_vendor.o(goToPermissions)
       }), {
-        Q: common_vendor.s(_ctx.__cssVars())
+        R: common_vendor.s(_ctx.__cssVars())
       });
     };
   }

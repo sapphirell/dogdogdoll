@@ -37,7 +37,7 @@
 			</view>
 		</view>
 		<view class="publish-detail">
-			<text>* 展示您的宝宝们 🩵。</text>
+			<text>* 展示您的宝宝们 。</text>
 			<text>* 不关联商品的展示柜不会出现在广场中。</text>
 		</view>
 		<!-- 相关 -->
@@ -191,7 +191,7 @@
 	function getGoodsInfo(id) {
 		return new Promise((resolve, reject) => {
 			uni.request({
-				url: websiteUrl + '/goods?id=' + id,
+				url: websiteUrl.value + '/goods?id=' + id,
 				method: 'GET',
 				timeout: 5000,
 				success: (res) => {
@@ -224,7 +224,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/showcase-detail?id=${props.showcase_id}`,
+				url: `${websiteUrl.value}/with-state/showcase-detail?id=${props.showcase_id}`,
 				method: 'GET',
 				header: {
 					'Authorization': uni.getStorageSync('token'),
@@ -302,7 +302,7 @@
 				if (res.confirm) {
 					try {
 						const res = await uni.request({
-							url: `${websiteUrl}/with-state/delete-showcase?id=` + props
+							url: `${websiteUrl.value}/with-state/delete-showcase?id=` + props
 								.showcase_id,
 							method: 'POST',
 
@@ -372,10 +372,10 @@
 		};
 
 		try {
-			let url = `${websiteUrl}/with-state/add-showcase`
+			let url = `${websiteUrl.value}/with-state/add-showcase`
 			// id 转int
 			if (props.showcase_id) {
-				url = `${websiteUrl}/with-state/update-showcase`
+				url = `${websiteUrl.value}/with-state/update-showcase`
 				postData = {
 					...postData,
 					id: parseInt(props.showcase_id, 10)
@@ -421,7 +421,7 @@
 	function getTypes() {
 		///goods-types
 		uni.request({
-			url: websiteUrl + '/goods-types',
+			url: websiteUrl.value + '/goods-types',
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
@@ -537,7 +537,7 @@
 	});
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 	.uploaded_image {
 		width: 100px;
 		height: 100px;

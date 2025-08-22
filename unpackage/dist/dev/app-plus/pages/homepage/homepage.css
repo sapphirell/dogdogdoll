@@ -10,6 +10,7 @@
   /* 统一高度 */
   padding: 0 0.625rem;
   /* 统一内边距 */
+  /* 索引选择器样式 - 修改为蓝色 */
 }
 .search_tab .icon_image[data-v-e5a069da] {
   width: 1.125rem;
@@ -27,6 +28,24 @@
   font-size: 0.71875rem;
   /* 统一字体大小 */
 }
+.search_tab .index-selector .selector-content[data-v-e5a069da] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.625rem;
+  height: 1.875rem;
+  border-radius: 0.9375rem;
+  font-size: 0.75rem;
+  color: white;
+  transition: all 0.3s ease;
+  margin-right: 0.46875rem;
+}
+.search_tab .index-selector .selector-content[data-v-e5a069da]:active {
+  transform: translateY(0.0625rem);
+}
+.search_tab .index-selector .selector-content uni-text[data-v-e5a069da] {
+  font-weight: 500;
+}
 .search_results[data-v-e5a069da] {
   padding: 10px;
   background-color: #f8f8f8;
@@ -36,6 +55,7 @@
   box-shadow: 0 0 15px #0000002b;
   max-height: 12.5rem;
   font-size: 0.6875rem;
+  box-sizing: border-box;
 }
 .search_results .result_item[data-v-e5a069da] {
   font-size: 0.6875rem;
@@ -76,6 +96,13 @@
   height: 1.125rem;
   margin-left: 0;
   /* 重置左边距 */
+}
+.close-associate uni-text[data-v-e5a069da] {
+  font-size: 0.6875rem;
+  color: #ccc;
+}
+.close-associate[data-v-e5a069da]:active {
+  background-color: #f0f0f0;
 }
 
 /**

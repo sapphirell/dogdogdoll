@@ -1,3 +1,4 @@
+<!-- shmily-drag-image -->
 <template>
 	<view class="con">
 		<template v-if="viewWidth">
@@ -5,7 +6,7 @@
 				@mouseleave="mouseleave">
 				<movable-view v-for="(item, index) in imageList" :key="item.id" class="view" direction="all" :y="item.y"
 					:x="item.x" :damping="40" :disabled="item.disable || !item.ready" @change="onChange($event, item)"
-					@touchstart="onLongPressStart(item, $event)" @touchend="touchend(item)" @tap="go2preview(item.id)"
+					@touchstart="onLongPressStart(item, $event)" @touchend="touchend(item)" @tap="handleItemClick(item)"
 					@touchmove="onTouchMove($event, item)" :style="{
 						width: viewWidth + 'px', 
 						height: viewHeight + 'px', 
@@ -19,8 +20,11 @@
 							  transform: 'scale(' + item.scale + ')',
 							  margin: itemMargin + 'px'
 							}" :class="{ 'ready' : !item.disable && item.ready  }">
+						<view v-if="props.showDelete" class="delete-btn" @click.stop="deleteImage(item)">
+							<uni-icons type="clear" color="#9b9b9b" size="30"></uni-icons>
+						</view>
 						<image class="pre-image" :src="getFirstImage(item.src)" mode="aspectFill"></image>
-						<view class="info-container">
+						<view class="info-container" v-if="props.showItemInfo">
 							<text class="name">{{ item.name }}</text>
 							<!-- <text class="name">状态{{ item.disable || !item.ready }}</text> -->
 							<text class="price">{{item.price}}</text>
@@ -55,6 +59,10 @@
 		value: {
 			type: Array,
 			default: () => []
+		},
+		customClick: {
+		  type: Boolean,
+		  default: false
 		},
 		modelValue: {
 			type: Array,
@@ -101,11 +109,20 @@
 		imageRatio: {
 			type: Number,
 			default: 0.7 // 图片区域占总高度的70%
+		},
+		// 显示item的信息
+		showItemInfo: {
+			type: Boolean,
+			default: true
+		},
+		showDelete: {
+			type: Boolean,
+			default: false
 		}
 	})
 
 	// 定义 emits
-	const emit = defineEmits(['input', 'update:modelValue', 'sort-change']);
+	const emit = defineEmits(['input', 'update:modelValue', 'sort-change', 'delete',  'item-click' ]);
 
 	// 响应式变量
 	const imageList = ref([])
@@ -144,6 +161,19 @@
 	const childHeight = computed(() => {
 		return (viewHeight.value - rpx2px(props.padding) * 2) + 'px'
 	})
+	// 删除图片方法
+	const deleteImage = (item) => {
+		// 触发 delete 事件，传递被删除图片的 ID
+		emit('delete', item.id);
+
+		// 组件内部也需要删除该图片
+		const index = imageList.value.findIndex(img => img.id === item.id);
+		if (index !== -1) {
+			imageList.value.splice(index, 1);
+			updateItemsPosition(); // 更新位置
+			sortList(); // 更新数据
+		}
+	};
 	// 方法
 	const getSrc = (item) => {
 		return props.keyName !== null ? item[props.keyName] : item
@@ -315,7 +345,7 @@
 			const sortedIds = imageList.value.map(item => item.id);
 
 			emit('sort-change', sortedIds);
-			// console.log("排序后的ID", sortedIds)
+			console.log("排序后的ID", sortedIds)
 
 		}
 
@@ -475,7 +505,15 @@
 			url: '/pages/stock/account_book_form/account_book_form?account_book_id=' + id
 		})
 	}
-
+	 const handleItemClick = (item) => {
+		// 触发自定义点击事件
+		emit('item-click', item);
+		
+		// 如果未设置 customClick 属性，执行默认预览
+		if (!props.customClick) {
+		  go2preview(item.id);
+		}
+	  };
 	function go2preview(id) {
 		uni.navigateTo({
 			url: '/pages/account_book_preview/account_book_preview?account_book_id=' + id
@@ -617,25 +655,25 @@
 		})
 		isMounted.value = true;
 	})
-	
+
 	// 更新所有项目的位置（根据当前索引）
 	const updateItemsPosition = () => {
-	  imageList.value.forEach((item, index) => {
-	    // 根据新的索引计算网格位置
-	    item.index = index;
-	    const newAbsX = index % colsValue.value;
-	    const newAbsY = Math.floor(index / colsValue.value);
-	    
-	    // 确保位置精确对齐网格
-	    item.x = newAbsX * viewWidth.value;
-	    item.y = newAbsY * viewHeight.value;
-	    item.oldX = item.x;
-	    item.oldY = item.y;
-	    item.absX = newAbsX;
-	    item.absY = newAbsY;
-	  });
+		imageList.value.forEach((item, index) => {
+			// 根据新的索引计算网格位置
+			item.index = index;
+			const newAbsX = index % colsValue.value;
+			const newAbsY = Math.floor(index / colsValue.value);
+
+			// 确保位置精确对齐网格
+			item.x = newAbsX * viewWidth.value;
+			item.y = newAbsY * viewHeight.value;
+			item.oldX = item.x;
+			item.oldY = item.y;
+			item.absX = newAbsX;
+			item.absY = newAbsY;
+		});
 	};
-	
+
 	const initViewSize = () => {
 		return new Promise(resolve => {
 			// 检查实例是否可用
@@ -665,6 +703,7 @@
 	};
 	// 监听 value 和 modelValue 的变化
 	watch(() => props.modelValue, (newVal) => {
+		if (isDragging.value) return; // 拖动时忽略父组件回写，避免受控回拉
 		if (isMounted.value) {
 			nextTick(() => {
 				initViewSize().then(() => {
@@ -674,7 +713,7 @@
 		}
 	}, {
 		deep: true,
-		 immediate: true 
+		immediate: true
 	});
 
 	// 更新图片列表的公共方法
@@ -696,32 +735,32 @@
 			}
 			return createNewItem(item);
 		});
-		 updateItemsPosition();
+		updateItemsPosition();
 	};
 
 	// 创建新项目的方法
 	const createNewItem = (item) => {
-	  const data = getItemData(item);
-	  const absX = imageList.value.length % colsValue.value;
-	  const absY = Math.floor(imageList.value.length / colsValue.value);
-	  
-	  return {
-	    ...data,
-	    x: absX * viewWidth.value,
-	    y: absY * viewHeight.value,
-	    oldX: absX * viewWidth.value,
-	    oldY: absY * viewHeight.value,
-	    absX,
-	    absY,
-	    scale: 1,
-	    zIndex: 9,
-	    opacity: 1,
-	    index: imageList.value.length,
-	    disable: false,
-	    offset: 0,
-	    moveEnd: false,
-	    ready: false
-	  };
+		const data = getItemData(item);
+		const absX = imageList.value.length % colsValue.value;
+		const absY = Math.floor(imageList.value.length / colsValue.value);
+
+		return {
+			...data,
+			x: absX * viewWidth.value,
+			y: absY * viewHeight.value,
+			oldX: absX * viewWidth.value,
+			oldY: absY * viewHeight.value,
+			absX,
+			absY,
+			scale: 1,
+			zIndex: 9,
+			opacity: 1,
+			index: imageList.value.length,
+			disable: false,
+			offset: 0,
+			moveEnd: false,
+			ready: false
+		};
 	};
 </script>
 
@@ -807,4 +846,23 @@
 			}
 		}
 	}
+	
+	  /* 添加删除按钮样式 */
+	  .delete-btn {
+	    position: absolute;
+	    top: 0rpx;
+	    right: 0rpx;
+	    border-radius: 50%;
+	    display: flex;
+	    justify-content: center;
+	    align-items: center;
+	    z-index: 100;
+	    font-size: 30rpx;
+	    cursor: pointer;
+	  }
+	  
+	  /* 调整图片容器为相对定位 */
+	  .area-con {
+	    position: relative;
+	  }
 </style>

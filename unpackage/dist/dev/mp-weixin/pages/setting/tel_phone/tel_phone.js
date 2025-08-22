@@ -20,7 +20,7 @@ const _sfc_main = {
     let buttonMsg = common_vendor.ref("发送验证码");
     function updateTelPhone() {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/update-profile",
+        url: common_config.websiteUrl.value + "/with-state/update-profile",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")
@@ -70,7 +70,7 @@ const _sfc_main = {
       }
       buttonMsg.value = "发送中";
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/send-sms-code",
+        url: common_config.websiteUrl.value + "/send-sms-code",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")

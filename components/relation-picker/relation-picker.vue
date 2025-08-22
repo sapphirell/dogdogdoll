@@ -19,7 +19,7 @@
 			<view class="picker-body">
 				<!-- 精确模式 -->
 				<template v-if="!isFuzzyMode">
-					<common-name-picker ref="typePicker"  :dataList="typeList" @select="handleTypeSelect"
+					<common-name-picker ref="typePicker"  v-if="!hideType" :dataList="typeList" @select="handleTypeSelect"
 						@toggle="handleComponentToggle('type')" class="type-picker" />
 
 					<common-search ref="brandSearch" background="#f8f8f8" mode="fill" @select="handleBrandSelect"
@@ -70,7 +70,11 @@
 		visible: {
 			type: Boolean,
 			default: false
-		}
+		},
+	  hideType: {
+		type: Boolean,
+		default: false
+	  }
 	})
 	const emit = defineEmits([
 		'update:visible',
@@ -276,7 +280,7 @@
 	const getGoodsInfo = (id) => {
 		return new Promise((resolve, reject) => {
 			uni.request({
-				url: websiteUrl + '/goods?id=' + id,
+				url: websiteUrl.value + '/goods?id=' + id,
 				method: 'GET',
 				timeout: 5000,
 				success: (res) => {
@@ -360,7 +364,7 @@
 	function getGoods(id) {
 		// 请求 /goods-name-list 并赋值goodsList
 		uni.request({
-			url: websiteUrl + '/goods-name-list?id=' + id,
+			url: websiteUrl.value + '/goods-name-list?id=' + id,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {

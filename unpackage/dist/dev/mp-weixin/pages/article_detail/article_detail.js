@@ -49,7 +49,7 @@ const _sfc_main = {
       };
       try {
         const { data } = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/add-comment`,
+          url: `${common_config.websiteUrl.value}/with-state/add-comment`,
           method: "POST",
           header: { Authorization: common_vendor.index.getStorageSync("token") },
           data: requestData
@@ -81,7 +81,7 @@ const _sfc_main = {
     const fetchArticle = async (id) => {
       try {
         const { data } = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/article-detail?id=${id}`
+          url: `${common_config.websiteUrl.value}/article-detail?id=${id}`
         });
         if (data.status === "success") {
           article.value = data.data;

@@ -103,7 +103,7 @@
 		loading.value = true
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/my-comment`,
+				url: `${websiteUrl.value}/with-state/my-comment`,
 				method: 'GET',
 				header: {
 					"Authorization": uni.getStorageSync('token')

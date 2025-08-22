@@ -5,12 +5,12 @@
     "iPad"
   ],
   "id": "__UNI__5D7AAEE",
-  "name": "DogDogDoll",
+  "name": "娃圈狗狗助手",
   "version": {
-    "name": "1.0.42",
-    "code": 1042
+    "name": "1.1.2",
+    "code": 1102
   },
-  "description": "娃圈狗狗助手",
+  "description": "一个关于BJD娃娃的应用",
   "developer": {
     "name": "",
     "email": "",
@@ -19,6 +19,7 @@
   "permissions": {
     "VideoPlayer": {},
     "Camera": {},
+    "Push": {},
     "UniNView": {
       "description": "UniNView原生渲染"
     }
@@ -127,6 +128,21 @@
       },
       "plugins": {
         "share": {},
+        "push": {
+          "unipush": {
+            "version": "2",
+            "offline": true,
+            "icons": {
+              "small": {
+                "ldpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/18x18.png",
+                "mdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/24x24.png",
+                "hdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/36x36.png",
+                "xhdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/48x48.png",
+                "xxhdpi": "/Users/sapphirell/Desktop/个人信息/app-物料素材/72x72.png"
+              }
+            }
+          }
+        },
         "audio": {
           "mp3": {
             "description": "Android平台录音支持MP3格式文件"
@@ -153,7 +169,7 @@
     "uni-app": {
       "control": "uni-v3",
       "vueVersion": "3",
-      "compilerVersion": "4.65",
+      "compilerVersion": "4.75",
       "nvueCompiler": "uni-app",
       "renderer": "auto",
       "nvue": {
@@ -178,32 +194,32 @@
         {
           "pagePath": "pages/index/index",
           "text": "百科",
-          "iconPath": "/static/new-icon/home-w.png",
-          "selectedIconPath": "/static/new-icon/home-b.png"
+          "iconPath": "/static/new-icon/tab1.png",
+          "selectedIconPath": "/static/new-icon/tab1.png"
         },
         {
           "pagePath": "pages/collocation_square/collocation_square",
           "text": "广场",
-          "iconPath": "/static/new-icon/home-w.png",
-          "selectedIconPath": "/static/new-icon/home-b.png"
+          "iconPath": "/static/new-icon/tab4.png",
+          "selectedIconPath": "/static/new-icon/tab4.png"
         },
         {
           "pagePath": "pages/calendar/calendar",
           "text": "上新",
-          "iconPath": "/static/new-icon/date-w.png",
-          "selectedIconPath": "/static/new-icon/date-b.png"
+          "iconPath": "/static/new-icon/tab2.png",
+          "selectedIconPath": "/static/new-icon/tab2.png"
         },
         {
           "pagePath": "pages/stock/stock",
           "text": "娃柜",
-          "iconPath": "/static/new-icon/stock-w.png",
-          "selectedIconPath": "/static/new-icon/stock-b.png"
+          "iconPath": "/static/new-icon/tab3.png",
+          "selectedIconPath": "/static/new-icon/tab3.png"
         },
         {
           "pagePath": "pages/mine/mine",
           "text": "我的",
-          "iconPath": "/static/new-icon/mine-w.png",
-          "selectedIconPath": "/static/new-icon/mine-b.png"
+          "iconPath": "/static/new-icon/tab5.png",
+          "selectedIconPath": "/static/new-icon/tab5.png"
         }
       ],
       "backgroundColor": "#fefefe",

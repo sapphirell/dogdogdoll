@@ -89,7 +89,7 @@ const _sfc_main = {
           return;
         }
         const isActive = currentStatus.value === actionType;
-        const apiUrl = `${common_config.websiteUrl}/with-state/attitude/${isActive ? "remove" : "add"}`;
+        const apiUrl = `${common_config.websiteUrl.value}/with-state/attitude/${isActive ? "remove" : "add"}`;
         const res = await common_vendor.index.request({
           url: apiUrl,
           method: "POST",

@@ -60,6 +60,11 @@ const _sfc_main = {
         loadData();
       }
     });
+    const navigateTo = (url) => {
+      common_vendor.index.navigateTo({
+        url
+      });
+    };
     const loadData = async () => {
       if (is_blocked.value || they_blocked.value)
         return;
@@ -85,7 +90,7 @@ const _sfc_main = {
             break;
         }
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}${url}`
+          url: `${common_config.websiteUrl.value}${url}`
         });
         if (res.data.status === "success") {
           const data = res.data.data;
@@ -107,7 +112,9 @@ const _sfc_main = {
                   cover: ((_c = item.image_urls) == null ? void 0 : _c.split(",")[0]) || "",
                   title: item.name,
                   desc: item.description,
-                  time: item.created_at
+                  time: item.created_at,
+                  price: item.price || 0
+                  // 添加价格字段
                 };
               case 2:
                 return {
@@ -115,7 +122,9 @@ const _sfc_main = {
                   product_thumb: item.target_image,
                   product_name: item.target_name,
                   content: item.comment,
-                  create_time: formatTime(item.created_at)
+                  create_time: formatTime(item.created_at),
+                  target_id: item.relation_id
+                  // 添加目标ID用于跳转
                 };
             }
           });
@@ -126,7 +135,7 @@ const _sfc_main = {
           currentPagination.page++;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:228", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:231", error);
         common_vendor.index.showToast({
           title: "数据加载失败",
           icon: "none"
@@ -138,7 +147,7 @@ const _sfc_main = {
     const getAuthorInfo = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/user-info?uid=${props.uid}`
+          url: `${common_config.websiteUrl.value}/user-info?uid=${props.uid}`
         });
         if (res.data.status === "success") {
           userInfo.value = res.data.data;
@@ -153,12 +162,12 @@ const _sfc_main = {
     const getBlockStatus = async () => {
       const token = common_vendor.index.getStorageSync("token");
       if (!token) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:260", "未登录");
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:263", "未登录");
         return;
       }
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/blacklist/status`,
+          url: `${common_config.websiteUrl.value}/with-state/blacklist/status`,
           method: "GET",
           data: {
             target_user_id: props.uid
@@ -172,19 +181,19 @@ const _sfc_main = {
           they_blocked.value = res.data.data.they_blocked;
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:281", "获取黑名单状态失败", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:284", "获取黑名单状态失败", error);
       }
     };
     const toggleBlock = async () => {
       try {
         const token = common_vendor.index.getStorageSync("token");
         if (!token) {
-          common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:290", "未登录");
+          common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:293", "未登录");
           return;
         }
         const action = is_blocked.value ? "remove" : "add";
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/blacklist/${action}?target_user_id=` + props.uid,
+          url: `${common_config.websiteUrl.value}/with-state/blacklist/${action}?target_user_id=` + props.uid,
           method: "POST",
           header: {
             Authorization: token
@@ -208,7 +217,7 @@ const _sfc_main = {
           });
         }
       } catch (error) {
-        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:325", "操作失败", error);
+        common_vendor.index.__f__("log", "at pages/user_page/user_page.vue:328", "操作失败", error);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -262,7 +271,7 @@ const _sfc_main = {
             a: item.cover,
             b: common_vendor.t(item.title),
             c: index,
-            d: common_vendor.o(($event) => _ctx.navigateTo(`/pages/collocation_share/collocation_share?collocation_id=${item.id}`), index)
+            d: common_vendor.o(($event) => navigateTo(`/pages/collocation_share/collocation_share?collocation_id=${item.id}&origin=1`), index)
           };
         })
       } : {}, {
@@ -274,7 +283,7 @@ const _sfc_main = {
             b: common_vendor.t(item.title),
             c: common_vendor.t(item.price),
             d: index,
-            e: common_vendor.o(($event) => _ctx.navigateTo(`/pages/user_doll/user_doll?id=${item.id}`), index)
+            e: common_vendor.o(($event) => navigateTo(`/pages/collocation_share/collocation_share?collocation_id=${item.id}&origin=2`), index)
           };
         })
       } : {}, {
@@ -286,7 +295,8 @@ const _sfc_main = {
             b: common_vendor.t(item.product_name),
             c: common_vendor.t(item.content),
             d: common_vendor.t(item.create_time),
-            e: index
+            e: index,
+            f: common_vendor.o(($event) => navigateTo(`/pages/goods/goods?goods_id=${item.target_id}`), index)
           };
         })
       } : {}) : {}, {

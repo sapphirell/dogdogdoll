@@ -66,7 +66,7 @@ const _sfc_main = {
         }
         const cv2 = common_vendor.index.getAppBaseInfo().appVersion;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/latest-version?version=${common_config.dogdogdollVersion}`,
+          url: `${common_config.websiteUrl.value}/latest-version?version=${common_config.dogdogdollVersion}`,
           method: "GET"
         });
         if (res && res.data) {

@@ -5,11 +5,11 @@
 		<view style="width: 100%;overflow: hidden;">
 			<scroll-view scroll-x="true" class="upload_box" ll-with-animation="true" :show-scrollbar="false">
 				<view class="upload_item" v-for="(item, index) in uploadList" :key="index">
-					<image :src="item" class="uploaded_image" @tap="viewFullImage" mode="aspectFill" />
+					<image :src="item" class="uploaded_image" @tap="viewFullImage(index)" mode="aspectFill" />
 					<image src="../../static/cancel.png" class="close_icon" @tap="deleteImage(index)" />
 				</view>
-				<view class="uploadImageBox" style="background: #f8f8f8;">
-					<image src="../../static/add2.png" class="upload_img" @tap="selectImage(index)"
+				<view class="uploadImageBox" style="background: #f8f8f8;" v-if="uploadList.length < 9">
+					<image src="../../static/add2.png" class="upload_img" @tap="selectImage"
 						style="width: 50px;height: 50px;margin: 25px;" />
 				</view>
 
@@ -32,7 +32,6 @@
 			<text>* 分享您对于打扮BJD的想法✨。</text>
 			<text>* 不关联商品的搭配不会出现在广场中。</text>
 			<text>* 可以是BJD相关的贩售广告，但不可以滥用关联。</text>
-
 		</view>
 		<!-- 相关 -->
 		<view class="saveCollocationDataList">
@@ -52,10 +51,8 @@
 		<relation-picker v-model:visible="showSelectTab" :typeList="typeList" :goodsList="goodsList"
 			@confirm="handleRelationConfirm" @cancel="handleRelationCancel" />
 
-
-
 		<view class="footer">
-			<button @click="submitForm">提交</button>
+			<button @click="submitForm">{{ isEdit ? '更新' : '提交' }}</button>
 		</view>
 
 	</view>
@@ -63,41 +60,104 @@
 
 <script setup>
 	import {
-		ref
+		ref,
+		onMounted
 	} from 'vue';
 	import {
 		websiteUrl,
 		image1Url,
-		wechatSignLogin,
-		getUserInfo,
-		global,
-		asyncGetUserInfo,
-		getScene,
 	} from "../../common/config.js";
-
 	import {
-		chooseImage,
-		jumpToCroper,
 		getQiniuToken,
 		uploadImageToQiniu,
 		chooseImageList,
 	} from "../../common/image.js";
 
-	//接受参数 propsGoodsId propsGoodsName propsBrandId propsBrandName如果是非空或非0，添加一条
-	const props = defineProps(["goods_id", "goods_name", "brand_id", "brand_name", "type"])
+	// 接受参数 propsGoodsId propsGoodsName propsBrandId propsBrandName如果是非空或非0，添加一条
+	// 新增collocation_id参数用于编辑模式
+	const props = defineProps(["goods_id", "goods_name", "brand_id", "brand_name", "type", "collocation_id"])
 
+	// 标记是否为编辑模式
+	const isEdit = ref(false);
 	const uploadList = ref([]);
-	const goodsList = ref([
-		// {"name":"aa", "id":1}
-	]);
+	const goodsList = ref([]);
 	const typeList = ref([]);
 	const showSelectTab = ref(false);
-	// 信息输入框临时信息
-	const chooseBrandName = ref("")
-	const chooseBrandId = ref(0)
-	const chooseGoodsName = ref("")
-	const chooseGoodsId = ref(0)
-	const chooseType = ref("")
+	const saveCollocationDataList = ref([])
+	
+	//表单信息
+	const title = ref("")
+	const content = ref("")
+
+	// 获取搭配详情
+	async function fetchCollocationDetail() {
+		if (!props.collocation_id) return;
+		
+		try {
+			const res = await uni.request({
+				url: `${websiteUrl.value}/view-collocation?collocation_id=${props.collocation_id}&origin=1`,
+				method: 'GET',
+				timeout: 5000
+			});
+			
+			if (res.data.status === "success") {
+				const data = res.data.data;
+				title.value = data.title || "";
+				content.value = data.content || "";
+				uploadList.value = data.image_url_list || [];
+				
+				// 处理关联商品
+				if (data.collocation_relation_list && data.collocation_relation_list.length > 0) {
+					saveCollocationDataList.value = data.collocation_relation_list.map(item => ({
+						goods_id: item.relation_goods_id,
+						goods_name: item.relation_goods_name,
+						brand_id: item.relation_brand_id,
+						brand_name: item.relation_brand_name,
+						type: item.type,
+						goods_image: item.relation_goods_image || ""
+					}));
+				}
+			}
+		} catch (error) {
+			console.error('获取搭配详情失败:', error);
+			uni.showToast({
+				title: '加载搭配详情失败',
+				icon: 'none'
+			});
+		}
+	}
+
+	onMounted(() => {
+		// 初始化商品类型
+		getTypes();
+		
+		// 检查是否是编辑模式
+		if (props.collocation_id) {
+			isEdit.value = true;
+			fetchCollocationDetail();
+		}
+		
+		// 处理直接关联商品
+		if (props.goods_id && props.goods_name && props.brand_id && props.brand_name && props.type) {
+			getGoodsInfo(props.goods_id).then((res) => {
+				let data = {
+					"brand_id": parseInt(props.brand_id, 10),
+					"goods_id": parseInt(props.goods_id, 10),
+					"brand_name": props.brand_name,
+					"goods_name": props.goods_name,
+					"goods_image": res.data.goods_images[0],
+					"type": props.type
+				}
+				// 避免重复添加
+				const exists = saveCollocationDataList.value.some(item => 
+					item.goods_id === data.goods_id && item.brand_id === data.brand_id
+				);
+				if (!exists) {
+					saveCollocationDataList.value.push(data);
+				}
+			});
+		}
+	});
 
 	// 处理确认事件
 	const handleRelationConfirm = (data) => {
@@ -133,6 +193,7 @@
 			})
 		}
 	}
+	
 	// 处理取消事件
 	const handleRelationCancel = () => {
 		console.log('用户取消选择')
@@ -146,11 +207,10 @@
 	function getGoodsInfo(id) {
 		return new Promise((resolve, reject) => {
 			uni.request({
-				url: websiteUrl + '/goods?id=' + id,
+				url: websiteUrl.value + '/goods?id=' + id,
 				method: 'GET',
 				timeout: 5000,
 				success: (res) => {
-					console.log(res.data.data);
 					resolve(res.data); // 请求成功，返回数据
 				},
 				fail: (err) => {
@@ -159,37 +219,11 @@
 						title: '网络请求失败',
 						icon: 'none'
 					})
-					reject(err); // 请求失败，抛出错误
-				},
-				complete: () => {
-					uni.hideLoading()
+					reject(err);
 				}
 			})
 		});
 	}
-
-	//存储的信息框内容列表
-	const saveCollocationDataList = ref([])
-	if (props.goods_id && props.goods_name && props.brand_id && props.brand_name && props.type) {
-		getGoodsInfo(props.goods_id).then((res) => {
-			// console.log(res.data)
-			let data = {
-				"brand_id": parseInt(props.brand_id, 10),
-				"goods_id": parseInt(props.goods_id, 10),
-				"brand_name": props.brand_name,
-				"goods_name": props.goods_name,
-				"goods_image": res.data.goods_images[0],
-				"type": props.type
-			}
-			console.log(data)
-			saveCollocationDataList.value.push(data)
-		})
-
-	}
-
-	//表单信息
-	const title = ref("")
-	const content = ref("")
 
 	function viewFullImage(index) {
 		uni.previewImage({
@@ -198,12 +232,21 @@
 		});
 	}
 
-
 	//选择图片
 	async function selectImage() {
 		try {
+			// 计算还能上传几张图片
+			const remaining = 9 - uploadList.value.length;
+			if (remaining <= 0) {
+				uni.showToast({
+					title: '最多只能上传9张图片',
+					icon: 'none'
+				});
+				return;
+			}
+			
 			// 选择多张图片
-			const imagePaths = await chooseImageList(9);
+			const imagePaths = await chooseImageList(remaining);
 
 			// 逐个上传
 			for (const path of imagePaths) {
@@ -230,12 +273,8 @@
 		}
 	}
 
-	function addRelated() {}
-
-
-
 	// 实现提交方法
-	function submitForm() {
+	async function submitForm() {
 		const token = uni.getStorageSync('token');
 		if (!token) {
 			uni.showToast({
@@ -260,14 +299,11 @@
 			return;
 		}
 
-		let scene = getScene()
-
 		// 构造请求数据
 		const postData = {
 			title: title.value,
 			content: content.value,
 			image_url_list: uploadList.value,
-			scene: scene,
 			relations: saveCollocationDataList.value.map(item => ({
 				relation_goods_id: item.goods_id,
 				relation_goods_name: item.goods_name,
@@ -277,150 +313,67 @@
 				relation_origin: 1 // 标识关联的是collocation
 			}))
 		};
-		console.log(postData)
+		
+		// 编辑模式添加collocation_id
+		if (isEdit.value) {
+			postData.collocation_id = parseInt(props.collocation_id);
+		}
 
+		try {
+			const url = isEdit.value 
+				? websiteUrl.value + '/with-state/update-collocation'
+				: websiteUrl.value + '/with-state/add-collocation';
+				
+			const res = await uni.request({
+				url: url,
+				method: 'POST',
+				data: postData,
+				header: {
+					'Content-Type': 'application/json',
+					'Authorization': token,
+				},
+				timeout: 8000
+			});
+			
+			if (res.data.status === "success") {
+				uni.showToast({
+					title: isEdit.value ? '更新成功' : '提交成功'
+				});
+				// 返回上一页
+				setTimeout(() => uni.navigateBack(), 1500);
+			} else {
+				uni.showToast({
+					title: res[1].data.msg || (isEdit.value ? '更新失败' : '提交失败'),
+					icon: 'none'
+				});
+			}
+		} catch (err) {
+			console.log(err);
+			uni.showToast({
+				title: '网络请求失败',
+				icon: 'none'
+			});
+		}
+	}
+
+	// 获取types列表
+	function getTypes() {
 		uni.request({
-			url: websiteUrl + '/with-state/add-collocation',
-			method: 'POST',
-			data: postData,
-			header: {
-				'Content-Type': 'application/json',
-				'Authorization': token,
-			},
+			url: websiteUrl.value + '/goods-types',
+			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
-				if (res.data.status === "success") {
-					uni.showToast({
-						title: '提交成功'
-					});
-					// 清空表单
-					title.value = '';
-					content.value = '';
-					uploadList.value = [];
-					saveCollocationDataList.value = [];
-					// 返回上一页
-					uni.navigateBack();
-				} else {
-					uni.showToast({
-						title: res.data.msg || '提交失败',
-						icon: 'none'
-					});
+				if (res.data && res.data.data) {
+					typeList.value = res.data.data;
 				}
 			},
 			fail: (err) => {
 				console.log(err);
 				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				});
-			},
-		});
-
-
-
-	}
-
-
-	// 获取goods列表
-	function getGoods(id) {
-		// 请求 /goods-name-list 并赋值goodsList
-		uni.request({
-			url: websiteUrl + '/goods-name-list?id=' + id,
-			method: 'GET',
-			timeout: 5000,
-			success: (res) => {
-				console.log(res.data.data);
-				goodsList.value = res.data.data
-				console.log(goodsList.value)
-			},
-
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
+					title: '获取商品类型失败',
 					icon: 'none'
 				})
 			}
-		})
-
-	}
-
-
-	// 获取types列表
-	function getTypes() {
-		///goods-types
-		uni.request({
-			url: websiteUrl + '/goods-types',
-			method: 'GET',
-			timeout: 5000,
-			success: (res) => {
-				console.log(res.data.data);
-				typeList.value = res.data.data
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			}
-		})
-	}
-
-	// 存储一条搭配信息
-	function saveCollocation() {
-		if (chooseBrandName.value == "") {
-			uni.showToast({
-				title: '请选择或填写品牌名称',
-				icon: 'none'
-			})
-			return
-		}
-		if (chooseGoodsName.value == "") {
-			uni.showToast({
-				title: '请选择或填写商品名称',
-				icon: 'none'
-			})
-			return
-		}
-
-		//如果没有goods_id，存储goods_name进去即可
-		if (chooseGoodsId.value == 0) {
-			let data = {
-				"brand_id": chooseBrandId.value,
-				"goods_id": 0,
-				"brand_name": chooseBrandName.value,
-				"goods_name": chooseGoodsName.value,
-				"goods_image": "",
-				"type": chooseType.value,
-			}
-			saveCollocationDataList.value.push(data)
-			showSelectTab.value = false
-			chooseBrandId.value = 0
-			chooseBrandName.value = ""
-			chooseGoodsId.value = 0
-			chooseGoodsName.value = ""
-			chooseType.value = ""
-			return
-		}
-
-
-		getGoodsInfo(chooseGoodsId.value).then((res) => {
-			let data = {
-				"brand_id": chooseBrandId.value,
-				"goods_id": chooseGoodsId.value,
-				"brand_name": chooseBrandName.value,
-				"goods_name": chooseGoodsName.value,
-				"goods_image": res.data.goods_images[0],
-				"type": chooseType.value,
-			}
-			saveCollocationDataList.value.push(data)
-			showSelectTab.value = false
-			chooseBrandId.value = 0
-			chooseBrandName.value = ""
-			chooseGoodsId.value = 0
-			chooseGoodsName.value = ""
-			chooseType.value = ""
 		})
 	}
 
@@ -431,37 +384,34 @@
 	function deleteCollcation(index) {
 		saveCollocationDataList.value.splice(index, 1)
 	}
-	getTypes()
 </script>
 
 <style lang="less">
+	/* 样式保持不变，与之前相同 */
 	.uploaded_image {
 		width: 100px;
 		height: 100px;
 		margin-right: 10px;
-
 	}
 
 	.upload_box {
-		// 核心修改点：
-		width: 100%; // 避免使用 100vw（可能因滚动条导致宽度溢出）
-		white-space: nowrap; // 强制子元素不换行
-		overflow-x: auto; // 确保横向滚动生效（UniApp的scroll-view组件已封装滚动逻辑，此处为保险可保留）
-		display: block; // 明确容器为块级元素
+		width: 100%;
+		white-space: nowrap;
+		overflow-x: auto;
+		display: block;
 		margin-top: 15px;
 		padding: 10px;
 		margin-left: 10px;
 
 		view {
-			display: inline-block; // 关键！强制子元素横向排列（替代 float）
-			vertical-align: top; // 对齐方式（避免图片底部留白）
+			display: inline-block;
+			vertical-align: top;
 		}
 
 		.upload_item {
 			position: relative;
 			width: 100px;
 			margin-right: 10px;
-
 			border-radius: 5px;
 			overflow: hidden;
 
@@ -520,8 +470,6 @@
 				border-radius: 100%;
 			}
 		}
-
-
 	}
 
 	.footer {

@@ -60,7 +60,7 @@ const _sfc_main = {
     const fetchCategories = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/treehole-typelist",
+          url: common_config.websiteUrl.value + "/treehole-typelist",
           method: "GET"
         });
         if (res.data.status === "success") {
@@ -113,7 +113,7 @@ const _sfc_main = {
           category_id: selectedCategory.value
         };
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/add-submission",
+          url: common_config.websiteUrl.value + "/with-state/add-submission",
           method: "POST",
           data: postData,
           header: {

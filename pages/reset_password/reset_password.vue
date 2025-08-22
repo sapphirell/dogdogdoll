@@ -113,7 +113,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/send-sms-code`, // 根据实际接口调整
+				url: `${websiteUrl.value}/send-sms-code`, // 根据实际接口调整
 				method: 'POST',
 				data: {
 					tel_phone: formData.value.telephone
@@ -188,7 +188,7 @@
 		try {
 			loading.value = true
 			const res = await uni.request({
-				url: `${websiteUrl}/reset-password`, // 修改为重置密码接口
+				url: `${websiteUrl.value}/reset-password`, // 修改为重置密码接口
 				method: 'POST',
 				data: {
 					telephone: formData.value.telephone,

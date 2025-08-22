@@ -35,7 +35,6 @@
   max-height: 60vh;
   position: absolute;
   z-index: 1001;
-  top: 80rpx;
 }
 .search_results .result_item.data-v-445b599f {
   display: flex;

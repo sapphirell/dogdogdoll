@@ -159,7 +159,7 @@
 		loading.value = true
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/user-likes`,
+				url: `${websiteUrl.value}/with-state/user-likes`,
 				method: 'GET',
 				data: {
 					type: activeCategory.value,
@@ -225,7 +225,7 @@
 	const unfollowGoods = async (id) => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/user/unfollow`,
+				url: `${websiteUrl.value}/user/unfollow`,
 				method: 'POST',
 				data: {
 					id
@@ -588,11 +588,11 @@
 				font-size: 24rpx;
 
 				.goods-type::before {
-					content: '📦 '
+					content: ' '
 				}
 
 				.goods-material::before {
-					content: '🧸 '
+					content: ' '
 				}
 			}
 		}

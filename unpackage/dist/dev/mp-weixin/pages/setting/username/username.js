@@ -28,7 +28,7 @@ const _sfc_main = {
       try {
         isLoading.value = true;
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/update-profile",
+          url: common_config.websiteUrl.value + "/with-state/update-profile",
           method: "POST",
           header: {
             "Authorization": common_vendor.index.getStorageSync("token")

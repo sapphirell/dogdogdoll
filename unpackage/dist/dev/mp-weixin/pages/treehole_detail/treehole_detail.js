@@ -125,7 +125,7 @@ const _sfc_main = {
         });
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-comment",
+        url: common_config.websiteUrl.value + "/with-state/add-comment",
         method: "POST",
         header: {
           "Authorization": token
@@ -201,7 +201,7 @@ const _sfc_main = {
         return;
       }
       const token = common_vendor.index.getStorageSync("token");
-      const url = common_config.websiteUrl + (hasLiked.value ? "/with-state/unlike" : "/with-state/add-like");
+      const url = common_config.websiteUrl.value + (hasLiked.value ? "/with-state/unlike" : "/with-state/add-like");
       common_vendor.index.request({
         url,
         method: "POST",
@@ -227,7 +227,7 @@ const _sfc_main = {
         return;
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/hasLike?id=" + props.id + "&type=5",
+        url: common_config.websiteUrl.value + "/with-state/hasLike?id=" + props.id + "&type=5",
         method: "POST",
         header: {
           "Authorization": token
@@ -295,7 +295,7 @@ const _sfc_main = {
       common_vendor.index.__f__("log", "at pages/treehole_detail/treehole_detail.vue:427", "pageId", pageId.value);
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/treehole-detail?id=${props.id}`
+          url: `${common_config.websiteUrl.value}/treehole-detail?id=${props.id}`
         });
         if (res.data.status === "success") {
           detailData.value = res.data.data;

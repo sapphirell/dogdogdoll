@@ -21,10 +21,14 @@ const _sfc_main = {
     const swiperHeight = common_vendor.ref(500);
     const imageHeights = common_vendor.ref([]);
     const screenWidth = common_vendor.ref(0);
+    const STORAGE_KEY = `account_book_heights_${props.account_book_id}`;
     const handleImageLoad = (event, index) => {
       if (!screenWidth.value)
         return;
-      const { width: originWidth, height: originHeight } = event.detail;
+      const {
+        width: originWidth,
+        height: originHeight
+      } = event.detail;
       const renderHeight = originHeight / originWidth * screenWidth.value;
       imageHeights.value[index] = renderHeight;
       const currentHeights = imageHeights.value.filter((h) => h);
@@ -32,8 +36,15 @@ const _sfc_main = {
         const maxHeight = Math.max(...currentHeights);
         if (maxHeight > swiperHeight.value) {
           swiperHeight.value = maxHeight;
+          saveHeightsToStorage();
         }
       }
+    };
+    const saveHeightsToStorage = () => {
+      common_vendor.index.setStorageSync(STORAGE_KEY, {
+        heights: imageHeights.value,
+        screenWidth: screenWidth.value
+      });
     };
     const imageList = common_vendor.computed(() => {
       if (!detail.value.image_url)
@@ -44,7 +55,7 @@ const _sfc_main = {
       const token = common_vendor.index.getStorageSync("token");
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/account-book-detail?id=${id}`,
+          url: `${common_config.websiteUrl.value}/with-state/account-book-detail?id=${id}`,
           method: "GET",
           header: {
             "Authorization": token
@@ -77,11 +88,21 @@ const _sfc_main = {
       });
     };
     common_vendor.onShow(() => {
+      const systemInfo = common_vendor.index.getSystemInfoSync();
+      const currentScreenWidth = systemInfo.windowWidth;
+      screenWidth.value = currentScreenWidth;
+      const storedData = common_vendor.index.getStorageSync(STORAGE_KEY);
       swiperHeight.value = 300;
       imageHeights.value = [];
-      const systemInfo = common_vendor.index.getSystemInfoSync();
-      screenWidth.value = systemInfo.windowWidth;
-      common_config.asyncGetUserInfo().then((userInfo) => {
+      if (storedData) {
+        const isScreenSizeChanged = storedData.screenWidth !== currentScreenWidth;
+        if (!isScreenSizeChanged && storedData.heights.length > 0) {
+          imageHeights.value = storedData.heights;
+          const maxStoredHeight = Math.max(...storedData.heights.filter((h) => h));
+          swiperHeight.value = Math.max(maxStoredHeight, 300);
+        }
+      }
+      common_config.asyncGetUserInfo().then(() => {
         fetchDetail(props.account_book_id);
       });
     });

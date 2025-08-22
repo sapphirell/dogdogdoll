@@ -25,29 +25,78 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
     fontSize: {
       type: String,
       default: ""
+    },
+    // 新增：是否显示索引选择器
+    showIndexSelector: {
+      type: Boolean,
+      default: false
+    },
+    // 新增：索引选项配置
+    indexOptions: {
+      type: Array,
+      default: () => [
+        { label: "店铺", value: "" },
+        { label: "妆师", value: "bjd_artist" },
+        { label: "毛娘", value: "hairstylist" }
+      ]
+    },
+    // 新增：默认选中的索引
+    defaultIndex: {
+      type: String,
+      default: ""
     }
   },
-  emits: ["select"],
+  emits: ["select", "close-associate", "index-change"],
   setup(__props, { emit: __emit }) {
+    var _a;
     const props = __props;
     const emit = __emit;
     const searchTerm = common_vendor.ref("");
     const results = common_vendor.ref([]);
+    const currentIndex = common_vendor.ref(props.defaultIndex || (((_a = props.indexOptions[0]) == null ? void 0 : _a.value) || ""));
+    const currentIndexLabel = common_vendor.computed(() => {
+      const option = props.indexOptions.find((opt) => opt.value === currentIndex.value);
+      return option ? option.label : "选择类型";
+    });
+    const indexLabels = common_vendor.computed(() => {
+      return props.indexOptions.map((opt) => opt.label);
+    });
+    const selectedIndex = common_vendor.computed(() => {
+      return props.indexOptions.findIndex((opt) => opt.value === currentIndex.value);
+    });
+    const closeAssociate = () => {
+      common_vendor.index.__f__("log", "at components/common-search/common-search.vue:119", "开始通知", searchTerm.value);
+      results.value = [];
+      emit("close-associate", searchTerm.value);
+    };
+    const handleIndexChange = (e) => {
+      var _a2;
+      const index = e.detail.value;
+      currentIndex.value = ((_a2 = props.indexOptions[index]) == null ? void 0 : _a2.value) || "";
+      emit("index-change", currentIndex.value);
+      if (searchTerm.value.trim() !== "") {
+        onSearchInput();
+      }
+    };
     const onSearchInput = async () => {
       if (searchTerm.value.trim() === "") {
         results.value = [];
         return;
       }
       emit("select", 0, searchTerm.value);
+      let url = `${common_config.websiteUrl.value}/search-brand?search=${encodeURIComponent(searchTerm.value)}`;
+      if (currentIndex.value) {
+        url += `&index=${currentIndex.value}`;
+      }
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + `/search-brand?search=${searchTerm.value}`,
+          url,
           method: "GET",
           header: {
             "Content-Type": "application/json"
           }
         });
-        common_vendor.index.__f__("log", "at components/common-search/common-search.vue:86", "请求结果:", res.data);
+        common_vendor.index.__f__("log", "at components/common-search/common-search.vue:161", "请求结果:", res.data);
         if (res.data.status == "success") {
           if (res.data.data == null) {
             results.value = [];
@@ -60,7 +109,7 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
           return;
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/common-search/common-search.vue:101", "请求错误:", error);
+        common_vendor.index.__f__("error", "at components/common-search/common-search.vue:176", "请求错误:", error);
         results.value = [];
         return;
       }
@@ -84,29 +133,37 @@ const _sfc_main = /* @__PURE__ */ Object.assign({
       return common_vendor.e({
         a: props.mode == "jump"
       }, props.mode == "jump" ? {
-        b: common_assets._imports_0$12
+        b: common_assets._imports_0$15
       } : {}, {
-        c: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
-        d: searchTerm.value,
-        e: results.value.length > 0
+        c: __props.showIndexSelector
+      }, __props.showIndexSelector ? {
+        d: common_vendor.t(currentIndexLabel.value),
+        e: selectedIndex.value,
+        f: indexLabels.value,
+        g: common_vendor.o(handleIndexChange)
+      } : {}, {
+        h: common_vendor.o([($event) => searchTerm.value = $event.detail.value, onSearchInput]),
+        i: searchTerm.value,
+        j: results.value.length > 0
       }, results.value.length > 0 ? common_vendor.e({
-        f: results.value.length > 0 && searchTerm.value.length < 5
+        k: results.value.length > 0 && searchTerm.value.length < 5
       }, results.value.length > 0 && searchTerm.value.length < 5 ? {} : {}, {
-        g: common_assets._imports_1$5,
-        h: common_vendor.o(cancel)
+        l: common_assets._imports_1$5,
+        m: common_vendor.o(cancel)
       }) : {}, {
-        i: common_vendor.n(_ctx.$attrs.class),
-        j: __props.background || "#fff",
-        k: results.value.length > 0
+        n: common_vendor.n(_ctx.$attrs.class),
+        o: __props.background || "#fff",
+        p: results.value.length > 0
       }, results.value.length > 0 ? {
-        l: common_vendor.f(results.value, (item, k0, i0) => {
+        q: common_vendor.o(closeAssociate),
+        r: common_vendor.f(results.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.name),
             b: item.id,
             c: common_vendor.o(($event) => onTap(item.id, item.name), item.id)
           };
         }),
-        m: __props.width
+        s: __props.width
       } : {});
     };
   }

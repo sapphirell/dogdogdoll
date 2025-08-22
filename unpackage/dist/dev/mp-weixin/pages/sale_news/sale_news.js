@@ -74,7 +74,7 @@ const _sfc_main = {
     const fetchNewsDetail = async (id) => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/sale-news-detail?id=${id}`,
+          url: `${common_config.websiteUrl.value}/sale-news-detail?id=${id}`,
           timeout: 5e3
         });
         if (res.data.status === "success") {
@@ -175,7 +175,7 @@ const _sfc_main = {
         });
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-comment",
+        url: common_config.websiteUrl.value + "/with-state/add-comment",
         method: "POST",
         header: {
           "Authorization": token
@@ -235,7 +235,7 @@ const _sfc_main = {
     }
     const getBrandsInfo = () => {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/brand-info?id=" + brandId.value,
+        url: common_config.websiteUrl.value + "/brand-info?id=" + brandId.value,
         success: (res) => {
           if (res.data.status === "success") {
             brand.value = res.data.data;
@@ -258,7 +258,7 @@ const _sfc_main = {
       }
       const url = `/with-state/${hasLikeBrand.value ? "unlike" : "add-like"}`;
       common_vendor.index.request({
-        url: common_config.websiteUrl + url,
+        url: common_config.websiteUrl.value + url,
         method: "POST",
         header: {
           Authorization: common_vendor.index.getStorageSync("token")
@@ -283,7 +283,7 @@ const _sfc_main = {
       if (!common_config.global.isLogin)
         return;
       common_vendor.index.request({
-        url: `${common_config.websiteUrl}/with-state/hasLike?id=${brandId.value}&type=2`,
+        url: `${common_config.websiteUrl.value}/with-state/hasLike?id=${brandId.value}&type=2`,
         method: "POST",
         header: {
           Authorization: common_vendor.index.getStorageSync("token")

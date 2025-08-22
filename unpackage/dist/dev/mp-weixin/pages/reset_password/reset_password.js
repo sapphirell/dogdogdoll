@@ -47,7 +47,7 @@ const _sfc_main = {
         return;
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/send-sms-code`,
+          url: `${common_config.websiteUrl.value}/send-sms-code`,
           // 根据实际接口调整
           method: "POST",
           data: {
@@ -113,7 +113,7 @@ const _sfc_main = {
       try {
         loading.value = true;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/reset-password`,
+          url: `${common_config.websiteUrl.value}/reset-password`,
           // 修改为重置密码接口
           method: "POST",
           data: {

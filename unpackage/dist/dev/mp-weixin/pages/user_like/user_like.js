@@ -64,7 +64,7 @@ const _sfc_main = {
       loading.value = true;
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/user-likes`,
+          url: `${common_config.websiteUrl.value}/with-state/user-likes`,
           method: "GET",
           data: {
             type: activeCategory.value,
@@ -117,7 +117,7 @@ const _sfc_main = {
     const unfollowGoods = async (id) => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/user/unfollow`,
+          url: `${common_config.websiteUrl.value}/user/unfollow`,
           method: "POST",
           data: {
             id

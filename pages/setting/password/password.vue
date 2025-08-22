@@ -121,7 +121,7 @@
 		}
 		// /with-state/setting-password
 		uni.request({
-			url: websiteUrl + '/with-state/setting-password',
+			url: websiteUrl.value + '/with-state/setting-password',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token'),

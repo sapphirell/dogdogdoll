@@ -114,7 +114,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/send-sms-code`,
+				url: `${websiteUrl.value}/send-sms-code`,
 				method: 'POST',
 				data: {
 					tel_phone: formData.value.telephone
@@ -201,7 +201,7 @@
 		try {
 			loading.value = true
 			const res = await uni.request({
-				url: `${websiteUrl}/register`,
+				url: `${websiteUrl.value}/register`,
 				method: 'POST',
 				data: {
 					telephone: formData.value.telephone,

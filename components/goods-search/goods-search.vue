@@ -66,7 +66,10 @@
 			type: Boolean,
 			default: true
 		},
-
+	 brandId: { // 新增brandId属性
+		  type: Number,
+		  default: 0
+		}
 	});
 
 	const emit = defineEmits(['select', 'update:modelValue']);
@@ -102,10 +105,13 @@
 			results.value = [];
 			return;
 		}
-
+		let url = `${websiteUrl.value}/search-goods?search=${encodeURIComponent(searchValue)}`;
+		  if (props.brandId && props.brandId !== 0) {
+			url += `&brand_id=${props.brandId}`;
+		  }
 		try {
 			const res = await uni.request({
-				url: websiteUrl + `/search-goods?search=${encodeURIComponent(searchValue)}`,
+				url: url,
 				method: 'GET'
 			});
 
@@ -176,7 +182,7 @@
 		max-height: 60vh;
 		position: absolute;
 		z-index: 1001;
-		top: 80rpx;
+		// top: 80rpx;
 
 		.result_item {
 			display: flex;

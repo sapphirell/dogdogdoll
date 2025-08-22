@@ -17,7 +17,7 @@
 				:class="['impression-item', { 'active': item.selected }]"
 				@tap="handleImpressionClick(item)">
 				<text class="impression-text">{{ item.content }}</text>
-				<text class="impression-count">{{ item.count }}</text>
+				<text class="impression-count" :class="{highlight: item.count > 0}">{{ item.count }}</text>
 			</view>
 
 			<!-- 添加新表态按钮 -->
@@ -147,7 +147,7 @@
 	    }
 	    
 	    const res = await uni.request({
-	      url: `${websiteUrl}/impression/default`,
+	      url: `${websiteUrl.value}/impression/default`,
 	      method: 'GET',
 	      data: {
 	        type: impressionType
@@ -180,7 +180,7 @@
 
 			// 获取表态统计
 			const countsRes = await uni.request({
-				url: `${websiteUrl}/impression/counts`,
+				url: `${websiteUrl.value}/impression/counts`,
 				method: 'GET',
 				data: {
 					target_id: parseInt(props.target_id, 10),
@@ -190,7 +190,7 @@
 
 			// 获取用户表态状态
 			const statusRes = await uni.request({
-				url: `${websiteUrl}/with-state/impression/status`,
+				url: `${websiteUrl.value}/with-state/impression/status`,
 				method: 'GET',
 				data: {
 					target_id: parseInt(props.target_id, 10),
@@ -255,7 +255,7 @@
 			if (item.selected) {
 				// 3. 移除表态
 				const res = await uni.request({
-					url: `${websiteUrl}/with-state/impression/remove`,
+					url: `${websiteUrl.value}/with-state/impression/remove`,
 					method: 'POST',
 					header: {
 						Authorization: uni.getStorageSync('token'),
@@ -273,7 +273,7 @@
 			} else {
 				// 5. 添加表态
 				const res = await uni.request({
-					url: `${websiteUrl}/with-state/impression/add`,
+					url: `${websiteUrl.value}/with-state/impression/add`,
 					method: 'POST',
 					header: {
 						Authorization: uni.getStorageSync('token'),
@@ -375,7 +375,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/impression/add`,
+				url: `${websiteUrl.value}/with-state/impression/add`,
 				method: 'POST',
 				header: {
 					Authorization: uni.getStorageSync('token'),
@@ -473,6 +473,11 @@
 		align-items: center;
 		transition: all 0.3s ease;
 		flex-shrink: 0;
+		
+		.highlight {
+			color: #fff!important;
+			background: #64c6dc!important;
+		}
 
 		&.active {
 			background-color: #e6f9fc; /* 浅蓝色背景 */

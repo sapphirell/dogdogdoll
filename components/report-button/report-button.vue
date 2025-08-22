@@ -134,7 +134,7 @@
 		try {
 			const token = uni.getStorageSync('token')
 			const res = await uni.request({
-				url: `${websiteUrl}/report/reasons?type=${props.reportType}`,
+				url: `${websiteUrl.value}/report/reasons?type=${props.reportType}`,
 				method: 'GET',
 				header: {
 					'Authorization': token,
@@ -203,10 +203,10 @@
 				reason: selectedReason.value,
 				details: reportDetails.value
 			}
-			let url = `${websiteUrl}/with-state/report/submit`
+			let url = `${websiteUrl.value}/with-state/report/submit`
 			
 			if (token == "") {
-				url = `${websiteUrl}/report/submit`
+				url = `${websiteUrl.value}/report/submit`
 			}
 
 			const res = await uni.request({

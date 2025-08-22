@@ -69,6 +69,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 12rpx;
   z-index: 999;
+  width: 450rpx;
 }
 .attitude-panel .attitude-btn.data-v-f15d1ff3 {
   padding: 12rpx;

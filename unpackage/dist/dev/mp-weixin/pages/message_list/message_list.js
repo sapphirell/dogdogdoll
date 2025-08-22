@@ -59,7 +59,7 @@ const _sfc_main = {
         loading.value = true;
         const targetPage = isLoadMore ? page.value : 1;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/user-messages?page=${targetPage}`,
+          url: `${common_config.websiteUrl.value}/with-state/user-messages?page=${targetPage}`,
           header: {
             Authorization: common_vendor.index.getStorageSync("token")
           }
@@ -93,7 +93,7 @@ const _sfc_main = {
     const fetchUnreadCount = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/unread-message-count`,
+          url: `${common_config.websiteUrl.value}/with-state/unread-message-count`,
           header: {
             Authorization: common_vendor.index.getStorageSync("token")
           }
@@ -133,7 +133,7 @@ const _sfc_main = {
     const deleteMessage = async (messageId) => {
       try {
         await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/delete-message`,
+          url: `${common_config.websiteUrl.value}/with-state/delete-message`,
           method: "POST",
           header: {
             "Authorization": common_vendor.index.getStorageSync("token"),
@@ -158,7 +158,7 @@ const _sfc_main = {
     const markAsRead = async (messageId) => {
       try {
         await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/mark-message-read`,
+          url: `${common_config.websiteUrl.value}/with-state/mark-message-read`,
           method: "POST",
           header: {
             "Authorization": common_vendor.index.getStorageSync("token"),

@@ -47,7 +47,7 @@ const _sfc_main = {
         return;
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/send-sms-code`,
+          url: `${common_config.websiteUrl.value}/send-sms-code`,
           method: "POST",
           data: {
             tel_phone: formData.value.telephone
@@ -122,7 +122,7 @@ const _sfc_main = {
       try {
         loading.value = true;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/register`,
+          url: `${common_config.websiteUrl.value}/register`,
           method: "POST",
           data: {
             telephone: formData.value.telephone,

@@ -169,7 +169,7 @@
 	const fetchNewsDetail = async (id) => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/sale-news-detail?id=${id}`,
+				url: `${websiteUrl.value}/sale-news-detail?id=${id}`,
 				timeout: 5000
 			})
 
@@ -286,7 +286,7 @@
 		  }
 		
 		  uni.request({
-		    url: websiteUrl + '/with-state/add-comment',
+		    url: websiteUrl.value + '/with-state/add-comment',
 		    method: 'POST',
 		    header: {
 		      'Authorization': token
@@ -367,7 +367,7 @@
 	// 获取品牌信息
 	const getBrandsInfo = () => {
 		uni.request({
-			url: websiteUrl + '/brand-info?id=' + brandId.value,
+			url: websiteUrl.value + '/brand-info?id=' + brandId.value,
 			success: (res) => {
 				if (res.data.status === 'success') {
 					brand.value = res.data.data
@@ -393,7 +393,7 @@
 
 		const url = `/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
 		uni.request({
-			url: websiteUrl + url,
+			url: websiteUrl.value + url,
 			method: 'POST',
 			header: {
 				Authorization: uni.getStorageSync('token')
@@ -419,7 +419,7 @@
 		if (!global.isLogin) return
 
 		uni.request({
-			url: `${websiteUrl}/with-state/hasLike?id=${brandId.value}&type=2`,
+			url: `${websiteUrl.value}/with-state/hasLike?id=${brandId.value}&type=2`,
 			method: 'POST',
 			header: {
 				Authorization: uni.getStorageSync('token')
@@ -494,10 +494,7 @@
 			background: #f0f0f0;
 			color: #666;
 
-			&[class*='active'] {
-				background: #64c6dc;
-				color: #fff;
-			}
+
 		}
 	}
 
@@ -511,7 +508,7 @@
 		}
 
 		.content {
-			font-size: 22rpx;
+			font-size: 24rpx;
 			color: #666;
 			line-height: 1.6;
 		}

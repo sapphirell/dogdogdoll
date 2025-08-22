@@ -8,9 +8,14 @@
 		<loading-toast :show="showLoadding"></loading-toast>
 		<view-logs></view-logs>
 
+
+
 		<view class="body">
 			<view class="index_header">
 				<view class="header-placeholders"></view>
+				<!-- 	<button @click="open">打开弹窗</button>
+					<uni-popup ref="popup" type="bottom" border-radius="10px 10px 0 0">底部弹出 Popup 自定义圆角</uni-popup>
+				 -->
 				<view>
 					<!-- <image src="/static/new-icon/logo-with-img.jpg" style="width: 380rpx;height: 120rpx;"></image> -->
 					<!-- <image src="/static/main/2.png"
@@ -22,9 +27,10 @@
 						<image src="/static/new-icon/title.gif" mode="widthFix"
 							style="width: 400rpx;max-height: 180rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;">
 						</image>
+						<server-selector @server-change="handleServerChange"></server-selector>
 					</view>
 					<!-- <goods-search width="720rpx" :hiddenIcon="false"></goods-search> -->
-					<switch-search @select="handleSearchSelect"  mode="jump" width="95%" background="#f8f8f8" />
+					<switch-search @select="handleSearchSelect" mode="jump" width="95%" background="#f8f8f8" />
 				</view>
 				<view style="margin: 20rpx 0rpx 0rpx 0rpx; padding: 5px 10px 0px 10px;border-radius: 20px 20px 0 0;">
 					<!-- 四个小方块按钮 -->
@@ -41,7 +47,8 @@
 						<view class="swich_box" :class="{ 'active': activeTab === 'hot' }" @click="switchTab('hot')">
 							<image src="/static/new-icon/collocation.gif" mode="aspectFill"
 								style="width: 90rpx;height: 90rpx;position: relative;bottom: 0rpx;"></image>
-							<text class="font-cute" style="position: relative;bottom: 5rpx;">热门搭配</text>
+							<!-- <text class="font-cute" style="position: relative;bottom: 5rpx;">热门搭配</text> -->
+							<text class="font-cute" style="position: relative;bottom: 5rpx;">妆师毛娘</text>
 						</view>
 						<view class="swich_box" :class="{ 'active': activeTab === 'second' }"
 							@click="switchTab('second')">
@@ -123,25 +130,20 @@
 				<!-- 品牌图鉴 -->
 				<!-- <transition name="fade" mode="out-in"> -->
 				<uni-transition :mode-class="['fade']" :show="activeTab === 'brands'">
-					<view style="width: 700rpx;">
-						<common-search style="width: 100%;" width="720rpx"></common-search>
-					</view>
-
-
-					<view class="filter-tabs">
-						<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
-							:class="{ 'active': activeSearchType === tab.value }" @click="handleTabClick(tab.value)">
-							{{ tab.label }}
-						</view>
-					</view>
-					<view class="brand_type_description" style="display: block;">
-						<text v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
-						<text v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
-						<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
-					</view>
 					<view class="body_list brand_box" style="position: relative;" v-if="activeTab === 'brands'">
 
-
+						<view class="filter-tabs">
+							<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
+								:class="{ 'active': activeSearchType === tab.value }"
+								@click="handleTabClick(tab.value)">
+								{{ tab.label }}
+							</view>
+						</view>
+						<view class="brand_type_description" style="display: block;">
+							<text v-if="activeSearchType == 1">中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。</text>
+							<text v-if="activeSearchType == 2">个人作者在贩售娃物前基本都是圈内玩家，在设计方面花的心思很多。</text>
+							<text v-if="activeSearchType == 3">国外娃社起步较早，风格设计也比较多样化。</text>
+						</view>
 
 						<view v-for="(item, index) in brandsList" :key="item.id">
 							<index-brand :brand="item"></index-brand>
@@ -159,7 +161,7 @@
 				<!-- <transition name="fade" mode="out-in"> -->
 				<uni-transition :mode-class="['fade']" :show="activeTab === 'hot'">
 					<view class="body_list hot-box" v-if="activeTab === 'hot'">
-						<view v-for="item in hotList" :key="item.collocation_id" class="hot-item"
+						<!-- <view v-for="item in hotList" :key="item.collocation_id" class="hot-item"
 							@tap="jumpToCollocationDetail(item)">
 							<view class="images-box">
 								
@@ -192,13 +194,16 @@
 									</view>
 								</view>
 							</view>
-						</view>
+						</view> -->
+
+
 
 						<!-- 加载状态 -->
-						<view class="loading-more">
+						<!-- <view class="loading-more">
 							<text v-if="hotLoading">加载中...</text>
 							<text v-if="!hotHasMore">没有更多了~</text>
-						</view>
+						</view> -->
+						<index-artist></index-artist>
 					</view>
 					<!-- </transition> -->
 				</uni-transition>
@@ -299,7 +304,7 @@
 		getUserInfo,
 		global,
 	} from "../../common/config.js";
-
+	import uniPopup from "@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue"
 	//轮播图组件
 	import sdp from '@/components/swiper-dynamic-bullets/swiper-dynamic-bullets.vue';
 	let brandsList = ref([]);
@@ -493,7 +498,7 @@
 	// 新增获取文章列表方法
 	const getArticles = () => {
 		uni.request({
-			url: websiteUrl + '/articles',
+			url: websiteUrl.value + '/articles',
 			data: {
 				page: 1,
 				page_size: 10,
@@ -529,6 +534,16 @@
 		cursor.value = ''; // 重置游标
 		getBrands();
 	}
+	const popup = ref(null)
+
+	const open = async () => {
+
+		await showModal({});
+		uni.showToast({
+			title: "你点击了确定按钮",
+			position: "bottom"
+		})
+	}
 
 	function jump2userWhenNotAnonymous(item) {
 		if (item.is_anonymous == 1) {
@@ -560,7 +575,7 @@
 		newsLoading.value = true
 		showLoadding.value = true
 		uni.request({
-			url: websiteUrl + '/sale-news',
+			url: websiteUrl.value + '/sale-news',
 			data: {
 				page: newsPage.value,
 				pageSize: newsPageSize.value
@@ -609,7 +624,7 @@
 		hotLoading.value = true
 		showLoadding.value = true
 		uni.request({
-			url: websiteUrl + '/hot-collocation',
+			url: websiteUrl.value + '/hot-collocation',
 			data: {
 				page: hotPage.value,
 				pageSize: hotPageSize.value
@@ -675,7 +690,7 @@
 		}
 
 		uni.request({
-			url: websiteUrl + '/brands-info-list',
+			url: websiteUrl.value + '/brands-info-list',
 			data: params,
 			success: (res) => {
 				if (res.data.status !== 'success') {
@@ -724,7 +739,7 @@
 		treeholeLoading.value = true
 		showLoadding.value = true
 		uni.request({
-			url: websiteUrl + '/treehole-submissions',
+			url: websiteUrl.value + '/treehole-submissions',
 			data: {
 				page: treeholePage.value,
 				pageSize: treeholePageSize.value
@@ -776,7 +791,7 @@
 			item.loadCount = 0
 		}
 		item.loadCount++;
-		console.log(item.id, "加载进度:",item.loadCount  , "/" ,item.image_urls.length)
+		console.log(item.id, "加载进度:", item.loadCount, "/", item.image_urls.length)
 		// 所有图片加载完成后再启用轮播
 		// if (item.loadCount >= item.image_urls.length) {
 		// 	item.imagesLoaded = true;
@@ -785,7 +800,7 @@
 			item.imagesLoaded = true;
 		}, 300)
 	}
-	
+
 
 
 	// 图片加载失败处理
@@ -874,7 +889,7 @@
 			return
 		}
 		uni.request({
-			url: websiteUrl + (item.has_liked ? '/with-state/unlike' : '/with-state/add-like'),
+			url: websiteUrl.value + (item.has_liked ? '/with-state/unlike' : '/with-state/add-like'),
 			method: 'POST',
 			header: {
 				Authorization: token,
@@ -895,11 +910,53 @@
 	}
 
 
+
 	// 时间格式化方法
 	const formatTime = (timestamp) => {
 		const date = new Date(timestamp * 1000)
 		return `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`
 	}
+
+	// 在父组件的script中添加处理函数
+	const handleServerChange = (event) => {
+		console.log('服务器已切换', event.server);
+
+		// 在这里执行刷新数据的操作
+		refreshData();
+
+		// 示例：刷新当前标签页的数据
+		switch (activeTab.value) {
+			case 'brands':
+				page.value = 1;
+				brandsList.value = [];
+				hasMore.value = true;
+				getBrands(true);
+				break;
+			case 'news':
+				newsPage.value = 1;
+				newsList.value = [];
+				newsHasMore.value = true;
+				getNews(true);
+				break;
+			case 'hot':
+				hotPage.value = 1;
+				hotList.value = [];
+				hotHasMore.value = true;
+				getHotCollocations(true);
+				break;
+			case 'second':
+				treeholePage.value = 1;
+				treeholeList.value = [];
+				treeholeHasMore.value = true;
+				getTreeholeList(true);
+				break;
+		}
+
+		// uni.showToast({
+		//   title: '已刷新数据',
+		//   icon: 'success'
+		// });
+	};
 
 	// 初始化加载
 	onLoad(() => {
@@ -1309,7 +1366,7 @@
 
 	.hot-box {
 		padding: 20rpx;
-		padding-top: 50rpx;
+		// padding-top: 50rpx;
 
 		.hot-item {
 			margin: 0 20rpx 30rpx;
@@ -1526,7 +1583,7 @@
 	.publish-btn {
 		position: fixed;
 		right: 40rpx;
-		bottom: 120rpx;
+		bottom: 280rpx;
 		width: 100rpx;
 		height: 100rpx;
 		background: #4cbbd0;
@@ -1599,7 +1656,7 @@
 			text-align: justify;
 
 			&::after {
-				content: " 🐻 ";
+				content: "  ";
 				color: rgba(76, 187, 208, 0.2);
 				position: absolute;
 				font-size: 40rpx;

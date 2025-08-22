@@ -1,239 +1,239 @@
 <template>
-	<view-logs />
-	<view class="container">
-		<meta name="theme-color" content="#F8F8F8">
-		</meta>
-		<!-- 分类管理弹窗 -->
-		<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="100rpx"
-			>
-			<view class="type-modal">
-				<view class="add-type-form">
-					<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
-					<button class="add-btn" @tap="addNewType">添加分类</button>
-				</view>
-				<view class="type-list">
-					<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
-						<text>{{ type.name }}</text>
-						<uni-icons type="trash" size="22" color="#ff6666" @tap="deleteType(type.id)"></uni-icons>
-					</view>
-				</view>
+  <view-logs />
+  <view class="container">
+    <meta name="theme-color" content="#F8F8F8">
+    </meta>
+    <!-- 分类管理弹窗 -->
+    <common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val" top="100rpx">
+      <view class="type-modal">
+        <view class="add-type-form">
+          <input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
+          <button class="add-btn" @tap="addNewType">添加分类</button>
+        </view>
+        <view class="type-list">
+          <view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
+            <text>{{ type.name }}</text>
+            <uni-icons type="trash" size="22" color="#ff6666" @tap="deleteType(type.id)"></uni-icons>
+          </view>
+        </view>
+      </view>
+    </common-modal>
+    
+    <!-- 表单卡片容器 -->
+    <view class="form-card">
+      <!-- 分类选择 -->
+      <view class="form-item">
+        <text class="form-label">分类</text>
+        <view class="type-selector">
+          <picker mode="selector" class="form-input" :value="selectedType" :range="typeOptions"
+            @change="updateSelectedType">
+            <view class="picker-content">
+              {{ typeOptions[selectedType] || '请选择分类' }}
+            </view>
+          </picker>
+          <text class="manage-type" @tap="typeModalVisible = true">管理分类</text>
+        </view>
+      </view>
+
+      <!-- 名称 -->
+      <view class="form-item">
+        <text class="form-label">名称</text>
+        <view class="form-input" style="padding:0;">
+			<view class="custom-search-container">
+				<goods-search :font-size="'24rpx'" mode="fill" @select="handleGoodsSelect" v-model="name"
+				  :background="'#fff'" :width="'620rpx'" :show-icon="false" class="custom-search" />
 			</view>
-		</common-modal>
-		<!-- 表单卡片容器 -->
-		<view class="form-card">
-			<!-- 分类选择 -->
-			<view class="form-item">
-				<text class="form-label">分类</text>
-				<view class="type-selector">
-					<picker mode="selector" class="form-input" :value="selectedType" :range="typeOptions"
-						@change="updateSelectedType">
-						<view class="picker-content">
-							{{ typeOptions[selectedType] || '请选择分类' }}
-						</view>
-					</picker>
-					<text class="manage-type" @tap="typeModalVisible = true">管理分类</text>
-				</view>
-			</view>
+          
+        </view>
+      </view>
 
-			<!-- 名称 -->
-			<view class="form-item">
-				<text class="form-label">名称</text>
-				<view class="form-input" style="padding: 0;">
-					<goods-search :font-size="'24rpx'" mode="fill" @select="handleGoodsSelect" v-model="name"
-						:background="'#fff'" :width="'640rpx'" :show-icon="false" class="custom-search" />
-				</view>
-			</view>
+      <!-- 价值 -->
+      <view class="form-item">
+        <text class="form-label">价值</text>
+        <input class="form-input" type="digit" placeholder="请输入价值" placeholder-class="placeholder-style"
+          v-model="price" />
+      </view>
 
-			<!-- 价值 -->
-			<view class="form-item">
-				<text class="form-label">价值</text>
-				<input class="form-input" type="digit" placeholder="请输入价值" placeholder-class="placeholder-style"
-					v-model="price" />
-			</view>
+      <!-- 个数 -->
+      <view class="form-item">
+        <text class="form-label">个数</text>
+        <input class="form-input" type="number" placeholder="请输入个数" placeholder-class="placeholder-style"
+          v-model="count" />
+      </view>
 
-			<!-- 个数 -->
-			<view class="form-item">
-				<text class="form-label">个数</text>
-				<input class="form-input" type="number" placeholder="请输入个数" placeholder-class="placeholder-style"
-					v-model="count" />
-			</view>
+      <!-- 图片上传 -->
+      <view class="form-item">
+        <text class="form-label">物品图片</text>
+        <view class="upload-wrapper">
+          <view class="image-grid">
+            <!-- 已上传图片预览 -->
+            <view v-for="(img, index) in imageList" :key="index" class="preview-image">
+              <image mode="aspectFill" :src="img" class="image-preview" @tap="viewFullImage(index)">
+              </image>
+              <view class="image-actions">
+                <uni-icons type="close" size="22" color="#fff" @tap="(e) => removeImage(index, e)"
+                  class="delete-icon"></uni-icons>
+              </view>
+            </view>
 
-			<!-- 图片上传 -->
-			<view class="form-item">
-				<text class="form-label">物品图片</text>
-				<view class="upload-wrapper">
-					<view class="image-grid">
-						<!-- 已上传图片预览 -->
-						<view v-for="(img, index) in imageList" :key="index" class="preview-image">
-							<image mode="aspectFill" :src="img" class="image-preview" @tap="viewFullImage(index)">
-							</image>
-							<view class="image-actions">
-								<uni-icons type="close" size="22" color="#fff" @tap="(e) => removeImage(index, e)"
-									class="delete-icon"></uni-icons>
-							</view>
-						</view>
+            <!-- 添加图片按钮 -->
+            <view class="add-image-box" @click="selectImage">
+              <uni-icons type="plusempty" size="40" color="#ccc"></uni-icons>
+              <text class="add-text">添加图片</text>
+            </view>
+          </view>
+        </view>
+      </view>
 
-						<!-- 添加图片按钮 -->
-						<view class="add-image-box" @click="selectImage">
-							<uni-icons type="plusempty" size="40" color="#ccc"></uni-icons>
-							<text class="add-text">添加图片</text>
-						</view>
-					</view>
-				</view>
-			</view>
+      <!-- 尺寸选择器 -->
+      <view class="form-item">
+        <text class="form-label">尺寸</text>
+        <uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" :value="selectedSizePath"
+          @change="onSizeChange" class="size-picker">
+        </uni-data-picker>
+      </view>
 
-			<!-- 尺寸选择器 -->
-			<view class="form-item">
-				<text class="form-label">尺寸</text>
-				<uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" :value="selectedSizePath"
-					@change="onSizeChange" class="size-picker">
-				</uni-data-picker>
-			</view>
+      <!-- 更多信息折叠区域 -->
+      <view class="form-item">
+        <label class="remind-label" @tap="toggleMoreInfo()">
+          <view class="arrow-icon" :class="{ 'arrow-down': showMoreInfo }"></view>
+          <text>更多信息</text>
+        </label>
+      </view>
 
-			<!-- 更多信息折叠区域 -->
-			<view class="form-item">
-				<label class="remind-label" @tap="toggleMoreInfo()">
-					<uni-icons type="right" size="20" v-if="!showMoreInfo" color="#888"></uni-icons>
-					<uni-icons type="down" size="20" color="#888" v-else></uni-icons>
-					<text>更多信息</text>
-				</label>
-			</view>
+      <view v-if="showMoreInfo" class="more-info-form">
+        <!-- 尺寸详情 -->
+        <view class="form-item size_detail">
+          <text class="form-label">尺寸详情</text>
+          <input v-model="moreInfo.sizeDetail" placeholder="请输入尺寸详情" class="form-input" />
+        </view>
 
-			<view v-if="showMoreInfo" class="more-info-form">
-				<!-- 尺寸详情 -->
-				<view class="form-item size_detail">
-					<text class="form-label">尺寸详情</text>
-					<input v-model="moreInfo.sizeDetail" placeholder="请输入尺寸详情" class="form-input" />
-				</view>
+        <!-- 颜色 -->
+        <view class="form-item">
+          <text class="form-label">颜色</text>
+          <input v-model="moreInfo.color" placeholder="请输入颜色" class="form-input" />
+        </view>
 
-				<!-- 颜色 -->
-				<view class="form-item">
-					<text class="form-label">颜色</text>
-					<input v-model="moreInfo.color" placeholder="请输入颜色" class="form-input" />
-				</view>
+        <!-- 新增字段开始 -->
+        <!-- 店名 -->
+        <view class="form-item">
+          <text class="form-label">店名</text>
+          <input v-model="moreInfo.shopName" placeholder="请输入店名" class="form-input" />
+        </view>
 
-				<!-- 新增字段开始 -->
-				<!-- 店名 -->
-				<view class="form-item">
-					<text class="form-label">店名</text>
-					<input v-model="moreInfo.shopName" placeholder="请输入店名" class="form-input" />
-				</view>
+        <!-- 头围 -->
+        <view class="form-item">
+          <text class="form-label">头围</text>
+          <input v-model="moreInfo.headCircumference" placeholder="请输入头围(cm)" class="form-input"
+            type="digit" />
+        </view>
 
-				<!-- 头围 -->
-				<view class="form-item">
-					<text class="form-label">头围</text>
-					<input v-model="moreInfo.headCircumference" placeholder="请输入头围(cm)" class="form-input"
-						type="digit" />
-				</view>
+        <!-- 肩宽 -->
+        <view class="form-item">
+          <text class="form-label">肩宽</text>
+          <input v-model="moreInfo.shoulderWidth" placeholder="请输入肩宽(cm)" class="form-input" type="digit" />
+        </view>
 
-				<!-- 肩宽 -->
-				<view class="form-item">
-					<text class="form-label">肩宽</text>
-					<input v-model="moreInfo.shoulderWidth" placeholder="请输入肩宽(cm)" class="form-input" type="digit" />
-				</view>
+        <!-- 妆师 -->
+        <view class="form-item">
+          <text class="form-label">妆师</text>
+          <input v-model="moreInfo.makeupArtist" placeholder="请输入妆师" class="form-input" />
+        </view>
+        <!-- 新增字段结束 -->
 
-				<!-- 妆师 -->
-				<view class="form-item">
-					<text class="form-label">妆师</text>
-					<input v-model="moreInfo.makeupArtist" placeholder="请输入妆师" class="form-input" />
-				</view>
-				<!-- 新增字段结束 -->
+        <!-- 备注 -->
+        <view class="form-item">
+          <text class="form-label">备注</text>
+          <input v-model="moreInfo.remark" placeholder="请输入备注" class="form-input" />
+        </view>
 
-				<!-- 备注 -->
-				<view class="form-item">
-					<text class="form-label">备注</text>
-					<input v-model="moreInfo.remark" placeholder="请输入备注" class="form-input" />
-				</view>
+        <!-- 购入时间 -->
+        <view class="form-item">
+          <text class="form-label">购入时间</text>
+          <view class="date-picker-wrapper">
+            <picker mode="date" :value="moreInfo.buyDate"
+              @change="(e) => moreInfo.buyDate = e.detail.value">
+              <view class="picker-content">
+                {{ moreInfo.buyDate || '选择购入日期' }}
+              </view>
+            </picker>
+          </view>
+        </view>
 
-				<!-- 购入时间 -->
-				<view class="form-item">
-					<text class="form-label">购入时间</text>
-					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
-						<picker mode="date" :value="moreInfo.buyDate"
-							@change="(e) => moreInfo.buyDate = e.detail.value">
-							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
-								{{ moreInfo.buyDate || '选择购入日期' }}
-							</view>
-						</picker>
-					</view>
-				</view>
+        <!-- 新增字段开始 -->
+        <!-- 到家日期 -->
+        <view class="form-item">
+          <text class="form-label">到家日期</text>
+          <view class="date-picker-wrapper">
+            <picker mode="date" :value="moreInfo.arrivalDate"
+              @change="(e) => moreInfo.arrivalDate = e.detail.value">
+              <view class="picker-content">
+                {{ moreInfo.arrivalDate || '选择到家日期' }}
+              </view>
+            </picker>
+          </view>
+        </view>
 
-				<!-- 新增字段开始 -->
-				<!-- 到家日期 -->
-				<view class="form-item">
-					<text class="form-label">到家日期</text>
-					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
-						<picker mode="date" :value="moreInfo.arrivalDate"
-							@change="(e) => moreInfo.arrivalDate = e.detail.value">
-							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
-								{{ moreInfo.arrivalDate || '选择到家日期' }}
-							</view>
-						</picker>
-					</view>
-				</view>
+        <!-- 附加值 -->
+        <view class="form-item">
+          <text class="form-label">附加值（妆费或h了多少入）</text>
+          <input v-model="moreInfo.additionalValue" placeholder="请输入附加值" class="form-input" type="digit" />
+        </view>
+        <!-- 新增字段结束 -->
 
-				<!-- 附加值 -->
-				<view class="form-item">
-					<text class="form-label">附加值（妆费或h了多少入）</text>
-					<input v-model="moreInfo.additionalValue" placeholder="请输入附加值" class="form-input" type="digit" />
-				</view>
-				<!-- 新增字段结束 -->
+        <!-- 存放位置 -->
+        <view class="form-item">
+          <text class="form-label">存放位置</text>
+          <input v-model="moreInfo.position" placeholder="请输入存放位置" class="form-input" />
+        </view>
+      </view>
 
-				<!-- 存放位置 -->
-				<view class="form-item">
-					<text class="form-label">存放位置</text>
-					<input v-model="moreInfo.position" placeholder="请输入存放位置" class="form-input" />
-				</view>
-			</view>
+      <!-- 补款提醒 -->
+      <view class="form-item">
+        <label class="remind-label" @tap="toggleRemind()">
+          <view class="arrow-icon" :class="{ 'arrow-down': form.isRemind }"></view>
+          <text>需要补款提醒</text>
+          <!-- 新增小红点 -->
+          <view v-if="form.finalPrice > 0 " class="remind-dot"></view>
+        </label>
+      </view>
 
-			<!-- 补款提醒 -->
-			<view class="form-item">
-				<label class="remind-label" @tap="toggleRemind()">
-					<uni-icons type="right" size="20" v-if="!form.isRemind" color="#888"></uni-icons>
-					<uni-icons type="down" size="20" color="#888" v-else></uni-icons>
-					<text>需要补款提醒</text>
-					<!-- 新增小红点 -->
-					<view v-if="form.finalPrice > 0 " class="remind-dot"></view>
-				</label>
-			</view>
+      <view v-if="form.isRemind" class="remind-form">
+        <view class="form-item">
+          <text class="form-label">尾款金额</text>
+          <input type="number" v-model="form.finalPrice" placeholder="请输入待补款金额" class="form-input" />
+        </view>
 
-			<view v-if="form.isRemind" class="remind-form" style="margin-bottom: 40rpx;">
-				<view class="form-item">
-					<text class="form-label">尾款金额</text>
-					<input type="number" v-model="form.finalPrice" placeholder="请输入待补款金额" class="form-input" />
-				</view>
+        <view class="form-item">
+          <text class="form-label">补款日期</text>
+          <view class="date-picker-wrapper">
+            <picker mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value">
+              <view class="picker-content">
+                {{ form.finalTime || '选择截止日期' }}
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+      
+      <view class="info-text">
+        <image src="/static/info-circle.png" mode="aspectFill"></image>
+        <text>仅用于记录您所购买过的物品，其他人不会看到</text>
+      </view>
 
-				<view class="form-item">
-					<text class="form-label">补款日期</text>
-					<view style="padding: 0px 10px;border: 1px solid #e6e6e6; border-radius: 10px;">
-						<picker mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value">
-							<view class="picker-content" style="color: #2c2c2c;font-size: 26rpx;">
-								{{ form.finalTime || '选择截止日期' }}
-							</view>
-						</picker>
-					</view>
-				</view>
-			</view>
-			<view style="overflow: hidden;">
-				<image src="/static/info-circle.png" mode="aspectFill"
-					style="width: 28rpx;height: 28rpx;margin-right: 10rpx; position: relative;top: 3rpx;"></image>
-				<text style="color: #888;">仅用于记录您所购买过的物品，其他人不会看到</text>
-			</view>
-
-			<!-- 操作按钮 -->
-			<view class="button-group">
-				<button class="delete-button" v-if="isEdit" @click="handleDelete">
-					删除账本
-				</button>
-				<button class="submit-button" @click="postSubmit">
-					记录{{ isEdit ? '修改' : '新增' }}
-				</button>
-			</view>
-		</view>
-
-
-	</view>
+      <!-- 操作按钮 -->
+      <view class="button-group">
+        <button class="delete-button" v-if="isEdit" @click="handleDelete">
+          删除账本
+        </button>
+        <button class="submit-button" @click="postSubmit">
+          记录{{ isEdit ? '修改' : '新增' }}
+        </button>
+      </view>
+    </view>
+  </view>
 </template>
+
 <script setup>
 	import {
 		ref,
@@ -332,7 +332,7 @@
 	const fetchSizes = async () => {
 		try {
 			const res = await uni.request({
-				url: websiteUrl + '/sizes',
+				url: websiteUrl.value + '/sizes',
 				method: 'GET'
 			});
 
@@ -392,7 +392,7 @@
 		const token = uni.getStorageSync('token');
 		try {
 			const res = await uni.request({
-				url: websiteUrl + '/with-state/account-types',
+				url: websiteUrl.value + '/with-state/account-types',
 				method: 'GET',
 				header: {
 					'Authorization': token
@@ -417,7 +417,7 @@
 		const token = uni.getStorageSync('token');
 		try {
 			await uni.request({
-				url: websiteUrl + '/with-state/add-account-type',
+				url: websiteUrl.value + '/with-state/add-account-type',
 				method: 'POST',
 				header: {
 					'Authorization': token
@@ -449,7 +449,7 @@
 					const token = uni.getStorageSync('token');
 					try {
 						const response = await uni.request({
-							url: websiteUrl + '/with-state/delete-account-type',
+							url: websiteUrl.value + '/with-state/delete-account-type',
 							method: 'POST',
 							header: {
 								'Authorization': token,
@@ -513,7 +513,7 @@
 		let token = uni.getStorageSync('token')
 		// /with-state/account-book-detail
 		uni.request({
-			url: websiteUrl + '/with-state/account-book-detail',
+			url: websiteUrl.value + '/with-state/account-book-detail',
 			method: 'GET',
 			header: {
 				'Authorization': token,
@@ -585,7 +585,7 @@
 	const handleGoodsSelect = async (goods) => {
 		try {
 			const res = await uni.request({
-				url: websiteUrl + `/goods?id=${goods.id}`,
+				url: websiteUrl.value + `/goods?id=${goods.id}`,
 				method: 'GET'
 			});
 
@@ -631,7 +631,7 @@
 					}
 
 					uni.request({
-						url: websiteUrl + '/with-state/delete-account-book',
+						url: websiteUrl.value + '/with-state/delete-account-book',
 						method: 'POST',
 						header: {
 							'Authorization': uni.getStorageSync('token'),
@@ -804,7 +804,7 @@
 		console.log('提交数据:', postData)
 
 		uni.request({
-			url: websiteUrl + '/with-state/add-account-book',
+			url: websiteUrl.value + '/with-state/add-account-book',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token'),
@@ -859,7 +859,7 @@
 		}
 
 		uni.request({
-			url: websiteUrl + '/with-state/update-account-book',
+			url: websiteUrl.value + '/with-state/update-account-book',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token'),
@@ -920,7 +920,7 @@
 	const getGoodsInfo = (id) => {
 		return new Promise((resolve, reject) => {
 			uni.request({
-				url: websiteUrl + '/goods?id=' + id,
+				url: websiteUrl.value + '/goods?id=' + id,
 				method: 'GET',
 				timeout: 5000,
 				success: (res) => {
@@ -997,315 +997,374 @@
 	});
 </script>
 
+
 <style lang="scss" scoped>
-	$primary-color: #a6e9f7;
-	$hover-color: #94a5f3;
-	$border-color: #e6e6e6;
-	$radius: 8px;
+$primary-color: #65C3D6;
+$secondary-color: #94a5f3;
+$border-color: #e0e0e0;
+$bg-color: #f5f7fa;
+$radius: 24rpx;
 
-	.container {
-		padding: 20rpx;
-		background-color: #f5f5f5;
-		min-height: 100vh;
-	}
+.container {
+  background-color: $bg-color;
+  min-height: 100vh;
+}
 
-	.form-card {
-		background: white;
-		border-radius: $radius;
-		padding: 30rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-	}
+.form-card {
+  background: white;
+  border-radius: $radius;
+  padding: 40rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
+}
 
-	.form-item {
-		margin-bottom: 40rpx;
-	}
+.form-item {
+  margin-bottom: 48rpx;
+  position: relative;
+}
 
-	.form-label {
-		display: block;
-		font-size: 28rpx;
-		color: #666;
-		margin-bottom: 16rpx;
-		font-weight: 500;
-	}
+.form-label {
+  position: absolute;
+  left: 20rpx;
+  top: -16rpx;
+  padding: 0 10rpx;
+  background: white;
+  font-size: 26rpx;
+  color: #b8b8b8;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
 
-	.form-input {
-		height: 80rpx;
-		padding: 0 20rpx;
-		border: 2rpx solid $border-color;
-		border-radius: $radius;
-		font-size: 28rpx;
-		transition: all 0.3s;
-		line-height: 80rpx;
-		overflow: hidden;
+.form-input {
+  height: 100rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid $border-color;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  transition: all 0.3s;
+  line-height: 100rpx;
+  background: white;
+  position: relative;
+  
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.2);
+  }
+}
 
-		&:focus {
-			border-color: $primary-color;
-			box-shadow: 0 0 8rpx rgba($primary-color, 0.2);
-		}
-	}
+.type-selector {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  
+  .form-input {
+    flex: 1;
+  }
+}
 
-	.picker-content {
-		height: 80rpx;
-		line-height: 80rpx;
-		color: #333;
-	}
+.manage-type {
+  font-size: 24rpx;
+  color: $primary-color;
+  padding: 8rpx 20rpx;
+  border: 1rpx solid $primary-color;
+  border-radius: 40rpx;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
+  transition: all 0.3s;
+  color: #fff;
+  
+  &:active {
+    background: rgba($primary-color, 0.2);
+    transform: scale(0.98);
+  }
+}
 
-	.upload-wrapper {
-		border: 2rpx dashed $border-color;
-		border-radius: $radius;
-		padding: 30rpx;
-		text-align: center;
-	}
+.upload-wrapper {
+  border: 2rpx dashed $border-color;
+  border-radius: $radius;
+  padding: 30rpx;
+  text-align: center;
+  background: #e0e0e038;
+}
 
-	.image-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 20rpx;
-		margin-top: 20rpx;
-	}
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
 
-	.preview-image {
-		position: relative;
-		width: 180rpx;
-		height: 180rpx;
-		border-radius: $radius;
-		overflow: hidden;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+.preview-image {
+  position: relative;
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: $radius;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  
+  .image-preview {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .image-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 6rpx;
+    border-radius: 100%;
+  }
+  
+  .delete-icon {
+    display: block;
+    background: rgba(255, 102, 102, 0.8);
+    border-radius: 50%;
+    height: 53rpx;
+    width: 53rpx;
+    box-sizing: border-box;
+    padding: 4rpx;
+  }
+}
 
-		.image-preview {
-			width: 100%;
-			height: 100%;
-		}
+.add-image-box {
+  width: 180rpx;
+  height: 180rpx;
+  border: 2rpx dashed $border-color;
+  border-radius: $radius;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: #999;
+  font-size: 24rpx;
+  transition: all 0.3s;
+  
+  &:active {
+    background: rgba($primary-color, 0.1);
+    border-color: $primary-color;
+  }
+}
 
-		.image-actions {
-			position: absolute;
-			top: 0;
-			right: 0;
-			padding: 6rpx;
-			border-radius: 100%;
-		}
+.add-text {
+  margin-top: 10rpx;
+}
 
-		.delete-icon {
-			display: block;
-			background: rgba(255, 102, 102, 0.8);
-			border-radius: 50%;
-			height: 53rpx;
-			width: 53rpx;
-			box-sizing: border-box;
-			padding: 4rpx;
-		}
-	}
+.button-group {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 60rpx;
+  
+  button {
+    flex: 1;
+  }
+}
+.custom-search-container {
+	position: relative;
+	top: 15rpx;
+	left: 5rpx;
+	width: 90%;
+}
+.submit-button {
+  background: linear-gradient(135deg, $primary-color, $secondary-color);
+  color: white;
+  border: none;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.3);
+  transition: all 0.3s;
+  
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
 
-	.add-image-box {
-		width: 180rpx;
-		height: 180rpx;
-		border: 2rpx dashed #ddd;
-		border-radius: $radius;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background: rgba($primary-color, 0.05);
-		color: #999;
-		font-size: 24rpx;
+.delete-button {
+  background: linear-gradient(135deg, #adadad, #ffbdbb);
+  color: white;
+  border: none;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 77, 79, 0.2);
+  transition: all 0.3s;
+  
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
 
-		&:active {
-			background: rgba($primary-color, 0.1);
-		}
-	}
+.remind-label {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+  font-size: 28rpx;
+  color: #666;
+  position: relative;
+  padding-right: 40rpx;
+  cursor: pointer;
+  
+  .remind-dot {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16rpx;
+    height: 16rpx;
+    background: #ff4444;
+    border-radius: 50%;
+    box-shadow: 0 2rpx 8rpx rgba(255, 68, 68, 0.2);
+  }
+}
 
-	.add-text {
-		margin-top: 10rpx;
-	}
+.arrow-icon {
+  width: 5rpx;
+  height: 5rpx;
+  border: solid #888;
+  border-width: 0 2rpx 2rpx 0;
+  transform: rotate(-45deg);
+  transition: transform 0.3s ease;
+  padding: 5rpx;
+  position: relative;
+  
+  
+  &.arrow-down {
+    transform: rotate(45deg);
+	bottom: 5rpx;
+  }
+}
 
-	.submit-button {
-		margin-top: 60rpx;
-		background: linear-gradient(135deg, $primary-color, $hover-color);
-		color: white;
-		border: none;
-		border-radius: 50rpx;
-		font-size: 32rpx;
-		height: 90rpx;
-		line-height: 90rpx;
-		box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.3);
-		transition: all 0.3s;
-		width: 100%;
+.remind-form, .more-info-form {
+  background: #e0e0e038;
+  border-radius: $radius;
+  padding: 30rpx;
+  margin-top: 20rpx;
+  border: 1px solid rgba($primary-color, 0.1);
+  animation: fadeIn 0.3s ease;
+  margin-bottom: 20rpx;
+}
 
-		&:active {
-			transform: translateY(2rpx);
-			box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.3);
-		}
-	}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-	.placeholder-style {
-		color: #ccc;
-		font-size: 28rpx;
-	}
+.type-modal {
+  padding: 30rpx;
+  box-sizing: border-box;
+  width: 80vw;
+  height: 50vh;
+  
+  .type-list {
+    max-height: 500rpx;
+    overflow-y: auto;
+    margin-bottom: 40rpx;
+  }
+  
+  .type-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25rpx;
+    border-bottom: 1rpx solid #eee;
+    background: white;
+    border-radius: 12rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+    
+    text {
+      font-size: 26rpx;
+      color: #333;
+    }
+  }
+  
+  .add-type-form {
+    display: flex;
+    gap: 20rpx;
+    margin-bottom: 30rpx;
+    
+    .type-input {
+      flex: 1;
+      border: 1rpx solid #ddd;
+      border-radius: 16rpx;
+      padding: 0 30rpx;
+      font-size: 26rpx;
+      height: 80rpx;
+      line-height: 80rpx;
+    }
+    
+    .add-btn {
+      background: $primary-color;
+      color: white;
+      font-size: 26rpx;
+      padding: 0 30rpx;
+      border-radius: 16rpx;
+      height: 80rpx;
+      line-height: 80rpx;
+      transition: all 0.3s;
+      
+      &:active {
+        opacity: 0.9;
+      }
+    }
+  }
+}
 
-	.button-group {
-		margin-top: 60rpx;
-	}
+.picker-content {
+  height: 100rpx;
+  line-height: 100rpx;
+  color: #333;
+  padding: 0 20rpx;
+}
 
-	.delete-button {
-		background: linear-gradient(135deg, #adadad, #ffbdbb);
-		color: white;
-		border: none;
-		border-radius: 50rpx;
-		font-size: 32rpx;
-		height: 90rpx;
-		line-height: 90rpx;
-		box-shadow: 0 6rpx 20rpx rgba(255, 77, 79, 0.3);
-		transition: all 0.3s;
-		margin-top: 30rpx;
+.info-text {
+  color: #888;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  margin-top: 30rpx;
+  
+  image {
+    width: 28rpx;
+    height: 28rpx;
+    margin-right: 10rpx;
+  }
+}
 
-		&:active {
-			transform: translateY(2rpx);
-			box-shadow: 0 4rpx 12rpx rgba(255, 77, 79, 0.3);
-		}
-	}
+.size-picker {
+  padding: 20rpx 0;
+  
+  ::v-deep .input-value-border {
+    border: 2rpx solid $border-color;
+    border-radius: 16rpx;
+    height: 100rpx;
+    padding: 0 20rpx;
+    
+    &:focus {
+      border-color: $primary-color;
+    }
+  }
+}
 
-	.form-input {
-		// 原有样式保持不变
-		// padding: 0 !important;  // 移除内边距让搜索组件填满
+.date-picker-wrapper {
+  padding: 0px 10px;
+  border: 1px solid #e6e6e6; 
+  border-radius: 10px;
+  height: 100rpx;
+  line-height: 100rpx;
+}
 
-		.custom-search {
-			border: none !important; // 移除组件自身边框
-			height: 80rpx;
-
-			.search_tab {
-				border: 2rpx solid $border-color;
-				border-radius: $radius;
-				height: 100%;
-			}
-		}
-	}
-
-	.type-selector {
-		display: flex;
-		align-items: center;
-		gap: 20rpx;
-	}
-
-	.manage-type {
-		font-size: 24rpx;
-		color: #74c9e5;
-		padding: 8rpx 20rpx;
-		border: 1rpx solid #74c9e5;
-		border-radius: 40rpx;
-		flex-shrink: 0;
-	}
-
-	.type-modal {
-		padding: 30rpx;
-		box-sizing: border-box;
-		width: 80vw;
-		height: 50vh;
-
-		.type-list {
-			max-height: 500rpx;
-			overflow-y: auto;
-			margin-bottom: 40rpx;
-		}
-
-		.type-item {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 25rpx;
-			border-bottom: 1rpx solid #eee;
-
-			text {
-				font-size: 26rpx;
-				color: #333;
-			}
-		}
-
-		.add-type-form {
-			display: flex;
-			gap: 20rpx;
-			margin-bottom: 10rpx;
-
-			.type-input {
-				flex: 1;
-				border: 1rpx solid #ddd;
-				border-radius: 8rpx;
-				padding: 15rpx;
-				font-size: 26rpx;
-			}
-
-			.add-btn {
-				background: #74c9e5;
-				color: white;
-				font-size: 26rpx;
-				padding: 0 30rpx;
-				border-radius: 8rpx;
-			}
-		}
-	}
-
-	.remind-label {
-		display: flex;
-		align-items: center;
-		gap: 15rpx;
-		font-size: 28rpx;
-		color: #666;
-	}
-
-	.remind-form {
-		background: #f8f8f8;
-		border-radius: 16rpx;
-		padding: 20rpx;
-		margin-top: 20rpx;
-	}
-
-	.more-info-form {
-		background: #f8f8f8;
-		border-radius: 16rpx;
-		padding: 20rpx;
-		margin-top: 20rpx;
-		margin-bottom: 20rpx;
-	}
-
-	.remind-label {
-		position: relative; // 添加相对定位
-		display: flex;
-		align-items: center;
-		gap: 15rpx;
-		font-size: 28rpx;
-		color: #666;
-		padding-right: 40rpx; // 为小红点留出空间
-
-		.remind-dot {
-			position: relative;
-			right: 0;
-			top: 7rpx;
-			transform: translateY(-50%);
-			width: 16rpx;
-			height: 16rpx;
-			background: #ff4444;
-			border-radius: 50%;
-			box-shadow: 0 2rpx 8rpx rgba(255, 68, 68, 0.2);
-		}
-	}
-
-	.size-picker {
-		padding: 20rpx 0;
-	}
-
-	.size_detail {
-		display: none;
-	}
-
-	uni-button:after {
-		border: none;
-	}
-
-	.size-measurements {
-		display: flex;
-		gap: 20rpx;
-
-		.form-item {
-			flex: 1;
-		}
-	}
+/* 新增图标样式 */
+.input-icon {
+  position: absolute;
+  right: 30rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  color: #999;
+}
 </style>

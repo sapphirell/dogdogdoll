@@ -249,8 +249,8 @@
   font-size: 24rpx;
 }
 .goods-item .goods-right .goods-footer .goods-type.data-v-909fcc31::before {
-  content: '📦 ';
+  content: ' ';
 }
 .goods-item .goods-right .goods-footer .goods-material.data-v-909fcc31::before {
-  content: '🧸 ';
+  content: ' ';
 }

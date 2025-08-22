@@ -4,7 +4,7 @@
 		<!-- 新版本提示弹窗 -->
 		<common-modal :visible="modalVisible" @update:visible="modalVisible = $event" top="15vh">
 			<view class="version-update-container">
-				<view class="update-title">发现新版本 v{{newVersionInfo?.version}} 当前 v{{}}</view>
+				<view class="update-title">发现新版本 v{{newVersionInfo?.version}} 当前 v{{dogdogdollVersion}}</view>
 
 				<scroll-view class="update-content" scroll-y>
 					<view class="update-section">
@@ -100,7 +100,7 @@
 			// 平台检查：H5或小程序不弹出
 			let scene = getScene()
 			if (scene === 1 || scene === 4) {
-				console.log("scene:", scene)
+				console.log("不检查版本原因scene:", scene)
 				return
 			}
 			// 检查是否在忽略期内
@@ -110,11 +110,13 @@
 			}
 			const cv = uni.getAppBaseInfo().appVersion;
 			const res = await uni.request({
-				url: `${websiteUrl}/latest-version?version=${dogdogdollVersion}`,
+				url: `${websiteUrl.value}/latest-version?version=${dogdogdollVersion}`,
 				method: 'GET'
 			});
 
 			if (res && res.data) {
+				console.log(`${websiteUrl.value}/latest-version?version=${dogdogdollVersion}`)
+				console.log(res.data)
 				if (res.data.status === 'success' && res.data.data) {
 					// 有新版本
 					newVersionInfo.value = res.data.data;
@@ -149,7 +151,7 @@
 			// iOS 跳转 App Store
 			plus.runtime.openURL('https://apps.apple.com/app/id6747564362');
 		} else if (scene === 3) {
-			plus.runtime.openURL('https://apps.apple.com/app/id6747564362');
+			plus.runtime.openURL('https://www.dogdogdoll.com/');
 		} else {
 			// 其他平台提示
 			uni.showModal({

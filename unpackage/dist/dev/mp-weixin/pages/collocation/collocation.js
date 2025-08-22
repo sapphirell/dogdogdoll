@@ -15,20 +15,75 @@ if (!Math) {
 }
 const _sfc_main = {
   __name: "collocation",
-  props: ["goods_id", "goods_name", "brand_id", "brand_name", "type"],
+  props: ["goods_id", "goods_name", "brand_id", "brand_name", "type", "collocation_id"],
   setup(__props) {
     const props = __props;
+    const isEdit = common_vendor.ref(false);
     const uploadList = common_vendor.ref([]);
-    const goodsList = common_vendor.ref([
-      // {"name":"aa", "id":1}
-    ]);
+    const goodsList = common_vendor.ref([]);
     const typeList = common_vendor.ref([]);
     const showSelectTab = common_vendor.ref(false);
-    common_vendor.ref("");
-    common_vendor.ref(0);
-    common_vendor.ref("");
-    common_vendor.ref(0);
-    common_vendor.ref("");
+    const saveCollocationDataList = common_vendor.ref([]);
+    const title = common_vendor.ref("");
+    const content = common_vendor.ref("");
+    async function fetchCollocationDetail() {
+      if (!props.collocation_id)
+        return;
+      try {
+        const res = await common_vendor.index.request({
+          url: `${common_config.websiteUrl.value}/view-collocation?collocation_id=${props.collocation_id}&origin=1`,
+          method: "GET",
+          timeout: 5e3
+        });
+        if (res.data.status === "success") {
+          const data = res.data.data;
+          title.value = data.title || "";
+          content.value = data.content || "";
+          uploadList.value = data.image_url_list || [];
+          if (data.collocation_relation_list && data.collocation_relation_list.length > 0) {
+            saveCollocationDataList.value = data.collocation_relation_list.map((item) => ({
+              goods_id: item.relation_goods_id,
+              goods_name: item.relation_goods_name,
+              brand_id: item.relation_brand_id,
+              brand_name: item.relation_brand_name,
+              type: item.type,
+              goods_image: item.relation_goods_image || ""
+            }));
+          }
+        }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:122", "获取搭配详情失败:", error);
+        common_vendor.index.showToast({
+          title: "加载搭配详情失败",
+          icon: "none"
+        });
+      }
+    }
+    common_vendor.onMounted(() => {
+      getTypes();
+      if (props.collocation_id) {
+        isEdit.value = true;
+        fetchCollocationDetail();
+      }
+      if (props.goods_id && props.goods_name && props.brand_id && props.brand_name && props.type) {
+        getGoodsInfo(props.goods_id).then((res) => {
+          let data = {
+            "brand_id": parseInt(props.brand_id, 10),
+            "goods_id": parseInt(props.goods_id, 10),
+            "brand_name": props.brand_name,
+            "goods_name": props.goods_name,
+            "goods_image": res.data.goods_images[0],
+            "type": props.type
+          };
+          const exists = saveCollocationDataList.value.some(
+            (item) => item.goods_id === data.goods_id && item.brand_id === data.brand_id
+          );
+          if (!exists) {
+            saveCollocationDataList.value.push(data);
+          }
+        });
+      }
+    });
     const handleRelationConfirm = (data) => {
       try {
         const relationData = {
@@ -51,7 +106,7 @@ const _sfc_main = {
           });
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:129", "保存关联数据失败:", error);
+        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:189", "保存关联数据失败:", error);
         common_vendor.index.showToast({
           title: "保存关联信息失败",
           icon: "none"
@@ -59,7 +114,7 @@ const _sfc_main = {
       }
     };
     const handleRelationCancel = () => {
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:138", "用户取消选择");
+      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:199", "用户取消选择");
     };
     const showRelationPicker = () => {
       showSelectTab.value = true;
@@ -67,44 +122,23 @@ const _sfc_main = {
     function getGoodsInfo(id) {
       return new Promise((resolve, reject) => {
         common_vendor.index.request({
-          url: common_config.websiteUrl + "/goods?id=" + id,
+          url: common_config.websiteUrl.value + "/goods?id=" + id,
           method: "GET",
           timeout: 5e3,
           success: (res) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:153", res.data.data);
             resolve(res.data);
           },
           fail: (err) => {
-            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:157", err);
+            common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:217", err);
             common_vendor.index.showToast({
               title: "网络请求失败",
               icon: "none"
             });
             reject(err);
-          },
-          complete: () => {
-            common_vendor.index.hideLoading();
           }
         });
       });
     }
-    const saveCollocationDataList = common_vendor.ref([]);
-    if (props.goods_id && props.goods_name && props.brand_id && props.brand_name && props.type) {
-      getGoodsInfo(props.goods_id).then((res) => {
-        let data = {
-          "brand_id": parseInt(props.brand_id, 10),
-          "goods_id": parseInt(props.goods_id, 10),
-          "brand_name": props.brand_name,
-          "goods_name": props.goods_name,
-          "goods_image": res.data.goods_images[0],
-          "type": props.type
-        };
-        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:184", data);
-        saveCollocationDataList.value.push(data);
-      });
-    }
-    const title = common_vendor.ref("");
-    const content = common_vendor.ref("");
     function viewFullImage(index) {
       common_vendor.index.previewImage({
         current: uploadList.value[index],
@@ -113,7 +147,15 @@ const _sfc_main = {
     }
     async function selectImage() {
       try {
-        const imagePaths = await common_image.chooseImageList(9);
+        const remaining = 9 - uploadList.value.length;
+        if (remaining <= 0) {
+          common_vendor.index.showToast({
+            title: "最多只能上传9张图片",
+            icon: "none"
+          });
+          return;
+        }
+        const imagePaths = await common_image.chooseImageList(remaining);
         for (const path of imagePaths) {
           const tokenData = await common_image.getQiniuToken();
           await common_image.uploadImageToQiniu(path, tokenData.token, tokenData.path);
@@ -124,14 +166,14 @@ const _sfc_main = {
           icon: "success"
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:225", "上传出错:", error);
+        common_vendor.index.__f__("error", "at pages/collocation/collocation.vue:268", "上传出错:", error);
         common_vendor.index.showToast({
           title: "部分图片上传失败",
           icon: "none"
         });
       }
     }
-    function submitForm() {
+    async function submitForm() {
       const token = common_vendor.index.getStorageSync("token");
       if (!token) {
         common_vendor.index.showToast({
@@ -154,12 +196,10 @@ const _sfc_main = {
         });
         return;
       }
-      let scene = common_config.getScene();
       const postData = {
         title: title.value,
         content: content.value,
         image_url_list: uploadList.value,
-        scene,
         relations: saveCollocationDataList.value.map((item) => ({
           relation_goods_id: item.goods_id,
           relation_goods_name: item.goods_name,
@@ -170,55 +210,54 @@ const _sfc_main = {
           // 标识关联的是collocation
         }))
       };
-      common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:280", postData);
-      common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-collocation",
-        method: "POST",
-        data: postData,
-        header: {
-          "Content-Type": "application/json",
-          "Authorization": token
-        },
-        timeout: 5e3,
-        success: (res) => {
-          if (res.data.status === "success") {
-            common_vendor.index.showToast({
-              title: "提交成功"
-            });
-            title.value = "";
-            content.value = "";
-            uploadList.value = [];
-            saveCollocationDataList.value = [];
-            common_vendor.index.navigateBack();
-          } else {
-            common_vendor.index.showToast({
-              title: res.data.msg || "提交失败",
-              icon: "none"
-            });
-          }
-        },
-        fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:311", err);
+      if (isEdit.value) {
+        postData.collocation_id = parseInt(props.collocation_id);
+      }
+      try {
+        const url = isEdit.value ? common_config.websiteUrl.value + "/with-state/update-collocation" : common_config.websiteUrl.value + "/with-state/add-collocation";
+        const res = await common_vendor.index.request({
+          url,
+          method: "POST",
+          data: postData,
+          header: {
+            "Content-Type": "application/json",
+            "Authorization": token
+          },
+          timeout: 8e3
+        });
+        if (res.data.status === "success") {
           common_vendor.index.showToast({
-            title: "网络请求失败",
+            title: isEdit.value ? "更新成功" : "提交成功"
+          });
+          setTimeout(() => common_vendor.index.navigateBack(), 1500);
+        } else {
+          common_vendor.index.showToast({
+            title: res[1].data.msg || (isEdit.value ? "更新失败" : "提交失败"),
             icon: "none"
           });
         }
-      });
+      } catch (err) {
+        common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:351", err);
+        common_vendor.index.showToast({
+          title: "网络请求失败",
+          icon: "none"
+        });
+      }
     }
     function getTypes() {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/goods-types",
+        url: common_config.websiteUrl.value + "/goods-types",
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:357", res.data.data);
-          typeList.value = res.data.data;
+          if (res.data && res.data.data) {
+            typeList.value = res.data.data;
+          }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:361", err);
+          common_vendor.index.__f__("log", "at pages/collocation/collocation.vue:371", err);
           common_vendor.index.showToast({
-            title: "网络请求失败",
+            title: "获取商品类型失败",
             icon: "none"
           });
         }
@@ -230,27 +269,29 @@ const _sfc_main = {
     function deleteCollcation(index) {
       saveCollocationDataList.value.splice(index, 1);
     }
-    getTypes();
     return (_ctx, _cache) => {
-      return {
+      return common_vendor.e({
         a: common_vendor.f(uploadList.value, (item, index, i0) => {
           return {
             a: item,
-            b: common_vendor.o(viewFullImage, index),
+            b: common_vendor.o(($event) => viewFullImage(index), index),
             c: common_vendor.o(($event) => deleteImage(index), index),
             d: index
           };
         }),
         b: common_assets._imports_1$5,
-        c: common_assets._imports_1$4,
-        d: common_vendor.o(($event) => selectImage(_ctx.index)),
-        e: title.value,
-        f: common_vendor.o(($event) => title.value = $event.detail.value),
-        g: content.value,
-        h: common_vendor.o(($event) => content.value = $event.detail.value),
-        i: common_assets._imports_2$3,
-        j: common_vendor.o(showRelationPicker),
-        k: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
+        c: uploadList.value.length < 9
+      }, uploadList.value.length < 9 ? {
+        d: common_assets._imports_1$4,
+        e: common_vendor.o(selectImage)
+      } : {}, {
+        f: title.value,
+        g: common_vendor.o(($event) => title.value = $event.detail.value),
+        h: content.value,
+        i: common_vendor.o(($event) => content.value = $event.detail.value),
+        j: common_assets._imports_2$2,
+        k: common_vendor.o(showRelationPicker),
+        l: common_vendor.f(saveCollocationDataList.value, (item, index, i0) => {
           return common_vendor.e({
             a: item.goods_image
           }, item.goods_image ? {
@@ -263,17 +304,18 @@ const _sfc_main = {
             g: index
           });
         }),
-        l: common_assets._imports_1$5,
-        m: common_vendor.o(handleRelationConfirm),
-        n: common_vendor.o(handleRelationCancel),
-        o: common_vendor.o(($event) => showSelectTab.value = $event),
-        p: common_vendor.p({
+        m: common_assets._imports_1$5,
+        n: common_vendor.o(handleRelationConfirm),
+        o: common_vendor.o(handleRelationCancel),
+        p: common_vendor.o(($event) => showSelectTab.value = $event),
+        q: common_vendor.p({
           typeList: typeList.value,
           goodsList: goodsList.value,
           visible: showSelectTab.value
         }),
-        q: common_vendor.o(submitForm)
-      };
+        r: common_vendor.t(isEdit.value ? "更新" : "提交"),
+        s: common_vendor.o(submitForm)
+      });
     };
   }
 };

@@ -311,7 +311,6 @@
 }
 .hot-box.data-v-1cf27b2a {
   padding: 20rpx;
-  padding-top: 50rpx;
 }
 .hot-box .hot-item.data-v-1cf27b2a {
   margin: 0 20rpx 30rpx;
@@ -492,7 +491,7 @@
 .publish-btn.data-v-1cf27b2a {
   position: fixed;
   right: 40rpx;
-  bottom: 120rpx;
+  bottom: 280rpx;
   width: 100rpx;
   height: 100rpx;
   background: #4cbbd0;
@@ -551,7 +550,7 @@
   text-align: justify;
 }
 .brand_type_description text.data-v-1cf27b2a::after {
-  content: " 🐻 ";
+  content: "  ";
   color: rgba(76, 187, 208, 0.2);
   position: absolute;
   font-size: 40rpx;

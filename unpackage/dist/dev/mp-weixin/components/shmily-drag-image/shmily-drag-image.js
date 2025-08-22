@@ -1,6 +1,14 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 require("../../common/config.js");
+if (!Array) {
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
+  _easycom_uni_icons2();
+}
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
+if (!Math) {
+  _easycom_uni_icons();
+}
 const _sfc_main = {
   __name: "shmily-drag-image",
   props: {
@@ -55,9 +63,18 @@ const _sfc_main = {
       type: Number,
       default: 0.7
       // 图片区域占总高度的70%
+    },
+    // 显示item的信息
+    showItemInfo: {
+      type: Boolean,
+      default: true
+    },
+    showDelete: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ["input", "update:modelValue", "sort-change"],
+  emits: ["input", "update:modelValue", "sort-change", "delete"],
   setup(__props, { emit: __emit }) {
     const props = __props;
     const emit = __emit;
@@ -91,6 +108,15 @@ const _sfc_main = {
     const childHeight = common_vendor.computed(() => {
       return viewHeight.value - rpx2px(props.padding) * 2 + "px";
     });
+    const deleteImage = (item) => {
+      emit("delete", item.id);
+      const index = imageList.value.findIndex((img) => img.id === item.id);
+      if (index !== -1) {
+        imageList.value.splice(index, 1);
+        updateItemsPosition();
+        sortList();
+      }
+    };
     const getSrc = (item) => {
       return props.keyName !== null ? item[props.keyName] : item;
     };
@@ -189,12 +215,12 @@ const _sfc_main = {
         item2.ready = false;
         item2.disable = true;
       });
-      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:263", "长按开始");
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:288", "长按开始");
       longPressTimer.value = setTimeout(() => {
-        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:267", "长按成功！");
+        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:292", "长按成功！");
         common_vendor.index.vibrateShort({
           success: () => {
-            common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:270", "触感反馈");
+            common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:295", "触感反馈");
           }
         });
         item.ready = true;
@@ -204,7 +230,7 @@ const _sfc_main = {
       }, 240);
     };
     const touchstart = (item, e) => {
-      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:281", "进入touchstart");
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:306", "进入touchstart");
       imageList.value.forEach((v) => {
         v.zIndex = v.index + 9;
       });
@@ -225,13 +251,13 @@ const _sfc_main = {
       item.y = item.oldY;
       item.offset = 0;
       item.moveEnd = false;
-      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:306", "结束点击，清理ready");
+      common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:331", "结束点击，清理ready");
       imageList.value.forEach((item2) => {
         item2.ready = false;
         item2.disable = true;
       });
       if (isDragging.value == true) {
-        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:312", "来自于拖拽的结束,上报排序事件");
+        common_vendor.index.__f__("log", "at components/shmily-drag-image/shmily-drag-image.vue:337", "来自于拖拽的结束,上报排序事件");
         const sortedIds = imageList.value.map((item2) => item2.id);
         emit("sort-change", sortedIds);
       }
@@ -345,7 +371,7 @@ const _sfc_main = {
         const query = common_vendor.index.createSelectorQuery().in(instanceRef.value.proxy);
         query.select(".con").boundingClientRect((data) => {
           if (!data) {
-            common_vendor.index.__f__("error", "at components/shmily-drag-image/shmily-drag-image.vue:592", "未找到 .con 元素");
+            common_vendor.index.__f__("error", "at components/shmily-drag-image/shmily-drag-image.vue:617", "未找到 .con 元素");
             return;
           }
           colsValue.value = props.cols;
@@ -381,7 +407,7 @@ const _sfc_main = {
     const initViewSize = () => {
       return new Promise((resolve) => {
         if (!instanceRef.value || !instanceRef.value.proxy) {
-          common_vendor.index.__f__("warn", "at components/shmily-drag-image/shmily-drag-image.vue:643", "Component instance not available for selector query");
+          common_vendor.index.__f__("warn", "at components/shmily-drag-image/shmily-drag-image.vue:668", "Component instance not available for selector query");
           return resolve();
         }
         const query = common_vendor.index.createSelectorQuery().in(instanceRef.value.proxy);
@@ -457,35 +483,47 @@ const _sfc_main = {
         a: viewWidth.value
       }, viewWidth.value ? {
         b: common_vendor.f(imageList.value, (item, index, i0) => {
-          return {
-            a: getFirstImage(item.src),
-            b: common_vendor.t(item.name),
-            c: common_vendor.t(item.price),
-            d: common_vendor.t(item.type),
-            e: "scale(" + item.scale + ")",
-            f: !item.disable && item.ready ? 1 : "",
-            g: item.id,
-            h: item.y,
-            i: item.x,
-            j: item.disable || !item.ready,
-            k: common_vendor.o(($event) => onChange($event, item), item.id),
-            l: common_vendor.o(($event) => onLongPressStart(item, $event), item.id),
-            m: common_vendor.o(($event) => touchend(item), item.id),
-            n: common_vendor.o(($event) => go2preview(item.id), item.id),
-            o: common_vendor.o(($event) => onTouchMove($event), item.id),
-            p: item.zIndex,
-            q: item.opacity
-          };
+          return common_vendor.e(props.showDelete ? {
+            a: "96f535cf-0-" + i0,
+            b: common_vendor.p({
+              type: "clear",
+              color: "#9b9b9b",
+              size: "30"
+            }),
+            c: common_vendor.o(($event) => deleteImage(item), item.id)
+          } : {}, {
+            d: getFirstImage(item.src)
+          }, props.showItemInfo ? {
+            e: common_vendor.t(item.name),
+            f: common_vendor.t(item.price),
+            g: common_vendor.t(item.type)
+          } : {}, {
+            h: "scale(" + item.scale + ")",
+            i: !item.disable && item.ready ? 1 : "",
+            j: item.id,
+            k: item.y,
+            l: item.x,
+            m: item.disable || !item.ready,
+            n: common_vendor.o(($event) => onChange($event, item), item.id),
+            o: common_vendor.o(($event) => onLongPressStart(item, $event), item.id),
+            p: common_vendor.o(($event) => touchend(item), item.id),
+            q: common_vendor.o(($event) => go2preview(item.id), item.id),
+            r: common_vendor.o(($event) => onTouchMove($event), item.id),
+            s: item.zIndex,
+            t: item.opacity
+          });
         }),
-        c: childWidth.value,
-        d: childHeight.value,
-        e: __props.borderRadius + "rpx",
-        f: __props.itemMargin + "px",
-        g: viewWidth.value + "px",
-        h: viewHeight.value + "px",
-        i: areaHeight.value,
-        j: common_vendor.o(mouseenter),
-        k: common_vendor.o(mouseleave)
+        c: props.showDelete,
+        d: props.showItemInfo,
+        e: childWidth.value,
+        f: childHeight.value,
+        g: __props.borderRadius + "rpx",
+        h: __props.itemMargin + "px",
+        i: viewWidth.value + "px",
+        j: viewHeight.value + "px",
+        k: areaHeight.value,
+        l: common_vendor.o(mouseenter),
+        m: common_vendor.o(mouseleave)
       } : {});
     };
   }

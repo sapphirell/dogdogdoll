@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "",
   "usingComponents": {
-    "bt-cropper": "../../uni_modules/bt-cropper/components/bt-cropper/bt-cropper"
+    "bt-cropper": "../../uni_modules/bt-cropper/components/bt-cropper/bt-cropper",
+    "uni-popup": "../../uni_modules/uni-popup/components/uni-popup/uni-popup"
   }
 }

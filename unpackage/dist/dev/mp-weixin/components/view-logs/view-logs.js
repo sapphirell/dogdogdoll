@@ -39,7 +39,7 @@ const _sfc_main = {
       }
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/log/view`,
+          url: `${common_config.websiteUrl.value}/log/view`,
           method: "POST",
           data: logData,
           header: {

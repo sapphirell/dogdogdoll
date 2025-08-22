@@ -36,7 +36,7 @@ const _sfc_main = {
           return;
         }
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/message-detail`,
+          url: `${common_config.websiteUrl.value}/with-state/message-detail`,
           method: "GET",
           data: { id: messageId.value },
           header: { Authorization: common_vendor.index.getStorageSync("token") }

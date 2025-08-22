@@ -25,15 +25,31 @@
 						</view>
 						<view class="clearfix"></view>
 					</view>
-
 					<view class="pageinfo-infobox">
+						    <view class="info-item" @tap="jump2like">
+						      <!-- <uni-icons type="heart" size="30" color="#bbbbbb"></uni-icons> -->
+							  <text class="mine-info-number font-alimamashuhei">{{ likeCount }}</text>
+						      <text class="info-tap font-alimamashuhei">关注</text>
+						    </view>
+						    <view class="info-item" @tap="jump2message">
+						      <!-- <uni-icons type="chat" size="30" color="#606060"></uni-icons> -->
+							  <text class="mine-info-number font-alimamashuhei">{{ unreadCount }}</text>
+						      <text class="info-tap font-alimamashuhei">消息</text>
+						    </view>
+						    <view class="info-item" @tap="jump2collocation">
+						      <!-- <uni-icons type="compose" size="30" color="#606060"></uni-icons> -->
+							  <text class="mine-info-number font-alimamashuhei">{{ myCollocationCount }}</text>
+						      <text class="info-tap font-alimamashuhei">搭配</text>
+						    </view>
+						  </view>
+					<!-- <view class="pageinfo-infobox">
 						<view class="info-item" @tap="jump2like">
 							<image src="/static/new-icon/minefollow.gif" class="icon"></image>
 							<text class="info-tap font-alimamashuhei">关注</text>
 							<text class="mine-info-number">{{ likeCount }}</text>
 						</view>
 						<view class="info-item" @tap="jump2message">
-							<image src="/static/new-icon/minemessage.gif" class="icon"></image>
+							<image src="/static/new-icon/minemessage.gif" class="icion"></image>
 							<text class="info-tap font-alimamashuhei">消息</text>
 							<text class="mine-info-number">{{ unreadCount }}</text>
 						</view>
@@ -42,11 +58,11 @@
 							<text class="info-tap font-alimamashuhei">搭配</text>
 							<text class="mine-info-number">{{ myCollocationCount }}</text>
 						</view>
-					</view>
+					</view> -->
 				</view>
 				<view class="main-padding">
 					<view class="button-container">
-						<!-- 修改后的按钮样式 -->
+						 
 						<view class="mine-button-item" @click="jump2myComment">
 							<view class="button-content">
 								<uni-icons type="chatboxes" size="24" color="#606060"></uni-icons>
@@ -59,6 +75,14 @@
 							<view class="button-content">
 								<uni-icons type="gear" size="24" color="#606060"></uni-icons>
 								<text class="button-text">账号设置</text>
+							</view>
+							<uni-icons type="right" size="24" color="#c0c0c0"></uni-icons>
+						</view>
+						
+						<view class="mine-button-item" @click="jumpBrandBase">
+							<view class="button-content">
+								<uni-icons type="shop" size="24" color="#606060"></uni-icons>
+								<text class="button-text">作者入驻</text>
 							</view>
 							<uni-icons type="right" size="24" color="#c0c0c0"></uni-icons>
 						</view>
@@ -80,7 +104,10 @@
 						</view>
 					</view>
 				</view>
-
+				<!-- 在容器底部添加平台公告横幅 -->
+				<view class="platform-announcement" @click="jumpToAnnouncement">
+				  <text class="announcement-text">平台公告</text>
+				</view>
 			</view>
 
 			<view v-else class="unlogin-container">
@@ -267,7 +294,7 @@
 	const fetchUnreadCount = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/unread-message-count`,
+				url: `${websiteUrl.value}/with-state/unread-message-count`,
 				header: {
 					Authorization: uni.getStorageSync('token')
 				}
@@ -284,11 +311,17 @@
 			});
 		}
 	};
+	// 跳转到店铺
+	const jumpBrandBase = async () => {
+		uni.navigateTo({
+			url: '/pages/creator_base/creator_base',
+		})
+	}
 	// 获取关注数量
 	const fetchLikeCount = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/user-likes-count`,
+				url: `${websiteUrl.value}/with-state/user-likes-count`,
 				header: {
 					Authorization: uni.getStorageSync('token')
 				}
@@ -310,7 +343,7 @@
 	const fetchMyCollocationCount = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/my-collocation-count`,
+				url: `${websiteUrl.value}/with-state/my-collocation-count`,
 				header: {
 					Authorization: uni.getStorageSync('token')
 				}
@@ -335,7 +368,7 @@
 
 		// 获取七牛上传token
 		uni.request({
-				url: websiteUrl + '/with-state/qiniu-token',
+				url: websiteUrl.value + '/with-state/qiniu-token',
 				method: "POST",
 				header: {
 					'Authorization': token,
@@ -400,7 +433,7 @@
 		let token = uni.getStorageSync('token');
 		let userInfo = uni.getStorageSync('userInfo');
 		uni.request({
-			url: websiteUrl + '/with-state/update-profile',
+			url: websiteUrl.value + '/with-state/update-profile',
 			method: "POST",
 			header: {
 				'Authorization': token,
@@ -462,7 +495,7 @@
 		let password = inputPassword.value;
 
 		uni.request({
-			url: websiteUrl + '/login',
+			url: websiteUrl.value + '/login',
 			method: "POST",
 			data: {
 				account: phone,
@@ -536,7 +569,12 @@
 		return `${statusBarHeight}px` // 44px 为 iOS 导航栏标准高度
 		// #endif
 	})
-
+  // 添加跳转到公告详情的方法
+  function jumpToAnnouncement() {
+    uni.navigateTo({
+      url: '/pages/article_detail/article_detail?id=3'
+    })
+  }
 
 	watch(
 		() => global.isLogin, // 使用函数返回要监听的值
@@ -587,6 +625,8 @@
 
 
 <style lang="scss" scoped>
+
+	
 	.container {
 		background: #fff;
 	}
@@ -595,6 +635,11 @@
 	$hover-color: #1ed1e1;
 	$border-color: #e6e6e6;
 	$radius: 8px;
+	
+	.font-alimamashuhei {
+		font-family: "alimamamshuhei" !important;
+	}
+	
 
 	.mine {
 		// background: linear-gradient(180deg, rgb(185 195 253) 0%, rgb(211 245 255) 100%);
@@ -611,6 +656,8 @@
 			width: 100%;
 			padding: 60rpx 50rpx 20rpx 50rpx;
 			box-sizing: border-box;
+			position: relative;
+			top:20rpx;
 		}
 	}
 
@@ -677,49 +724,46 @@
 	}
 
 	.pageinfo-infobox {
-		width: 620rpx;
-		display: flex;
-		justify-content: space-evenly;
-		padding: 10rpx;
-		background: #fff;
-		margin: 0rpx auto;
-		border-radius: 20rpx;
-		box-shadow: 0 0 20px #ff898926;
-		padding-bottom: 30rpx;
-		position: relative;
-		top: 40rpx;
-
-		.info-item {
-			width: 200rpx;
-			align-items: center;
-			padding: 10rpx 0rpx;
-
-			.info-tap {
-				display: block;
-				width: 100%;
-				text-align: center;
-				font-size: 24rpx;
-				color: #626262;
-			}
-
-			.mine-info-number {
-				display: block;
-				width: 100%;
-				text-align: center;
-				font-size: 24rpx;
-				color: #949494;
-				font-weight: 1000;
-				margin-top: 20rpx;
-			}
-
-			.icon {
-				opacity: 0.7;
-				width: 120rpx;
-				height: 120rpx;
-				margin: 10rpx 40rpx 0rpx 40rpx;
+			width: 620rpx;
+			display: flex;
+			justify-content: space-evenly;
+			padding: 10rpx;
+			background: #fff;
+			margin: 0rpx auto;
+			border-radius: 20rpx;
+			box-shadow: 0 0 20px #ff898926;
+			padding-bottom: 30rpx;
+			position: relative;
+			top: 40rpx;
+			.info-item {
+				display: flex; /* 添加flex布局 */
+				flex-direction: column; /* 垂直排列 */
+				align-items: center; /* 水平居中 */
+				justify-content: center; /* 垂直居中 */
+				width: 180rpx; /* 固定宽度 */
+				gap:20rpx;
+				.uni-icons {
+					width: 80rpx;
+					height: 80rpx;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					background: #fff;
+					border-radius: 50%;
+					// box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+				}
+				.info-tap {
+					font-size: 26rpx;
+					color: #626262;
+				}
+				.mine-info-number {
+					font-size: 26rpx;
+					color: #949494;
+					font-weight: 1000;
+					margin-top: 10rpx;
+				}
 			}
 		}
-	}
 
 	.button-container {
 		// padding: 40rpx;
@@ -1009,4 +1053,50 @@
 	    }
 	  }
 	}
+	/* 添加平台公告横幅样式 */
+	  .platform-announcement {
+	    width: 650rpx;
+	    height: 180rpx;
+	    margin: 40rpx auto;
+	    background-image: url('https://images1.fantuanpu.com/box/admin/c73541842fb9d9d2e1a6bef376ef784c');
+	    background-size: contain;
+	    background-position: center;
+	    border-radius: 20rpx;
+	    box-shadow: 0 8rpx 30rpx rgb(145, 145, 145, 30%);
+	    display: flex;
+	    justify-content: center;
+	    align-items: flex-end; /* 文字下沉 */
+	    padding-bottom: 25rpx; /* 文字离底部距离 */
+	    position: relative;
+	    overflow: hidden;
+		
+	    
+	    /* 添加渐变覆盖层增强文字可读性 */
+	    &::before {
+	      content: '';
+	      position: absolute;
+	      bottom: 0;
+	      left: 0;
+	      right: 0;
+	      height: 50%;
+	      // background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+	      z-index: 1;
+	    }
+	    
+	    .announcement-text {
+	      font-size: 34rpx;
+	      font-weight: 900;
+	      color: #7d7d7d;
+	      letter-spacing: 4rpx;
+	      position: relative;
+	      z-index: 2;
+			text-align: right;
+	      background-clip: text;
+	    }
+	  }
+	  
+	  /* 在未登录状态下调整底部间距 */
+	  .unlogin-container {
+	    padding-bottom: 60rpx;
+	  }
 </style>

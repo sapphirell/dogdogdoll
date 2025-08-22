@@ -47,7 +47,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/log/view`,
+				url: `${websiteUrl.value}/log/view`,
 				method: 'POST',
 				data: logData,
 				header: {

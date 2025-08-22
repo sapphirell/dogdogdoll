@@ -1,20 +1,68 @@
 <script setup>
-	import {
-		ref,
-		computed
-	} from 'vue'
+import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
+onLaunch(() => {
+  console.log('App Launch')
+
+  
+})
+
+onShow(() => {
+  console.log('App Show')
+  setTimeout(() => {
+  	  console.log("开始加载字体...")
+  	  loadFonts()
+  	  console.log("结束加载字体")
+  },2000)
+})
+
+onHide(() => {
+  console.log('App Hide')
+})
+
+function loadFonts() {
+  // 加载第一个字体
+  uni.loadFontFace({
+    family: 'cutefont',
+    // 根据平台选择路径，或者使用同一路径
+    source: 'url("https://images1.fantuanpu.com/font/ry-super-less-rokk.ttf")',
+    global: true,
+    success() {
+      console.log('字体cutefont加载成功')
+    },
+    fail(err) {
+      console.log('字体cutefont加载失败', err)
+    }
+  })
+
+  // // 加载第二个字体
+  // uni.loadFontFace({
+  //   family: 'alimamamshuhei',
+  //   source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
+  //   global: true,
+  //   success() {
+  //     console.log('字体alimamamshuhei加载成功')
+  //   },
+  //   fail(err) {
+  //     console.log('字体alimamamshuhei加载失败', err)
+  //   }
+  // })
+}
 </script>
 
 <style>
 	/*每个页面公共css */
-
+	@import 'common/font.css';
 
 	.backbody {
 		background-color: #C0EDE9;
 		height: 100vh;
 	}
-
+	/*  tab图标 */
+/* 	.uni-tabbar .uni-tabbar__icon {
+		width: 65rpx !important;
+		height: 465rpx !important;
+	} */
 	.avatar {
 		border-radius: 50%;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -35,6 +83,7 @@
 	.font-alimamashuhei {
 		font-family: "alimamamshuhei" !important;
 	}
+
 	.font-cute {
 		font-family: "cutefont";
 	}
@@ -95,10 +144,11 @@
 		height: auto;
 		aspect-ratio: 1;
 	}
+
 	::-webkit-scrollbar {
-		width: 0!important;
-		height: 0!important;
-		background-color: transparent!important;
-		display: none!important;
+		width: 0 !important;
+		height: 0 !important;
+		background-color: transparent !important;
+		display: none !important;
 	}
 </style>

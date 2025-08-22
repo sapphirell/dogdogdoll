@@ -94,7 +94,7 @@
 			const targetPage = isLoadMore ? page.value : 1;
 
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/user-messages?page=${targetPage}`,
+				url: `${websiteUrl.value}/with-state/user-messages?page=${targetPage}`,
 				header: {
 					Authorization: uni.getStorageSync('token')
 				}
@@ -144,7 +144,7 @@
 	const fetchUnreadCount = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/unread-message-count`,
+				url: `${websiteUrl.value}/with-state/unread-message-count`,
 				header: {
 					Authorization: uni.getStorageSync('token')
 				}
@@ -192,7 +192,7 @@
 	const deleteMessage = async (messageId) => {
 		try {
 			await uni.request({
-				url: `${websiteUrl}/with-state/delete-message`,
+				url: `${websiteUrl.value}/with-state/delete-message`,
 				method: 'POST',
 				header: {
 					'Authorization': uni.getStorageSync('token'),
@@ -220,7 +220,7 @@
 	const markAsRead = async (messageId) => {
 		try {
 			await uni.request({
-				url: `${websiteUrl}/with-state/mark-message-read`,
+				url: `${websiteUrl.value}/with-state/mark-message-read`,
 				method: 'POST',
 				header: {
 					'Authorization': uni.getStorageSync('token'),

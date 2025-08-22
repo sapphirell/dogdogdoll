@@ -4,29 +4,50 @@ const common_config = require("../../common/config.js");
 if (!Array) {
   const _easycom_view_logs2 = common_vendor.resolveComponent("view-logs");
   const _easycom_uni_rate2 = common_vendor.resolveComponent("uni-rate");
+  const _easycom_uni_icons2 = common_vendor.resolveComponent("uni-icons");
   const _easycom_comment_list2 = common_vendor.resolveComponent("comment-list");
   const _easycom_comment_input2 = common_vendor.resolveComponent("comment-input");
-  (_easycom_view_logs2 + _easycom_uni_rate2 + _easycom_comment_list2 + _easycom_comment_input2)();
+  (_easycom_view_logs2 + _easycom_uni_rate2 + _easycom_uni_icons2 + _easycom_comment_list2 + _easycom_comment_input2)();
 }
 const _easycom_view_logs = () => "../../components/view-logs/view-logs.js";
 const _easycom_uni_rate = () => "../../uni_modules/uni-rate/components/uni-rate/uni-rate.js";
+const _easycom_uni_icons = () => "../../uni_modules/uni-icons/components/uni-icons/uni-icons.js";
 const _easycom_comment_list = () => "../../components/comment-list/comment-list.js";
 const _easycom_comment_input = () => "../../components/comment-input/comment-input.js";
 if (!Math) {
-  (_easycom_view_logs + _easycom_uni_rate + _easycom_comment_list + _easycom_comment_input)();
+  (_easycom_view_logs + _easycom_uni_rate + _easycom_uni_icons + _easycom_comment_list + _easycom_comment_input)();
 }
 const _sfc_main = {
   __name: "brand",
   props: ["brand_id"],
   setup(__props) {
     const props = __props;
-    common_vendor.index.__f__("log", "at pages/brand/brand.vue:121", props);
+    common_vendor.index.__f__("log", "at pages/brand/brand.vue:139", props);
+    const firstLoadGoods = common_vendor.ref(true);
+    const activeTab = common_vendor.ref(0);
+    const hasAddedArtistTab = common_vendor.ref(false);
+    const tabs = common_vendor.ref([
+      {
+        label: "贩售作品"
+      },
+      {
+        label: "消息动态"
+      }
+    ]);
+    const jumpToArtistPage = () => {
+      common_vendor.index.navigateTo({
+        url: `/pages/artist_info/artist_info?brand_id=${props.brand_id}`
+      });
+    };
+    const switchTab = (index) => {
+      activeTab.value = index;
+    };
     const hasLikeBrand = common_vendor.ref(false);
     let newsList = common_vendor.ref([]);
     let newsPage = common_vendor.ref({
       page_index: 1,
       // 当前页码
-      page_size: 3,
+      page_size: 10,
       // 每页数量
       total: 0
       // 总数
@@ -46,8 +67,8 @@ const _sfc_main = {
       target
     }) => {
       var _a;
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:153", "parent", parent);
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:154", "target", target);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:196", "parent", parent);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:197", "target", target);
       let item = parent;
       if (target != null) {
         item = target;
@@ -56,7 +77,7 @@ const _sfc_main = {
         replyForItem.value = {};
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:165", "item", item);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:208", "item", item);
       replyForItem.value = item;
       (_a = commentInputRef.value) == null ? void 0 : _a.focusInput();
     };
@@ -70,7 +91,7 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:181", "reply_info", replyForItem.value);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:224", "reply_info", replyForItem.value);
       const requestData = {
         content: submitData.content,
         origin: submitData.origin,
@@ -141,7 +162,7 @@ const _sfc_main = {
         });
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-comment",
+        url: common_config.websiteUrl.value + "/with-state/add-comment",
         method: "POST",
         header: {
           "Authorization": token
@@ -190,7 +211,7 @@ const _sfc_main = {
       });
     };
     const onRateChange = (e) => {
-      common_vendor.index.__f__("log", "at pages/brand/brand.vue:322", e);
+      common_vendor.index.__f__("log", "at pages/brand/brand.vue:365", e);
       if (!common_config.global.isLogin) {
         common_vendor.index.showToast({
           title: "请先登录",
@@ -224,7 +245,7 @@ const _sfc_main = {
           title: "提交中..."
         });
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/add-vote-score",
+          url: common_config.websiteUrl.value + "/with-state/add-vote-score",
           method: "POST",
           header: {
             "Authorization": token,
@@ -251,7 +272,7 @@ const _sfc_main = {
         }
       } catch (err) {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:394", "评分失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:437", "评分失败:", err);
         common_vendor.index.showToast({
           title: "评分失败，请重试",
           icon: "none"
@@ -260,7 +281,7 @@ const _sfc_main = {
     }
     function getBrandNews() {
       common_vendor.index.request({
-        url: `${common_config.websiteUrl}/brand-news-list?brand_id=${props.brand_id}&page=${newsPage.value.page_index}&page_size=${newsPage.value.page_size}`,
+        url: `${common_config.websiteUrl.value}/brand-news-list?brand_id=${props.brand_id}&page=${newsPage.value.page_index}&page_size=${newsPage.value.page_size}`,
         method: "GET",
         success: (res) => {
           if (res.data.status === "success") {
@@ -287,19 +308,25 @@ const _sfc_main = {
     }
     function getBrandsInfo() {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/brand-info?id=" + props.brand_id,
+        url: common_config.websiteUrl.value + "/brand-info?id=" + props.brand_id,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:453", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:496", res.data.data);
           brand.value = res.data.data;
           common_vendor.index.setNavigationBarTitle({
             title: res.data.data.brand_name
           });
           getHasLikeBrand();
+          if (!hasAddedArtistTab.value && (brand.value.is_bjd_artist == 1 || brand.value.is_bjd_hairstylist == 1)) {
+            tabs.value.push({
+              label: "接单主页"
+            });
+            hasAddedArtistTab.value = true;
+          }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:463", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:513", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -320,7 +347,7 @@ const _sfc_main = {
         return;
       }
       try {
-        const url = `${common_config.websiteUrl}/with-state/${hasLikeBrand.value ? "unlike" : "add-like"}`;
+        const url = `${common_config.websiteUrl.value}/with-state/${hasLikeBrand.value ? "unlike" : "add-like"}`;
         const res = await common_vendor.index.request({
           url,
           method: "POST",
@@ -347,7 +374,7 @@ const _sfc_main = {
           });
         }
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:515", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:565", err);
         common_vendor.index.showToast({
           title: "操作失败",
           icon: "none"
@@ -358,7 +385,7 @@ const _sfc_main = {
       var _a;
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/hasLike?id=${parseInt(props.brand_id)}&type=2`,
+          url: `${common_config.websiteUrl.value}/with-state/hasLike?id=${parseInt(props.brand_id)}&type=2`,
           method: "POST",
           header: {
             Authorization: common_vendor.index.getStorageSync("token")
@@ -366,7 +393,7 @@ const _sfc_main = {
         });
         hasLikeBrand.value = ((_a = res.data.data) == null ? void 0 : _a.id) > 0;
       } catch (err) {
-        common_vendor.index.__f__("error", "at pages/brand/brand.vue:537", "获取关注状态失败:", err);
+        common_vendor.index.__f__("error", "at pages/brand/brand.vue:587", "获取关注状态失败:", err);
       }
     };
     function formatTimestamp(timestamp) {
@@ -379,39 +406,38 @@ const _sfc_main = {
       date.getSeconds().toString().padStart(2, "0");
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
-    function getBrandGoods() {
+    function getBrandGoods(isLoadMore = false) {
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/brand-goods?brand_id=" + props.brand_id + "&page=" + page.value,
+        url: common_config.websiteUrl.value + "/brand-goods?brand_id=" + props.brand_id + "&page=" + page.value,
         method: "GET",
         timeout: 5e3,
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:562", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:612", res.data.data);
           goods.value.page_index = res.data.data.page_index;
           goods.value.total = res.data.data.total;
-          goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data.goods_list) : res.data.data.goods_list;
+          if (isLoadMore) {
+            goods.value.goods_list = goods.value.goods_list.concat(res.data.data.goods_list);
+          } else {
+            goods.value.goods_list = res.data.data.goods_list;
+          }
           if (res.data.data.goods_list.length > 0) {
             page.value += 1;
           }
-          if (res.data.data.goods_list.length == 0 && page.value > 1) {
+          if (isLoadMore && res.data.data.goods_list.length == 0 && page.value > 1) {
             common_vendor.index.showToast({
               title: "没有更多数据了",
               icon: "none"
             });
           }
+          firstLoadGoods.value = false;
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:580", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:641", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
           });
         }
-      });
-    }
-    function viewFullImage(currentUrl, allUrl) {
-      common_vendor.index.previewImage({
-        current: currentUrl,
-        urls: allUrl
       });
     }
     function getMyScore(type, targetId) {
@@ -423,7 +449,7 @@ const _sfc_main = {
         return 0;
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/my-vote-record",
+        url: common_config.websiteUrl.value + "/with-state/my-vote-record",
         method: "GET",
         header: {
           "Authorization": token,
@@ -434,7 +460,7 @@ const _sfc_main = {
           type
         },
         success: (res) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:686", res.data.data);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:746", res.data.data);
           if (res.data.status == "success") {
             myRateValue.value = res.data.data.score;
             return res.data.data.score;
@@ -447,7 +473,7 @@ const _sfc_main = {
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("log", "at pages/brand/brand.vue:699", err);
+          common_vendor.index.__f__("log", "at pages/brand/brand.vue:759", err);
           common_vendor.index.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -472,7 +498,9 @@ const _sfc_main = {
     common_vendor.onShow(() => {
       common_config.getUserInfo();
       getBrandsInfo();
-      getBrandGoods();
+      if (firstLoadGoods.value) {
+        getBrandGoods();
+      }
       getBrandNews();
       if (common_config.global.isLogin) {
         getMyScore(1, props.brand_id);
@@ -500,7 +528,14 @@ const _sfc_main = {
         k: hasLikeBrand.value ? "#ff6a6c" : "#65C3D6",
         l: common_vendor.t(common_vendor.unref(brand).nickname_list),
         m: common_vendor.t(common_vendor.unref(brand).description),
-        n: common_vendor.t(common_vendor.unref(goods).total),
+        n: common_vendor.f(tabs.value, (tab, index, i0) => {
+          return {
+            a: common_vendor.t(tab.label),
+            b: index,
+            c: activeTab.value === index ? 1 : "",
+            d: common_vendor.o(($event) => switchTab(index), index)
+          };
+        }),
         o: common_vendor.f(common_vendor.unref(goods).goods_list, (item, index, i0) => {
           return {
             a: item.goods_images[0],
@@ -510,7 +545,7 @@ const _sfc_main = {
           };
         }),
         p: common_vendor.o(getBrandGoods),
-        q: common_vendor.t(common_vendor.unref(newsPage).total),
+        q: activeTab.value === 0,
         r: common_vendor.f(common_vendor.unref(newsList), (item, index, i0) => {
           return common_vendor.e({
             a: common_vendor.t(item.title),
@@ -519,31 +554,38 @@ const _sfc_main = {
             c: common_vendor.f(item.image_list, (img, imgIndex, i1) => {
               return {
                 a: img,
-                b: common_vendor.o(($event) => viewFullImage(img, item.image_list), imgIndex),
+                b: common_vendor.o(($event) => jump2saleNews(item), imgIndex),
                 c: imgIndex
               };
             })
           } : {}, {
             d: common_vendor.t(item.content),
             e: common_vendor.t(formatTimestamp(item.created_at)),
-            f: common_vendor.o(($event) => jump2saleNews(item), item.id),
-            g: item.id
+            f: item.id
           });
         }),
-        s: common_vendor.sr(commentListRef, "1a297a1d-2", {
+        s: activeTab.value === 1,
+        t: common_vendor.p({
+          type: "arrow-right",
+          size: "20",
+          color: "#65C3D6"
+        }),
+        v: common_vendor.o(jumpToArtistPage),
+        w: activeTab.value === 2,
+        x: common_vendor.sr(commentListRef, "1a297a1d-3", {
           "k": "commentListRef"
         }),
-        t: common_vendor.o(handleReplyComment),
-        v: common_vendor.p({
+        y: common_vendor.o(handleReplyComment),
+        z: common_vendor.p({
           type: 1,
           ["relation-id"]: parseInt(props.brand_id)
         }),
-        w: common_vendor.sr(commentInputRef, "1a297a1d-3", {
+        A: common_vendor.sr(commentInputRef, "1a297a1d-4", {
           "k": "commentInputRef"
         }),
-        x: common_vendor.o(handleCommentSubmit),
-        y: common_vendor.o((val) => common_vendor.isRef(replyForItem) ? replyForItem.value = val : replyForItem = val),
-        z: common_vendor.p({
+        B: common_vendor.o(handleCommentSubmit),
+        C: common_vendor.o((val) => common_vendor.isRef(replyForItem) ? replyForItem.value = val : replyForItem = val),
+        D: common_vendor.p({
           ["reply-info"]: common_vendor.unref(replyForItem),
           ["target-id"]: props.brand_id
         })

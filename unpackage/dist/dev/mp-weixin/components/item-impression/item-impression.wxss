@@ -42,6 +42,10 @@
   transition: all 0.3s ease;
   flex-shrink: 0;
 }
+.impression-item .highlight {
+  color: #fff !important;
+  background: #64c6dc !important;
+}
 .impression-item.active {
   background-color: #e6f9fc;
   /* 浅蓝色背景 */

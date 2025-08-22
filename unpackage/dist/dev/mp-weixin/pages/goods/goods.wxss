@@ -438,3 +438,70 @@
 .swiper-container.data-v-7e2880f6 {
   margin-bottom: 0;
 }
+
+/* 新增：妆图展示区域样式 */
+.faceup-section.data-v-7e2880f6 {
+  background: #fff;
+  border-radius: 20rpx;
+  margin: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+.faceup-section .section-header.data-v-7e2880f6 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25rpx;
+}
+.faceup-section .section-title.data-v-7e2880f6 {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #64c6dc;
+  padding-left: 10rpx;
+  border-left: 8rpx solid #64c6dc;
+}
+.faceup-section .refresh-btn.data-v-7e2880f6 {
+  display: flex;
+  align-items: center;
+  color: #64c6dc;
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  border: 1rpx solid #64c6dc;
+  border-radius: 30rpx;
+}
+.faceup-section .refresh-btn.data-v-7e2880f6:active {
+  background-color: #f0f9ff;
+}
+.faceup-section .faceup-list.data-v-7e2880f6 {
+  width: 100%;
+  white-space: nowrap;
+  margin-top: 15rpx;
+  padding: 8rpx 0;
+}
+.faceup-section .faceup-item.data-v-7e2880f6 {
+  display: inline-block;
+  width: 200rpx;
+  height: 280rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  margin-right: 18rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+.faceup-section .faceup-item image.data-v-7e2880f6 {
+  width: 100%;
+  height: 100%;
+}
+.faceup-section .faceup-item .faceup-title.data-v-7e2880f6 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 22rpx;
+  padding: 10rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

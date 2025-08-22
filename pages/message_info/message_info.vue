@@ -76,7 +76,7 @@ const fetchMessageDetail = async () => {
     }
 
     const res = await uni.request({
-      url: `${websiteUrl}/with-state/message-detail`,
+      url: `${websiteUrl.value}/with-state/message-detail`,
       method: 'GET',
       data: { id: messageId.value },
       header: { Authorization: uni.getStorageSync('token') }

@@ -40,9 +40,9 @@
 			return
 		}
 		let token = uni.getStorageSync('token');
-		let url = websiteUrl + '/with-state/account-book';
+		let url = websiteUrl.value + '/with-state/account-book';
 		if (type && type !== "全部") {
-			url = websiteUrl + '/with-state/account-book?type=' + type;
+			url = websiteUrl.value + '/with-state/account-book?type=' + type;
 		}
 	
 		// 获取账本数据 /with-state//account-book

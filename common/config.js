@@ -1,14 +1,21 @@
 import {
-	reactive
+	reactive,ref
 } from 'vue';
 
 // 网站域名
-export const websiteUrl = 'http://localhost:8080';
-// export const websiteUrl = 'https://api.fantuanpu.com';	
+export const websiteUrl = ref('https://api.fantuanpu.com');
+// export const websiteUrl = ref('http://localhost:8080');
+// 测试环境
+export const devUrl = 'http://localhost:8080';
+// 中国服务器API
+export const cnURL = 'https://api.fantuanpu.com';	
+// US API
+export const usURL = 'https://us-api.dogdogdoll.com'
+
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
 // 客户端版本号
-export const dogdogdollVersion = "1.0.41"
+export const dogdogdollVersion = "1.1.2"
 
 // 全局状态
 export let global = reactive({
@@ -42,7 +49,7 @@ export function wechatSignLogin() {
 			}
 
 			uni.request({
-				url: `${websiteUrl}/login-with-wechat`,
+				url: `${websiteUrl.value}/login-with-wechat`,
 				method: 'POST',
 				data: {
 					js_token: code
@@ -118,7 +125,7 @@ export function bindWechat() {
 
         // 3. 调用后端绑定接口
         uni.request({
-          url: `${websiteUrl}/with-state/bind-wechat`,
+          url: `${websiteUrl.value}/with-state/bind-wechat`,
           method: 'POST',
           header: {
             Authorization: token,
@@ -172,7 +179,7 @@ export function getUserInfo() {
 	}
 	console.log("请求接口")
 	uni.request({
-		url: `${websiteUrl}/with-state/mine`,
+		url: `${websiteUrl.value}/with-state/mine`,
 		method: 'GET',
 		header: {
 			Authorization: token
@@ -206,7 +213,7 @@ export function asyncGetUserInfo() {
 		}
 
 		uni.request({
-			url: `${websiteUrl}/with-state/mine`,
+			url: `${websiteUrl.value}/with-state/mine`,
 			method: 'GET',
 			header: {
 				Authorization: token
@@ -215,6 +222,7 @@ export function asyncGetUserInfo() {
 				const data = res.data.data;
 				if (data) {
 					console.log("返回：", data);
+				
 					saveUserInfo(data);
 					resolve(data); // 返回用户信息
 				} else {
@@ -243,7 +251,7 @@ export async function voteScore(type, score, targetId) {
 		return 0;
 	}
 	uni.request({
-		url: websiteUrl + '/with-state/add-vote-score',
+		url: websiteUrl.value + '/with-state/add-vote-score',
 		method: 'POST',
 		header: {
 			'Authorization': token,
@@ -319,7 +327,7 @@ export function getScene() {
 export function getGoodsInfo (id) {
 		return new Promise((resolve, reject) => {
 			uni.request({
-				url: websiteUrl + '/goods?id=' + id,
+				url: websiteUrl.value + '/goods?id=' + id,
 				method: 'GET',
 				timeout: 5000,
 				success: (res) => {
@@ -333,6 +341,40 @@ export function getGoodsInfo (id) {
 		})
 	}
 
+
+// export const showModal = (options) => {
+//     let params = {
+//         title: "提示",
+//         content: "自定义内容", 
+//         align: "center", // 对齐方式 left/center/right
+//         cancelText: "取消", // 取消按钮的文字
+//         cancelColor: "#8F8F8F", // 取消按钮颜色
+//         confirmText: "确定", // 确认按钮文字
+//         confirmColor: "#FFAD15", // 确认按钮颜色 
+//         showCancel: true, // 是否显示取消按钮，默认为 true
+//     }
+
+//     Object.assign(params, options)
+
+//     let list = []
+//     Object.keys(params).forEach(ele => {
+//         list.push(ele + "=" + params[ele])
+//     })
+//     let paramsStr = list.join('&')
+
+//     uni.navigateTo({
+//         url: "/pages/modal/modal?" + paramsStr
+//     })
+
+//     return new Promise((resolve, reject) => {
+//         uni.$once("AppModalCancel", () => {
+//             reject()
+//         })
+//         uni.$once("AppModalConfirm", () => {
+//             resolve()
+//         })
+//     });
+// }
 
 // 工具函数
 function saveUserInfo(data) {
@@ -355,3 +397,4 @@ function handleRequestError(error, message = '请求失败') {
 		icon: 'none'
 	});
 }
+

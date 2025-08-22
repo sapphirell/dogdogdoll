@@ -10,13 +10,12 @@
 				<text style="float: right;margin: 5px 0px;">{{brand.country_name}} / {{brand.type}}</text>
 				<view style="clear: both;"></view>
 			</view>
-
 			<!-- 优化后的评分区域 -->
 			<view
 				style="margin: 20rpx 0rpx;display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;">
 				<view style="display: flex; align-items: center; flex-grow: 1;">
-					<uni-rate style="margin-top: 5px;" :value="brand.score" allow-half="true" 
-						activeColor="#65C3D6" @change="onRateChange" is-fill="false" />
+					<uni-rate style="margin-top: 5px;" :value="brand.score" allow-half="true" activeColor="#65C3D6"
+						@change="onRateChange" is-fill="false" />
 					<text style="margin-left: 8rpx; position: relative; top: 5px;">
 						{{brand.score}}（{{brand.vote_number}}次评分)
 					</text>
@@ -25,74 +24,96 @@
 					{{ hasLikeBrand ? '已关注' : '+ 关注品牌' }}
 				</text>
 			</view>
-
 			<view style="margin-top: 15px;">
-				<text>别名：{{brand.nickname_list}}</text>
+				<text>别名：{{brand.nickname_list || "暂无设置"}}</text>
 			</view>
 			<view style="margin-top: 10px;">
-				<text>简介：{{brand.description}}</text>
+				<text>简介：{{brand.description || "暂未设置"}}</text>
+			</view>
+			<view style="margin-top: 10px;">
+			  <text @tap="copyUrl(brand.website_url)">贩售地址：点击复制</text>
 			</view>
 			<div style="clear: both;"></div>
-			<!-- 品牌商品列表 -->
-			<text style="color: rgb(100, 198, 220);display: block;margin: 20px 0px;">收录作品 ({{goods.total}})</text>
-			<view class="brand_goods">
-				<view class="brand_goods_item" style="" v-for="(item, index) in goods.goods_list" :key="item.id">
-					<navigator @click="jumpGoods(item.id)" style="width: 100%;height: 100%;">
-						<view style="width: 100%;height: calc(100% - 20px)">
-							<image style="width: 100%;height: 100%;" :src="item.goods_images[0]" mode="aspectFill"
-								class="brand_goods_image"></image>
+
+			<!-- Tab切换区域 -->
+			<view class="tabs-container">
+				<view v-for="(tab, index) in tabs" :key="index" class="tab-item"
+					:class="{ 'active-tab': activeTab === index }" @click="switchTab(index)">
+					<text>{{ tab.label }}</text>
+				</view>
+			</view>
+
+			<!-- Tab内容区域 -->
+			<view v-show="activeTab === 0">
+				<!-- 品牌商品列表 -->
+				<!-- <text style="color: rgb(100, 198, 220);display: block;margin: 20px 0px;">贩售作品 ({{goods.total}})</text> -->
+				<view class="brand_goods">
+					<view class="brand_goods_item" style="" v-for="(item, index) in goods.goods_list" :key="item.id">
+						<navigator @click="jumpGoods(item.id)" style="width: 100%;height: 100%;">
+							<view style="width: 100%;height: calc(100% - 20px)">
+								<image style="width: 100%;height: 100%;" :src="item.goods_images[0]" mode="aspectFill"
+									class="brand_goods_image"></image>
+							</view>
+							<text
+								style="display: block;width: 100%;text-align: center;font-weight: 900;color: #586f88">{{item.name}}</text>
+						</navigator>
+					</view>
+				</view>
+				<button class="load_more" @click="getBrandGoods">加载更多</button>
+			</view>
+
+			<view v-show="activeTab === 1">
+				<!-- 品牌图透模块 - 两列布局 -->
+				<!-- <text class="section-title">消息动态 ({{newsPage.total}})</text> -->
+				<view class="news-list" style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+					<view class="news-item" style="position: relative; width: calc(50% - 10px); margin-bottom: 20px;"
+						v-for="(item, index) in newsList" :key="item.id">
+						<view class="news-header">
+							<text class="news-header-title">{{item.title}}</text>
 						</view>
-						<text
-							style="display: block;width: 100%;text-align: center;font-weight: 900;color: #586f88">{{item.name}}</text>
-					</navigator>
-				</view>
-			</view>
-			<button class="load_more" @click="getBrandGoods">加载更多</button>
 
-			<!-- 品牌图透模块 -->
-			<text class="section-title">品牌图透 ({{newsPage.total}})</text>
-			<view class="news-list">
-				<view class="news-item" style="position: relative;" v-for="(item, index) in newsList" :key="item.id">
-					<view class="news-header">
-						<text class="news-header-title">{{item.title}}</text>
-					</view>
+						<!-- 添加轮播图 -->
+						<view class="news-images" v-if="item.image_list && item.image_list.length > 0">
+							<swiper class="image-swiper" :autoplay="true" :circular="true" indicator-dots>
+								<swiper-item v-for="(img, imgIndex) in item.image_list" :key="imgIndex">
+									<image :src="img" mode="aspectFill" class="swiper-image"
+										@click="jump2saleNews(item)" />
+								</swiper-item>
+							</swiper>
+						</view>
 
-					<!-- 添加轮播图 -->
-					<view class="news-images" v-if="item.image_list && item.image_list.length > 0">
-						<swiper class="image-swiper" :autoplay="true" :circular="true" indicator-dots>
-							<swiper-item v-for="(img, imgIndex) in item.image_list" :key="imgIndex">
-								<image :src="img" mode="aspectFill" class="swiper-image" @tap="viewFullImage(img, item.image_list)" />
-							</swiper-item>
-						</swiper>
-					</view>
+						<view class="news-content">{{item.content}}</view>
 
-					<view class="news-content">{{item.content}}</view>
-
-					<!-- 添加品牌标签 -->
-					<view class="news-footer">
-						<text class="news-time">{{formatTimestamp(item.created_at)}}</text>
-						<text class="view-more" @click="jump2saleNews(item)">查看详情 →</text>
+						<!-- 添加品牌标签 -->
+						<view class="news-footer">
+							<text class="news-time">{{formatTimestamp(item.created_at)}}</text>
+						</view>
 					</view>
 				</view>
 			</view>
 
+
+			<view v-show="activeTab === 2">
+				<!-- 接单主页 -->
+				<view style="text-align: center; padding: 50rpx 0;">
+					<button class="artist-button" @click="jumpToArtistPage">
+						<text>前往接单主页</text>
+						<uni-icons type="arrow-right" size="20" color="#65C3D6"></uni-icons>
+					</button>
+				</view>
+			</view>
 
 			<view>
 				<!-- 评论区 -->
 				<comment-list ref="commentListRef" :type="1" :relation-id="parseInt(props.brand_id)"
 					@reply="handleReplyComment" />
-
 			</view>
-
 		</view>
 		<!-- 一个不可见透明元素，撑起80px高度 -->
 		<view style="height: 80px;"></view>
-
 		<!-- 输入框 -->
 		<comment-input ref="commentInputRef" :reply-info="replyForItem" :target-id="props.brand_id"
 			@submit="handleCommentSubmit" @update:reply-info="val => replyForItem = val" />
-
-
 	</view>
 </template>
 
@@ -119,12 +140,37 @@
 
 	const props = defineProps(["brand_id"])
 	console.log(props)
+	// 添加一个标志位，记录是否是首次加载商品
+	const firstLoadGoods = ref(true)
 
+	// Tab相关状态
+	const activeTab = ref(0)
+	// 记录是否已添加接单主页标签
+	const hasAddedArtistTab = ref(false)
+	const tabs = ref([{
+			label: '贩售作品'
+		},
+		{
+			label: '消息动态'
+		},
+	])
+
+	// 跳转到妆师接单主页
+	const jumpToArtistPage = () => {
+		uni.navigateTo({
+			url: `/pages/artist_info/artist_info?brand_id=${props.brand_id}`
+		})
+	}
+
+	// Tab切换方法
+	const switchTab = (index) => {
+		activeTab.value = index
+	}
 	const hasLikeBrand = ref(false)
 	let newsList = ref([]); // 图透列表
 	let newsPage = ref({
 		page_index: 1, // 当前页码
-		page_size: 3, // 每页数量
+		page_size: 10, // 每页数量
 		total: 0, // 总数
 	});
 
@@ -167,156 +213,196 @@
 		// 聚焦输入框
 		commentInputRef.value?.focusInput()
 	}
-	 // 评论提交处理
-	  const handleCommentSubmit = (submitData) => {
-	    let token = uni.getStorageSync('token');
-	    if (!global.isLogin) {
+	
+	// 在script中添加复制方法和评分检查
+	const copyUrl = (url) => {
+	  // 检查贩售地址是否为空
+	  if (!url) {
+	    uni.showToast({
+	      title: '暂无贩售地址',
+	      icon: 'none'
+	    })
+	    return
+	  }
+	  
+	  // 检查用户是否已评分
+	  if (myRateValue.value === 0) {
+	    uni.showToast({
+	      title: '请先评分后再复制',
+	      icon: 'none'
+	    })
+	    return
+	  }
+	  
+	  // 复制到剪贴板
+	  uni.setClipboardData({
+	    data: url,
+	    success: () => {
 	      uni.showToast({
-	        title: '请先登录',
+	        title: '已复制贩售地址',
+	        icon: 'success'
+	      })
+	    },
+	    fail: (err) => {
+	      console.error('复制失败:', err)
+	      uni.showToast({
+	        title: '复制失败',
 	        icon: 'none'
 	      })
-	      return
 	    }
-	    
-	    console.log("reply_info", replyForItem.value)
-	    const requestData = {
-	      content: submitData.content,
-	      origin: submitData.origin,
-	      target_id: parseInt(props.brand_id),
-	      type: 1, // 品牌评论类型
-	      image_url: submitData.image_url || "",
-	      association_id: submitData.association_id || 0,
-	      association_type: submitData.association_type || 0,
-	      is_anonymous: submitData.is_anonymous || 0,
-	      ...(replyForItem.value.id && {
-	        reply_id: replyForItem.value.id,
-	        reply_for: replyForItem.value.comment,
-	        reply_uid: replyForItem.value.user_id,
-	        parent_id: replyForItem.value.parent_id > 0 ? 
-	          replyForItem.value.parent_id : replyForItem.value.id,
-	      })
-	    }
-	    
-	    // 创建临时评论对象
-	    const tempComment = {
-	      id: Date.now(), // 临时ID
-	      content: submitData.content,
-	      created_at: Math.floor(Date.now() / 1000),
-	      like_count: 0,
-	      reply_count: 0,
-	      is_liked: false,
-	      floor: 0, // 临时楼层数
-	      
-	      // 匿名处理
-	      ...(submitData.is_anonymous ? {
-	        avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
-	        username: "匿名用户",
-	        is_anonymous: 1
-	      } : {
-	        avatar: global.userInfo.avatar,
-	        username: global.userInfo.nickname,
-	        is_anonymous: 0
-	      }),
-	      
-	      // 关联信息
-	      ...(submitData.association_id && {
-	        association_id: submitData.association_id,
-	        association_type: submitData.association_type
-	      }),
-	      
-	      // 图片信息
-	      ...(submitData.image_url && {
-	        image_url: submitData.image_url
-	      }),
-	      
-	      // 回复信息
-	      ...(replyForItem.value.id && {
-	        reply_id: replyForItem.value.id,
-	        reply_for: replyForItem.value.comment,
-	        reply_uid: replyForItem.value.user_id,
-	        parent_id: replyForItem.value.parent_id > 0 ? 
-	          replyForItem.value.parent_id : replyForItem.value.id,
-	        // 处理被回复者的匿名状态
-	        reply_username: replyForItem.value.is_anonymous ? 
-	          "匿名用户" : replyForItem.value.username
-	      })
-	    }
-	    
-	    // 添加临时评论
-	    if (!replyForItem.value.id) {
-	      // 主评论
-	      commentListRef.value?.addNewComment(tempComment)
-	    } else if (replyForItem.value.parent_id === 0) {
-	      // 回复主评论
-	      commentListRef.value?.addReplyComment({
-	        ...tempComment,
-	        parent_id: replyForItem.value.id
-	      })
-	    } else {
-	      // 回复楼中楼评论
-	      commentListRef.value?.addReplyComment({
-	        ...tempComment,
-	        parent_id: replyForItem.value.parent_id
-	      })
-	    }
-	  
-	    uni.request({
-	      url: websiteUrl + '/with-state/add-comment',
-	      method: 'POST',
-	      header: {
-	        'Authorization': token
-	      },
-	      data: requestData,
-	      success: (res) => {
-	        if (res.data.status == "success") {
-	          const newComment = res.data.data
-	          
-	          // 处理匿名状态
-	          const finalComment = {
-	            ...newComment,
-	            ...(submitData.is_anonymous ? {
-	              avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
-	              username: "匿名用户",
-	              is_anonymous: 1
-	            } : {
-	              avatar: global.userInfo.avatar,
-	              username: global.userInfo.nickname,
-	              is_anonymous: 0
-	            })
-	          }
-	          
-	          // 处理被回复者的匿名状态
-	          if (newComment.reply_uid && replyForItem.value.is_anonymous) {
-	            finalComment.reply_username = "匿名用户"
-	          }
-	  
-	          // 更新临时评论为真实评论
-	          commentListRef.value?.updateTempComment(tempComment.id, finalComment)
-	  
-	          uni.showToast({
-	            title: '评论成功',
-	            icon: 'success'
-	          })
-	  
-	        } else {
-	          // 请求失败，移除临时评论
-	          commentListRef.value?.removeTempComment(tempComment.id)
-	          uni.showToast({
-	            title: res.data.msg,
-	            icon: 'none'
-	          })
-	        }
-	      },
-	      fail: (err) => {
-	        // 请求失败，移除临时评论
-	        commentListRef.value?.removeTempComment(tempComment.id)
-	        uni.showToast({
-	          title: '网络请求失败',
-	          icon: 'none'
-	        })
-	      }
-	    });
-	  }
+	  })
+	}
+
+	// 评论提交处理
+	const handleCommentSubmit = (submitData) => {
+		let token = uni.getStorageSync('token');
+		if (!global.isLogin) {
+			uni.showToast({
+				title: '请先登录',
+				icon: 'none'
+			})
+			return
+		}
+
+		console.log("reply_info", replyForItem.value)
+		const requestData = {
+			content: submitData.content,
+			origin: submitData.origin,
+			target_id: parseInt(props.brand_id),
+			type: 1, // 品牌评论类型
+			image_url: submitData.image_url || "",
+			association_id: submitData.association_id || 0,
+			association_type: submitData.association_type || 0,
+			is_anonymous: submitData.is_anonymous || 0,
+			...(replyForItem.value.id && {
+				reply_id: replyForItem.value.id,
+				reply_for: replyForItem.value.comment,
+				reply_uid: replyForItem.value.user_id,
+				parent_id: replyForItem.value.parent_id > 0 ?
+					replyForItem.value.parent_id : replyForItem.value.id,
+			})
+		}
+
+		// 创建临时评论对象
+		const tempComment = {
+			id: Date.now(), // 临时ID
+			content: submitData.content,
+			created_at: Math.floor(Date.now() / 1000),
+			like_count: 0,
+			reply_count: 0,
+			is_liked: false,
+			floor: 0, // 临时楼层数
+
+			// 匿名处理
+			...(submitData.is_anonymous ? {
+				avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+				username: "匿名用户",
+				is_anonymous: 1
+			} : {
+				avatar: global.userInfo.avatar,
+				username: global.userInfo.nickname,
+				is_anonymous: 0
+			}),
+
+			// 关联信息
+			...(submitData.association_id && {
+				association_id: submitData.association_id,
+				association_type: submitData.association_type
+			}),
+
+			// 图片信息
+			...(submitData.image_url && {
+				image_url: submitData.image_url
+			}),
+
+			// 回复信息
+			...(replyForItem.value.id && {
+				reply_id: replyForItem.value.id,
+				reply_for: replyForItem.value.comment,
+				reply_uid: replyForItem.value.user_id,
+				parent_id: replyForItem.value.parent_id > 0 ?
+					replyForItem.value.parent_id : replyForItem.value.id,
+				// 处理被回复者的匿名状态
+				reply_username: replyForItem.value.is_anonymous ?
+					"匿名用户" : replyForItem.value.username
+			})
+		}
+
+		// 添加临时评论
+		if (!replyForItem.value.id) {
+			// 主评论
+			commentListRef.value?.addNewComment(tempComment)
+		} else if (replyForItem.value.parent_id === 0) {
+			// 回复主评论
+			commentListRef.value?.addReplyComment({
+				...tempComment,
+				parent_id: replyForItem.value.id
+			})
+		} else {
+			// 回复楼中楼评论
+			commentListRef.value?.addReplyComment({
+				...tempComment,
+				parent_id: replyForItem.value.parent_id
+			})
+		}
+
+		uni.request({
+			url: websiteUrl.value + '/with-state/add-comment',
+			method: 'POST',
+			header: {
+				'Authorization': token
+			},
+			data: requestData,
+			success: (res) => {
+				if (res.data.status == "success") {
+					const newComment = res.data.data
+
+					// 处理匿名状态
+					const finalComment = {
+						...newComment,
+						...(submitData.is_anonymous ? {
+							avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
+							username: "匿名用户",
+							is_anonymous: 1
+						} : {
+							avatar: global.userInfo.avatar,
+							username: global.userInfo.nickname,
+							is_anonymous: 0
+						})
+					}
+
+					// 处理被回复者的匿名状态
+					if (newComment.reply_uid && replyForItem.value.is_anonymous) {
+						finalComment.reply_username = "匿名用户"
+					}
+
+					// 更新临时评论为真实评论
+					commentListRef.value?.updateTempComment(tempComment.id, finalComment)
+
+					uni.showToast({
+						title: '评论成功',
+						icon: 'success'
+					})
+
+				} else {
+					// 请求失败，移除临时评论
+					commentListRef.value?.removeTempComment(tempComment.id)
+					uni.showToast({
+						title: res.data.msg,
+						icon: 'none'
+					})
+				}
+			},
+			fail: (err) => {
+				// 请求失败，移除临时评论
+				commentListRef.value?.removeTempComment(tempComment.id)
+				uni.showToast({
+					title: '网络请求失败',
+					icon: 'none'
+				})
+			}
+		});
+	}
 	// 新增方法：处理评分变化
 	const onRateChange = (e) => {
 		console.log(e)
@@ -361,7 +447,7 @@
 			})
 
 			const res = await uni.request({
-				url: websiteUrl + '/with-state/add-vote-score',
+				url: websiteUrl.value + '/with-state/add-vote-score',
 				method: 'POST',
 				header: {
 					'Authorization': token,
@@ -402,7 +488,7 @@
 	// 添加获取品牌图透的方法
 	function getBrandNews() {
 		uni.request({
-			url: `${websiteUrl}/brand-news-list?brand_id=${props.brand_id}&page=${newsPage.value.page_index}&page_size=${newsPage.value.page_size}`,
+			url: `${websiteUrl.value}/brand-news-list?brand_id=${props.brand_id}&page=${newsPage.value.page_index}&page_size=${newsPage.value.page_size}`,
 			method: 'GET',
 			success: (res) => {
 				if (res.data.status === "success") {
@@ -446,7 +532,7 @@
 
 	function getBrandsInfo() {
 		uni.request({
-			url: websiteUrl + '/brand-info?id=' + props.brand_id,
+			url: websiteUrl.value + '/brand-info?id=' + props.brand_id,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
@@ -457,7 +543,14 @@
 					title: res.data.data.brand_name
 				})
 				getHasLikeBrand() // 新增检查关注状态
-
+				// 根据品牌属性设置Tab - 只添加一次
+				if (!hasAddedArtistTab.value &&
+					(brand.value.is_bjd_artist == 1 || brand.value.is_bjd_hairstylist == 1)) {
+					tabs.value.push({
+						label: '接单主页'
+					})
+					hasAddedArtistTab.value = true // 标记已添加
+				}
 			},
 			fail: (err) => {
 				console.log(err);
@@ -484,7 +577,7 @@
 		}
 
 		try {
-			const url = `${websiteUrl}/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
+			const url = `${websiteUrl.value}/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
 			const res = await uni.request({
 				url,
 				method: 'POST',
@@ -525,7 +618,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/hasLike?id=${parseInt(props.brand_id)}&type=2`,
+				url: `${websiteUrl.value}/with-state/hasLike?id=${parseInt(props.brand_id)}&type=2`,
 				method: 'POST',
 				header: {
 					Authorization: uni.getStorageSync('token')
@@ -553,28 +646,39 @@
 		return `${year}-${month}-${day} ${hours}:${minutes}`;
 	}
 
-	function getBrandGoods() {
+	function getBrandGoods(isLoadMore = false) {
 		uni.request({
-			url: websiteUrl + '/brand-goods?brand_id=' + props.brand_id + "&page=" + page.value,
+			url: websiteUrl.value + '/brand-goods?brand_id=' + props.brand_id + "&page=" + page.value,
 			method: 'GET',
 			timeout: 5000,
 			success: (res) => {
 				console.log(res.data.data);
 				goods.value.page_index = res.data.data.page_index;
 				goods.value.total = res.data.data.total;
-				goods.value.goods_list = goods.value.goods_list ? goods.value.goods_list.concat(res.data.data
-					.goods_list) : res.data.data.goods_list;
+
+				// 如果是加载更多操作，则追加数据
+				if (isLoadMore) {
+					goods.value.goods_list = goods.value.goods_list.concat(res.data.data.goods_list)
+				} else {
+					// 否则替换数据
+					goods.value.goods_list = res.data.data.goods_list
+				}
+
 				//如果返回的列表size大于0，页码增加
 				if (res.data.data.goods_list.length > 0) {
 					page.value += 1
 				}
-				//如果返回的列表size等于0，且page>1提示无更多数据
-				if (res.data.data.goods_list.length == 0 && page.value > 1) {
+
+				// 只有在主动加载更多且没有数据时才显示提示
+				if (isLoadMore && res.data.data.goods_list.length == 0 && page.value > 1) {
 					uni.showToast({
 						title: '没有更多数据了',
 						icon: 'none'
 					})
 				}
+
+				// 标记首次加载完成
+				firstLoadGoods.value = false
 			},
 			fail: (err) => {
 				console.log(err);
@@ -585,7 +689,6 @@
 			}
 		})
 	}
-
 
 
 
@@ -610,7 +713,7 @@
 
 		let scene = getScene()
 		uni.request({
-			url: websiteUrl + '/with-state/add-comment',
+			url: websiteUrl.value + '/with-state/add-comment',
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -653,7 +756,7 @@
 			},
 		});
 	}
-	
+
 	//viewFullImage
 	function viewFullImage(currentUrl, allUrl) {
 		uni.previewImage({
@@ -661,7 +764,7 @@
 			urls: allUrl
 		})
 	}
-	
+
 
 	function getMyScore(type, targetId) {
 		let token = uni.getStorageSync('token')
@@ -672,7 +775,7 @@
 			return 0;
 		}
 		uni.request({
-			url: websiteUrl + '/with-state/my-vote-record',
+			url: websiteUrl.value + '/with-state/my-vote-record',
 			method: 'GET',
 			header: {
 				'Authorization': token,
@@ -740,8 +843,10 @@
 		getUserInfo()
 		// 获取品牌信息
 		getBrandsInfo()
-		// 获取品牌娃娃列表
-		getBrandGoods()
+		// 只在首次加载时获取商品列表
+		if (firstLoadGoods.value) {
+			getBrandGoods()
+		}
 		// 获取品牌图透
 		getBrandNews();
 		if (global.isLogin) {
@@ -1122,5 +1227,199 @@
 		background: #000000c4;
 		padding: 5px 10px;
 		border-radius: 10px 0 10px 0;
+	}
+
+	/* 新增Tab样式 */
+	.tabs-container {
+		display: flex;
+		margin: 20rpx 0;
+		border-bottom: 1px solid #eee;
+	}
+
+	.tab-item {
+		flex: 1;
+		text-align: center;
+		padding: 20rpx 0;
+		font-size: 32rpx;
+		color: #666;
+		position: relative;
+
+		&.active-tab {
+			color: #65C3D6;
+			font-weight: bold;
+
+			&::after {
+				content: '';
+				position: absolute;
+				bottom: 0;
+				left: 20%;
+				right: 20%;
+				height: 4rpx;
+				background-color: #65C3D6;
+				border-radius: 2rpx;
+			}
+		}
+	}
+
+	/* 调整图透项为两列布局 */
+	.news-list {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+	}
+
+	.news-item {
+		width: calc(50% - 10px);
+		margin-bottom: 20px;
+		border-radius: 12rpx;
+		overflow: hidden;
+		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+
+		.news-header-title {
+			font-size: 28rpx;
+			padding: 8rpx 16rpx;
+		}
+
+		.news-images {
+			height: 400rpx;
+
+			.image-swiper {
+				height: 100%;
+			}
+		}
+
+		.news-content {
+			font-size: 26rpx;
+			padding: 10rpx;
+			height: 80rpx;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+		}
+
+		.news-footer {
+			padding: 10rpx;
+			font-size: 24rpx;
+			color: #999;
+			display: flex;
+			justify-content: space-between;
+		}
+	}
+
+	.brand_logo {
+		width: calc(100vw - 10px);
+		display: block;
+		margin: 5px;
+		float: left;
+	}
+
+	.brand_info_body {
+		width: calc(70vw - 10px);
+		box-sizing: border-box;
+		padding: 5px;
+		float: right;
+		justify-content: flex-start;
+
+		text {
+			display: block;
+			width: 100%;
+		}
+	}
+
+	.brand_goods {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 16px;
+
+		/* 设置元素之间的间距 */
+		// padding: 8px; /* 避免元素贴边 */
+		.brand_goods_item {
+			flex: 1 1 calc(33.33% - 12px);
+			/* 固定每个元素宽度为 33.33% */
+			width: calc(33.33% - 12px);
+			/* 设置最大宽度 */
+			max-width: calc(33.33% - 12px);
+			height: 140px;
+			/* 示例高度，可根据需求调整 */
+			// background-color: #4CAF50;
+			// height: auto;             /* 高度自动调整以保持比例 */
+			aspect-ratio: 1;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 20px;
+			border-radius: 8px;
+			overflow: hidden;
+		}
+	}
+
+	.follow {
+		padding: 12rpx 30rpx;
+		border-radius: 20rpx;
+		overflow: hidden;
+		display: inline-block;
+		color: #ffffff;
+		font-size: 11px;
+		margin-left: 80rpx;
+	}
+
+	.body {
+		width: 100vw;
+		// height: calc(100vh - 50px);
+		opacity: 1;
+		border-radius: 25px;
+		background: white;
+		box-shadow: 0px 0px 5px rgb(0 0 0 / 24%);
+		// overflow: hidden;
+		width: 100vw;
+		// height: calc(100vh - 50px);
+		opacity: 1;
+		border-radius: 25px;
+		background: white;
+		box-shadow: 0px -10px 12px rgba(0, 0, 0, 0.05);
+		overflow: hidden;
+		padding: 20px;
+		box-sizing: border-box;
+	}
+
+	//加载更多goods
+	.load_more {
+		background: #fff;
+		color: #d6d6d6;
+		font-size: 13px;
+		margin-top: 15px;
+	}
+
+	.load_more::after {
+		border: none;
+	}
+
+
+	/* 新增按钮样式 */
+	.light_button {
+		color: #fff;
+		background: #65C3D6;
+		border-radius: 15px;
+		padding: 12rpx 24rpx;
+		font-size: 28rpx;
+	}
+
+	/* 新增艺术家按钮样式 */
+	.artist-button {
+		background: none;
+		border-radius: 40rpx;
+		color: #65C3D6;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 10rpx 30rpx;
+		margin: 0 auto;
+	}
+
+	.artist-button::after {
+		border: none;
 	}
 </style>

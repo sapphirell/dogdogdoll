@@ -34,6 +34,11 @@ const _sfc_main = {
     hiddenIcon: {
       type: Boolean,
       default: true
+    },
+    brandId: {
+      // 新增brandId属性
+      type: Number,
+      default: 0
     }
   },
   emits: ["select", "update:modelValue"],
@@ -62,14 +67,18 @@ const _sfc_main = {
         results.value = [];
         return;
       }
+      let url = `${common_config.websiteUrl.value}/search-goods?search=${encodeURIComponent(searchValue)}`;
+      if (props.brandId && props.brandId !== 0) {
+        url += `&brand_id=${props.brandId}`;
+      }
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + `/search-goods?search=${encodeURIComponent(searchValue)}`,
+          url,
           method: "GET"
         });
         results.value = ((_a = res.data) == null ? void 0 : _a.status) === "success" ? res.data.data || [] : [];
       } catch (error) {
-        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:114", "搜索失败:", error);
+        common_vendor.index.__f__("error", "at components/goods-search/goods-search.vue:120", "搜索失败:", error);
         results.value = [];
       }
     };
@@ -97,7 +106,7 @@ const _sfc_main = {
       } : {}, {
         c: !__props.hiddenIcon
       }, !__props.hiddenIcon ? {
-        d: common_assets._imports_0$12
+        d: common_assets._imports_0$15
       } : {}, {
         e: inputValue.value,
         f: common_vendor.o(onSearchInput),

@@ -35,7 +35,20 @@
     "pages/private/private",
     "pages/permission/permission",
     "pages/drag-image-test/drag-image-test",
-    "pages/account_book_preview/account_book_preview"
+    "pages/account_book_preview/account_book_preview",
+    "pages/creator_base/creator_base",
+    "pages/creator_base/brand_edit/brand_edit",
+    "pages/creator_base/goods_list/goods_list",
+    "pages/creator_base/goods_editor/goods_editor",
+    "pages/creator_base/collocation_list/collocation_list",
+    "pages/creator_base/artist_info/artist_info",
+    "pages/creator_base/artist_setting/artist_setting",
+    "pages/artist_info/artist_info",
+    "pages/creator_base/set_showcase/set_showcase",
+    "pages/creator_base/faceup_editor/faceup_editor",
+    "pages/creator_base/order_plane/order_plane",
+    "pages/artwork/artwork",
+    "pages/creator_base/news/news"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -54,32 +67,32 @@
       {
         "pagePath": "pages/index/index",
         "text": "百科",
-        "iconPath": "static/new-icon/home-w.png",
-        "selectedIconPath": "static/new-icon/home-b.png"
+        "iconPath": "static/new-icon/tab1.png",
+        "selectedIconPath": "static/new-icon/tab1.png"
       },
       {
         "pagePath": "pages/collocation_square/collocation_square",
         "text": "广场",
-        "iconPath": "static/new-icon/home-w.png",
-        "selectedIconPath": "static/new-icon/home-b.png"
+        "iconPath": "static/new-icon/tab4.png",
+        "selectedIconPath": "static/new-icon/tab4.png"
       },
       {
         "pagePath": "pages/calendar/calendar",
         "text": "上新",
-        "iconPath": "static/new-icon/date-w.png",
-        "selectedIconPath": "static/new-icon/date-b.png"
+        "iconPath": "static/new-icon/tab2.png",
+        "selectedIconPath": "static/new-icon/tab2.png"
       },
       {
         "pagePath": "pages/stock/stock",
         "text": "娃柜",
-        "iconPath": "static/new-icon/stock-w.png",
-        "selectedIconPath": "static/new-icon/stock-b.png"
+        "iconPath": "static/new-icon/tab3.png",
+        "selectedIconPath": "static/new-icon/tab3.png"
       },
       {
         "pagePath": "pages/mine/mine",
         "text": "我的",
-        "iconPath": "static/new-icon/mine-w.png",
-        "selectedIconPath": "static/new-icon/mine-b.png"
+        "iconPath": "static/new-icon/tab5.png",
+        "selectedIconPath": "static/new-icon/tab5.png"
       }
     ]
   },

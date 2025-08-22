@@ -382,7 +382,7 @@
 	const fetchGoodsTypes = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/goods-types`,
+				url: `${websiteUrl.value}/goods-types`,
 				method: 'GET'
 			});
 
@@ -398,7 +398,7 @@
 	const fetchSizes = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/sizes?show_type=hot`,
+				url: `${websiteUrl.value}/sizes?show_type=hot`,
 				method: 'GET'
 			});
 
@@ -445,7 +445,7 @@
 			};
 
 			const res = await uni.request({
-				url: `${websiteUrl}/random-list`,
+				url: `${websiteUrl.value}/random-list`,
 				method: 'POST',
 				data: params,
 				header: {
@@ -538,7 +538,7 @@
 			console.log('请求参数:', JSON.stringify(params, null, 2));
 
 			const res = await uni.request({
-				url: `${websiteUrl}/collocation-list`,
+				url: `${websiteUrl.value}/collocation-list`,
 				method: 'POST',
 				data: params,
 				header: {
@@ -616,7 +616,7 @@
 	const loadGoodsOptions = async (brandId) => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/goods-name-list?id=${brandId}`,
+				url: `${websiteUrl.value}/goods-name-list?id=${brandId}`,
 				method: 'GET'
 			})
 			console.log('商品列表:', res.data)
@@ -1245,15 +1245,15 @@
 		}
 		
 		.tab-image {
-		  width: 120rpx; /* 调整图片大小 */
-		  height: 120rpx;
+		  width: 100rpx; /* 调整图片大小 */
+		  height: 100rpx;
 		  transition: transform 0.3s ease;
 		  position: relative;
 		}
 
 		
 		.category-container {
-			padding: 40rpx 40rpx 10rpx 40rpx;
+			padding: 10rpx 40rpx 10rpx 40rpx;
 			background: linear-gradient(180deg, #d6e4f2, #fff);
 		}
 		
@@ -1286,7 +1286,7 @@
 		.goods-container {
 			display: flex;
 			flex-wrap: wrap;
-			padding: 20rpx;
+			padding:0rpx 20rpx 20rpx 20rpx;
 			gap:10rpx;
 			background: linear-gradient(1deg, #e4e4e4, #fff);
 		}

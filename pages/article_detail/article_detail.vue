@@ -87,7 +87,7 @@ const handleCommentSubmit = async ({ content, replyInfo, origin }) => {
   
   try {
     const { data } = await uni.request({
-      url: `${websiteUrl}/with-state/add-comment`,
+      url: `${websiteUrl.value}/with-state/add-comment`,
       method: 'POST',
       header: { Authorization: uni.getStorageSync('token') },
       data: requestData,
@@ -125,7 +125,7 @@ onLoad(async (options) => {
 const fetchArticle = async (id) => {
   try {
     const { data } = await uni.request({
-      url: `${websiteUrl}/article-detail?id=${id}`
+      url: `${websiteUrl.value}/article-detail?id=${id}`
     })
     if (data.status === 'success') {
       article.value = data.data

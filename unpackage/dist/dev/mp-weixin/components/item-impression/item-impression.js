@@ -81,7 +81,7 @@ const _sfc_main = {
             impressionType = 9;
         }
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/impression/default`,
+          url: `${common_config.websiteUrl.value}/impression/default`,
           method: "GET",
           data: {
             type: impressionType
@@ -108,7 +108,7 @@ const _sfc_main = {
       try {
         userInfo.value = await common_config.asyncGetUserInfo();
         const countsRes = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/impression/counts`,
+          url: `${common_config.websiteUrl.value}/impression/counts`,
           method: "GET",
           data: {
             target_id: parseInt(props.target_id, 10),
@@ -116,7 +116,7 @@ const _sfc_main = {
           }
         });
         const statusRes = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/impression/status`,
+          url: `${common_config.websiteUrl.value}/with-state/impression/status`,
           method: "GET",
           data: {
             target_id: parseInt(props.target_id, 10),
@@ -163,7 +163,7 @@ const _sfc_main = {
         }
         if (item.selected) {
           const res = await common_vendor.index.request({
-            url: `${common_config.websiteUrl}/with-state/impression/remove`,
+            url: `${common_config.websiteUrl.value}/with-state/impression/remove`,
             method: "POST",
             header: {
               Authorization: common_vendor.index.getStorageSync("token"),
@@ -178,7 +178,7 @@ const _sfc_main = {
           }
         } else {
           const res = await common_vendor.index.request({
-            url: `${common_config.websiteUrl}/with-state/impression/add`,
+            url: `${common_config.websiteUrl.value}/with-state/impression/add`,
             method: "POST",
             header: {
               Authorization: common_vendor.index.getStorageSync("token"),
@@ -255,7 +255,7 @@ const _sfc_main = {
       }
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/impression/add`,
+          url: `${common_config.websiteUrl.value}/with-state/impression/add`,
           method: "POST",
           header: {
             Authorization: common_vendor.index.getStorageSync("token"),
@@ -305,11 +305,12 @@ const _sfc_main = {
           return {
             a: common_vendor.t(item.content),
             b: common_vendor.t(item.count),
-            c: item.id || "default-" + item.content,
-            d: common_vendor.n({
+            c: item.count > 0 ? 1 : "",
+            d: item.id || "default-" + item.content,
+            e: common_vendor.n({
               "active": item.selected
             }),
-            e: common_vendor.o(($event) => handleImpressionClick(item), item.id || "default-" + item.content)
+            f: common_vendor.o(($event) => handleImpressionClick(item), item.id || "default-" + item.content)
           };
         }),
         b: common_vendor.o(showAddModal),

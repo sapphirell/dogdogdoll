@@ -91,3 +91,22 @@
   font-size: 24rpx;
   font-weight: 600;
 }
+
+/* 添加删除按钮样式 */
+.delete-btn.data-v-96f535cf {
+  position: absolute;
+  top: 0rpx;
+  right: 0rpx;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  font-size: 30rpx;
+  cursor: pointer;
+}
+
+/* 调整图片容器为相对定位 */
+.area-con.data-v-96f535cf {
+  position: relative;
+}

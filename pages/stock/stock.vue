@@ -270,9 +270,9 @@
 			return
 		}
 		let token = uni.getStorageSync('token');
-		let url = websiteUrl + '/with-state/account-book';
+		let url = websiteUrl.value + '/with-state/account-book';
 		if (type && type !== "全部") {
-			url = websiteUrl + '/with-state/account-book?type=' + type;
+			url = websiteUrl.value + '/with-state/account-book?type=' + type;
 		}
 
 		// 获取账本数据 /with-state//account-book
@@ -302,7 +302,7 @@
 
 		// 获取展示柜数据
 		uni.request({
-			url: websiteUrl + '/with-state/showcase',
+			url: websiteUrl.value + '/with-state/showcase',
 			method: 'GET',
 			header: {
 				'Authorization': token
@@ -329,7 +329,7 @@
 
 		// 获取账单数据
 		uni.request({
-			url: websiteUrl + '/with-state/tail-bill',
+			url: websiteUrl.value + '/with-state/tail-bill',
 			method: 'GET',
 			header: {
 				'Authorization': token
@@ -1083,7 +1083,7 @@
 			font-weight: bold;
 	
 			&::before {
-				content: '💰 ';
+				content: ' ';
 			}
 		}
 	}

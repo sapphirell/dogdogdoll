@@ -90,7 +90,7 @@
 			if (!userInfo) return
 
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/my-collocation`,
+				url: `${websiteUrl.value}/with-state/my-collocation`,
 				method: 'GET',
 				header: {
 					Authorization: uni.getStorageSync('token')

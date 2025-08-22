@@ -200,7 +200,7 @@
 			}
 
 			uni.request({
-				url: `${websiteUrl}/goods?id=${id}`,
+				url: `${websiteUrl.value}/goods?id=${id}`,
 				method: 'GET',
 				timeout: 5000,
 				success: (res) => {
@@ -235,7 +235,7 @@
 	const fetchData = async (id, origin) => {
 		try {
 			const res = await uni.request({
-				url: websiteUrl + `/view-collocation?collocation_id=${id}&origin=${origin}`,
+				url: websiteUrl.value + `/view-collocation?collocation_id=${id}&origin=${origin}`,
 			})
 
 			if (res.data.status !== 'success') {
@@ -315,7 +315,7 @@
 	const getAuthorInfo = async (uid) => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/user-info?uid=${uid}`,
+				url: `${websiteUrl.value}/user-info?uid=${uid}`,
 				method: 'GET'
 			})
 
@@ -373,7 +373,7 @@
 		// 判断是请求点赞接口还是取消点赞接口 add-like unlike
 		let url = hasLike.value ? '/with-state/unlike' : '/with-state/add-like';
 		uni.request({
-			url: websiteUrl + url,
+			url: websiteUrl.value + url,
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -416,7 +416,7 @@
 		//区分type, origin=1,type=3   origin=2,type=4
 		let type = origin.value == 1 ? 3 : 4
 		uni.request({
-			url: websiteUrl + '/with-state/hasLike?id=' + id + '&type=' + type,
+			url: websiteUrl.value + '/with-state/hasLike?id=' + id + '&type=' + type,
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -593,7 +593,7 @@
 	    }
 	  
 	    uni.request({
-	      url: websiteUrl + '/with-state/add-comment',
+	      url: websiteUrl.value + '/with-state/add-comment',
 	      method: 'POST',
 	      header: {
 	        'Authorization': token

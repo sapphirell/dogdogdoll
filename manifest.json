@@ -1,9 +1,9 @@
 {
-    "name" : "DogDogDoll",
+    "name" : "娃圈狗狗助手",
     "appid" : "__UNI__5D7AAEE",
-    "description" : "娃圈狗狗助手",
-    "versionName" : "1.0.42",
-    "versionCode" : 1042,
+    "description" : "一个关于BJD娃娃的应用",
+    "versionName" : "1.1.2",
+    "versionCode" : 1102,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
@@ -19,7 +19,8 @@
         /* 模块配置 */
         "modules" : {
             "VideoPlayer" : {},
-            "Camera" : {}
+            "Camera" : {},
+            "Push" : {}
         },
         /* 应用发布信息 */
         "distribute" : {
@@ -61,7 +62,22 @@
             },
             /* SDK配置 */
             "sdkConfigs" : {
-                "share" : {}
+                "share" : {},
+                "push" : {
+                    "unipush" : {
+                        "version" : "2",
+                        "offline" : true,
+                        "icons" : {
+                            "small" : {
+                                "ldpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/18x18.png",
+                                "mdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/24x24.png",
+                                "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/36x36.png",
+                                "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/48x48.png",
+                                "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/72x72.png"
+                            }
+                        }
+                    }
+                }
             },
             "icons" : {
                 "android" : {

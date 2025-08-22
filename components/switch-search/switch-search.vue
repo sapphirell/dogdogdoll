@@ -9,11 +9,11 @@
 
 				<!-- 品牌搜索组件 -->
 				<common-search v-else ref="commonSearchRef" :width="searchWidth" :background="background"
-					:fontSize="fontSize" :hidenIcon="false" :mode="mode" @select="handleBrandSelect" />
+					:fontSize="fontSize" :hiddenIcon="true" :mode="mode" @select="handleBrandSelect" show-index-selector />
 			</view>
 			<!-- 切换按钮 -->
 			<view class="toggle-button" @tap="toggleSearchType">
-				<text>{{ searchType === 'goods' ? '娃物' : '娃店' }}</text>
+				<text>{{ searchType === 'goods' ? '娃物' : '作者' }}</text>
 			</view>
 		</view>
 

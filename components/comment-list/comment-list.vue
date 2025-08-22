@@ -362,7 +362,7 @@
 
 		try {
 			const token = uni.getStorageSync('token')
-			const url = `${websiteUrl}/with-state/${comment.user_like ? 'unlike' : 'add-like'}`
+			const url = `${websiteUrl.value}/with-state/${comment.user_like ? 'unlike' : 'add-like'}`
 			const res = await uni.request({
 				url,
 				method: 'POST',
@@ -425,7 +425,7 @@
 			loading.value = true
 			let token = uni.getStorageSync('token');
 			const res = await uni.request({
-				url: `${websiteUrl}/get-comments`,
+				url: `${websiteUrl.value}/get-comments`,
 				data: {
 					relation_id: props.relationId,
 					type: props.type,
@@ -522,7 +522,7 @@
 			const nextPage = Math.ceil(comment.localChildren.length / 5) + 1
 			try {
 				const res = await uni.request({
-					url: `${websiteUrl}/get-comments-by-parent-id`,
+					url: `${websiteUrl.value}/get-comments-by-parent-id`,
 					data: {
 						parent_id: comment.id,
 						page: nextPage

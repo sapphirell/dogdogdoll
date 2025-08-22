@@ -215,7 +215,7 @@
     }
   
     uni.request({
-      url: websiteUrl + '/with-state/add-comment',
+      url: websiteUrl.value + '/with-state/add-comment',
       method: 'POST',
       header: {
         'Authorization': token
@@ -305,7 +305,7 @@
 		}
 
 		const token = uni.getStorageSync('token');
-		const url = websiteUrl + (hasLiked.value ? '/with-state/unlike' : '/with-state/add-like');
+		const url = websiteUrl.value + (hasLiked.value ? '/with-state/unlike' : '/with-state/add-like');
 
 		uni.request({
 			url: url,
@@ -334,7 +334,7 @@
 		}
 
 		uni.request({
-			url: websiteUrl + '/with-state/hasLike?id=' + props.id + '&type=5',
+			url: websiteUrl.value + '/with-state/hasLike?id=' + props.id + '&type=5',
 			method: 'POST',
 			header: {
 				'Authorization': token,
@@ -428,7 +428,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/treehole-detail?id=${props.id}`
+				url: `${websiteUrl.value}/treehole-detail?id=${props.id}`
 			});
 
 			if (res.data.status === 'success') {

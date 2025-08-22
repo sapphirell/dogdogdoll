@@ -28,7 +28,7 @@ function getQiniuToken() {
   return new Promise((resolve, reject) => {
     let token = common_vendor.index.getStorageSync("token");
     common_vendor.index.request({
-      url: common_config.websiteUrl + "/with-state/qiniu-token",
+      url: common_config.websiteUrl.value + "/with-state/qiniu-token",
       method: "POST",
       header: {
         "Authorization": token
@@ -73,7 +73,7 @@ function uploadImageToQiniu(croperPath, qnToken, fileName) {
         try {
           const fullUrl = common_config.image1Url + fileName;
           const logRes = await common_vendor.index.request({
-            url: `${common_config.websiteUrl}/with-state/add-image-log`,
+            url: `${common_config.websiteUrl.value}/with-state/add-image-log`,
             method: "POST",
             header: {
               "Content-Type": "application/json",

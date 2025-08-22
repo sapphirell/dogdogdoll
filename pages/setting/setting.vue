@@ -140,7 +140,7 @@
 			click.value ++;
 	
 			const res = await uni.request({
-				url: `${websiteUrl}/latest-version?version=${dogdogdollVersion}`,
+				url: `${websiteUrl.value}/latest-version?version=${dogdogdollVersion}`,
 				method: 'GET'
 			});
 
@@ -214,7 +214,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/apply-delete`,
+				url: `${websiteUrl.value}/with-state/apply-delete`,
 				method: 'POST',
 				header: {
 					'Authorization': token
@@ -275,7 +275,7 @@
 
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/cancel-delete`,
+				url: `${websiteUrl.value}/with-state/cancel-delete`,
 				method: 'POST',
 				header: {
 					'Authorization': token

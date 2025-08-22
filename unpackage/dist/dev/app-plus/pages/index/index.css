@@ -537,10 +537,10 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
 		z-index: 1001;
+		/* 移除背景色设置，改为动态绑定 */
 }
 .modal-container[data-v-d7656854] {
 		position: absolute;
@@ -811,6 +811,95 @@
   letter-spacing: 0.03125rem;
 }
 
+.server-selector-trigger[data-v-ebbb3777] {
+  display: flex;
+  align-items: center;
+  padding: 0.3125rem 0.625rem;
+  background-color: #f0f4ff;
+  border-radius: 1.5625rem;
+  font-size: 0.875rem;
+  color: #5db7ff;
+  position: fixed;
+  bottom: 5rem;
+  right: 0.9375rem;
+  z-index: 99;
+  box-shadow: 0 0.125rem 0.46875rem rgba(93, 183, 255, 0.3);
+}
+.server-selector-trigger uni-text[data-v-ebbb3777] {
+  margin-left: 0.3125rem;
+  font-weight: 500;
+}
+.server-modal-content[data-v-ebbb3777] {
+  padding: 0.9375rem;
+  width: 15.625rem;
+}
+.server-modal-content .modal-header[data-v-ebbb3777] {
+  margin-bottom: 0.9375rem;
+}
+.server-modal-content .modal-header .title[data-v-ebbb3777] {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 0.3125rem;
+}
+.server-modal-content .modal-header .subtitle[data-v-ebbb3777] {
+  font-size: 0.8125rem;
+  color: #666;
+}
+.server-modal-content .server-list .server-item[data-v-ebbb3777] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.78125rem 0.9375rem;
+  margin-bottom: 0.625rem;
+  background-color: #f8faff;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid #e8ecff;
+  transition: all 0.3s ease;
+}
+.server-modal-content .server-list .server-item.active[data-v-ebbb3777] {
+  background-color: #e6f3ff;
+  border-color: #5db7ff;
+  box-shadow: 0 0.125rem 0.3125rem rgba(93, 183, 255, 0.2);
+}
+.server-modal-content .server-list .server-item.loading[data-v-ebbb3777] {
+  opacity: 0.8;
+}
+.server-modal-content .server-list .server-item .server-info[data-v-ebbb3777] {
+  flex: 1;
+  /* 移除了URL样式 */
+}
+.server-modal-content .server-list .server-item .server-info .name[data-v-ebbb3777] {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+.server-modal-content .server-list .server-item .ping-info[data-v-ebbb3777] {
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 3.75rem;
+  text-align: right;
+}
+.server-modal-content .server-list .server-item .ping-info .ping-value[data-v-ebbb3777] {
+  color: #5db7ff;
+}
+.server-modal-content .server-list .server-item .ping-info .ping-error[data-v-ebbb3777] {
+  color: #ff6b6b;
+}
+.server-modal-content .server-list .server-item .ping-info .spinner[data-v-ebbb3777] {
+  animation: rotate-ebbb3777 1.5s linear infinite;
+}
+@keyframes rotate-ebbb3777 {
+from {
+    transform: rotate(0deg);
+}
+to {
+    transform: rotate(360deg);
+}
+}
+
 .search_tab[data-v-445b599f] {
   display: flex;
   align-items: center;
@@ -848,7 +937,6 @@
   max-height: 60vh;
   position: absolute;
   z-index: 1001;
-  top: 2.5rem;
 }
 .search_results .result_item[data-v-445b599f] {
   display: flex;
@@ -906,6 +994,7 @@
   /* 统一高度 */
   padding: 0 0.625rem;
   /* 统一内边距 */
+  /* 索引选择器样式 - 修改为蓝色 */
 }
 .search_tab .icon_image[data-v-e5a069da] {
   width: 1.125rem;
@@ -923,6 +1012,24 @@
   font-size: 0.71875rem;
   /* 统一字体大小 */
 }
+.search_tab .index-selector .selector-content[data-v-e5a069da] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.625rem;
+  height: 1.875rem;
+  border-radius: 0.9375rem;
+  font-size: 0.75rem;
+  color: white;
+  transition: all 0.3s ease;
+  margin-right: 0.46875rem;
+}
+.search_tab .index-selector .selector-content[data-v-e5a069da]:active {
+  transform: translateY(0.0625rem);
+}
+.search_tab .index-selector .selector-content uni-text[data-v-e5a069da] {
+  font-weight: 500;
+}
 .search_results[data-v-e5a069da] {
   padding: 10px;
   background-color: #f8f8f8;
@@ -932,6 +1039,7 @@
   box-shadow: 0 0 15px #0000002b;
   max-height: 12.5rem;
   font-size: 0.6875rem;
+  box-sizing: border-box;
 }
 .search_results .result_item[data-v-e5a069da] {
   font-size: 0.6875rem;
@@ -972,6 +1080,13 @@
   height: 1.125rem;
   margin-left: 0;
   /* 重置左边距 */
+}
+.close-associate uni-text[data-v-e5a069da] {
+  font-size: 0.6875rem;
+  color: #ccc;
+}
+.close-associate[data-v-e5a069da]:active {
+  background-color: #f0f0f0;
 }
 
 .integrated-search-container[data-v-946fdc68] {
@@ -1189,6 +1304,399 @@
   width: 0;
   height: 0;
   color: transparent;
+}
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.mask[data-v-f4186061] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mask.mask-show[data-v-f4186061] {
+  opacity: 1;
+}
+.popup-container[data-v-f4186061] {
+  position: fixed;
+  bottom: -100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-radius: 0.75rem 0.75rem 0 0;
+  padding: 0.9375rem;
+  z-index: 999;
+  box-shadow: 0 -0.0625rem 0.625rem rgba(0, 0, 0, 0.1);
+  transition: bottom 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.popup-container.popup-show[data-v-f4186061] {
+  bottom: 0;
+}
+.close-btn[data-v-f4186061] {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  z-index: 1000;
+}
+.artist-list-container[data-v-ced2d0e2] {
+  min-height: 100vh;
+}
+/* 顶部操作栏 */
+.top-actions[data-v-ced2d0e2] {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+  height: 1.875rem;
+}
+.top-actions .filter-btn[data-v-ced2d0e2] {
+  display: flex;
+  align-items: center;
+  padding: 0 0.78125rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
+  color: #fff;
+  font-size: 0.875rem;
+  box-shadow: 0 0.125rem 0.3125rem rgba(151, 231, 247, 0.4);
+  margin-left: 0.625rem;
+}
+.top-actions .filter-btn uni-text[data-v-ced2d0e2] {
+  margin-left: 0.3125rem;
+}
+.top-actions .help-btn[data-v-ced2d0e2] {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+/* 筛选弹窗内容 */
+.filter-popup-content[data-v-ced2d0e2] {
+  padding: 0.9375rem;
+}
+.filter-popup-content .popup-header[data-v-ced2d0e2] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.filter-popup-content .popup-header .popup-title[data-v-ced2d0e2] {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+}
+.filter-popup-content .filter-section[data-v-ced2d0e2] {
+  margin-bottom: 1.25rem;
+}
+.filter-popup-content .filter-section .section-title[data-v-ced2d0e2] {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.625rem;
+  font-weight: 500;
+}
+.filter-popup-content .filter-section .status-buttons[data-v-ced2d0e2] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+.filter-popup-content .filter-section .status-buttons .status-btn[data-v-ced2d0e2] {
+  padding: 0.46875rem 0.9375rem;
+  border-radius: 1.25rem;
+  background-color: #f5f5f5;
+  color: #666;
+  font-size: 0.8125rem;
+}
+.filter-popup-content .filter-section .status-buttons .status-btn.active[data-v-ced2d0e2] {
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
+  color: #fff;
+}
+.filter-popup-content .filter-section .price-inputs[data-v-ced2d0e2] {
+  display: flex;
+  align-items: center;
+}
+.filter-popup-content .filter-section .price-inputs .price-input[data-v-ced2d0e2] {
+  flex: 1;
+  height: 2.5rem;
+  padding: 0 0.9375rem;
+  background-color: #f5f5f5;
+  border-radius: 1.25rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+.filter-popup-content .filter-section .price-inputs .price-separator[data-v-ced2d0e2] {
+  margin: 0 0.625rem;
+  color: #666;
+}
+.filter-popup-content .popup-actions[data-v-ced2d0e2] {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.9375rem;
+}
+.filter-popup-content .popup-actions .popup-btn[data-v-ced2d0e2] {
+  flex: 1;
+  height: 2.1875rem;
+  border-radius: 1.25rem;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.filter-popup-content .popup-actions .popup-btn.reset[data-v-ced2d0e2] {
+  background-color: #f5f5f5;
+  color: #666;
+  margin-right: 0.625rem;
+}
+.filter-popup-content .popup-actions .popup-btn.apply[data-v-ced2d0e2] {
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
+  color: #fff;
+}
+.filter-popup-content .popup-actions .popup-btn[data-v-ced2d0e2]::after {
+  border: none;
+}
+.artist-list .artist-card[data-v-ced2d0e2] {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+}
+.artist-list .artist-info[data-v-ced2d0e2] {
+  display: flex;
+  margin-bottom: 0.625rem;
+}
+.artist-list .artist-info .artist-avatar[data-v-ced2d0e2] {
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 0.375rem;
+  margin-right: 0.75rem;
+  background-color: #f0f0f0;
+}
+.artist-list .artist-info .artist-details[data-v-ced2d0e2] {
+  flex: 1;
+}
+.artist-list .artist-info .artist-details .artist-name[data-v-ced2d0e2] {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+.artist-list .artist-info .artist-details .artist-status[data-v-ced2d0e2] {
+  margin-bottom: 0.25rem;
+}
+.artist-list .artist-info .artist-details .artist-status .status-badge[data-v-ced2d0e2] {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+}
+.artist-list .artist-info .artist-details .artist-status .status-badge.status-long-term[data-v-ced2d0e2] {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+.artist-list .artist-info .artist-details .artist-status .status-badge.status-speed[data-v-ced2d0e2] {
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+.artist-list .artist-info .artist-details .artist-status .status-badge.status-lottery[data-v-ced2d0e2] {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+.artist-list .artist-info .artist-details .artist-status .status-badge.status-black-card[data-v-ced2d0e2] {
+  background-color: #f9f0ff;
+  color: #722ed1;
+}
+.artist-list .artist-info .artist-details .artist-status .status-badge.status-closed[data-v-ced2d0e2] {
+  background-color: #f5f5f5;
+  color: #bfbfbf;
+}
+.artist-list .artist-info .artist-details .artist-price[data-v-ced2d0e2] {
+  font-size: 0.8125rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+.artist-list .artist-info .artist-details .artist-price .price-label[data-v-ced2d0e2] {
+  margin-right: 0.25rem;
+}
+.artist-list .artist-info .artist-details .artist-price .price-value[data-v-ced2d0e2] {
+  color: #ff9c9a;
+  font-weight: bold;
+}
+.artist-list .artist-info .artist-details .artist-desc[data-v-ced2d0e2] {
+  font-size: 0.8125rem;
+  color: #999;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.artist-list .highlight-works .works-scroll[data-v-ced2d0e2] {
+  white-space: nowrap;
+}
+.artist-list .highlight-works .works-scroll .work-item[data-v-ced2d0e2] {
+  display: inline-block;
+  width: 6.875rem;
+  height: 6.875rem;
+  margin-right: 0.625rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+.artist-list .highlight-works .works-scroll .work-item[data-v-ced2d0e2]:last-child {
+  margin-right: 0;
+}
+.artist-list .highlight-works .works-scroll .work-item .work-image[data-v-ced2d0e2] {
+  width: 100%;
+  height: 100%;
+}
+.artist-list .no-works[data-v-ced2d0e2] {
+  text-align: center;
+  padding: 1.25rem 0;
+  color: #999;
+  font-size: 0.8125rem;
+  background-color: #f9f9f9;
+  border-radius: 0.25rem;
+}
+.load-more[data-v-ced2d0e2] {
+  text-align: center;
+  padding: 0.9375rem 0;
+  color: #999;
+  font-size: 0.8125rem;
+}
+.empty-state[data-v-ced2d0e2] {
+  text-align: center;
+  padding: 3.125rem 0;
+}
+.empty-state .empty-image[data-v-ced2d0e2] {
+  width: 9.375rem;
+  height: 9.375rem;
+  margin-bottom: 1.25rem;
+}
+.empty-state .empty-text[data-v-ced2d0e2] {
+  display: block;
+  color: #999;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+.empty-state .reset-btn[data-v-ced2d0e2] {
+  width: 60%;
+  background-color: #ff7a7a;
+  color: #fff;
+  border-radius: 1.5625rem;
+}
+/* 帮助弹窗样式 */
+.help-modal-content[data-v-ced2d0e2] {
+  padding: 0.9375rem;
+  width: 18.125rem;
+}
+.help-modal-content .modal-title[data-v-ced2d0e2] {
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 0.9375rem;
+  color: #333;
+}
+.help-modal-content .modal-text[data-v-ced2d0e2] {
+  margin-bottom: 0.625rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #555;
+}
+.help-modal-content .modal-text .bold[data-v-ced2d0e2] {
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 0.15625rem;
+}
+.help-modal-content .modal-close[data-v-ced2d0e2] {
+  margin-top: 0.9375rem;
+  text-align: center;
+  color: #ff7a7a;
+  font-size: 0.875rem;
+  font-weight: bold;
+  padding: 0.46875rem;
+}
+
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.uni-popup[data-v-4dd3c44b] {
+  position: fixed;
+  z-index: 99;
+}
+.uni-popup.top[data-v-4dd3c44b], .uni-popup.left[data-v-4dd3c44b], .uni-popup.right[data-v-4dd3c44b] {
+  top: 0;
+}
+.uni-popup .uni-popup__wrapper[data-v-4dd3c44b] {
+  display: block;
+  position: relative;
+  /* iphonex 等安全区设置，底部安全区适配 */
+}
+.uni-popup .uni-popup__wrapper.left[data-v-4dd3c44b], .uni-popup .uni-popup__wrapper.right[data-v-4dd3c44b] {
+  padding-top: 0;
+  flex: 1;
+}
+.fixforpc-z-index[data-v-4dd3c44b] {
+  z-index: 999;
+}
+.fixforpc-top[data-v-4dd3c44b] {
+  top: 0;
 }
 /**
  * 这里是uni-app内置的常用样式变量
@@ -1562,7 +2070,6 @@
 }
 .hot-box[data-v-1cf27b2a] {
   padding: 0.625rem;
-  padding-top: 1.5625rem;
 }
 .hot-box .hot-item[data-v-1cf27b2a] {
   margin: 0 0.625rem 0.9375rem;
@@ -1743,7 +2250,7 @@
 .publish-btn[data-v-1cf27b2a] {
   position: fixed;
   right: 1.25rem;
-  bottom: 3.75rem;
+  bottom: 8.75rem;
   width: 3.125rem;
   height: 3.125rem;
   background: #4cbbd0;
@@ -1802,7 +2309,7 @@
   text-align: justify;
 }
 .brand_type_description uni-text[data-v-1cf27b2a]::after {
-  content: " 🐻 ";
+  content: "  ";
   color: rgba(76, 187, 208, 0.2);
   position: absolute;
   font-size: 1.25rem;

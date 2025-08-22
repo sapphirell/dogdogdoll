@@ -71,7 +71,7 @@ const _sfc_main = {
     const fetchSizes = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/sizes",
+          url: common_config.websiteUrl.value + "/sizes",
           method: "GET"
         });
         if (res.data.status === "success") {
@@ -123,7 +123,7 @@ const _sfc_main = {
       const token = common_vendor.index.getStorageSync("token");
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/account-types",
+          url: common_config.websiteUrl.value + "/with-state/account-types",
           method: "GET",
           header: {
             "Authorization": token
@@ -145,7 +145,7 @@ const _sfc_main = {
       const token = common_vendor.index.getStorageSync("token");
       try {
         await common_vendor.index.request({
-          url: common_config.websiteUrl + "/with-state/add-account-type",
+          url: common_config.websiteUrl.value + "/with-state/add-account-type",
           method: "POST",
           header: {
             "Authorization": token
@@ -175,7 +175,7 @@ const _sfc_main = {
             const token = common_vendor.index.getStorageSync("token");
             try {
               const response = await common_vendor.index.request({
-                url: common_config.websiteUrl + "/with-state/delete-account-type",
+                url: common_config.websiteUrl.value + "/with-state/delete-account-type",
                 method: "POST",
                 header: {
                   "Authorization": token,
@@ -226,7 +226,7 @@ const _sfc_main = {
     function getAccountBookById(id) {
       let token = common_vendor.index.getStorageSync("token");
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/account-book-detail",
+        url: common_config.websiteUrl.value + "/with-state/account-book-detail",
         method: "GET",
         header: {
           "Authorization": token
@@ -288,7 +288,7 @@ const _sfc_main = {
       var _a;
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + `/goods?id=${goods.id}`,
+          url: common_config.websiteUrl.value + `/goods?id=${goods.id}`,
           method: "GET"
         });
         if (res.data.status === "success") {
@@ -323,7 +323,7 @@ const _sfc_main = {
               return;
             }
             common_vendor.index.request({
-              url: common_config.websiteUrl + "/with-state/delete-account-book",
+              url: common_config.websiteUrl.value + "/with-state/delete-account-book",
               method: "POST",
               header: {
                 "Authorization": common_vendor.index.getStorageSync("token"),
@@ -473,7 +473,7 @@ const _sfc_main = {
       };
       common_vendor.index.__f__("log", "at pages/stock/account_book_form/account_book_form.vue:804", "提交数据:", postData);
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-account-book",
+        url: common_config.websiteUrl.value + "/with-state/add-account-book",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")
@@ -530,7 +530,7 @@ const _sfc_main = {
         additional_value: moreInfo.value.additionalValue
       };
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/update-account-book",
+        url: common_config.websiteUrl.value + "/with-state/update-account-book",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")
@@ -579,7 +579,7 @@ const _sfc_main = {
     const getGoodsInfo = (id) => {
       return new Promise((resolve, reject) => {
         common_vendor.index.request({
-          url: common_config.websiteUrl + "/goods?id=" + id,
+          url: common_config.websiteUrl.value + "/goods?id=" + id,
           method: "GET",
           timeout: 5e3,
           success: (res) => {
@@ -668,7 +668,7 @@ const _sfc_main = {
           ["font-size"]: "24rpx",
           mode: "fill",
           background: "#fff",
-          width: "640rpx",
+          width: "620rpx",
           ["show-icon"]: false,
           modelValue: common_vendor.unref(name)
         }),
@@ -702,80 +702,54 @@ const _sfc_main = {
           localdata: sizeOptions.value,
           value: selectedSizePath.value
         }),
-        A: !showMoreInfo.value
-      }, !showMoreInfo.value ? {
-        B: common_vendor.p({
-          type: "right",
-          size: "20",
-          color: "#888"
-        })
-      } : {
-        C: common_vendor.p({
-          type: "down",
-          size: "20",
-          color: "#888"
-        })
-      }, {
-        D: common_vendor.o(($event) => toggleMoreInfo()),
-        E: showMoreInfo.value
+        A: showMoreInfo.value ? 1 : "",
+        B: common_vendor.o(($event) => toggleMoreInfo()),
+        C: showMoreInfo.value
       }, showMoreInfo.value ? {
-        F: moreInfo.value.sizeDetail,
-        G: common_vendor.o(($event) => moreInfo.value.sizeDetail = $event.detail.value),
-        H: moreInfo.value.color,
-        I: common_vendor.o(($event) => moreInfo.value.color = $event.detail.value),
-        J: moreInfo.value.shopName,
-        K: common_vendor.o(($event) => moreInfo.value.shopName = $event.detail.value),
-        L: moreInfo.value.headCircumference,
-        M: common_vendor.o(($event) => moreInfo.value.headCircumference = $event.detail.value),
-        N: moreInfo.value.shoulderWidth,
-        O: common_vendor.o(($event) => moreInfo.value.shoulderWidth = $event.detail.value),
-        P: moreInfo.value.makeupArtist,
-        Q: common_vendor.o(($event) => moreInfo.value.makeupArtist = $event.detail.value),
-        R: moreInfo.value.remark,
-        S: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
-        T: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
-        U: moreInfo.value.buyDate,
-        V: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
-        W: common_vendor.t(moreInfo.value.arrivalDate || "选择到家日期"),
-        X: moreInfo.value.arrivalDate,
-        Y: common_vendor.o((e) => moreInfo.value.arrivalDate = e.detail.value),
-        Z: moreInfo.value.additionalValue,
-        aa: common_vendor.o(($event) => moreInfo.value.additionalValue = $event.detail.value),
-        ab: moreInfo.value.position,
-        ac: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
+        D: moreInfo.value.sizeDetail,
+        E: common_vendor.o(($event) => moreInfo.value.sizeDetail = $event.detail.value),
+        F: moreInfo.value.color,
+        G: common_vendor.o(($event) => moreInfo.value.color = $event.detail.value),
+        H: moreInfo.value.shopName,
+        I: common_vendor.o(($event) => moreInfo.value.shopName = $event.detail.value),
+        J: moreInfo.value.headCircumference,
+        K: common_vendor.o(($event) => moreInfo.value.headCircumference = $event.detail.value),
+        L: moreInfo.value.shoulderWidth,
+        M: common_vendor.o(($event) => moreInfo.value.shoulderWidth = $event.detail.value),
+        N: moreInfo.value.makeupArtist,
+        O: common_vendor.o(($event) => moreInfo.value.makeupArtist = $event.detail.value),
+        P: moreInfo.value.remark,
+        Q: common_vendor.o(($event) => moreInfo.value.remark = $event.detail.value),
+        R: common_vendor.t(moreInfo.value.buyDate || "选择购入日期"),
+        S: moreInfo.value.buyDate,
+        T: common_vendor.o((e) => moreInfo.value.buyDate = e.detail.value),
+        U: common_vendor.t(moreInfo.value.arrivalDate || "选择到家日期"),
+        V: moreInfo.value.arrivalDate,
+        W: common_vendor.o((e) => moreInfo.value.arrivalDate = e.detail.value),
+        X: moreInfo.value.additionalValue,
+        Y: common_vendor.o(($event) => moreInfo.value.additionalValue = $event.detail.value),
+        Z: moreInfo.value.position,
+        aa: common_vendor.o(($event) => moreInfo.value.position = $event.detail.value)
       } : {}, {
-        ad: !form.value.isRemind
-      }, !form.value.isRemind ? {
-        ae: common_vendor.p({
-          type: "right",
-          size: "20",
-          color: "#888"
-        })
-      } : {
-        af: common_vendor.p({
-          type: "down",
-          size: "20",
-          color: "#888"
-        })
-      }, {
-        ag: form.value.finalPrice > 0
+        ab: form.value.isRemind ? 1 : "",
+        ac: form.value.finalPrice > 0
       }, form.value.finalPrice > 0 ? {} : {}, {
-        ah: common_vendor.o(($event) => toggleRemind()),
-        ai: form.value.isRemind
+        ad: common_vendor.o(($event) => toggleRemind()),
+        ae: form.value.isRemind
       }, form.value.isRemind ? {
-        aj: form.value.finalPrice,
-        ak: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
-        al: common_vendor.t(form.value.finalTime || "选择截止日期"),
-        am: form.value.finalTime,
-        an: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
+        af: form.value.finalPrice,
+        ag: common_vendor.o(($event) => form.value.finalPrice = $event.detail.value),
+        ah: common_vendor.t(form.value.finalTime || "选择截止日期"),
+        ai: form.value.finalTime,
+        aj: common_vendor.o(($event) => form.value.finalTime = $event.detail.value)
       } : {}, {
-        ao: common_assets._imports_0$8,
-        ap: common_vendor.unref(isEdit)
+        ak: common_assets._imports_0$8,
+        al: common_vendor.unref(isEdit)
       }, common_vendor.unref(isEdit) ? {
-        aq: common_vendor.o(handleDelete)
+        am: common_vendor.o(handleDelete)
       } : {}, {
-        ar: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
-        as: common_vendor.o(postSubmit)
+        an: common_vendor.t(common_vendor.unref(isEdit) ? "修改" : "新增"),
+        ao: common_vendor.o(postSubmit)
       });
     };
   }

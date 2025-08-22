@@ -165,7 +165,7 @@ const _sfc_main = {
       }
       try {
         const token = common_vendor.index.getStorageSync("token");
-        const url = `${common_config.websiteUrl}/with-state/${comment.user_like ? "unlike" : "add-like"}`;
+        const url = `${common_config.websiteUrl.value}/with-state/${comment.user_like ? "unlike" : "add-like"}`;
         const res = await common_vendor.index.request({
           url,
           method: "POST",
@@ -222,7 +222,7 @@ const _sfc_main = {
         loading.value = true;
         let token = common_vendor.index.getStorageSync("token");
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/get-comments`,
+          url: `${common_config.websiteUrl.value}/get-comments`,
           data: {
             relation_id: props.relationId,
             type: props.type,
@@ -305,7 +305,7 @@ const _sfc_main = {
         const nextPage = Math.ceil(comment.localChildren.length / 5) + 1;
         try {
           const res = await common_vendor.index.request({
-            url: `${common_config.websiteUrl}/get-comments-by-parent-id`,
+            url: `${common_config.websiteUrl.value}/get-comments-by-parent-id`,
             data: {
               parent_id: comment.id,
               page: nextPage

@@ -66,7 +66,7 @@ const _sfc_main = {
           return;
         }
         common_vendor.index.request({
-          url: `${common_config.websiteUrl}/goods?id=${id}`,
+          url: `${common_config.websiteUrl.value}/goods?id=${id}`,
           method: "GET",
           timeout: 5e3,
           success: (res) => {
@@ -98,7 +98,7 @@ const _sfc_main = {
       var _a;
       try {
         const res = await common_vendor.index.request({
-          url: common_config.websiteUrl + `/view-collocation?collocation_id=${id}&origin=${origin2}`
+          url: common_config.websiteUrl.value + `/view-collocation?collocation_id=${id}&origin=${origin2}`
         });
         if (res.data.status !== "success") {
           handleError(res.data.msg || "数据加载失败");
@@ -158,7 +158,7 @@ const _sfc_main = {
     const getAuthorInfo = async (uid) => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/user-info?uid=${uid}`,
+          url: `${common_config.websiteUrl.value}/user-info?uid=${uid}`,
           method: "GET"
         });
         if (res.data.status === "success") {
@@ -198,7 +198,7 @@ const _sfc_main = {
       };
       let url = hasLike.value ? "/with-state/unlike" : "/with-state/add-like";
       common_vendor.index.request({
-        url: common_config.websiteUrl + url,
+        url: common_config.websiteUrl.value + url,
         method: "POST",
         header: {
           "Authorization": token
@@ -239,7 +239,7 @@ const _sfc_main = {
       }
       let type = origin.value == 1 ? 3 : 4;
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/hasLike?id=" + id + "&type=" + type,
+        url: common_config.websiteUrl.value + "/with-state/hasLike?id=" + id + "&type=" + type,
         method: "POST",
         header: {
           "Authorization": token
@@ -375,7 +375,7 @@ const _sfc_main = {
         });
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/add-comment",
+        url: common_config.websiteUrl.value + "/with-state/add-comment",
         method: "POST",
         header: {
           "Authorization": token

@@ -38,22 +38,55 @@ if (!Math) {
   "./pages/permission/permission.js";
   "./pages/drag-image-test/drag-image-test.js";
   "./pages/account_book_preview/account_book_preview.js";
+  "./pages/creator_base/creator_base.js";
+  "./pages/creator_base/brand_edit/brand_edit.js";
+  "./pages/creator_base/goods_list/goods_list.js";
+  "./pages/creator_base/goods_editor/goods_editor.js";
+  "./pages/creator_base/collocation_list/collocation_list.js";
+  "./pages/creator_base/artist_info/artist_info.js";
+  "./pages/creator_base/artist_setting/artist_setting.js";
+  "./pages/artist_info/artist_info.js";
+  "./pages/creator_base/set_showcase/set_showcase.js";
+  "./pages/creator_base/faceup_editor/faceup_editor.js";
+  "./pages/creator_base/order_plane/order_plane.js";
+  "./pages/artwork/artwork.js";
+  "./pages/creator_base/news/news.js";
 }
 const _sfc_main = {
   __name: "App",
   setup(__props) {
+    common_vendor.onLaunch(() => {
+      common_vendor.index.__f__("log", "at App.vue:5", "App Launch");
+    });
+    common_vendor.onShow(() => {
+      common_vendor.index.__f__("log", "at App.vue:11", "App Show");
+      setTimeout(() => {
+        common_vendor.index.__f__("log", "at App.vue:13", "开始加载字体...");
+        loadFonts();
+        common_vendor.index.__f__("log", "at App.vue:15", "结束加载字体");
+      }, 2e3);
+    });
+    common_vendor.onHide(() => {
+      common_vendor.index.__f__("log", "at App.vue:20", "App Hide");
+    });
+    function loadFonts() {
+      common_vendor.index.loadFontFace({
+        family: "cutefont",
+        // 根据平台选择路径，或者使用同一路径
+        source: 'url("https://images1.fantuanpu.com/font/ry-super-less-rokk.ttf")',
+        global: true,
+        success() {
+          common_vendor.index.__f__("log", "at App.vue:31", "字体cutefont加载成功");
+        },
+        fail(err) {
+          common_vendor.index.__f__("log", "at App.vue:34", "字体cutefont加载失败", err);
+        }
+      });
+    }
     return () => {
     };
   }
 };
-common_vendor.index.loadFontFace({
-  family: "cutefont",
-  source: `url("https://images1.fantuanpu.com/font/ry-super-less-rokk.ttf")`
-});
-common_vendor.index.loadFontFace({
-  family: "alimamamshuhei",
-  source: `url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")`
-});
 function createApp() {
   const app = common_vendor.createSSRApp(_sfc_main);
   return {

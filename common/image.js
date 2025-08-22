@@ -44,7 +44,7 @@ export function getQiniuToken() {
   return new Promise((resolve, reject) => {
     let token = uni.getStorageSync('token');
     uni.request({
-      url: websiteUrl + '/with-state/qiniu-token',
+      url: websiteUrl.value + '/with-state/qiniu-token',
       method: "POST",
       header: {
         'Authorization': token,
@@ -95,7 +95,7 @@ export function uploadImageToQiniu(croperPath, qnToken, fileName) {
           
           // 调用日志接口
           const logRes = await uni.request({
-            url: `${websiteUrl}/with-state/add-image-log`,
+            url: `${websiteUrl.value}/with-state/add-image-log`,
             method: 'POST',
             header: {
               'Content-Type': 'application/json',

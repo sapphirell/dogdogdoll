@@ -537,10 +537,10 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
 		z-index: 1001;
+		/* 移除背景色设置，改为动态绑定 */
 }
 .modal-container[data-v-d7656854] {
 		position: absolute;
@@ -601,6 +601,10 @@
   align-items: center;
   transition: all 0.3s ease;
   flex-shrink: 0;
+}
+.impression-item .highlight[data-v-883b6a8c] {
+  color: #fff !important;
+  background: #64c6dc !important;
 }
 .impression-item.active[data-v-883b6a8c] {
   background-color: #e6f9fc;
@@ -942,6 +946,7 @@ uni-button[data-v-b620d6d3]::after {
   grid-template-columns: repeat(2, 1fr);
   gap: 0.375rem;
   z-index: 999;
+  width: 14.0625rem;
 }
 .attitude-panel .attitude-btn[data-v-f15d1ff3] {
   padding: 0.375rem;
@@ -1360,7 +1365,6 @@ to {
   max-height: 60vh;
   position: absolute;
   z-index: 1001;
-  top: 2.5rem;
 }
 .search_results .result_item[data-v-445b599f] {
   display: flex;
@@ -1418,6 +1422,7 @@ to {
   /* 统一高度 */
   padding: 0 0.625rem;
   /* 统一内边距 */
+  /* 索引选择器样式 - 修改为蓝色 */
 }
 .search_tab .icon_image[data-v-e5a069da] {
   width: 1.125rem;
@@ -1435,6 +1440,24 @@ to {
   font-size: 0.71875rem;
   /* 统一字体大小 */
 }
+.search_tab .index-selector .selector-content[data-v-e5a069da] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.625rem;
+  height: 1.875rem;
+  border-radius: 0.9375rem;
+  font-size: 0.75rem;
+  color: white;
+  transition: all 0.3s ease;
+  margin-right: 0.46875rem;
+}
+.search_tab .index-selector .selector-content[data-v-e5a069da]:active {
+  transform: translateY(0.0625rem);
+}
+.search_tab .index-selector .selector-content uni-text[data-v-e5a069da] {
+  font-weight: 500;
+}
 .search_results[data-v-e5a069da] {
   padding: 10px;
   background-color: #f8f8f8;
@@ -1444,6 +1467,7 @@ to {
   box-shadow: 0 0 15px #0000002b;
   max-height: 12.5rem;
   font-size: 0.6875rem;
+  box-sizing: border-box;
 }
 .search_results .result_item[data-v-e5a069da] {
   font-size: 0.6875rem;
@@ -1484,6 +1508,13 @@ to {
   height: 1.125rem;
   margin-left: 0;
   /* 重置左边距 */
+}
+.close-associate uni-text[data-v-e5a069da] {
+  font-size: 0.6875rem;
+  color: #ccc;
+}
+.close-associate[data-v-e5a069da]:active {
+  background-color: #f0f0f0;
 }
 
 .integrated-search-container[data-v-946fdc68] {
@@ -2241,4 +2272,80 @@ uni-button[data-v-88f35a0c]:after {
 /* 确保按钮与上方内容有间距 */
 .swiper-container[data-v-7e2880f6] {
   margin-bottom: 0;
+}
+
+/* 新增：妆图展示区域样式 */
+.faceup-section[data-v-7e2880f6] {
+  background: #fff;
+  border-radius: 0.625rem;
+  margin: 0.625rem;
+  padding: 0.9375rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+}
+.faceup-section .section-header[data-v-7e2880f6] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.78125rem;
+}
+.faceup-section .section-title[data-v-7e2880f6] {
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #64c6dc;
+  padding-left: 0.3125rem;
+  border-left: 0.25rem solid #64c6dc;
+}
+.faceup-section .refresh-btn[data-v-7e2880f6] {
+  display: flex;
+  align-items: center;
+  color: #64c6dc;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.9375rem;
+}
+.faceup-section .refresh-btn[data-v-7e2880f6]:active {
+  background-color: #f0f9ff;
+}
+.faceup-section .faceup-list[data-v-7e2880f6] {
+  width: 100%;
+  white-space: nowrap;
+  margin-top: 0.46875rem;
+  padding: 0.25rem 0;
+}
+.faceup-section .faceup-item[data-v-7e2880f6] {
+  display: inline-block;
+  width: 6.25rem;
+  height: 8.75rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  margin-right: 0.5625rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+.faceup-section .faceup-item uni-image[data-v-7e2880f6] {
+  width: 100%;
+  height: 100%;
+}
+.faceup-section .faceup-item .faceup-title[data-v-7e2880f6] {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.6875rem;
+  padding: 0.3125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.size-group[data-v-7e2880f6] {
+  margin-bottom: 0.25rem;
+}
+.size-category[data-v-7e2880f6] {
+  font-weight: bold;
+  color: #333;
+}
+.size-details[data-v-7e2880f6] {
+  color: #666;
 }

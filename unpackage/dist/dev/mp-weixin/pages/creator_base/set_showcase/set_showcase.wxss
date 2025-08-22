@@ -1,0 +1,173 @@
+.artist-container.data-v-c25da532 {
+  padding: 20rpx;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+/* Tab样式 */
+.tabs.data-v-c25da532 {
+  display: flex;
+  background-color: #fff;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+.tab-item.data-v-c25da532 {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx 0;
+  font-size: 30rpx;
+  color: #666;
+  position: relative;
+}
+.tab-item.active.data-v-c25da532 {
+  color: #333;
+  font-weight: bold;
+}
+.tab-item.active.data-v-c25da532::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80rpx;
+  height: 6rpx;
+  background: linear-gradient(90deg, #8fecff, #c1ddff);
+  border-radius: 4rpx;
+}
+/* 展示图Tab样式 */
+.highlight-scroll.data-v-c25da532 {
+  height: calc(100vh - 240rpx);
+}
+.highlight-list.data-v-c25da532 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+.highlight-item.data-v-c25da532 {
+  position: relative;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+.highlight-img.data-v-c25da532 {
+  width: 100%;
+  height: 320rpx;
+}
+.highlight-actions.data-v-c25da532 {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 10rpx;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-top-left-radius: 16rpx;
+}
+/* 妆图列表Tab样式 */
+.faceup-scroll.data-v-c25da532 {
+  height: calc(100vh - 240rpx);
+}
+.faceup-list.data-v-c25da532 {
+  background-color: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+.faceup-item.data-v-c25da532 {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.faceup-item.data-v-c25da532:active {
+  background-color: #f9f9f9;
+}
+.faceup-img.data-v-c25da532 {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 8rpx;
+  margin-right: 20rpx;
+}
+.faceup-info.data-v-c25da532 {
+  flex: 1;
+}
+.faceup-head.data-v-c25da532 {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+  display: block;
+}
+.faceup-tags.data-v-c25da532 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
+}
+.tag.data-v-c25da532 {
+  font-size: 22rpx;
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+}
+.faceup-meta.data-v-c25da532 {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.sex.data-v-c25da532 {
+  font-size: 22rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
+}
+.sex.male.data-v-c25da532 {
+  background-color: #E8F5FF;
+  color: #1890FF;
+}
+.sex.female.data-v-c25da532 {
+  background-color: #FFEEF2;
+  color: #FF4D6A;
+}
+.date.data-v-c25da532 {
+  font-size: 22rpx;
+  color: #999;
+}
+/* 添加按钮 */
+.add-btn.data-v-c25da532 {
+  position: fixed;
+  bottom: 40rpx;
+  right: 40rpx;
+  color: #fff;
+  padding: 16rpx 24rpx;
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #8fecff, #c1ddff);
+  color: #2c3e50;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+}
+.add-btn text.data-v-c25da532 {
+  margin-left: 8rpx;
+  font-size: 26rpx;
+  color: #fff;
+}
+.add-btn.data-v-c25da532:active {
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+/* 上传进度提示 */
+.upload-progress.data-v-c25da532 {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  border-radius: 12rpx;
+}
+.upload-progress progress.data-v-c25da532 {
+  width: 100%;
+  margin-bottom: 10rpx;
+}
+.upload-progress text.data-v-c25da532 {
+  display: block;
+  text-align: center;
+  font-size: 24rpx;
+  color: #666;
+}

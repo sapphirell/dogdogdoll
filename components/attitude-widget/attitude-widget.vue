@@ -137,7 +137,7 @@
 			}
 
 			const isActive = currentStatus.value === actionType
-			const apiUrl = `${websiteUrl}/with-state/attitude/${isActive ? 'remove' : 'add'}`
+			const apiUrl = `${websiteUrl.value}/with-state/attitude/${isActive ? 'remove' : 'add'}`
 
 			const res = await uni.request({
 				url: apiUrl,
@@ -266,6 +266,7 @@
 		grid-template-columns: repeat(2, 1fr);
 		gap: 12rpx;
 		z-index: 999;
+		width: 450rpx;
 
 		.attitude-btn {
 			padding: 12rpx;

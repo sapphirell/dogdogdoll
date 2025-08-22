@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const common_config = require("../../common/config.js");
 if (!Array) {
   const _easycom_uni_transition2 = common_vendor.resolveComponent("uni-transition");
   _easycom_uni_transition2();
@@ -12,7 +13,6 @@ const _sfc_main = {
   __name: "common-modal",
   props: {
     visible: Boolean,
-    // 新增参数
     top: {
       type: [String, Number],
       default: "30%"
@@ -26,31 +26,31 @@ const _sfc_main = {
       default: "auto"
     },
     closeable: {
-      // 点击遮罩层是否可以关闭
       type: Boolean,
       default: true
     }
   },
   emits: ["update:visible"],
   setup(__props, { emit: __emit }) {
+    const isApp = common_vendor.ref(false);
     const props = __props;
     let modeClass = common_vendor.ref(["fade", "zoom-in"]);
     const emit = __emit;
+    const maskStyle = common_vendor.computed(() => {
+      return {
+        backgroundColor: isApp.value ? "rgba(0, 0, 0, 0)" : "rgba(0, 0, 0, 0.5)"
+      };
+    });
     const containerStyle = common_vendor.computed(() => ({
       top: formatValue(props.top),
-      // width: formatValue(props.width),
       height: formatValue(props.height)
     }));
-    const moveHandle = () => {
-      return false;
-    };
+    const moveHandle = () => false;
     const formatValue = (val) => {
-      if (typeof val === "number") {
+      if (typeof val === "number")
         return `${val}px`;
-      }
-      if (/\d$/.test(val)) {
+      if (/\d$/.test(val))
         return `${val}px`;
-      }
       return val;
     };
     const closeModal = () => {
@@ -58,6 +58,10 @@ const _sfc_main = {
         emit("update:visible", false);
       }
     };
+    common_vendor.onMounted(() => {
+      const scene = common_config.getScene();
+      isApp.value = scene === 2 || scene === 3;
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: __props.visible
@@ -70,7 +74,8 @@ const _sfc_main = {
           show: __props.visible
         }),
         e: common_vendor.o(closeModal),
-        f: common_vendor.o(moveHandle)
+        f: common_vendor.o(moveHandle),
+        g: common_vendor.s(maskStyle.value)
       } : {});
     };
   }

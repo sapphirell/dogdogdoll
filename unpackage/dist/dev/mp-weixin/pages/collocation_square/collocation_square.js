@@ -163,7 +163,7 @@ const _sfc_main = {
     const fetchGoodsTypes = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/goods-types`,
+          url: `${common_config.websiteUrl.value}/goods-types`,
           method: "GET"
         });
         if (res.data.status === "success") {
@@ -176,7 +176,7 @@ const _sfc_main = {
     const fetchSizes = async () => {
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/sizes?show_type=hot`,
+          url: `${common_config.websiteUrl.value}/sizes?show_type=hot`,
           method: "GET"
         });
         if (res.data.status === "success") {
@@ -212,7 +212,7 @@ const _sfc_main = {
           size: selectedSize.value === "全部" ? "" : selectedSize.value
         };
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/random-list`,
+          url: `${common_config.websiteUrl.value}/random-list`,
           method: "POST",
           data: params,
           header: {
@@ -284,7 +284,7 @@ const _sfc_main = {
         };
         common_vendor.index.__f__("log", "at pages/collocation_square/collocation_square.vue:538", "请求参数:", JSON.stringify(params, null, 2));
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/collocation-list`,
+          url: `${common_config.websiteUrl.value}/collocation-list`,
           method: "POST",
           data: params,
           header: {

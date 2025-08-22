@@ -58,7 +58,7 @@ async function updateUsername() {
   try {
     isLoading.value = true
     const res = await uni.request({
-      url: websiteUrl + '/with-state/update-profile',
+      url: websiteUrl.value + '/with-state/update-profile',
       method: 'POST',
       header: {
         'Authorization': uni.getStorageSync('token')

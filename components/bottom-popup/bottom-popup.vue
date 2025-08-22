@@ -1,4 +1,4 @@
-<!-- components/BottomPopup.vue -->
+<!-- components/bottom-popup.vue -->
 <template>
   <view>
     <!-- 遮罩层 -->
@@ -7,12 +7,14 @@
       class="mask" 
       :class="{'mask-show': show}" 
       @tap="closePopup"
+	  @touchmove.stop.prevent="moveHandle"
     ></view>
     
     <!-- 弹窗内容 -->
     <view 
       class="popup-container" 
       :class="{'popup-show': show}"
+	  @touchmove.stop.prevent="moveHandle"
     >
       <!-- 关闭按钮 -->
   <!--    <view class="close-btn" @tap="closePopup">
@@ -34,10 +36,32 @@
         default: false
       }
     },
+	watch: {
+	  show(newVal) {
+	    if (typeof uni === 'undefined') return;
+	    
+	    // 获取运行环境
+	    const platform = uni.getSystemInfoSync().platform;
+	    const isApp = platform === 'android' || platform === 'ios';
+	    
+	    if (isApp) {
+	      if (newVal) {
+	        // 弹窗显示时隐藏tab-bar
+	        uni.hideTabBar();
+	      } else {
+	        // 弹窗隐藏时显示tab-bar
+	        uni.showTabBar();
+	      }
+	    }
+	  }
+	},
     methods: {
       closePopup() {
         this.$emit('close');
-      }
+      },
+	  moveHandle() {
+	  	return false;
+	  },
     }
   };
 </script>

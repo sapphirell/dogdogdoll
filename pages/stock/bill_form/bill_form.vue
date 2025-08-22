@@ -126,7 +126,7 @@
 	function getBillById(id) {
 		let token = uni.getStorageSync('token');
 		uni.request({
-			url: websiteUrl + '/with-state/tail-bill-detail',
+			url: websiteUrl.value + '/with-state/tail-bill-detail',
 			method: 'GET',
 			header: { 'Authorization': token },
 			data: { id: id },
@@ -158,7 +158,7 @@
 			success: (res) => {
 				if (res.confirm) {
 					uni.request({
-						url: websiteUrl + '/with-state/delete-tail-bill?id=' + parseInt(props.bill_id, 10),
+						url: websiteUrl.value + '/with-state/delete-tail-bill?id=' + parseInt(props.bill_id, 10),
 						method: 'POST',
 						header: { 'Authorization': uni.getStorageSync('token') },
 						success: (res) => {
@@ -231,7 +231,7 @@
 		};
 
 		uni.request({
-			url: websiteUrl + '/with-state/add-tail-bill',
+			url: websiteUrl.value + '/with-state/add-tail-bill',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token')
@@ -267,7 +267,7 @@
 		};
 
 		uni.request({
-			url: websiteUrl + '/with-state/update-tail-bill',
+			url: websiteUrl.value + '/with-state/update-tail-bill',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token')

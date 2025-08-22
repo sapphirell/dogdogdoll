@@ -4,12 +4,6 @@
 		<view-logs />
 		</meta>
 		<view class="header_container">
-			<!-- 黑名单提示 -->
-<!-- 			<view class="block-info" v-if="is_blocked || they_blocked">
-				<uni-icons type="minus" size="16" color="#fff"></uni-icons>
-				<text>你们已互相拉黑，无法查看彼此主页</text>
-			</view> -->
-
 			<!-- 头像和用户名区域 -->
 			<view class="user-info-container">
 				<view class="user-info-box">
@@ -39,10 +33,11 @@
 					</view>
 				</view>
 			</view>
+			
 			<!-- 搭配列表 -->
 			<view v-if="currentTab === 0" class="collocation-list">
 				<view v-for="(item, index) in collocations" :key="index" class="collocation-item item-image-container"
-					@click="navigateTo(`/pages/collocation_share/collocation_share?collocation_id=${item.id}`)">
+					@click="navigateTo(`/pages/collocation_share/collocation_share?collocation_id=${item.id}&origin=1`)">
 					<image class="item-image" :src="item.cover" mode="aspectFill" />
 					<text class="item-title">{{ item.title }}</text>
 				</view>
@@ -51,7 +46,7 @@
 			<!-- 娃柜列表 -->
 			<view v-if="currentTab === 1" class="doll-list">
 				<view v-for="(item, index) in dolls" :key="index" class="doll-item item-image-container"
-					@click="navigateTo(`/pages/user_doll/user_doll?id=${item.id}`)">
+					@click="navigateTo(`/pages/collocation_share/collocation_share?collocation_id=${item.id}&origin=2`)">
 					<image class="item-image" :src="item.cover" mode="aspectFill" />
 					<text class="item-title">{{ item.title }}</text>
 					<text class="item-price">¥{{ item.price }}</text>
@@ -60,7 +55,8 @@
 
 			<!-- 点评列表 -->
 			<view v-if="currentTab === 2" class="review-list">
-				<view v-for="(item, index) in reviews" :key="index" class="review-item ">
+				<view v-for="(item, index) in reviews" :key="index" class="review-item"
+					@click="navigateTo(`/pages/goods/goods?goods_id=${item.target_id}`)">
 					<image class="product-thumb" :src="item.product_thumb" mode="aspectFill" />
 					<view class="review-content">
 						<text class="product-name">{{ item.product_name }}</text>
@@ -148,7 +144,12 @@
 			loadData();
 		}
 	});
-
+	
+	const navigateTo = (url) => {
+		uni.navigateTo({
+			url: url
+		})
+	}
 
 	// 统一数据加载方法
 	const loadData = async () => {
@@ -178,7 +179,7 @@
 					break;
 			}
 			const res = await uni.request({
-				url: `${websiteUrl}${url}`
+				url: `${websiteUrl.value}${url}`
 			});
 
 			if (res.data.status === 'success') {
@@ -202,7 +203,8 @@
 									cover: item.image_urls?.split(',')[0] || '',
 									title: item.name,
 									desc: item.description,
-									time: item.created_at
+									time: item.created_at,
+									price: item.price || 0 // 添加价格字段
 							};
 						case 2: // 点评
 							return {
@@ -210,7 +212,8 @@
 									product_thumb: item.target_image,
 									product_name: item.target_name,
 									content: item.comment,
-									create_time: formatTime(item.created_at)
+									create_time: formatTime(item.created_at),
+									target_id: item.relation_id // 添加目标ID用于跳转
 							};
 					}
 				});
@@ -239,7 +242,7 @@
 	const getAuthorInfo = async () => {
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/user-info?uid=${props.uid}`,
+				url: `${websiteUrl.value}/user-info?uid=${props.uid}`,
 			});
 
 			if (res.data.status === 'success') {
@@ -262,7 +265,7 @@
 		}
 		try {
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/blacklist/status`,
+				url: `${websiteUrl.value}/with-state/blacklist/status`,
 				method: 'GET',
 				data: {
 					target_user_id: props.uid
@@ -292,7 +295,7 @@
 			}
 			const action = is_blocked.value ? 'remove' : 'add';
 			const res = await uni.request({
-				url: `${websiteUrl}/with-state/blacklist/${action}?target_user_id=` + props.uid,
+				url: `${websiteUrl.value}/with-state/blacklist/${action}?target_user_id=` + props.uid,
 				method: 'POST',
 				header: {
 					Authorization: token
@@ -575,7 +578,13 @@
 			border-radius: 12rpx;
 			margin-bottom: 20rpx;
 			box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+			cursor: pointer;
+			transition: all 0.2s ease;
 			
+			&:active {
+				transform: scale(0.98);
+				background-color: #f9f9f9;
+			}
 
 			.product-thumb {
 				width: 120rpx;

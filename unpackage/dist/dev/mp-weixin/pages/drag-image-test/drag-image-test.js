@@ -19,9 +19,9 @@ const _sfc_main = {
         return;
       }
       let token = common_vendor.index.getStorageSync("token");
-      let url = common_config.websiteUrl + "/with-state/account-book";
+      let url = common_config.websiteUrl.value + "/with-state/account-book";
       if (type && type !== "全部") {
-        url = common_config.websiteUrl + "/with-state/account-book?type=" + type;
+        url = common_config.websiteUrl.value + "/with-state/account-book?type=" + type;
       }
       common_vendor.index.request({
         url,

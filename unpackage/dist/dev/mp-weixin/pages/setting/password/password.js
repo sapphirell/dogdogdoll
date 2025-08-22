@@ -57,7 +57,7 @@ const _sfc_main = {
         return;
       }
       common_vendor.index.request({
-        url: common_config.websiteUrl + "/with-state/setting-password",
+        url: common_config.websiteUrl.value + "/with-state/setting-password",
         method: "POST",
         header: {
           "Authorization": common_vendor.index.getStorageSync("token")

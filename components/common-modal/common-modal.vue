@@ -1,6 +1,7 @@
 <!-- components/common-modal.vue -->
 <template>
-	<view class="modal-mask" v-if="visible" @tap.stop="closeModal" @touchmove.stop.prevent="moveHandle">
+	<view class="modal-mask" v-if="visible" @tap.stop="closeModal" @touchmove.stop.prevent="moveHandle"
+	:style="maskStyle">  <!-- 修改：使用动态样式 -->
 		<uni-transition :mode-class="modeClass" :show="visible">
 			<view class="modal-container" :style="containerStyle" @tap.stop>
 				<view class="modal-content">
@@ -9,7 +10,6 @@
 			</view>
 		</uni-transition>
 	</view>
-
 </template>
 
 <script setup>
@@ -18,10 +18,17 @@
 		defineEmits,
 		computed,
 		ref,
+		onMounted  // 新增生命周期钩子
 	} from 'vue'
+	
+	import {
+		getScene
+	} from "../../common/config.js";
+	
+	const isApp = ref(false)
+	
 	const props = defineProps({
 		visible: Boolean,
-		// 新增参数
 		top: {
 			type: [String, Number],
 			default: '30%'
@@ -35,34 +42,33 @@
 			default: 'auto'
 		},
 		closeable: {
-			// 点击遮罩层是否可以关闭
 			type: Boolean,
 			default: true
 		},
 	})
+	
 	let modeClass = ref(['fade', 'zoom-in'])
 
 	const emit = defineEmits(['update:visible'])
 
-	// 样式计算
+	// 新增：计算遮罩层样式
+	const maskStyle = computed(() => {
+		// App环境下完全透明，其他环境保持半透明遮罩
+		return {
+			backgroundColor: isApp.value ? 'rgba(0, 0, 0, 0)' : 'rgba(0, 0, 0, 0.5)'
+		}
+	})
+
 	const containerStyle = computed(() => ({
 		top: formatValue(props.top),
-		// width: formatValue(props.width),
 		height: formatValue(props.height)
 	}))
-	const moveHandle = () => {
-		return false;
-	};
+	
+	const moveHandle = () => false;
 
-
-	// 值格式化方法
 	const formatValue = (val) => {
-		if (typeof val === 'number') {
-			return `${val}px`
-		}
-		if (/\d$/.test(val)) { // 纯数字默认加px
-			return `${val}px`
-		}
+		if (typeof val === 'number') return `${val}px`
+		if (/\d$/.test(val)) return `${val}px`
 		return val
 	}
 
@@ -71,6 +77,12 @@
 			emit('update:visible', false)
 		}
 	}
+	
+	// 新增：组件挂载时检测环境
+	onMounted(() => {
+		const scene = getScene()
+		isApp.value = scene === 2 || scene === 3  // 2或3表示App环境
+	})
 </script>
 
 <style scoped>
@@ -80,10 +92,10 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		justify-content: center;
 		z-index: 1001;
+		/* 移除背景色设置，改为动态绑定 */
 	}
 
 	.modal-container {

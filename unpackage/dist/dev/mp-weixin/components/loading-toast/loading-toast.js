@@ -19,7 +19,7 @@ const _sfc_main = {
       return common_vendor.e({
         a: props.show
       }, props.show ? common_vendor.e({
-        b: common_assets._imports_0$11,
+        b: common_assets._imports_0$13,
         c: __props.text
       }, __props.text ? {
         d: common_vendor.t(__props.text)

@@ -39,10 +39,6 @@
   background: #f0f0f0;
   color: #666;
 }
-.brand-info .follow-btn[class*='active'].data-v-c9c53f1c {
-  background: #64c6dc;
-  color: #fff;
-}
 .content-box.data-v-c9c53f1c {
   padding: 30rpx;
 }
@@ -52,7 +48,7 @@
   margin-bottom: 20rpx;
 }
 .content-box .content.data-v-c9c53f1c {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #666;
   line-height: 1.6;
 }

@@ -75,7 +75,7 @@ const _sfc_main = {
       try {
         const token = common_vendor.index.getStorageSync("token");
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/report/reasons?type=${props.reportType}`,
+          url: `${common_config.websiteUrl.value}/report/reasons?type=${props.reportType}`,
           method: "GET",
           header: {
             "Authorization": token
@@ -132,9 +132,9 @@ const _sfc_main = {
           reason: selectedReason.value,
           details: reportDetails.value
         };
-        let url = `${common_config.websiteUrl}/with-state/report/submit`;
+        let url = `${common_config.websiteUrl.value}/with-state/report/submit`;
         if (token == "") {
-          url = `${common_config.websiteUrl}/report/submit`;
+          url = `${common_config.websiteUrl.value}/report/submit`;
         }
         const res = await common_vendor.index.request({
           url,

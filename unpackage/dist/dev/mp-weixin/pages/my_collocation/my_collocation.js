@@ -32,7 +32,7 @@ const _sfc_main = {
         if (!userInfo)
           return;
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/my-collocation`,
+          url: `${common_config.websiteUrl.value}/with-state/my-collocation`,
           method: "GET",
           header: {
             Authorization: common_vendor.index.getStorageSync("token")

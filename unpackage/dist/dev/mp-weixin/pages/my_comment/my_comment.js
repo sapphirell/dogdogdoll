@@ -57,7 +57,7 @@ const _sfc_main = {
       loading.value = true;
       try {
         const res = await common_vendor.index.request({
-          url: `${common_config.websiteUrl}/with-state/my-comment`,
+          url: `${common_config.websiteUrl.value}/with-state/my-comment`,
           method: "GET",
           header: {
             "Authorization": common_vendor.index.getStorageSync("token")

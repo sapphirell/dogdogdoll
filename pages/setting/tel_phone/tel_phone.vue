@@ -45,7 +45,7 @@
 
 	function updateTelPhone() {
 		uni.request({
-			url: websiteUrl + '/with-state/update-profile',
+			url: websiteUrl.value + '/with-state/update-profile',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token'),
@@ -99,7 +99,7 @@
 		}
 		buttonMsg.value = "发送中"
 		uni.request({
-			url: websiteUrl + '/send-sms-code',
+			url: websiteUrl.value + '/send-sms-code',
 			method: "POST",
 			header: {
 				'Authorization': uni.getStorageSync('token'),
