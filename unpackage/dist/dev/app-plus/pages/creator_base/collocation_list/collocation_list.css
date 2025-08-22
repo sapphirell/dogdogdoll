@@ -560,7 +560,7 @@
   font-weight: 1000;
   margin: 0.9375rem 0;
 }
-.header .add-btn* {
+.header .add-btn::after {
   border: none;
 }
 .header .add-btn::after {
