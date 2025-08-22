@@ -297,7 +297,7 @@
 			font-weight: 1000;
 			margin: 30rpx 0;
 
-			&* {
+			&::after {
 				border: none;
 			}
 
