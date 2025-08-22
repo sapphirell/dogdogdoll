@@ -35,24 +35,24 @@ function loadFonts() {
     }
   })
 
-  // // 加载第二个字体
-  // uni.loadFontFace({
-  //   family: 'alimamamshuhei',
-  //   source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
-  //   global: true,
-  //   success() {
-  //     console.log('字体alimamamshuhei加载成功')
-  //   },
-  //   fail(err) {
-  //     console.log('字体alimamamshuhei加载失败', err)
-  //   }
-  // })
+  // 加载第二个字体
+  uni.loadFontFace({
+    family: 'alimamamshuhei',
+    source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
+    global: true,
+    success() {
+      console.log('字体alimamamshuhei加载成功')
+    },
+    fail(err) {
+      console.log('字体alimamamshuhei加载失败', err)
+    }
+  })
 }
 </script>
 
 <style>
 	/*每个页面公共css */
-	@import 'common/font.css';
+	/* @import 'common/font.css'; */
 
 	.backbody {
 		background-color: #C0EDE9;

@@ -40562,6 +40562,17 @@ ${o3}
             formatAppLog("log", "at App.vue:34", "字体cutefont加载失败", err);
           }
         });
+        uni.loadFontFace({
+          family: "alimamamshuhei",
+          source: 'url("https://images1.fantuanpu.com/font/AlimamaShuHeiTi-Bold.ttf")',
+          global: true,
+          success() {
+            formatAppLog("log", "at App.vue:44", "字体alimamamshuhei加载成功");
+          },
+          fail(err) {
+            formatAppLog("log", "at App.vue:47", "字体alimamamshuhei加载失败", err);
+          }
+        });
       }
       const __returned__ = { loadFonts, get onLaunch() {
         return onLaunch;
