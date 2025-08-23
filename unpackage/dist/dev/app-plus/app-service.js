@@ -80,7 +80,7 @@ if (uni.restoreGlobal) {
     2
     /* HookFlags.PAGE */
   );
-  const websiteUrl = vue.ref("https://api.fantuanpu.com");
+  const websiteUrl = vue.ref("http://localhost:8080");
   const devUrl = "http://localhost:8080";
   const cnURL = "https://api.fantuanpu.com";
   const usURL = "https://us-api.dogdogdoll.com";
@@ -14194,6 +14194,7 @@ if (uni.restoreGlobal) {
     },
     onLoad(options) {
       this.imageSrc = decodeURIComponent(options.src);
+      formatAppLog("log", "at pages/pop_croper/pop_croper.vue:41", this.imageSrc);
     },
     onPullDownRefresh() {
       uni.stopPullDownRefresh();
@@ -14232,7 +14233,7 @@ if (uni.restoreGlobal) {
           this.dist = res;
           const pages2 = getCurrentPages();
           const parentPage = pages2[pages2.length - 2];
-          formatAppLog("log", "at pages/pop_croper/pop_croper.vue:82", parentPage);
+          formatAppLog("log", "at pages/pop_croper/pop_croper.vue:83", parentPage);
           parentPage.returnParam = res;
           uni.navigateBack({
             delta: 1
@@ -35160,28 +35161,39 @@ ${o3}
           urls
         });
       };
+      const onArtistStatusChange = (e2) => {
+        const index = e2.detail.value;
+        formData.value.status_of_artist = statusOptions.value[index].value;
+      };
+      const onHairstylistStatusChange = (e2) => {
+        const index = e2.detail.value;
+        formData.value.status_of_hairstylist = statusOptions.value[index].value;
+      };
       const chooseArtistImage = async () => {
         try {
           const maxCount = 9 - formData.value.artist_highlight_images.length;
           if (maxCount <= 0) {
-            uni.showToast({ title: "最多只能上传9张图片", icon: "none" });
+            uni.showToast({
+              title: "最多只能上传9张图片",
+              icon: "none"
+            });
             return;
           }
           const tempFilePaths = await chooseImageList(maxCount);
           artistUploading.value = true;
           artistUploadProgress.value = 0;
           artistUploadStatusText.value = "准备上传...";
-          artistUploadStatusText.value = "获取上传凭证...";
-          const qiniuTokenRes = await getQiniuToken();
-          if (!qiniuTokenRes || !qiniuTokenRes.token) {
-            throw new Error("获取上传凭证失败");
-          }
-          const qiniuTokenData = qiniuTokenRes;
           for (let i2 = 0; i2 < tempFilePaths.length; i2++) {
             try {
               const filePath = tempFilePaths[i2];
-              artistUploadStatusText.value = `上传中 (${i2 + 1}/${tempFilePaths.length})`;
+              artistUploadStatusText.value = `获取上传凭证 (${i2 + 1}/${tempFilePaths.length})`;
+              const qiniuTokenRes = await getQiniuToken();
+              if (!qiniuTokenRes || !qiniuTokenRes.token) {
+                throw new Error("获取上传凭证失败");
+              }
+              const qiniuTokenData = qiniuTokenRes;
               artistUploadProgress.value = Math.round(i2 / tempFilePaths.length * 100);
+              artistUploadStatusText.value = `上传中 (${i2 + 1}/${tempFilePaths.length})`;
               const fileName = qiniuTokenData.path;
               const result = await uploadImageToQiniu(
                 filePath,
@@ -35192,7 +35204,7 @@ ${o3}
                 formData.value.artist_highlight_images.push(result.imageUrl);
               }
             } catch (error2) {
-              formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:321", `第 ${i2 + 1} 张图片上传失败:`, error2);
+              formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:304", `第 ${i2 + 1} 张图片上传失败:`, error2);
               uni.showToast({
                 title: `第 ${i2 + 1} 张图片上传失败: ${error2.message || error2}`,
                 icon: "none",
@@ -35200,9 +35212,12 @@ ${o3}
               });
             }
           }
-          uni.showToast({ title: "上传成功", icon: "success" });
+          uni.showToast({
+            title: "上传成功",
+            icon: "success"
+          });
         } catch (error2) {
-          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:332", "上传失败:", error2);
+          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:318", "上传失败:", error2);
           uni.showToast({
             title: "上传失败: " + (error2.message || "未知错误"),
             icon: "none"
@@ -35231,7 +35246,10 @@ ${o3}
         try {
           const maxCount = 9 - formData.value.hairstylist_highlight_images.length;
           if (maxCount <= 0) {
-            uni.showToast({ title: "最多只能上传9张图片", icon: "none" });
+            uni.showToast({
+              title: "最多只能上传9张图片",
+              icon: "none"
+            });
             return;
           }
           const tempFilePaths = await chooseImageList(maxCount);
@@ -35259,7 +35277,7 @@ ${o3}
                 formData.value.hairstylist_highlight_images.push(result.imageUrl);
               }
             } catch (error2) {
-              formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:410", `第 ${i2 + 1} 张图片上传失败:`, error2);
+              formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:399", `第 ${i2 + 1} 张图片上传失败:`, error2);
               uni.showToast({
                 title: `第 ${i2 + 1} 张图片上传失败: ${error2.message || error2}`,
                 icon: "none",
@@ -35267,9 +35285,12 @@ ${o3}
               });
             }
           }
-          uni.showToast({ title: "上传成功", icon: "success" });
+          uni.showToast({
+            title: "上传成功",
+            icon: "success"
+          });
         } catch (error2) {
-          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:421", "上传失败:", error2);
+          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:413", "上传失败:", error2);
           uni.showToast({
             title: "上传失败: " + (error2.message || "未知错误"),
             icon: "none"
@@ -35315,7 +35336,7 @@ ${o3}
             }
           });
           if (res.data.status === "success") {
-            formatAppLog("log", "at pages/creator_base/artist_info/artist_info.vue:471", res.data.data);
+            formatAppLog("log", "at pages/creator_base/artist_info/artist_info.vue:463", res.data.data);
             const data = res.data.data;
             formData.value = {
               artist_highlight_images: data.artist_highlight_images || [],
@@ -35337,7 +35358,7 @@ ${o3}
             });
           }
         } catch (error2) {
-          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:493", "获取创作者信息失败:", error2);
+          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:485", "获取创作者信息失败:", error2);
           uni.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -35382,7 +35403,7 @@ ${o3}
             });
           }
         } catch (error2) {
-          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:545", "保存创作者信息失败:", error2);
+          formatAppLog("error", "at pages/creator_base/artist_info/artist_info.vue:537", "保存创作者信息失败:", error2);
           uni.showToast({
             title: "网络请求失败",
             icon: "none"
@@ -35397,7 +35418,7 @@ ${o3}
           title: "妆师毛娘信息设置"
         });
       });
-      const __returned__ = { activeTab, formData, statusOptions, artistUploading, artistUploadProgress, artistUploadStatusText, hairstylistUploading, hairstylistUploadProgress, hairstylistUploadStatusText, artistStatusIndex, hairstylistStatusIndex, switchTab, previewImage, chooseArtistImage, removeArtistImage, chooseHairstylistImage, removeHairstylistImage, fetchArtistInfo, saveSettings, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, get websiteUrl() {
+      const __returned__ = { activeTab, formData, statusOptions, artistUploading, artistUploadProgress, artistUploadStatusText, hairstylistUploading, hairstylistUploadProgress, hairstylistUploadStatusText, artistStatusIndex, hairstylistStatusIndex, switchTab, previewImage, onArtistStatusChange, onHairstylistStatusChange, chooseArtistImage, removeArtistImage, chooseHairstylistImage, removeHairstylistImage, fetchArtistInfo, saveSettings, ref: vue.ref, computed: vue.computed, onMounted: vue.onMounted, get websiteUrl() {
         return websiteUrl;
       }, get asyncGetUserInfo() {
         return asyncGetUserInfo;
@@ -35450,7 +35471,8 @@ ${o3}
             mode: "selector",
             range: $setup.statusOptions,
             "range-key": "label",
-            value: $setup.artistStatusIndex
+            value: $setup.artistStatusIndex,
+            onChange: $setup.onArtistStatusChange
           }, [
             vue.createElementVNode(
               "view",
@@ -35459,7 +35481,7 @@ ${o3}
               1
               /* TEXT */
             )
-          ], 8, ["range", "value"])
+          ], 40, ["range", "value"])
         ]),
         vue.createElementVNode("view", { class: "form-section" }, [
           vue.createElementVNode("view", { class: "section-title" }, "基础价格"),
@@ -35612,7 +35634,8 @@ ${o3}
             mode: "selector",
             range: $setup.statusOptions,
             "range-key": "label",
-            value: $setup.hairstylistStatusIndex
+            value: $setup.hairstylistStatusIndex,
+            onChange: $setup.onHairstylistStatusChange
           }, [
             vue.createElementVNode(
               "view",
@@ -35621,7 +35644,7 @@ ${o3}
               1
               /* TEXT */
             )
-          ], 8, ["range", "value"])
+          ], 40, ["range", "value"])
         ]),
         vue.createElementVNode("view", { class: "form-section" }, [
           vue.createElementVNode("view", { class: "section-title" }, "基础价格"),
