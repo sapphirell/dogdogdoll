@@ -58,6 +58,8 @@ function loadFonts() {
 		background-color: #C0EDE9;
 		height: 100vh;
 	}
+	
+	
 	/*  tab图标 */
 /* 	.uni-tabbar .uni-tabbar__icon {
 		width: 65rpx !important;

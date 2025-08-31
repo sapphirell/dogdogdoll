@@ -1,1 +1,0 @@
-<view class="dot-wrapper-box" style="{{b}}"><block wx:for="{{a}}" wx:for-item="item"><view class="dot-wrapper"><view class="{{['dot', item.a]}}"></view></view></block></view>

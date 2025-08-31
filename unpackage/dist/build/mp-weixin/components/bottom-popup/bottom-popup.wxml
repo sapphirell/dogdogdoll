@@ -1,1 +1,0 @@
-<view class="data-v-a001089e"><view wx:if="{{a}}" class="{{['mask', 'data-v-a001089e', b && 'mask-show']}}" bindtap="{{c}}" catchtouchmove="{{d}}"></view><view class="{{['popup-container', 'data-v-a001089e', e && 'popup-show']}}" catchtouchmove="{{f}}"><slot></slot></view></view>

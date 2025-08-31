@@ -15,7 +15,7 @@ export const usURL = 'https://us-api.dogdogdoll.com'
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
 // 客户端版本号
-export const dogdogdollVersion = "1.1.2"
+export const dogdogdollVersion = "1.1.3"
 
 // 全局状态
 export let global = reactive({

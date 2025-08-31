@@ -1,8 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "report-button": "../report-button/report-button",
-    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
-    "attitude-widget": "../attitude-widget/attitude-widget"
-  }
-}

@@ -73,197 +73,149 @@
 </template>
 
 <script setup>
-	import {
-		ref,
-		onMounted
-	} from 'vue';
-	import {
-		useRoute
-	} from 'vue-router';
-	import {
-		websiteUrl,
-		global,
-		asyncGetUserInfo
-	} from "@/common/config.js";
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
 
-	const route = useRoute();
-	const goodsId = ref(route.query.goods_id || '');
-	const collocationList = ref([]);
-	const loading = ref(true);
-  // 获取商品信息
-  const goodsInfo = ref(null);
-	// 获取搭配数据
-	const fetchCollocations = async () => {
-		if (!goodsId.value) {
-			uni.showToast({
-				title: '商品ID缺失',
-				icon: 'none'
-			});
-			return;
-		}
+const goodsId = ref('')
+const collocationList = ref([])
+const loading = ref(true)
+const goodsInfo = ref(null)
 
-		try {
-			loading.value = true;
-			const res = await uni.request({
-				url: `${websiteUrl.value}/goods-collocation`,
-				method: 'GET',
-				data: {
-					goods_id: goodsId.value,
-					official: true
-				}
-			});
+const fetchCollocations = async () => {
+  if (!goodsId.value) {
+    uni.showToast({ title: '商品ID缺失', icon: 'none' })
+    return
+  }
+  try {
+    loading.value = true
+    const res = await uni.request({
+      url: `${websiteUrl.value}/goods-collocation`,
+      method: 'GET',
+      data: { goods_id: goodsId.value, official: true }
+    })
+    if (res.data?.status === 'success') {
+      const data = res.data.data || {}
+      const list = data.collocation_relation_list || []
+      collocationList.value = list.map(item => ({
+        ...item,
+        imageList: (item.image_urls || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
+      }))
+    } else {
+      throw new Error(res.data?.msg || '获取搭配数据失败')
+    }
+  } catch (err) {
+    console.error('获取搭配数据失败:', err)
+    uni.showToast({ title: err.message || '请求失败', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
+}
 
-			if (res.data.status === 'success') {
-				const data = res.data.data;
-				// 处理图片URL
-				collocationList.value = data.collocation_relation_list.map(item => ({
-					...item,
-					imageList: item.image_urls.split(',').map(url => url.trim())
-				}));
-			} else {
-				throw new Error(res.data.msg || '获取搭配数据失败');
-			}
-		} catch (error) {
-			uni.showToast({
-				title: error.message || '请求失败',
-				icon: 'none'
-			});
-			console.error('获取搭配数据失败:', error);
-		} finally {
-			loading.value = false;
-		}
-	};
+// 预览图片
+const previewImage = (urls, index) => {
+  uni.previewImage({ current: index, urls })
+}
 
+// 跳转到预览页面
+const goToPreview = (collocationId) => {
+  uni.navigateTo({
+    url: `/pages/collocation_share/collocation_share?collocation_id=${encodeURIComponent(collocationId)}&origin=1`
+  })
+}
 
+// 添加
+const handleAddCollocation = async () => {
+  if (!goodsInfo.value && goodsId.value) {
+    try {
+      const res = await uni.request({
+        url: `${websiteUrl.value}/goods`,
+        method: 'GET',
+        data: { id: goodsId.value }
+      })
+      if (res.data?.status === 'success') {
+        goodsInfo.value = res.data.data
+      }
+    } catch (e) {
+      console.error('获取商品信息失败:', e)
+    }
+  }
+  const queryParams = {
+    goods_id: goodsId.value,
+    ...(goodsInfo.value ? {
+      brand_id: goodsInfo.value.brand_id,
+      goods_name: goodsInfo.value.name,
+      brand_name: goodsInfo.value.brand_name,
+      type: goodsInfo.value.type
+    } : {})
+  }
+  const queryString = Object.entries(queryParams)
+    .map(([k, v]) => `${k}=${(v ?? '')}`)
+    .join('&')
+  uni.navigateTo({ url: `/pages/collocation/collocation?${queryString}` })
+}
 
-	// 预览图片
-	const previewImage = (urls, index) => {
-		uni.previewImage({
-			current: index,
-			urls: urls
-		});
-	};
+// 编辑
+const handleEdit = (collocationId) => {
+  uni.navigateTo({
+    url: `/pages/collocation/collocation?collocation_id=${encodeURIComponent(collocationId)}`
+  })
+}
 
-	// 跳转到预览页面
-	const goToPreview = (collocationId) => {
-	  uni.navigateTo({
-		url: `/pages/collocation_share/collocation_share?collocation_id=${collocationId}&origin=1`
-	  });
-	};
-
-	// 处理添加
-	 const handleAddCollocation = async () => {
-    // 如果还没有获取商品信息，先获取
-    if (!goodsInfo.value && goodsId.value) {
+// 删除
+const handleDelete = (item) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这个搭配参考吗？',
+    success: async (r) => {
+      if (!r.confirm) return
       try {
+        const token = uni.getStorageSync('token')
         const res = await uni.request({
-          url: `${websiteUrl.value}/goods`,
-          method: 'GET',
-          data: {
-            id: goodsId.value
-          }
-        });
-        
-        if (res.data.status === 'success') {
-          goodsInfo.value = res.data.data;
+          url: `${websiteUrl.value}/with-state/delete-collocation?collocation_id=${encodeURIComponent(item.collocation_id)}`,
+          method: 'POST',
+          header: { Authorization: token },
+          data: { collocation_id: item.collocation_id }
+        })
+        if (res.data?.status === 'success') {
+          uni.showToast({ title: '删除成功' })
+          fetchCollocations()
+        } else {
+          throw new Error(res.data?.msg || '删除失败')
         }
-      } catch (error) {
-        console.error('获取商品信息失败:', error);
+      } catch (e) {
+        uni.showToast({ title: e.message || '删除失败', icon: 'none' })
       }
     }
-    
-    // 准备跳转参数
-    const queryParams = {
-      goods_id: goodsId.value
-    };
-    
-    // 如果有商品信息，添加更多参数
-    if (goodsInfo.value) {
-      queryParams.brand_id = goodsInfo.value.brand_id;
-      queryParams.goods_name = goodsInfo.value.name;
-      queryParams.brand_name = goodsInfo.value.brand_name;
-      queryParams.type = goodsInfo.value.type;
-    }
-    
-    // 构建URL参数
-    const queryString = Object.entries(queryParams)
-      .map(([key, value]) => `${key}=${(value)}`)
-      .join('&');
-    
-    // 跳转到添加搭配页面
-    uni.navigateTo({
-      url: `/pages/collocation/collocation?${queryString}`
-    });
-  };
+  })
+}
 
-	// 处理编辑
-	const handleEdit = (collocationId) => {
-		uni.navigateTo({
-			url: `/pages/collocation/collocation?collocation_id=${collocationId}`
-		});
-	};
+const pad2 = (n) => String(n).padStart(2, '0')
+const formatTime = (timestamp) => {
+  const d = new Date((Number(timestamp) || 0) * 1000)
+  const M = pad2(d.getMonth() + 1)
+  const D = pad2(d.getDate())
+  const h = pad2(d.getHours())
+  const m = pad2(d.getMinutes())
+  return `${M}-${D} ${h}:${m}`
+}
 
-	// 处理删除
-	const handleDelete = async (item) => {
-		uni.showModal({
-			title: '确认删除',
-			content: '确定要删除这个搭配参考吗？',
-			success: async (res) => {
-				if (res.confirm) {
-					console.log(item)
-					try {
-						const token = uni.getStorageSync('token');
-						const res = await uni.request({
-							url: `${websiteUrl.value}/with-state/delete-collocation?collocation_id=${item.collocation_id}`,
-							method: 'POST',
-							header: {
-								Authorization: token
-							},
-							data: {
-								collocation_id: item.collocation_id
-							}
-						});
-
-						if (res.data.status === 'success') {
-							uni.showToast({
-								title: '删除成功'
-							});
-							fetchCollocations();
-						} else {
-							throw new Error(res.data.msg || '删除失败');
-						}
-					} catch (error) {
-						uni.showToast({
-							title: error.message || '删除失败',
-							icon: 'none'
-						});
-					}
-				}
-			}
-		});
-	};
-
-	const formatTime = (timestamp) => {
-		const date = new Date(timestamp * 1000)
-		return `${date.getMonth()+1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`
-	}
-
-	// 初始化
-	onMounted(async () => {
-		uni.setNavigationBarTitle({
-			title: "官方搭配管理"
-		})
-		// 确保用户信息已加载
-		if (!global.isLogin) {
-			await asyncGetUserInfo();
-		}
-		fetchCollocations();
-		
-		
-	});
+// 入口：用 onLoad 拿到路由参数（跨 H5/小程序/App 通用）
+onLoad(async (options) => {
+  uni.setNavigationBarTitle({ title: '官方搭配管理' })
+  goodsId.value = options?.goods_id || ''
+  if (!global.isLogin) {
+    await asyncGetUserInfo()
+  }
+  fetchCollocations()
+})
 </script>
 
-<style lang="less">
+
+<style lang="less" scoped>
 	.container {
 		position: relative;
 		padding: 20rpx;

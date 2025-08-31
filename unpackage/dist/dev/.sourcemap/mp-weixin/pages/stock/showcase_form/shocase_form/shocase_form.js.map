@@ -1,1 +1,0 @@
-{"version":3,"file":"shocase_form.js","sources":["pages/stock/showcase_form/shocase_form/shocase_form.vue?type=page"],"sourcesContent":["import MiniProgramPage from '/Users/sapphirell/Documents/git/dogdogdoll-uniapp/pages/stock/showcase_form/shocase_form/shocase_form.vue'\nwx.createPage(MiniProgramPage)"],"names":[],"mappings":";;;;;;;;;;;AACA,GAAG,WAAW,eAAe;"}

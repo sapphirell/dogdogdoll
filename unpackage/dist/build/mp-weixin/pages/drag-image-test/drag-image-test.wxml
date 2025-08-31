@@ -1,1 +1,0 @@
-<view style="min-height:100vh;width:100vw"><shmily-drag-image wx:if="{{a}}" u-i="0b75304a-0" bind:__l="__l" bindupdateModelValue="{{b}}" u-p="{{c}}"></shmily-drag-image></view>

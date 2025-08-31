@@ -2,6 +2,7 @@
 	<meta name="theme-color" content="#d8deff">
 	</meta>
 	<view-logs />
+	<bottom-popup :show="false"></bottom-popup>
 	<common-page head_color="#d8deff">
 		<view class="container" style="overflow: hidden;">
 			<view class="head_container">
@@ -520,7 +521,7 @@
 	 		align-items: center;
 	 		justify-content: center;
 	 		box-shadow: 0 6rpx 20rpx rgba(30, 209, 225, 0.4);
-	 		z-index: 999;
+	 		z-index: 555;
 	 		transition: all 0.3s ease;
 	 		
 	 		/* 按钮动画效果 */

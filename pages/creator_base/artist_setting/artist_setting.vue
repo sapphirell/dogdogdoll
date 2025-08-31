@@ -71,11 +71,8 @@ const navigateTo = (type) => {
       url = '/pages/creator_base/set_showcase/set_showcase'
       break
     case 'wigGallery':
-		uni.showToast({
-			title: "将在下一个版本支持",
-			icon: 'none'
-		})
-      // url = '/pages/artist/wigGallery'
+
+      url = '/pages/creator_base/set_hair_showcase/set_hair_showcase'
       break
     case 'profileEdit':
       url = '/pages/creator_base/artist_info/artist_info'

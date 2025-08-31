@@ -1,8 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "uni-icons": "../../uni_modules/uni-icons/components/uni-icons/uni-icons",
-    "switch-search": "../switch-search/switch-search",
-    "bottom-popup": "../bottom-popup/bottom-popup"
-  }
-}

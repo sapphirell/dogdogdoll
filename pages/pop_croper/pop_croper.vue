@@ -37,8 +37,13 @@
 			};
 		},
 		onLoad(options) {
-			this.imageSrc = decodeURIComponent(options.src)
-
+		    this.imageSrc = decodeURIComponent(options.src)
+		    console.log(this.imageSrc)
+		    
+		    // 在onLoad中调用打开弹窗的方法
+		    this.$nextTick(() => {
+		        this.openPopup();
+		    });
 		},
 		onPullDownRefresh() {
 			// 阻止下拉刷新

@@ -1,1 +1,0 @@
-<view><input type="text" value="{{a}}" bindinput="{{b}}"/><text>{{c}}</text><view></view></view>
