@@ -1,430 +1,250 @@
 <template>
-	<meta name="theme-color" content="#d8deff">
-	</meta>
-	<view-logs />
-	<bottom-popup :show="false"></bottom-popup>
-	<common-page head_color="#d8deff">
-		<view class="container" style="overflow: hidden;">
-			<view class="head_container">
-				<view class="switch_tab">
-					<button @click="switch_tab(1)" class="font-alimamashuhei" :class="{'active': activeTab === 1}">
-						<image class="tab_img" src="/static/new-icon/myitems.png" mode="widthFix" style="width: 160rpx;opacity: 0.9;"></image>
-					</button>
-					<button @click="switch_tab(2)" class="font-alimamashuhei" :class="{'active': activeTab === 2}">
-						<image  class="tab_img"  src="/static/new-icon/showcase.png" mode="widthFix" style="width: 130rpx;opacity: 0.9;"></image>
-					</button>
-					<button @click="switch_tab(3)" class="font-alimamashuhei" :class="{'active': activeTab === 3}">
-						<image  class="tab_img"  src="/static/new-icon/calendar.png" mode="widthFix" style="width: 160rpx;opacity: 0.9;"></image>
-					</button>
-				</view>
-			</view>
+  <meta name="theme-color" content="#d8deff"></meta>
+  <view-logs />
+  <bottom-popup :show="false"></bottom-popup>
 
-			<view class="data_body">
-				<!-- <view @tap="jump2test">拖拽测试</view> -->
-				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
-					:show="activeTab === 1">
-					<!-- 我的物品 -->
-					<stock-myitems :accountBookData="accountBookData" @go2editor="go2editor" 
-						@update-type="handleTypeUpdate"></stock-myitems>
-						
-				</uni-transition>
-				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
-					:show="activeTab === 2">
+  <common-page head_color="#d8deff">
+    <view class="container" style="overflow: hidden;">
+      <view class="head_container">
+        <view class="switch_tab">
+          <button @click="switch_tab(1)" class="font-alimamashuhei" :class="{'active': activeTab === 1}">
+            <image class="tab_img" src="/static/new-icon/myitems.png" mode="widthFix" style="width: 160rpx;opacity: 0.9;"></image>
+          </button>
+          <button @click="switch_tab(2)" class="font-alimamashuhei" :class="{'active': activeTab === 2}">
+            <image class="tab_img" src="/static/new-icon/showcase.png" mode="widthFix" style="width: 130rpx;opacity: 0.9;"></image>
+          </button>
+          <button @click="switch_tab(3)" class="font-alimamashuhei" :class="{'active': activeTab === 3}">
+            <image class="tab_img" src="/static/new-icon/calendar.png" mode="widthFix" style="width: 160rpx;opacity: 0.9;"></image>
+          </button>
+        </view>
+      </view>
 
-					<view class="tab_body_sec">
-						<!-- 展示柜 -->
-						<view v-if="showcaseData.showcases && showcaseData.showcases.length > 0"
-							class="showcase-container">
-							<view v-for="(item, index) in showcaseData.showcases" :key="index" class="showcase-card"
-								@tap="go2editorShowCase(item.id)">
-								<view v-if="item.display !== 1" class="status-overlay">
-									<text class="status-text">{{ getStatusText(item.display) }}</text>
-								</view>
+      <view class="data_body">
+        <!-- Tab 1：我的物品 -->
+        <uni-transition :name="transitionName()" :mode-class="['fade','slide-bottom']" :duration="300" :show="activeTab === 1">
+          <stock-myitems
+            ref="myItemsRef"
+            :accountBookData="accountBookData"
+            :active-tab="activeTab"
+            @go2editor="go2editor"
+            @update-type="handleTypeUpdate"
+            @open-type-manager="typeModalVisible = true"
+          />
+        </uni-transition>
 
-								<view class="card-content" :class="{ 'blur-effect': item.display !== 1 }">
-									<image :src="item.image_url_list[0]" mode="aspectFill" class="showcase-image">
-									</image>
-									<view class="showcase-info">
-										<text class="showcase-title one_line_text">{{ item.name }}</text>
-										<text class="showcase-description multi_line_text">{{ item.description }}</text>
-										<view class="interaction-bar">
-											<view class="interaction-item">
-												<image src="/static/eye.png" class="interaction-icon"></image>
-												<text class="interaction-count">{{ item.views || 0 }}</text>
-											</view>
-											<view class="interaction-item">
-												<image src="/static/6.png" class="interaction-icon"></image>
-												<text class="interaction-count">{{ item.like_count || 0 }}</text>
-											</view>
-										</view>
-									</view>
-								</view>
-							</view>
-						</view>
-						<view class="empty-state" v-else>
-							<image class="empty-icon" src="/static/empty.jpg"></image>
-							<text class="empty-text">展示柜空空如也</text>
-							<text class="empty-tip">快来创建你的展示空间吧！</text>
-						</view>
-						<!-- 添加展示柜数据 -->
-						<!-- <view class="floating-button" @tap="go2addShowCase">
-							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
-						</view> -->
-					</view>
-				</uni-transition>
-				<uni-transition :name="transitionName()" :mode-class="['fade', 'slide-bottom']" :duration="300"
-					:show="activeTab === 3">
+        <!-- Tab 2：展示柜 -->
+        <uni-transition :name="transitionName()" :mode-class="['fade','slide-bottom']" :duration="300" :show="activeTab === 2">
+          <view class="tab_body_sec">
+            <view v-if="showcaseData.showcases && showcaseData.showcases.length > 0" class="showcase-container">
+              <view v-for="(item, index) in showcaseData.showcases" :key="index" class="showcase-card" @tap="go2editorShowCase(item.id)">
+                <view v-if="item.display !== 1" class="status-overlay">
+                  <text class="status-text">{{ getStatusText(item.display) }}</text>
+                </view>
+                <view class="card-content" :class="{ 'blur-effect': item.display !== 1 }">
+                  <image :src="item.image_url_list[0]" mode="aspectFill" class="showcase-image" />
+                  <view class="showcase-info">
+                    <text class="showcase-title one_line_text">{{ item.name }}</text>
+                    <text class="showcase-description multi_line_text">{{ item.description }}</text>
+                    <view class="interaction-bar">
+                      <view class="interaction-item">
+                        <image src="/static/eye.png" class="interaction-icon" />
+                        <text class="interaction-count">{{ item.views || 0 }}</text>
+                      </view>
+                      <view class="interaction-item">
+                        <image src="/static/6.png" class="interaction-icon" />
+                        <text class="interaction-count">{{ item.like_count || 0 }}</text>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="empty-state" v-else>
+              <image class="empty-icon" src="/static/empty.jpg" />
+              <text class="empty-text">展示柜空空如也</text>
+              <text class="empty-tip">快来创建你的展示空间吧！</text>
+            </view>
+          </view>
+        </uni-transition>
 
-					<view class="tab_body_3th">
-						<view class="calendar-container" v-if="Object.keys(billData).length > 0">
-							<view v-for="(bills, month) in billData" :key="month">
-								<view class="month-header-container">
-									<text class="month-header font-alimamashuhei">{{ month }} 账单</text>
-									<!-- 已补/总计：{{ countPaid(bills) }}/{{ bills.length }} -->
-									<text class="month-stats">
-										
-										{{ countPaid(bills) }}
-									</text>
-								</view>
+        <!-- Tab 3：账单 -->
+        <uni-transition :name="transitionName()" :mode-class="['fade','slide-bottom']" :duration="300" :show="activeTab === 3">
+          <view class="tab_body_3th">
+            <view class="calendar-container" v-if="Object.keys(billData).length > 0">
+              <view v-for="(bills, month) in billData" :key="month">
+                <view class="month-header-container">
+                  <text class="month-header font-alimamashuhei">{{ month }} 账单</text>
+                  <text class="month-stats">{{ countPaid(bills) }}</text>
+                </view>
+                <view v-for="bill in bills" :key="bill.id" class="bill-item" @tap="go2addBill(bill.id)">
+                  <view class="bill-left">
+                    <view class="bill-name-container"><text class="bill-name">{{ bill.name }}</text></view>
+                    <view class="due-amount-container">
+                      <text class="due-label">待补款:</text>
+                      <text class="due-amount">¥{{ bill.price }}</text>
+                    </view>
+                  </view>
+                  <view class="bill-right">
+                    <view class="date-container"><text class="date-text">日期: {{ bill.ymd }}</text></view>
+                    <view class="status-container">
+                      <text class="status-text" :class="{'paid': bill.status === 1}">{{ bill.status === 0 ? '未补款' : '已补款' }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="empty-state" v-else>
+              <image class="empty-icon" src="/static/empty.jpg" />
+              <text class="empty-text">暂无待补尾款</text>
+              <text class="empty-tip">增加添加一个到账本试试吧～</text>
+            </view>
+          </view>
+        </uni-transition>
+      </view>
+    </view>
 
-								<view v-for="bill in bills" :key="bill.id" class="bill-item" @tap="go2addBill(bill.id)">
-									<view class="bill-left">
-										<view class="bill-name-container">
-											<text class="bill-name">{{ bill.name }}</text>
-										</view>
-										<view class="due-amount-container">
-											<text class="due-label">待补款:</text>
-											<text class="due-amount">¥{{ bill.price }}</text>
-										</view>
-									</view>
+    <!-- ✅ 分类管理弹窗：移动到 uni-transition 外层，由父级控制显隐 -->
+    <item-category-manager
+      v-model="typeModalVisible"
+      :list="typeList"
+      @updated="onTypesUpdated"
+      @refresh="onTypesRefresh"
+    />
 
-									<view class="bill-right">
-										<view class="date-container">
-											<text class="date-text">日期: {{ bill.ymd }}</text>
-										</view>
-										<view class="status-container">
-											<text class="status-text" :class="{'paid': bill.status === 1}">
-												{{ bill.status === 0 ? '未补款' : '已补款' }}
-											</text>
-										</view>
-									</view>
-								</view>
-							</view>
-						</view>
-
-						<view class="empty-state" v-else>
-							<image class="empty-icon" src="/static/empty.jpg"></image>
-							<text class="empty-text">暂无待补尾款</text>
-							<text class="empty-tip">增加添加一个到账本试试吧～</text>
-						</view>
-						
-	<!-- 					<view class="floating-button" @tap="go2addBill(false)">
-							<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
-						</view> -->
-					</view>
-				</uni-transition>
-			</view>
-		</view>
-		
-		<!-- 新增分类管理弹窗 -->
-		<common-modal :visible="typeModalVisible" @update:visible="val => typeModalVisible = val"
-			top="300rpx" height="60%">
-			<view class="type-modal">
-				<view class="type-list">
-					<view v-for="(type, index) in customTypes" :key="type.id" class="type-item">
-						<text>{{ type.name }}</text>
-						<uni-icons type="trash" size="22" color="#ff6666"
-							@tap="deleteType(type.id)"></uni-icons>
-					</view>
-				</view>
-				<view class="add-type-form">
-					<input v-model="newTypeName" placeholder="输入新分类名称" class="type-input" />
-					<button class="add-btn" @tap="addNewType">添加分类</button>
-				</view>
-			</view>
-		</common-modal>
-		<!-- 统一的悬浮按钮 - 固定在底部中央 -->
-		<view class="unified-floating-button" @tap="handleFloatingButton">
-			<uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
-		</view>
-	</common-page>
+    <!-- 固定悬浮按钮 -->
+    <view class="unified-floating-button" @tap="handleFloatingButton">
+      <uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+    </view>
+  </common-page>
 </template>
 
 <script setup>
-	import {
-		ref,
-		computed
-	} from 'vue';
-	import {
-		onShow
-	} from '@dcloudio/uni-app';
-	import {
-		websiteUrl,
-		wechatSignLogin,
-		getUserInfo,
-		global,
-		asyncGetUserInfo,
-	} from "../../common/config.js";
+import { ref, computed, watch } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import {
+  websiteUrl, wechatSignLogin, getUserInfo, global, asyncGetUserInfo
+} from "../../common/config.js"
 
-	// 状态栏高度
-	const systemInfo = uni.getSystemInfoSync();
-	const statusBarHeight = ref(systemInfo.statusBarHeight);
+// ===== 新增：弹窗开关与列表（由父级控制） =====
+const typeModalVisible = ref(false)
+const typeList = ref([]) // 仅用于给弹窗初始渲染，真正数据以弹窗组件内部拉取为准
+const myItemsRef = ref(null) // 获取子组件实例以调用其 getAccountTypes()
 
-	// 当前激活的 tab
-	const activeTab = ref(1);
-	const previousTab = ref(1); // 记录上一次的 tab
-	// 切换动画名称
-	function transitionName() {
-		if (activeTab.value > 1) {
-			return ['fade', 'slide-left'];
-		} else {
-			return ['fade', 'slide-right'];
-		}
+// ===== 原有状态 =====
+const systemInfo = uni.getSystemInfoSync()
+const statusBarHeight = ref(systemInfo.statusBarHeight)
+const activeTab = ref(1)
+const previousTab = ref(1)
 
-	};
+function transitionName() {
+  return activeTab.value > 1 ? ['fade', 'slide-left'] : ['fade', 'slide-right']
+}
+function switch_tab(index) {
+  previousTab.value = activeTab.value
+  activeTab.value = index
+  // 切走非 Tab1 时，保证关闭分类弹窗
+  if (activeTab.value !== 1) typeModalVisible.value = false
 
-	function switch_tab(index) {
-		const oldIndex = activeTab.value;
-		previousTab.value = oldIndex; // 记录上一次的 tab
-		activeTab.value = index; // 设置新的激活 tab
+  switch (index) {
+    case 1: getAccountBookData(); break
+    case 2: getShowcaseData(); break
+    case 3: getBillData(); break
+  }
+}
 
-		console.log(`从 tab ${oldIndex} 切换到 tab ${index}，方向: ${transitionName()}`);
+// 账本、展示柜、账单数据
+const accountBookData = ref({})
+const showcaseData = ref({})
+const billData = ref({})
 
-		  // 根据切换的 tab 加载数据
-		  switch (index) {
-		    case 1:
-		      getAccountBookData();
-		      break;
-		    case 2:
-		      getShowcaseData();
-		      break;
-		    case 3:
-		      getBillData();
-		      break;
-		  }
-	}
-	// 计算当月账单金额
-	function countPaid(bills) {
-	  let totalAmount = 0; // 总金额
-	  let paidAmount = 0; // 已补款金额
-	  
-	  // 遍历所有账单项
-	  bills.forEach(bill => {
-	    // 将价格转换为数字（确保处理字符串类型）
-	    const price = parseFloat(bill.price) || 0;
-	    
-	    // 累加到总金额
-	    totalAmount += price;
-	    
-	    // 如果状态为已补款（1），累加到已补款金额
-	    if (bill.status === 1) {
-	      paidAmount += price;
-	    }
-	  });
-	  
-	  // 返回格式 "已补款金额/总金额"
-	  return `${paidAmount.toFixed(1)}/${totalAmount.toFixed(1)}`;
-	}
+// 金额统计
+function countPaid(bills) {
+  let totalAmount = 0, paidAmount = 0
+  bills.forEach(b => {
+    const p = parseFloat(b.price) || 0
+    totalAmount += p
+    if (b.status === 1) paidAmount += p
+  })
+  return `${paidAmount.toFixed(1)}/${totalAmount.toFixed(1)}`
+}
 
-	// 添加类型更新处理
-	const handleTypeUpdate = (type) => {
-		console.log("更新账本列表")
-	  getAccountBookData(type);
-	};
+// ===== 分类筛选回调（子组件触发） =====
+const handleTypeUpdate = (type) => {
+  getAccountBookData(type)
+}
 
-	
-	// 处理悬浮按钮点击事件
-	function handleFloatingButton() {
-		switch (activeTab.value) {
-			case 1:
-				go2addAccountBook();
-				break;
-			case 2:
-				go2addShowCase();
-				break;
-			case 3:
-				go2addBill(false);
-				break;
-		}
-	}
+// ===== 弹窗事件回调（弹窗组件触发） =====
+function onTypesUpdated(list) {
+  typeList.value = list || []
+  // 让子组件（我的物品）刷新自身的分类选项
+  myItemsRef.value && myItemsRef.value.getAccountTypes && myItemsRef.value.getAccountTypes()
+}
+function onTypesRefresh() {
+  // 刷新当前账本数据；筛选值仍由子组件控制并通过 @update-type 回传
+  getAccountBookData()
+}
 
-	// 账本数据
-	const accountBookData = ref({});
+// ===== 悬浮按钮 =====
+function handleFloatingButton() {
+  switch (activeTab.value) {
+    case 1: go2addAccountBook(); break
+    case 2: go2addShowCase(); break
+    case 3: go2addBill(false); break
+  }
+}
 
-	// 展示柜数据
-	const showcaseData = ref({});
+// ===== 请求：账本/展示柜/账单 =====
+function getAccountBookData(type) {
+  if (!global.isLogin) { accountBookData.value = {}; showcaseData.value = {}; billData.value = {}; return }
+  const token = uni.getStorageSync('token')
+  let url = websiteUrl.value + '/with-state/account-book'
+  if (type && type !== '全部') url = websiteUrl.value + '/with-state/account-book?type=' + encodeURIComponent(type)
+  uni.request({
+    url, method: 'GET', header: { 'Authorization': token },
+    success: (res) => { accountBookData.value = res.data.data || {} }
+  })
+}
+function getShowcaseData(){
+  if (!global.isLogin) return
+  const token = uni.getStorageSync('token')
+  uni.request({
+    url: websiteUrl.value + '/with-state/showcase', method:'GET', header:{'Authorization':token},
+    success: (res)=> { showcaseData.value = res.data.data || {} }
+  })
+}
+function getBillData(){
+  if (!global.isLogin) return
+  const token = uni.getStorageSync('token')
+  uni.request({
+    url: websiteUrl.value + '/with-state/tail-bill', method:'GET', header:{'Authorization':token},
+    success: (res)=> { billData.value = res.data.data || {} }
+  })
+}
 
-	// 账单数据
-	const billData = ref({});
+// 跳转们（保持原逻辑）
+function jump2test(){ uni.navigateTo({ url: '/pages/drag-image-test/drag-image-test' }) }
+function go2addAccountBook(){ uni.navigateTo({ url: '/pages/stock/account_book_form/account_book_form' }) }
+function go2editor(id){ uni.navigateTo({ url: '/pages/stock/account_book_form/account_book_form?account_book_id=' + id }) }
+function go2addShowCase(){ uni.navigateTo({ url: '/pages/stock/showcase_form/showcase_form' }) }
+function go2editorShowCase(id){ uni.navigateTo({ url: '/pages/stock/showcase_form/showcase_form?showcase_id=' + id }) }
+function go2addBill(id){
+  if (id === false) return uni.navigateTo({ url: '/pages/stock/bill_form/bill_form' })
+  uni.navigateTo({ url: '/pages/stock/bill_form/bill_form?bill_id=' + id })
+}
+function getStatusText(display){
+  const map = { 0:'审核中', 2:'人工复核中', 3:'违规隐藏中' }
+  return map[display] || ''
+}
 
-
-
-
-	//获取账本数据
-	function getAccountBookData(type) {
-		console.log(global)
-		if (!global.isLogin) {
-			accountBookData.value = {}
-			showcaseData.value = {}
-			billData.value = {}
-			
-			return
-		}
-		let token = uni.getStorageSync('token');
-		let url = websiteUrl.value + '/with-state/account-book';
-		if (type && type !== "全部") {
-			url = websiteUrl.value + '/with-state/account-book?type=' + type;
-		}
-
-		// 获取账本数据 /with-state//account-book
-		uni.request({
-			url: url,
-			method: 'GET',
-			header: {
-				'Authorization': token
-			},
-			success: (res) => {
-				console.log(res.data.data);
-				accountBookData.value = res.data.data;
-			},
-			fail: (err) => {
-				console.log(err);
-			}
-		});
-
-	}
-	//获取展示柜数据
-	function getShowcaseData() {
-		console.log(global)
-		if (!global.isLogin) {
-			return
-		}
-		let token = uni.getStorageSync('token');
-
-		// 获取展示柜数据
-		uni.request({
-			url: websiteUrl.value + '/with-state/showcase',
-			method: 'GET',
-			header: {
-				'Authorization': token
-			},
-			success: (res) => {
-				console.log(res.data.data);
-				showcaseData.value = res.data.data;
-			},
-			fail: (err) => {
-				console.log(err);
-			}
-		});
-	}
-	
-
-
-	//获取账单数据
-	function getBillData() {
-		console.log(global)
-		if (!global.isLogin) {
-			return
-		}
-		let token = uni.getStorageSync('token');
-
-		// 获取账单数据
-		uni.request({
-			url: websiteUrl.value + '/with-state/tail-bill',
-			method: 'GET',
-			header: {
-				'Authorization': token
-			},
-			success: (res) => {
-				console.log(res.data.data);
-				billData.value = res.data.data;
-			},
-			fail: (err) => {
-				console.log(err);
-			}
-		});
-	}
-
-	function jump2test() {
-		uni.navigateTo({
-			url: '/pages/drag-image-test/drag-image-test'
-		})
-	}
-
-	//跳转到添加账本数据
-	function go2addAccountBook() {
-		uni.navigateTo({
-			url: '/pages/stock/account_book_form/account_book_form'
-		})
-	}
-	//跳转到编辑
-	function go2editor(id) {
-		uni.navigateTo({
-			url: '/pages/stock/account_book_form/account_book_form?account_book_id=' + id
-		})
-	}
-	//跳转到添加展示柜数据
-	function go2addShowCase() {
-		uni.navigateTo({
-			url: '/pages/stock/showcase_form/showcase_form'
-		})
-	}
-	//跳转到编辑展示柜
-	function go2editorShowCase(id) {
-		uni.navigateTo({
-			url: '/pages/stock/showcase_form/showcase_form?showcase_id=' + id
-		})
-	}
-	//跳转到添加账单数据
-	function go2addBill(id) {
-		if (id == false) {
-			uni.navigateTo({
-				url: '/pages/stock/bill_form/bill_form',
-			});
-			return
-		}
-		uni.navigateTo({
-			url: '/pages/stock/bill_form/bill_form?bill_id=' + id
-		})
-	}
-	// 展示柜状态
-	function getStatusClass(display) {
-		const statusMap = {
-			0: 'reviewing',
-			2: 'rechecking',
-			3: 'violation'
-		}
-		return statusMap[display] || '';
-	}
-
-	function getStatusText(display) {
-		const textMap = {
-			0: '审核中',
-			2: '人工复核中',
-			3: '违规隐藏中'
-		}
-		return textMap[display] || '';
-	}
-
-	onShow(() => {
-	  // 加载用户信息
-	  asyncGetUserInfo().then((userInfo) => {
-	    // 移除 getAccountTypes() 调用，因为它已在组件内部处理
-	    
-	    // 根据当前激活的 tab 加载数据
-	    switch (activeTab.value) {
-	      case 1:
-	        getAccountBookData();
-	        break;
-	      case 2:
-	        getShowcaseData();
-	        break;
-	      case 3:
-	        getBillData();
-	        break;
-	    }
-	  })
-	})
+onShow(() => {
+  asyncGetUserInfo().then(() => {
+    switch (activeTab.value) {
+      case 1: getAccountBookData(); break
+      case 2: getShowcaseData(); break
+      case 3: getBillData(); break
+    }
+  })
+})
 </script>
 
 <style lang="scss" scoped>
@@ -565,10 +385,10 @@
 		// border-radius: 50rpx 50rpx 0 0;
 		overflow: hidden;
 		background-color: #fff;
-		padding: 20rpx 20rpx;
+		padding: 0rpx 20rpx;
 		// height: 100vh;
 		box-sizing: border-box;
-		margin: 20rpx 0rpx 20rpx 0rpx;
+		margin: 0rpx 0rpx 20rpx 0rpx;
 		// box-shadow: 0 0 5rpx #dadada;
 		overflow: hidden;
 		width: calc(100%);

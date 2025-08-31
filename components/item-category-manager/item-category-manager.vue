@@ -1,3 +1,4 @@
+<!-- item-category-manager -->
 <template>
   <bottom-popup :show="modelValue" @close="onClose">
     <view class="popup-panel">
