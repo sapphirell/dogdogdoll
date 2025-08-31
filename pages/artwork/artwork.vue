@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
   <view>
     <!-- 图片轮播区域 -->
     <view style="position: relative;">

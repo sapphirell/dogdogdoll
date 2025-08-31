@@ -63,7 +63,7 @@
 
 				<view class="identity-item">
 					<view class="identity-title">毛娘身份</view>
-					<switch :checked="isHairstylist" @change="toggleHairstylist" color="#c1ddff" />
+					<switch :checked="isHairstylist" @change="toggleHairstylist" color="#8fecff" />
 					<text class="identity-status">{{ isHairstylist ? '我是毛娘' : '不是毛娘' }}</text>
 				</view>
 			</view>
@@ -86,8 +86,18 @@
 				</view>
 				<view class="btn info-artist" @click="navigateTo('artist_info')">
 					<uni-icons type="contact" size="24" color="#c7e1fa"></uni-icons>
-					<text>创作者</text>
+					<text>妆师/毛娘</text>
 				</view>
+			</view>
+			
+			<!-- 信息说明 -->
+			<view class="info-section">
+			  <text class="info-title">功能说明</text>
+			  <text class="info-text">开启对应身份开关后，您的品牌名称将会出现在相关的搜索结果中，方便更多用户找到您。</text>
+			  <text class="info-text">您可以在「信息设置」中完善头像、品牌介绍及贩售渠道（仅限贩售类身份）。</text>
+			  <text class="info-text">「商品管理」用于创建和编辑您发布的商品信息。</text>
+			  <text class="info-text">「文章管理」用于发布图透、成品展示或宣传内容。</text>
+			  <text class="info-text">「妆师/毛娘」页面可编辑定制类服务（如妆面、手改毛）的接单信息。若为量产类手改毛或成品妆头，请在「商品管理」中创建；</text>
 			</view>
 		</view>
 
@@ -126,10 +136,10 @@
 			<view class="form-section">
 				<view class="form-group">
 					<text class="form-label">品牌名称</text>
-					<common-search mode="fill" @select="onBrandSelect" placeholder="搜索并选择您的品牌" show-index-selector  @close-associate="onCloseAssociate"/>
+					<common-search mode="fill" @select="onBrandSelect" placeholder="搜索并选择您的品牌/名字" show-index-selector  @close-associate="onCloseAssociate"/>
 					<text v-if="selectedBrandId" class="brand-id">品牌ID: {{ selectedBrandId }}</text>
 					<text class="desc-text">
-						您的信息可能已经被录入，可以在尝试这里搜索您的品牌名称。
+						您的信息可能已经被录入，可以在尝试这里搜索您的品牌名称。需要在搜索框左边勾选【店铺】【毛娘】【妆师】身份后，才能搜索到您的名字。
 					</text>
 				</view>
 
@@ -189,7 +199,9 @@
 	// 计算入驻信息
 	const settleInfo = computed(() => {
 		if (!brandName.value) return "";
-		return `我的UID是${userInfo.value.id}，我的品牌是${brandName.value}，品牌ID是${selectedBrandId.value}`;
+		
+		let isBrand = selectedBrandId.value > 0 ? selectedBrandId.value : "尚未收录"
+		return `我的UID是${userInfo.value.id}，我的品牌/名字是${brandName.value}，品牌ID是${isBrand}`;
 	});
 
 	let brandId = ref(0); // 存储品牌ID
@@ -811,5 +823,33 @@
 		&:last-child {
 			margin-bottom: 0;
 		}
+	}
+	
+	.info-section {
+	  background: #fff;
+	  border-radius: 16rpx;
+	  padding: 30rpx;
+	  margin: 20rpx 0;
+	  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+	
+	  .info-title {
+	    display: block;
+	    font-size: 32rpx;
+	    font-weight: bold;
+	    color: #333;
+	    margin-bottom: 20rpx;
+	  }
+	
+	  .info-text {
+	    display: block;
+	    font-size: 26rpx;
+	    color: #555;
+	    line-height: 1.8;
+	    margin-bottom: 16rpx;
+	
+	    &:last-child {
+	      margin-bottom: 0;
+	    }
+	  }
 	}
 </style>

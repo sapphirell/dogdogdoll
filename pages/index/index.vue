@@ -161,48 +161,6 @@
 				<!-- <transition name="fade" mode="out-in"> -->
 				<uni-transition :mode-class="['fade']" :show="activeTab === 'hot'">
 					<view class="body_list hot-box" v-if="activeTab === 'hot'">
-						<!-- <view v-for="item in hotList" :key="item.collocation_id" class="hot-item"
-							@tap="jumpToCollocationDetail(item)">
-							<view class="images-box">
-								
-								<swiper v-if="item.image_urls.length > 0" class="image-swiper" :autoplay="true"
-									:circular="true">
-									<swiper-item v-for="(img, idx) in item.image_urls" :key="idx">
-										<image :src="img" mode="aspectFill" class="swiper-image" :class="{loaded: item.imagesLoaded}" @load="handleHotImageLoad(item)" />
-									</swiper-item>
-								</swiper>
-							</view>
-							
-							<view class="content-box">
-								<text class="title">{{ item.title }}</text>
-								<text class="desc">{{ item.content }}</text>
-								<view class="tags-box">
-									<view v-for="(tag, tIdx) in item.relation_list" :key="tIdx" class="tag-item">
-										<text class="tag-text">{{ tag.relation_goods_name }}</text>
-										<text class="brand-text">{{ tag.relation_brand_name }}</text>
-									</view>
-								</view>
-								<view class="footer">
-									<view class="user-info">
-										<image :src="item.avatar" class="avatar" mode="aspectFill"></image>
-										<text class="time"> 发布{{ item.origin == 1? "搭配" : "展示柜" }}于
-											{{ formatTime(item.created_at) }}</text>
-									</view>
-									<view class="like-box">
-										<uni-icons type="heart" size="18" color="#ff4d4f"></uni-icons>
-										<text class="like-count">{{ item.like_count }}</text>
-									</view>
-								</view>
-							</view>
-						</view> -->
-
-
-
-						<!-- 加载状态 -->
-						<!-- <view class="loading-more">
-							<text v-if="hotLoading">加载中...</text>
-							<text v-if="!hotHasMore">没有更多了~</text>
-						</view> -->
 						<index-artist></index-artist>
 					</view>
 					<!-- </transition> -->

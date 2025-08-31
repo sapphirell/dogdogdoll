@@ -82,7 +82,8 @@
 						<view class="mine-button-item" @click="jumpBrandBase">
 							<view class="button-content">
 								<uni-icons type="shop" size="24" color="#606060"></uni-icons>
-								<text class="button-text">作者入驻</text>
+								<text class="button-text" v-if="!hasBrand">作者入驻</text>
+								<text class="button-text" v-else>作者信息</text>
 							</view>
 							<uni-icons type="right" size="24" color="#c0c0c0"></uni-icons>
 						</view>
@@ -176,6 +177,7 @@
 		getUserInfo,
 		global,
 		getScene,
+		asyncGetUserInfo,
 	} from "../../common/config.js";
 
 	console.log(global.isLogin)
@@ -192,7 +194,12 @@
 	let visible = ref(false)
 	
 	let scene = getScene()
+	const userInfo = ref({});
 
+	// 计算是否有品牌
+	const hasBrand = computed(() => {
+		return userInfo.value.brand_id > 0;
+	});
 
 	// 添加协议状态
 	let agree = ref(false)
@@ -289,6 +296,8 @@
 			})
 		})
 	}
+	
+	
 
 	// 获取未读数量
 	const fetchUnreadCount = async () => {
@@ -594,13 +603,16 @@
 
 
 
-	onShow(() => {
+	onShow(async() => {
 		// 获取一次个人信息，判断是否是登录超时
-		getUserInfo();
+		const user = await asyncGetUserInfo();
+		console.log(user)
 		if (global.isLogin) {
 			uni.showTabBar({
 				animation: false
 			})
+			
+			userInfo.value = user;
 		} else {
 			uni.hideTabBar({
 				animation: false
