@@ -1,7 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "goods-search": "../goods-search/goods-search",
-    "common-search": "../common-search/common-search"
-  }
-}

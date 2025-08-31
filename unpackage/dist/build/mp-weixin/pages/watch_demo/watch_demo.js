@@ -1,1 +1,0 @@
-"use strict";const e=require("../../common/vendor.js"),a={__name:"watch_demo",setup(a){const n=e.ref({name:"john",age:18});return e.watch((()=>n.value.name),((e,a)=>{console.log("newVal",e),console.log("oldVal",a)}),{deep:!0}),(a,o)=>({a:n.value.name,b:e.o((e=>n.value.name=e.detail.value)),c:e.t(n.value.name)})}};wx.createPage(a);

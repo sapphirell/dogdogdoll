@@ -1,7 +1,0 @@
-{
-  "navigationBarTitleText": "分享搭配",
-  "usingComponents": {
-    "view-logs": "../../components/view-logs/view-logs",
-    "relation-picker": "../../components/relation-picker/relation-picker"
-  }
-}

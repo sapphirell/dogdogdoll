@@ -1,1 +1,0 @@
-<view class="custom-select data-v-795dad92"><input bindtap="{{a}}" bindinput="{{b}}" placeholder="请选择或输入" class="select-input data-v-795dad92" style="{{'margin:' + c}}" value="{{d}}"/><view wx:if="{{e}}" class="dropdown data-v-795dad92"><view wx:for="{{f}}" wx:for-item="item" wx:key="b" bindtap="{{item.c}}" class="dropdown-item data-v-795dad92">{{item.a}}</view></view></view>
