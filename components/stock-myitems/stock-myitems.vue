@@ -1,6 +1,7 @@
+<!-- stock-myitems.vue -->
 <template>
   <view class="tab_body_1st">
-    <!-- 分类选择器区域 -->
+    <!-- 分类选择 + 管理按钮 -->
     <view class="type-header">
       <view class="selector-container">
         <picker
@@ -17,15 +18,15 @@
           </view>
         </picker>
 
-        <!-- 打开分类管理（新组件） -->
+        <!-- ✅ 改为发事件让父级打开弹窗 -->
         <text class="manage-btn" @tap="openTypeManager">
-          <uni-icons type="gear" size="16" color="#fff"></uni-icons>
+          <uni-icons type="gear" size="16" color="#fff" />
           <text>管理分类</text>
         </text>
       </view>
     </view>
 
-    <!-- 合计金额 -->
+    <!-- 合计 -->
     <view class="summary-container">
       <view class="summary-content">
         <uni-icons type="money" size="18" color="#74c9e5"></uni-icons>
@@ -39,36 +40,27 @@
           color="#74c9e5"
           class="toggle-eye"
           @tap="isPriceVisible = !isPriceVisible"
-        ></uni-icons>
+        />
         <text style="position: absolute;right: 30px;">长按排序</text>
       </view>
     </view>
 
-    <!-- 内容区域 -->
+    <!-- 内容 -->
     <view class="content" v-if="accountBookData.account_books?.length > 0">
       <shmily-drag-image
         v-model="accountBookData.account_books"
         border-radius="20"
         @sort-change="handleSortChange"
-      ></shmily-drag-image>
+      />
     </view>
 
-    <!-- 空状态 -->
+    <!-- 空态 -->
     <view class="empty-state" v-else>
-      <image class="empty-icon" src="/static/empty.jpg"></image>
+      <image class="empty-icon" src="/static/empty.jpg" />
       <text class="empty-text">空空如也～</text>
       <text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
-	  
     </view>
   </view>
-
-  <!-- 抽离后的分类管理组件 -->
-  <item-category-manager v-model="showTypeMgr"
-    :list="customTypes"
-	@refresh="getAccountTypes()" 
-    @updated="onTypesUpdated">
-	  
-	</item-category-manager>
 </template>
 
 <script setup>
@@ -77,30 +69,25 @@ import { onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 
 const props = defineProps({
-  accountBookData: Object
+  accountBookData: Object,
+  // ✅ 新增：父级传入当前 tab，便于内部自行处理（比如切走时本地状态重置）
+  activeTab: { type: Number, default: 1 }
 })
-const emits = defineEmits(['go2editor', 'update-type', 'init-request', 'update:accountBookData'])
+const emit = defineEmits(['go2editor','update-type','init-request','update:accountBookData','open-type-manager'])
 
-/** ===== 金额显示 ===== */
+/** 金额显示 */
 const isPriceVisible = ref(true)
 const PRICE_VISIBLE_KEY = 'accountBookPriceVisible'
 
-/** ===== 分类（父级仍维护给 picker 用） ===== */
+/** 分类（本组件内部维护给 picker 用） */
 const customTypes = ref([])
 const defaultTypes = ['全部']
 const selectedType = ref(0)
 const selectedTypeName = ref('全部')
 const SELECTED_TYPE_KEY = 'accountBookSelectedType'
-
 const typeOptions = computed(() => [...defaultTypes, ...customTypes.value.map(t => t.name)])
-watch([customTypes, selectedTypeName], () => {
-  const list = typeOptions.value
-  const want = selectedTypeName.value || '全部'
-  const idx = list.findIndex(n => n === want)
-  selectedType.value = idx >= 0 ? idx : 0
-})
 
-/** ===== 合计金额 ===== */
+/** 合计金额 */
 const totalPrice = computed(() => {
   if (!props.accountBookData.account_books) return 0
   return props.accountBookData.account_books
@@ -108,8 +95,8 @@ const totalPrice = computed(() => {
     .toFixed(2)
 })
 
-/** ===== 拉取分类（用于父级 picker） ===== */
-const getAccountTypes = async () => {
+/** 拉取分类（供父级通过 ref 调用；也在本组件展示用） */
+async function getAccountTypes() {
   const token = uni.getStorageSync('token')
   try {
     const res = await uni.request({
@@ -117,71 +104,66 @@ const getAccountTypes = async () => {
       method: 'GET',
       header: { 'Authorization': token }
     })
-    customTypes.value = res.data.data || []
-  } catch (err) {
-    console.error('获取分类失败:', err)
-  }
+    const list = res.data?.data || []
+    customTypes.value = list
+    // 选中的名称如果已经不存在，退回到“全部”
+    const names = list.map(t => t.name)
+    if (selectedTypeName.value !== '全部' && !names.includes(selectedTypeName.value)) {
+      selectedTypeName.value = '全部'
+      emit('update-type', '')
+    }
+  } catch (e) { console.error('获取分类失败:', e) }
 }
 
-/** ===== 本地存储选中分类 ===== */
-const saveSelectedType = () => {
-  uni.setStorageSync(SELECTED_TYPE_KEY, selectedTypeName.value)
-}
-const loadSelectedType = () => {
-  const saved = uni.getStorageSync(SELECTED_TYPE_KEY)
-  selectedTypeName.value = saved || '全部'
-}
+/** 暴露给父组件调用 */
+defineExpose({ getAccountTypes })
 
-/** ===== 打开分类管理（新组件） ===== */
-const showTypeMgr = ref(false)
-const openTypeManager = async () => {
-  // 父级保持已有列表，组件会在打开时自行拉取并 @updated 回传
-  showTypeMgr.value = true
-}
-/** 接收子组件回传的最新列表 */
-const onTypesUpdated = (list) => {
-  customTypes.value = list || []
-  // 如果当前选中的分类在更新后不存在了，回退到“全部”
-  const names = customTypes.value.map(t => t.name)
-  if (selectedTypeName.value !== '全部' && !names.includes(selectedTypeName.value)) {
-    selectedTypeName.value = '全部'
-    emits('update-type', '')
-  }
-}
+/** 选中分类持久化 */
+const saveSelectedType = () => uni.setStorageSync(SELECTED_TYPE_KEY, selectedTypeName.value)
+const loadSelectedType = () => { selectedTypeName.value = uni.getStorageSync(SELECTED_TYPE_KEY) || '全部' }
 
-/** ===== 列表内“物品”排序（与你原逻辑一致） ===== */
-const handleSortChange = (sortedIds) => {
+/** 打开分类管理（让父级控制弹窗） */
+function openTypeManager(){ emit('open-type-manager') }
+
+/** 列表排序保存 */
+function handleSortChange(sortedIds){
   const token = uni.getStorageSync('token')
   uni.request({
     url: websiteUrl.value + '/with-state/sort-account-book',
     method: 'POST',
-    header: {
-      'Authorization': token,
-      'Content-Type': 'application/json'
-    },
+    header: { 'Authorization': token, 'Content-Type':'application/json' },
     data: { sorted_ids: sortedIds }
   })
 }
 
-/** ===== 分类选择切换 ===== */
-const updateSelectedType = (e) => {
+/** 分类选择切换 */
+function updateSelectedType(e){
   selectedType.value = e.detail.value
   selectedTypeName.value = typeOptions.value[selectedType.value]
   saveSelectedType()
-  emits('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
+  emit('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
 }
 
-/** ===== 生命周期 ===== */
-watch(isPriceVisible, (v) => uni.setStorageSync(PRICE_VISIBLE_KEY, String(v)))
-onShow(async () => {
+/** 同步 picker 的 index */
+watch([customTypes, selectedTypeName], () => {
+  const list = typeOptions.value
+  const want = selectedTypeName.value || '全部'
+  const idx = list.findIndex(n => n === want)
+  selectedType.value = idx >= 0 ? idx : 0
+})
+
+/** 生命周期 */
+watch(isPriceVisible, (v)=> uni.setStorageSync(PRICE_VISIBLE_KEY, String(v)))
+onShow(async ()=>{
   const saved = uni.getStorageSync(PRICE_VISIBLE_KEY)
   if (saved !== '') isPriceVisible.value = (saved === 'true')
-
   loadSelectedType()
   await getAccountTypes()
-  emits('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
+  emit('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
 })
 </script>
+
+
 
 <style lang="scss" scoped>
 .content { padding: 0 20rpx; }
