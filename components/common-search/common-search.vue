@@ -12,7 +12,7 @@
         v-if="!props.hiddenIcon && props.mode == 'jump'"
       ></image>
 
-      <!-- 索引选择器 -->
+      <!-- 索引选择器（可关） -->
       <view v-if="showIndexSelector" class="index-selector">
         <picker
           mode="selector"
@@ -37,7 +37,7 @@
         :ignoreCompositionEvent="false"
       />
       <view class="search-info-tap" v-if="results.length > 0">
-        <text v-if="results.length > 0 && searchTerm.length < 5"
+        <text v-if="results.length > 0 && searchTerm.length < 5 && !props.hideHintText"
           >拼音、缩写、别名都可以搜</text
         >
         <image class="icon_image" src="../../static/cancel.png" @tap="cancel"></image>
@@ -82,7 +82,7 @@ const props = defineProps({
   mode: {
     type: String,
     default: 'jump', // 默认跳转模式
-    validator: (value) => ['jump', 'fill'].includes(value) // 参数校验
+    validator: (value) => ['jump', 'fill'].includes(value)
   },
   width: {
     type: String,
@@ -118,6 +118,11 @@ const props = defineProps({
   defaultIndex: {
     type: String,
     default: ""
+  },
+  // ★ 新增：是否隐藏“拼音、缩写、别名都可以搜”提示
+  hideHintText: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -166,10 +171,11 @@ const selectedIndex = computed(() =>
   props.indexOptions.findIndex(opt => opt.value === currentIndex.value)
 );
 
-// 关闭联想功能
+// 关闭联想功能（★ 同步把ID清零给父组件）
 const closeAssociate = () => {
   results.value = [];
   emit('close-associate', searchTerm.value);
+  emit('select', 0, searchTerm.value); // ★ 强制回传 id=0，满足“关闭=清零ID”
 };
 
 // 处理索引变更
@@ -192,7 +198,7 @@ const onSearchInput = async () => {
     return;
   }
 
-  emit('select', 0, searchTerm.value); // 清空向父组件传递的id
+  emit('select', 0, searchTerm.value); // 输入时先把ID清空
 
   // 构建请求URL
   let url = `${websiteUrl.value}/search-brand?search=${encodeURIComponent(searchTerm.value)}`;
@@ -264,7 +270,7 @@ function cancel() {
 
   /* 索引选择器 */
   .index-selector {
-    position: relative; /* 让气泡绝对定位基于此容器 */
+    position: relative;
     margin-right: 15rpx;
 
     .selector-content {
@@ -287,10 +293,9 @@ function cancel() {
       }
     }
 
-    /* 小气泡样式 */
     .selector-tip {
       position: absolute;
-      top: 66rpx; /* 紧贴选择器下方 */
+      top: 66rpx;
       left: 0;
       background: rgba(0, 0, 0, 0.8);
       color: #fff;
@@ -300,7 +305,7 @@ function cancel() {
       white-space: nowrap;
       box-shadow: 0 6rpx 18rpx rgba(0,0,0,0.15);
       animation: tipFade .2s ease both;
-	  z-index: 2;
+      z-index: 2;
 
       &:after {
         content: "";

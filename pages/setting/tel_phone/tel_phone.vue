@@ -1,7 +1,7 @@
 <template>
 	<view-logs />
 	<view class="page">
-		<view v-if="!global.userInfo.tel_phone">
+		<view v-if="global.userInfo.tel_phone">
 			<input type="text" class="input input--disabled" :value="global.userInfo.tel_phone" disabled />
 			<text class="tip">已绑定，如需修改请联系管理员操作。</text>
 		</view>

@@ -1,645 +1,445 @@
 <template>
-	<view class="container" v-if="detailData">
-		<meta name="theme-color" content="#F8F8F8">
-		</meta>
-		<view-logs />
-		<!-- 头部作者信息 -->
-		<view class="header">
-			<view class="author-info">
-				<image :src="detailData.avatar || '/static/noname.png' " class="avatar" mode="aspectFill" />
-				<view style="width: 500rpx;">
-					<text class="author-name">{{ detailData.author_name }}</text>
-					<view class="time">{{ formatTime(detailData.created_at) }}</view>
-				</view>
-				<!-- 举报按钮 -->
-				<view style="width: 120rpx;">
-					<report-button report-type=3 :relation-id="parseInt(props.id)" button-text="举报" icon-type="flag"
-						icon-size="24" icon-color="#666" />
-				</view>
+  <view class="container" v-if="detailData">
+    <meta name="theme-color" content="#F8F8F8"></meta>
+    <view-logs />
 
+    <!-- 头部作者信息（独立卡片） -->
+    <view class="header">
+      <view class="author-info card">
+        <image :src="detailData.avatar || '/static/noname.png'" class="avatar" mode="aspectFill" />
+        <view class="author-meta">
+          <text class="author-name">{{ detailData.author_name }}</text>
+          <view class="time chip">{{ formatTime(detailData.created_at) }}</view>
+        </view>
+        <view class="report-wrap">
+          <report-button
+            report-type="3"
+            :relation-id="parseInt(props.id)"
+            button-text="举报"
+            icon-type="flag"
+            icon-size="24"
+            icon-color="#666"
+          />
+        </view>
+      </view>
+    </view>
 
-			</view>
-			<!-- 			<button class="share-btn" open-type="share">
-				<image src="/static/images/share-icon.png" class="share-icon" />
-			</button> -->
-		</view>
+    <!-- 内容部分：一个完整的框框（正文+图片+操作栏） -->
+    <view class="post-card card">
+      <!-- 正文 -->
+      <view class="post-section post-content">
+        {{ detailData.content }}
+      </view>
 
-		<!-- 正文内容 -->
-		<view class="content">{{ detailData.content }}</view>
+      <!-- 分割线 -->
+      <view class="divider" v-if="(detailData.images?.length || 0) > 0"></view>
 
-		<!-- 图片展示区域 -->
-		<view class="image-container" :class="layoutClass">
-			<view v-for="(img, index) in displayImages" :key="index" class="image-wrapper">
-				<image :src="img" mode="aspectFill" class="image-item" @click="previewImage(index)" />
-				<view v-if="showOverlay && index === 8" class="image-overlay">
-					+{{ remainingCount }}
-				</view>
-			</view>
-		</view>
+      <!-- 图片宫格 -->
+      <view class="post-section image-container" :class="layoutClass" v-if="(detailData.images?.length || 0) > 0">
+        <view
+          v-for="(img, index) in displayImages"
+          :key="index"
+          class="image-wrapper"
+          hover-class="press"
+          hover-stay-time="80"
+        >
+          <image :src="img" mode="aspectFill" class="image-item" @click="previewImage(index)" />
+          <view v-if="showOverlay && index === 8" class="image-overlay">+{{ remainingCount }}</view>
+        </view>
+      </view>
 
-		<view class="action-bar">
-			<view class="action-group">
-				<view class="action-item" @tap="handleLike">
-					<uni-icons :type="hasLiked ? 'hand-up-filled' : 'hand-up'" size="24"
-						:color="hasLiked ? '#ff4d4f' : '#666'" />
-					<text class="action-text">{{ detailData.like_count || 0 }}</text>
-				</view>
-				<view class="action-item" @tap="copyUrl(detailData)">
-					<uni-icons type="redo" size="24" color="#666" />
-					<text class="action-text">分享</text>
-				</view>
-			</view>
-			<text class="time-text" v-if="detailData.approve_time > 0">审核于
-				{{ formatTime(detailData.approve_time) }}</text>
+      <!-- 分割线 -->
+      <view class="divider"></view>
 
-		</view>
-	</view>
+      <!-- 操作栏 -->
+      <view class="post-section action-bar">
+        <view class="action-group">
+          <view class="action-item" @tap="handleLike" hover-class="press" hover-stay-time="80">
+            <uni-icons :type="hasLiked ? 'hand-up-filled' : 'hand-up'" size="24" :color="hasLiked ? 'var(--brand)' : '#666'" />
+            <text class="action-text" :class="{ active: hasLiked }">{{ detailData.like_count || 0 }}</text>
+          </view>
+          <view class="action-item" @tap="copyUrl(detailData)" hover-class="press" hover-stay-time="80">
+            <uni-icons type="redo" size="24" color="#666" />
+            <text class="action-text">分享</text>
+          </view>
+        </view>
+        <text class="time-text" v-if="detailData.approve_time > 0">审核于 {{ formatTime(detailData.approve_time) }}</text>
+      </view>
+    </view>
 
-	<!-- 加载状态 -->
-	<view v-else class="loading">加载中...</view>
+  </view>
 
-	<!-- 评论区（保留原有结构，需根据接口调整） -->
-	<view style="padding: 10px;">
-		<comment-list ref="commentListRef" :type="5" :relation-id="parseInt(props.id)" @reply="handleReplyComment" />
-	</view> <!-- 加载状态 --
-	
-	<view v-if="error" class="error">{{ errorMsg }}</view>
+  <!-- 加载状态 -->
+  <view v-else class="loading">加载中...</view>
 
+  <!-- 评论区（独立区域，可按需也包一层 card） -->
+  <view class="comments card">
+    <comment-list ref="commentListRef" :type="5" :relation-id="parseInt(props.id)" @reply="handleReplyComment" />
+  </view>
 
-		
-		<!-- 输入框 -->
-	<comment-input ref="commentInputRef" :reply-info="replyForItem" :target-id="pageId" @submit="handleCommentSubmit"
-		@update:reply-info="val => replyForItem = val" />
-	<view style="width: 100%;height: 120rpx;"></view>
+  <!-- 输入框 -->
+  <comment-input
+    ref="commentInputRef"
+    :reply-info="replyForItem"
+    :target-id="pageId"
+    @submit="handleCommentSubmit"
+    @update:reply-info="val => replyForItem = val"
+  />
+  <view style="width: 100%; height: 120rpx;"></view>
 </template>
 
 <script setup>
-	import {
-		ref,
-		computed,
-		onMounted
-	} from 'vue';
+import { ref, computed, onMounted } from 'vue'
+import { websiteUrl, global, asyncGetUserInfo } from '../../common/config.js'
 
-	import {
-		websiteUrl,
-		image1Url,
-		global,
-		asyncGetUserInfo,
-	} from '../../common/config.js';
+const loading = ref(true)
+const error = ref(false)
+const errorMsg = ref('')
+const pageId = ref(0)
+const detailData = ref(null)
 
+// 回复
+const commentListRef = ref(null)
+const commentInputRef = ref(null)
+let commentsPage = ref(1)
+let replyForItem = ref({})
 
-	const loading = ref(true)
-	const error = ref(false)
-	const errorMsg = ref('')
-	const pageId = ref(0)
-	const detailData = ref(null);
-	// 回复
-	const commentListRef = ref(null) // 必须与模板中的ref名称一致
-	const commentInputRef = ref(null) // 输入框聚焦状态联动
-	let commentsPage = ref(1)
-	//引用回复
-	let replyForItem = ref({})
-	
-	const selectedAssociation = ref({})
+const selectedAssociation = ref({})
 
+// 点赞
+const hasLiked = ref(false)
 
-	// 点赞
-	const hasLiked = ref(false);
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  }
+})
 
+// —— 回复事件 —— //
+const handleReplyComment = ({ parent, target }) => {
+  const item = target || parent
+  replyForItem.value = item
+  commentInputRef.value?.focusInput()
+}
 
-	const props = defineProps({
-		id: {
-			type: String,
-			required: true
-		}
-	});
-
-	// 处理回复事件
-	const handleReplyComment = ({ parent, target }) => {
-	  const item = target || parent
-	  replyForItem.value = item
-	  commentInputRef.value?.focusInput()
-	}
-
-
-	// 引用回复
-  const handleCommentSubmit = (submitData) => {
-    let token = uni.getStorageSync('token');
-    if (!global.isLogin) {
-      uni.showToast({
-        title: '请先登录',
-        icon: 'none'
-      })
-      return
-    }
-    
-    console.log("reply_info", replyForItem.value)
-    const requestData = {
-      content: submitData.content,
-      origin: submitData.origin,
-      target_id: parseInt(pageId.value),
-      type: 5, // 树洞类型
-      image_url: submitData.image_url || "",
-      association_id: submitData.association_id || 0,
-      association_type: submitData.association_type || 0,
-      is_anonymous: submitData.is_anonymous || 0,
-      ...(replyForItem.value.id && {
-        reply_id: replyForItem.value.id,
-        reply_for: replyForItem.value.comment,
-        reply_uid: replyForItem.value.user_id,
-        parent_id: replyForItem.value.parent_id > 0 ? 
-          replyForItem.value.parent_id : replyForItem.value.id,
-      })
-    }
-    
-    // 创建临时评论对象（在请求发送前就创建）
-    const tempComment = {
-      id: Date.now(), // 临时ID
-      content: submitData.content,
-      created_at: Math.floor(Date.now() / 1000),
-      like_count: 0,
-      reply_count: 0,
-      is_liked: false,
-      floor: 0, // 临时楼层数，后续用真实数据更新
-      
-      // 如果是匿名评论，使用匿名信息
-      ...(submitData.is_anonymous ? {
-        avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
-        username: "匿名用户",
-        is_anonymous: 1
-      } : {
-        avatar: global.userInfo.avatar,
-        username: global.userInfo.nickname,
-        is_anonymous: 0
-      }),
-      
-      // 关联信息
-      ...(submitData.association_id && {
-        association_id: submitData.association_id,
-        association_type: submitData.association_type
-      }),
-      
-      // 图片信息
-      ...(submitData.image_url && {
-        image_url: submitData.image_url
-      }),
-      
-      // 回复信息
-      ...(replyForItem.value.id && {
-        reply_id: replyForItem.value.id,
-        reply_for: replyForItem.value.comment,
-        reply_uid: replyForItem.value.user_id,
-        parent_id: replyForItem.value.parent_id > 0 ? 
-          replyForItem.value.parent_id : replyForItem.value.id,
-        // 处理被回复者的匿名状态
-        reply_username: replyForItem.value.is_anonymous ? 
-          "匿名用户" : replyForItem.value.username
-      })
-    }
-    
-    // 如果是主评论，立即添加到列表顶部（创建临时评论）
-    if (!replyForItem.value.id) {
-      commentListRef.value?.addNewComment(tempComment)
-    } else if (replyForItem.value.parent_id === 0) {
-      // 如果是回复主评论，添加到回复列表
-      commentListRef.value?.addReplyComment({
-        ...tempComment,
-        parent_id: replyForItem.value.id
-      })
-    } else {
-      // 如果是回复楼中楼评论，添加到楼中楼列表
-      commentListRef.value?.addReplyComment({
-        ...tempComment,
-        parent_id: replyForItem.value.parent_id
-      })
-    }
-  
-    uni.request({
-      url: websiteUrl.value + '/with-state/add-comment',
-      method: 'POST',
-      header: {
-        'Authorization': token
-      },
-      data: requestData,
-      success: (res) => {
-        if (res.data.status == "success") {
-          const newComment = res.data.data
-          
-          // 处理匿名状态 - 保留临时评论中的匿名信息
-          const finalComment = {
-            ...newComment,
-            // 如果是匿名评论，保持匿名信息
-            ...(submitData.is_anonymous ? {
-              avatar: "https://images1.fantuanpu.com/home/default_avatar.jpg",
-              username: "匿名用户",
-              is_anonymous: 1
-            } : {
-              avatar: global.userInfo.avatar,
-              username: global.userInfo.nickname,
-              is_anonymous: 0
-            })
-          }
-          
-          // 处理被回复者的匿名状态
-          if (newComment.reply_uid && replyForItem.value.is_anonymous) {
-            finalComment.reply_username = "匿名用户"
-          }
-  
-          // 更新临时评论为真实评论
-          commentListRef.value?.updateTempComment(tempComment.id, finalComment)
-  
-          uni.showToast({
-            title: '评论成功',
-            icon: 'success'
-          })
-  
-        } else {
-          // 请求失败，移除临时评论
-          commentListRef.value?.removeTempComment(tempComment.id)
-          uni.showToast({
-            title: res.data.msg,
-            icon: 'none'
-          })
-        }
-      },
-      fail: (err) => {
-        // 请求失败，移除临时评论
-        commentListRef.value?.removeTempComment(tempComment.id)
-        uni.showToast({
-          title: '网络请求失败',
-          icon: 'none'
-        })
-      }
-    });
+// —— 提交评论 —— //
+const handleCommentSubmit = (submitData) => {
+  let token = uni.getStorageSync('token')
+  if (!global.isLogin) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
   }
 
+  const requestData = {
+    content: submitData.content,
+    origin: submitData.origin,
+    target_id: parseInt(pageId.value),
+    type: 5,
+    image_url: submitData.image_url || '',
+    association_id: submitData.association_id || 0,
+    association_type: submitData.association_type || 0,
+    is_anonymous: submitData.is_anonymous || 0,
+    ...(replyForItem.value.id && {
+      reply_id: replyForItem.value.id,
+      reply_for: replyForItem.value.comment,
+      reply_uid: replyForItem.value.user_id,
+      parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id
+    })
+  }
 
-	// 复制分享
-	function copyUrl(item) {
-		let url = "http://m.dogdogdoll.com/#/" + "pages/treehole_detail/treehole_detail?id=" + item.id
-		// 复制到剪贴板
-		uni.setClipboardData({
-			data: url,
-			success: function() {
-				uni.showToast({
-					title: '复制链接成功',
-					icon: 'none'
-				});
-			}
-		});
-	}
+  const tempComment = {
+    id: Date.now(),
+    content: submitData.content,
+    created_at: Math.floor(Date.now() / 1000),
+    like_count: 0,
+    reply_count: 0,
+    is_liked: false,
+    floor: 0,
+    ...(submitData.is_anonymous
+      ? { avatar: 'https://images1.fantuanpu.com/home/default_avatar.jpg', username: '匿名用户', is_anonymous: 1 }
+      : { avatar: global.userInfo.avatar, username: global.userInfo.nickname, is_anonymous: 0 }),
+    ...(submitData.association_id && { association_id: submitData.association_id, association_type: submitData.association_type }),
+    ...(submitData.image_url && { image_url: submitData.image_url }),
+    ...(replyForItem.value.id && {
+      reply_id: replyForItem.value.id,
+      reply_for: replyForItem.value.comment,
+      reply_uid: replyForItem.value.user_id,
+      parent_id: replyForItem.value.parent_id > 0 ? replyForItem.value.parent_id : replyForItem.value.id,
+      reply_username: replyForItem.value.is_anonymous ? '匿名用户' : replyForItem.value.username
+    })
+  }
 
-	// 处理点赞
-	const handleLike = () => {
-		if (!global.isLogin) {
-			uni.showModal({
-				title: '提示',
-				content: '需要登录后才能点赞',
-				success: res => {
-					if (res.confirm) uni.navigateTo({
-						url: '/pages/login/login'
-					})
-				}
-			})
-			return
-		}
+  if (!replyForItem.value.id) {
+    commentListRef.value?.addNewComment(tempComment)
+  } else if (replyForItem.value.parent_id === 0) {
+    commentListRef.value?.addReplyComment({ ...tempComment, parent_id: replyForItem.value.id })
+  } else {
+    commentListRef.value?.addReplyComment({ ...tempComment, parent_id: replyForItem.value.parent_id })
+  }
 
-		const token = uni.getStorageSync('token');
-		const url = websiteUrl.value + (hasLiked.value ? '/with-state/unlike' : '/with-state/add-like');
+  uni.request({
+    url: websiteUrl.value + '/with-state/add-comment',
+    method: 'POST',
+    header: { Authorization: token },
+    data: requestData,
+    success: (res) => {
+      if (res.data.status == 'success') {
+        const newComment = res.data.data
+        const finalComment = {
+          ...newComment,
+          ...(submitData.is_anonymous
+            ? { avatar: 'https://images1.fantuanpu.com/home/default_avatar.jpg', username: '匿名用户', is_anonymous: 1 }
+            : { avatar: global.userInfo.avatar, username: global.userInfo.nickname, is_anonymous: 0 })
+        }
+        if (newComment.reply_uid && replyForItem.value.is_anonymous) finalComment.reply_username = '匿名用户'
+        commentListRef.value?.updateTempComment(tempComment.id, finalComment)
+        uni.showToast({ title: '评论成功', icon: 'success' })
+      } else {
+        commentListRef.value?.removeTempComment(tempComment.id)
+        uni.showToast({ title: res.data.msg, icon: 'none' })
+      }
+    },
+    fail: () => {
+      commentListRef.value?.removeTempComment(tempComment.id)
+      uni.showToast({ title: '网络请求失败', icon: 'none' })
+    }
+  })
+}
 
-		uni.request({
-			url: url,
-			method: 'POST',
-			header: {
-				Authorization: token
-			},
-			data: {
-				id: parseInt(props.id),
-				type: 5 // 假设树洞类型为5
-			},
-			success: (res) => {
-				if (res.data.status === "success") {
-					hasLiked.value = !hasLiked.value;
-					detailData.value.like_count += hasLiked.value ? 1 : -1;
-				}
-			}
-		})
-	}
+// —— 复制分享 —— //
+function copyUrl(item) {
+  const url = 'http://m.dogdogdoll.com/#/' + 'pages/treehole_detail/treehole_detail?id=' + item.id
+  uni.setClipboardData({
+    data: url,
+    success: function () {
+      uni.showToast({ title: '复制链接成功', icon: 'none' })
+    }
+  })
+}
 
-	//获取是否点赞
-	function getHasLike() {
-		let token = uni.getStorageSync('token');
-		if (token == "") {
-			return
-		}
+// —— 点赞 —— //
+const handleLike = () => {
+  if (!global.isLogin) {
+    uni.showModal({
+      title: '提示',
+      content: '需要登录后才能点赞',
+      success: (res) => {
+        if (res.confirm) uni.navigateTo({ url: '/pages/login/login' })
+      }
+    })
+    return
+  }
+  const token = uni.getStorageSync('token')
+  const url = websiteUrl.value + (hasLiked.value ? '/with-state/unlike' : '/with-state/add-like')
+  uni.request({
+    url,
+    method: 'POST',
+    header: { Authorization: token },
+    data: { id: parseInt(props.id), type: 5 },
+    success: (res) => {
+      if (res.data.status === 'success') {
+        hasLiked.value = !hasLiked.value
+        detailData.value.like_count += hasLiked.value ? 1 : -1
+      }
+    }
+  })
+}
 
-		uni.request({
-			url: websiteUrl.value + '/with-state/hasLike?id=' + props.id + '&type=5',
-			method: 'POST',
-			header: {
-				'Authorization': token,
-			},
-			success: (res) => {
-				console.log(res.data);
-				if (res.data.status == "success") {
-					// goods.value = res.data.data;
-					if (res.data.data.id > 0) {
-						hasLiked.value = true
-					} else {
-						hasLiked.value = false
-					}
+// —— 是否已点赞 —— //
+function getHasLike() {
+  let token = uni.getStorageSync('token')
+  if (!token) return
+  uni.request({
+    url: websiteUrl.value + '/with-state/hasLike?id=' + props.id + '&type=5',
+    method: 'POST',
+    header: { Authorization: token },
+    success: (res) => {
+      if (res.data.status == 'success') {
+        hasLiked.value = res.data.data.id > 0
+      } else {
+        uni.showToast({ title: res.data.msg, icon: 'none' })
+      }
+    },
+    fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' })
+  })
+}
 
-				} else {
-					uni.showToast({
-						title: res.data.msg,
-						icon: 'none'
-					})
-					return
-				}
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			},
-		});
-	}
+// —— 图片显示逻辑 —— //
+const displayImages = computed(() => detailData.value?.images?.slice(0, 9) || [])
+const remainingCount = computed(() => (detailData.value?.images?.length || 0) - 9)
+const showOverlay = computed(() => (detailData.value?.images?.length || 0) > 9)
 
+uni.setNavigationBarTitle({ title: '投稿详情' })
 
-	// 图片显示逻辑
-	const displayImages = computed(() => {
-		return detailData.value?.images?.slice(0, 9) || [];
-	});
+const layoutClass = computed(() => {
+  const count = displayImages.value.length
+  if (count === 1) return 'single'
+  if (count === 2) return 'double'
+  return 'multi'
+})
 
-	const remainingCount = computed(() => {
-		return (detailData.value?.images?.length || 0) - 9;
-	});
+// —— 时间格式化 —— //
+function formatTime(timestamp) {
+  const date = new Date(timestamp * 1000)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(
+    date.getHours()
+  ).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
 
-	const showOverlay = computed(() => {
-		return (detailData.value?.images?.length || 0) > 9;
-	});
+// —— 预览图片 —— //
+function previewImage(index) {
+  uni.previewImage({ current: index, urls: detailData.value.images })
+}
 
-	// 设置标题
-	uni.setNavigationBarTitle({
-		title: '投稿详情'
-	})
-	//格式化时间戳
-	function formatTimestamp(timestamp) {
-		const date = new Date(timestamp * 1000);
-		const year = date.getFullYear();
-		const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月份从0开始，需要+1
-		const day = date.getDate().toString().padStart(2, '0');
-		const hours = date.getHours().toString().padStart(2, '0');
-		const minutes = date.getMinutes().toString().padStart(2, '0');
-		const seconds = date.getSeconds().toString().padStart(2, '0');
-
-		// 返回格式化后的日期时间
-		return `${year}-${month}-${day} ${hours}:${minutes}`;
-	}
-
-	const layoutClass = computed(() => {
-		const count = displayImages.value.length;
-		if (count === 1) return 'single';
-		if (count === 2) return 'double';
-		return 'multi';
-	});
-
-	// 时间格式化
-	const formatTime = (timestamp) => {
-		const date = new Date(timestamp * 1000);
-		return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-	};
-
-	// 预览图片
-	const previewImage = (index) => {
-		uni.previewImage({
-			current: index,
-			urls: detailData.value.images
-		});
-	};
-
-
-	// 获取数据
-	onMounted(async () => {
-		pageId.value = props.id
-		console.log("pageId", pageId.value)
-
-		try {
-			const res = await uni.request({
-				url: `${websiteUrl.value}/treehole-detail?id=${props.id}`
-			});
-
-			if (res.data.status === 'success') {
-				detailData.value = res.data.data;
-			}
-		} catch (error) {
-			console.log(error)
-			uni.showToast({
-				title: '加载失败',
-				icon: 'none'
-			});
-		}
-
-
-		asyncGetUserInfo()
-		getHasLike()
-	});
-
-	// 分享功能
-	// uni.onShareAppMessage(() => {
-	//   return {
-	//     title: detailData.value?.author_name + '的树洞',
-	//     path: `/pages/treehole/detail?id=${props.id}`
-	//   };
-	// });
+// —— 获取数据 —— //
+onMounted(async () => {
+  pageId.value = props.id
+  try {
+    const res = await uni.request({ url: `${websiteUrl.value}/treehole-detail?id=${props.id}` })
+    if (res.data.status === 'success') detailData.value = res.data.data
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
+  asyncGetUserInfo()
+  getHasLike()
+})
 </script>
 
 <style lang="less">
-	.container {
-		padding: 30rpx;
-		background: #fff;
-	}
+/* ========= 浅色主题 ========= */
+:root {
+  --brand: #3b82f6;   /* 品牌蓝 */
+  --bg: #f7f8fa;      /* 页面背景 */
+  --card: #ffffff;    /* 卡片背景 */
+  --text: #1f2937;    /* 主文本 */
+  --muted: #6b7280;   /* 次要文本 */
+  --line: #eef0f3;    /* 分割线 */
+  --shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.06);
+}
 
-	.loading {
-		text-align: center;
-		padding: 40rpx;
-		color: #999;
-	}
+/* ========= 基础布局 ========= */
+.container {
+  padding: 24rpx;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 26rpx;
+  line-height: 1.5;
+}
 
-	.header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 30rpx;
-	}
+.loading {
+  text-align: center;
+  padding: 48rpx 0;
+  color: var(--muted);
+}
 
-	.author-info {
-		display: flex;
-		align-items: center;
-		flex: 1;
-		overflow: hidden;
-		padding-bottom: 10rpx;
+/* ========= 统一卡片 ========= */
+.card {
+  background: var(--card);
+  border-radius: 20rpx;
+  box-shadow: var(--shadow);
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
 
-		.avatar {
-			width: 80rpx;
-			height: 80rpx;
-			border-radius: 50%;
-			margin-right: 20rpx;
-		}
+/* ========= 头部作者信息 ========= */
+.header { margin-bottom: 0; }
 
-		.author-name {
-			font-size: 24rpx;
-			font-weight: 800;
-			color: #333;
-			max-width: 70%;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-	}
+.author-info {
+  display: flex; align-items: center; gap: 16rpx;
 
-	.load_more {
-		background: #fff;
-		color: #d6d6d6;
-		font-size: 13px;
-		margin-top: 15px;
+  .avatar {
+    width: 96rpx; height: 96rpx; border-radius: 50%;
+    box-shadow: 0 0 0 4rpx rgba(59,130,246,.12);
+    background: #f2f3f5;
+  }
 
-		&::after {
-			border: none;
-		}
-	}
+  .author-meta {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 6rpx;
+  }
 
+  .author-name {
+    font-size: 28rpx; font-weight: 700; color: var(--text);
+    max-width: 520rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 
-	.share-btn {
-		background: none;
-		padding: 0;
-		margin: 0;
+  .time { font-size: 24rpx; color: var(--muted); }
 
-		.share-icon {
-			width: 40rpx;
-			height: 40rpx;
-		}
+  .report-wrap { margin-left: auto; }
+}
 
-		&::after {
-			border: none;
-		}
-	}
+/* 小芯片 */
+.chip {
+  display: inline-flex; align-items: center;
+  padding: 6rpx 12rpx; border-radius: 999rpx;
+  background: rgba(59,130,246,.08); color: var(--muted);
+}
 
-	.content {
-		font-size: 22rpx;
-		color: #333;
-		line-height: 1.6;
-		margin-bottom: 30rpx;
-	}
+/* ========= 内容框（完整的框框） ========= */
+.post-card { padding: 0; }           /* 外层卡片不再重复内边距，由内部 section 控制 */
+.post-section { padding: 24rpx; }    /* 统一 24rpx 内边距，8pt 栅格 */
 
-	.image-container {
-		margin-bottom: 30rpx;
+.post-content {
+  font-size: 26rpx; color: var(--text);
+  letter-spacing: 0.2rpx;
+  word-break: break-word; white-space: pre-wrap;
+}
 
-		&.single {
-			.image-wrapper {
-				width: 100%;
-				padding-bottom: 100%;
-			}
-		}
+/* 分割线：让整块更完整但层次清晰 */
+.divider {
+  height: 1rpx; background: var(--line);
+  margin: 0;      /* 紧贴两个 section，视觉上是一体的 */
+}
 
-		&.double {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10rpx;
+/* ========= 图片宫格（放在 post-section 内） ========= */
+.image-container { padding: 16rpx 24rpx; } /* 与文字左右对齐，顶部留 16rpx 更轻盈 */
+.image-container.single .image-wrapper { width: 100%; padding-bottom: 56.25%; } /* 16:9 */
+.image-container.double,
+.image-container.multi {
+  display: flex; flex-wrap: wrap; gap: 12rpx;
+}
+.image-container.double .image-wrapper { width: calc(50% - 6rpx); padding-bottom: 66.666%; }
+.image-container.multi  .image-wrapper { width: calc(33.333% - 8rpx); padding-bottom: 33.333%; position: relative; }
 
-			.image-wrapper {
-				width: calc(50% - 5rpx);
-				padding-bottom: 50%;
-			}
-		}
+.image-wrapper {
+  position: relative; border-radius: 16rpx; overflow: hidden; background: #f5f5f7;
+  transition: transform .12s ease-out;
+}
+.press { transform: scale(0.98); }
+.image-item { position: absolute; inset: 0; width: 100%; height: 100%; }
+.image-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
+  color: #fff; font-size: 32rpx; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: 2rpx;
+}
 
-		&.multi {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10rpx;
+/* ========= 操作栏（放在 post-section 内） ========= */
+.action-bar {
+  display: flex; justify-content: space-between; align-items: center;
 
-			.image-wrapper {
-				width: calc(33.333% - 12rpx);
-				padding-bottom: 33.333%;
-				position: relative;
-			}
-		}
-	}
+  .action-group { display: flex; align-items: center; gap: 16rpx; }
 
-	.image-wrapper {
-		position: relative;
-		border-radius: 10rpx;
-		overflow: hidden;
-		background: #f5f5f5;
-	}
+  .action-item {
+    display: inline-flex; align-items: center; gap: 10rpx;
+    padding: 14rpx 20rpx; border-radius: 999rpx;
+    background: #f3f4f6;
+    transition: transform .12s ease-out, background .12s ease-out;
+    min-height: 58rpx; /* 触控热区 */
 
-	.image-item {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-	}
+    &:active { transform: scale(0.96); background: #edeef2; }
 
-	.image-overlay {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		color: #fff;
-		font-size: 36rpx;
-	}
+    .action-text {
+      font-size: 26rpx; color: #666; font-weight: 600;
+      &.active { color: var(--brand); }
+    }
+  }
 
-	.time {
-		font-size: 24rpx;
-		color: #999;
-	}
+  .time-text { font-size: 24rpx; color: var(--muted); }
+}
 
-	.action-bar {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin: 40rpx 0;
-		padding: 20rpx 0;
-		border-top: 1rpx solid #f5f5f5;
-		border-bottom: 1rpx solid #f5f5f5;
-
-		.action-group {
-			display: flex;
-			align-items: center;
-			gap: 40rpx;
-
-			.action-item {
-				display: flex;
-				align-items: center;
-				padding: 12rpx 24rpx;
-				border-radius: 40rpx;
-				background: #f8f8f8;
-				transition: all 0.2s;
-
-				&:active {
-					transform: scale(0.96);
-					background: #f0f0f0;
-				}
-
-				.action-text {
-					margin-left: 12rpx;
-					font-size: 26rpx;
-					color: #666;
-					font-weight: 500;
-				}
-			}
-		}
-
-		.time-text {
-			font-size: 24rpx;
-			color: #999;
-			padding-right: 20rpx;
-		}
-	}
+/* ========= 评论区容器 ========= */
+.comments { padding: 0; }
 </style>

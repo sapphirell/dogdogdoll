@@ -3,7 +3,7 @@
   <view class="container">
     <meta name="theme-color" content="#F8F8F8"></meta>
 
-    <!-- ✅ 分类管理组件（取代原 common-modal） -->
+    <!-- 分类管理组件 -->
     <item-category-manager
       v-model="typeModalVisible"
       :list="customTypes"
@@ -17,13 +17,9 @@
       <view class="form-item">
         <text class="form-label">分类</text>
         <view class="type-selector">
-          <picker mode="selector" class="form-input" :value="selectedType" :range="typeOptions"
-            @change="updateSelectedType">
-            <view class="picker-content">
-              {{ typeOptions[selectedType] || '请选择分类' }}
-            </view>
+          <picker mode="selector" class="form-input" :value="selectedType" :range="typeOptions" @change="updateSelectedType">
+            <view class="picker-content">{{ typeOptions[selectedType] || '请选择分类' }}</view>
           </picker>
-          <!-- 打开分类管理 -->
           <text class="manage-type" @tap="typeModalVisible = true">管理分类</text>
         </view>
       </view>
@@ -50,15 +46,13 @@
       <!-- 价值 -->
       <view class="form-item">
         <text class="form-label">价值</text>
-        <input class="form-input" type="digit" placeholder="请输入价值" placeholder-class="placeholder-style"
-          v-model="price" />
+        <input class="form-input" type="digit" placeholder="请输入价值" placeholder-class="placeholder-style" v-model="price" />
       </view>
 
       <!-- 个数 -->
       <view class="form-item">
         <text class="form-label">个数</text>
-        <input class="form-input" type="number" placeholder="请输入个数" placeholder-class="placeholder-style"
-          v-model="count" />
+        <input class="form-input" type="number" placeholder="请输入个数" placeholder-class="placeholder-style" v-model="count" />
       </view>
 
       <!-- 图片上传 -->
@@ -66,15 +60,12 @@
         <text class="form-label">物品图片</text>
         <view class="upload-wrapper">
           <view class="image-grid">
-            <!-- 已上传图片预览 -->
             <view v-for="(img, index) in imageList" :key="index" class="preview-image">
               <image mode="aspectFill" :src="img" class="image-preview" @tap="viewFullImage(index)"></image>
               <view class="image-actions">
                 <uni-icons type="close" size="22" color="#fff" @tap="(e) => removeImage(index, e)" class="delete-icon"></uni-icons>
               </view>
             </view>
-
-            <!-- 添加图片按钮 -->
             <view class="add-image-box" @click="selectImage">
               <uni-icons type="plusempty" size="40" color="#ccc"></uni-icons>
               <text class="add-text">添加图片</text>
@@ -86,9 +77,7 @@
       <!-- 尺寸选择器 -->
       <view class="form-item">
         <text class="form-label">尺寸</text>
-        <uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" :value="selectedSizePath"
-          @change="onSizeChange" class="size-picker">
-        </uni-data-picker>
+        <uni-data-picker placeholder="请选择尺寸" :localdata="sizeOptions" :value="selectedSizePath" @change="onSizeChange" class="size-picker" />
       </view>
 
       <!-- 更多信息折叠区域 -->
@@ -142,27 +131,19 @@
           <input v-model="moreInfo.remark" placeholder="请输入备注" class="form-input" />
         </view>
 
-        <!-- 购入时间 -->
+        <!-- 购入时间（使用自定义日期选择器） -->
         <view class="form-item">
           <text class="form-label">购入时间</text>
-          <view class="date-picker-wrapper">
-            <picker mode="date" :value="moreInfo.buyDate" @change="(e) => moreInfo.buyDate = e.detail.value">
-              <view class="picker-content">
-                {{ moreInfo.buyDate || '选择购入日期' }}
-              </view>
-            </picker>
+          <view class="date-picker-wrapper" @tap="showBuyPicker = true">
+            <view class="picker-content">{{ moreInfo.buyDate || '选择购入日期' }}</view>
           </view>
         </view>
 
-        <!-- 到家日期 -->
+        <!-- 到家日期（使用自定义日期选择器） -->
         <view class="form-item">
           <text class="form-label">到家日期</text>
-          <view class="date-picker-wrapper">
-            <picker mode="date" :value="moreInfo.arrivalDate" @change="(e) => moreInfo.arrivalDate = e.detail.value">
-              <view class="picker-content">
-                {{ moreInfo.arrivalDate || '选择到家日期' }}
-              </view>
-            </picker>
+          <view class="date-picker-wrapper" @tap="showArrivalPicker = true">
+            <view class="picker-content">{{ moreInfo.arrivalDate || '选择到家日期' }}</view>
           </view>
         </view>
 
@@ -196,12 +177,8 @@
 
         <view class="form-item">
           <text class="form-label">补款日期</text>
-          <view class="date-picker-wrapper">
-            <picker mode="date" :value="form.finalTime" @change="form.finalTime = $event.detail.value">
-              <view class="picker-content">
-                {{ form.finalTime || '选择截止日期' }}
-              </view>
-            </picker>
+          <view class="date-picker-wrapper" @tap="showFinalPicker = true">
+            <view class="picker-content">{{ form.finalTime || '选择截止日期' }}</view>
           </view>
         </view>
       </view>
@@ -217,12 +194,38 @@
         <button class="submit-button" @click="postSubmit">记录{{ isEdit ? '修改' : '新增' }}</button>
       </view>
     </view>
+
+    <!-- ===== 自定义日期选择器挂载处 ===== -->
+    <common-date-picker
+      v-model:show="showBuyPicker"
+      v-model="moreInfo.buyDate"
+      title="选择购入日期"
+      :min-date="'2000-01-01'"
+      :max-date="'2035-12-31'"
+    />
+    <common-date-picker
+      v-model:show="showArrivalPicker"
+      v-model="moreInfo.arrivalDate"
+      title="选择宠物到家日期"
+      :min-date="'2000-01-01'"
+      :max-date="'2035-12-31'"
+    />
+    <common-date-picker
+      v-model:show="showFinalPicker"
+      v-model="form.finalTime"
+      title="选择补款截止日期"
+      :min-date="'2000-01-01'"
+      :max-date="'2035-12-31'"
+    />
+    <!-- ===== /自定义日期选择器 ===== -->
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow, onLoad } from '@dcloudio/uni-app'
+
+
 
 import {
   websiteUrl,
@@ -237,37 +240,20 @@ import {
 const props = defineProps(["account_book_id"])
 const isEdit = props.account_book_id ? true : false
 
+// 日期选择器开关
+const showBuyPicker = ref(false)
+const showArrivalPicker = ref(false)
+const showFinalPicker = ref(false)
+
 // —— 分类管理开关 & 列表 ——
 const typeModalVisible = ref(false)
 const customTypes = ref([])
 const defaultTypes = []
-
-// 下拉选项
-const typeOptions = computed(() => [
-  ...defaultTypes,
-  ...customTypes.value.map(t => t.name)
-])
-
-// 下拉当前值
+const typeOptions = computed(() => [...defaultTypes, ...customTypes.value.map(t => t.name)])
 const selectedType = ref(0)
-const updateSelectedType = (e) => {
-  selectedType.value = e.detail.value
-}
-
-// 弹窗关闭时：如果关闭，重新拉取一次分类
-const onTypeMgrVisibleChange = (visible) => {
-  typeModalVisible.value = visible
-  if (!visible) getAccountTypes()
-}
-
-// 子组件更新（新增 / 删除 / 排序成功后触发）：刷新本页列表
-const onTypesUpdated = (list) => {
-  customTypes.value = list || []
-  // 如果当前选中值越界，重置到 0
-  if (selectedType.value >= typeOptions.value.length) {
-    selectedType.value = 0
-  }
-}
+const updateSelectedType = (e) => { selectedType.value = e.detail.value }
+const onTypeMgrVisibleChange = (visible) => { typeModalVisible.value = visible; if (!visible) getAccountTypes() }
+const onTypesUpdated = (list) => { customTypes.value = list || []; if (selectedType.value >= typeOptions.value.length) selectedType.value = 0 }
 
 // —— 其它表单状态 ——
 const count = ref(1)
@@ -301,11 +287,7 @@ const fetchSizes = async () => {
       const sizesData = res.data.data
       const formatted = []
       for (const [category, items] of Object.entries(sizesData)) {
-        formatted.push({
-          text: category,
-          value: category,
-          children: items.map(it => ({ text: it, value: it }))
-        })
+        formatted.push({ text: category, value: category, children: items.map(it => ({ text: it, value: it })) })
       }
       sizeOptions.value = formatted
     }
@@ -335,17 +317,13 @@ const getAccountTypes = async () => {
     customTypes.value = res.data.data || []
   } catch (err) { console.error('获取分类失败:', err) }
 }
-const addNewType = async () => {} // 已由子组件处理，这里保留空实现以兼容旧模板调用
-
-const deleteType = async () => {} // 已由子组件处理，这里保留空实现以兼容旧模板调用
+const addNewType = async () => {}
+const deleteType = async () => {}
 
 // —— 提醒 —— 
 const toggleRemind = () => {
   form.value.isRemind = !form.value.isRemind
-  if (!form.value.isRemind) {
-    form.value.finalPrice = 0
-    form.value.finalTime = ''
-  }
+  if (!form.value.isRemind) { form.value.finalPrice = 0; form.value.finalTime = '' }
 }
 
 // —— 获取详情（编辑态） ——
@@ -383,7 +361,7 @@ function getAccountBookById(id) {
         arrivalDate: d.arrival_date ? new Date(d.arrival_date).toISOString().split('T')[0] : '',
         additionalValue: d.additional_value || ''
       }
-      if (d.size) selectedSizePath.value = [d.size, d.size_detail || '']
+      if (d.size) { selectedSizePath.value = [d.size, d.size_detail || '']; moreInfo.value.sizeDetail = d.size_detail || '' }
     }
   })
 }
@@ -411,21 +389,15 @@ function handleDelete() {
     success: (res) => {
       if (!res.confirm) return
       const id = Number(props.account_book_id)
-      if (isNaN(id) || id <= 0) {
-        uni.showToast({ title: '参数错误', icon: 'none' }); return
-      }
+      if (isNaN(id) || id <= 0) { uni.showToast({ title: '参数错误', icon: 'none' }); return }
       uni.request({
         url: websiteUrl.value + '/with-state/delete-account-book',
         method: 'POST',
         header: { 'Authorization': uni.getStorageSync('token'), 'Content-Type': 'application/json' },
         data: { id },
         success: (r) => {
-          if (r.data.status === 'success') {
-            uni.showToast({ title: '删除成功', icon: 'success' })
-            setTimeout(() => uni.navigateBack(), 500)
-          } else {
-            uni.showToast({ title: r.data.msg || '删除失败', icon: 'none' })
-          }
+          if (r.data.status === 'success') { uni.showToast({ title: '删除成功', icon: 'success' }); setTimeout(() => uni.navigateBack(), 500) }
+          else { uni.showToast({ title: r.data.msg || '删除失败', icon: 'none' }) }
         },
         fail: () => uni.showToast({ title: '网络错误', icon: 'none' })
       })
@@ -443,11 +415,8 @@ async function selectImage() {
         try {
           const tokenData = await getQiniuToken()
           const uploadRes = await uploadImageToQiniu(filePath, tokenData.token, tokenData.path)
-          if (uploadRes.qiniuRes.statusCode === 200) {
-            const imageUrl = image1Url + tokenData.path
-            imageList.value.push(imageUrl)
-          }
-        } catch (e) { /* 忽略单张失败 */ }
+          if (uploadRes.qiniuRes.statusCode === 200) imageList.value.push(image1Url + tokenData.path)
+        } catch (e) {}
       }
       uni.showToast({ title: `上传了${files.length}张图片`, icon: 'success' })
     }
@@ -461,9 +430,7 @@ function removeImage(index, event) {
     success: (res) => { if (res.confirm) imageList.value.splice(index, 1) }
   })
 }
-function viewFullImage(index) {
-  uni.previewImage({ current: index, urls: imageList.value })
-}
+function viewFullImage(index) { uni.previewImage({ current: index, urls: imageList.value }) }
 
 // —— 提交 —— 
 function validateForm() {
@@ -481,12 +448,8 @@ function addAccountBook() {
     header: { 'Authorization': uni.getStorageSync('token') },
     data,
     success: (res) => {
-      if (res.data.status === 'success') {
-        uni.showToast({ title: '提交成功', icon: 'success' })
-        setTimeout(() => uni.navigateBack(), 500)
-      } else {
-        uni.showToast({ title: res.data.msg || '提交失败', icon: 'none' })
-      }
+      if (res.data.status === 'success') { uni.showToast({ title: '提交成功', icon: 'success' }); setTimeout(() => uni.navigateBack(), 500) }
+      else { uni.showToast({ title: res.data.msg || '提交失败', icon: 'none' }) }
     }
   })
 }
@@ -499,12 +462,8 @@ function updateAccountBook() {
     header: { 'Authorization': uni.getStorageSync('token') },
     data,
     success: (res) => {
-      if (res.data.status === 'success') {
-        uni.showToast({ title: '提交成功', icon: 'success' })
-        setTimeout(() => uni.navigateBack(), 500)
-      } else {
-        uni.showToast({ title: res.data.msg || '提交失败', icon: 'none' })
-      }
+      if (res.data.status === 'success') { uni.showToast({ title: '提交成功', icon: 'success' }); setTimeout(() => uni.navigateBack(), 500) }
+      else { uni.showToast({ title: res.data.msg || '提交失败', icon: 'none' }) }
     }
   })
 }
@@ -532,22 +491,15 @@ function buildPostData() {
     additional_value: moreInfo.value.additionalValue
   }
 }
-function postSubmit() {
-  if (!validateForm()) return
-  isEdit ? updateAccountBook() : addAccountBook()
-}
+function postSubmit() { if (!validateForm()) return; isEdit ? updateAccountBook() : addAccountBook() }
 
 // —— 生命周期 —— 
 onShow(async () => {
   await asyncGetUserInfo()
   await getAccountTypes()
   await fetchSizes()
-  if (isEdit) {
-    await getAccountBookById(props.account_book_id)
-    uni.setNavigationBarTitle({ title: '编辑账本' })
-  } else {
-    uni.setNavigationBarTitle({ title: '新增账本' })
-  }
+  if (isEdit) { await getAccountBookById(props.account_book_id); uni.setNavigationBarTitle({ title: '编辑账本' }) }
+  else { uni.setNavigationBarTitle({ title: '新增账本' }) }
 })
 onLoad(async (options) => {
   if (options.goods_id) {
@@ -557,13 +509,9 @@ onLoad(async (options) => {
     } catch (e) { uni.showToast({ title: '获取商品信息失败', icon: 'none' }) }
   }
 })
-
-// 供 onLoad 使用
 const getGoodsInfo = (id) => new Promise((resolve, reject) => {
   uni.request({
-    url: websiteUrl.value + '/goods?id=' + id,
-    method: 'GET',
-    timeout: 5000,
+    url: websiteUrl.value + '/goods?id=' + id, method: 'GET', timeout: 5000,
     success: (res) => res.data.status === 'success' ? resolve(res.data.data) : reject(new Error(res.data.msg || '获取商品信息失败')),
     fail: reject
   })
@@ -573,10 +521,7 @@ const fillFormWithGoodsInfo = (g) => {
   const totalPrice = g.total_amount ? g.total_amount : (parseFloat(g.sub_amount) || 0) + (parseFloat(g.fin_amount) || 0)
   price.value = totalPrice
   if (g.goods_images?.length) imageList.value = [g.goods_images[0]]
-  if (g.size) {
-    selectedSizePath.value = [g.size, g.size_detail || '']
-    moreInfo.value.sizeDetail = g.size_detail || ''
-  }
+  if (g.size) { selectedSizePath.value = [g.size, g.size_detail || '']; moreInfo.value.sizeDetail = g.size_detail || '' }
 }
 </script>
 
@@ -657,7 +602,5 @@ $radius: 24rpx;
 }
 .size-picker { padding: 20rpx 0; ::v-deep .input-value-border { border: 2rpx solid $border-color; border-radius: 16rpx; height: 100rpx; padding: 0 20rpx; } }
 .date-picker-wrapper { padding: 0px 10px; border: 1px solid #e6e6e6; border-radius: 10px; height: 100rpx; line-height: 100rpx; }
-
-/* 新增图标样式 */
 .input-icon { position: absolute; right: 30rpx; top: 50%; transform: translateY(-50%); z-index: 2; color: #999; }
 </style>

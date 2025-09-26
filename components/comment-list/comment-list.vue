@@ -626,7 +626,7 @@
 			}
 
 			.comment-text {
-				font-size: 22rpx;
+				font-size: 26rpx;
 				color: #494b4b;
 				line-height: 1.6;
 				margin-bottom: 16rpx;
@@ -735,7 +735,7 @@
 		}
 
 		.comment-text {
-			font-size: 22rpx !important;
+			font-size: 26rpx !important;
 			color: #666 !important;
 			line-height: 1.5;
 		}

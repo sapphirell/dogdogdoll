@@ -44,7 +44,6 @@
 	    const platform = uni.getSystemInfoSync().platform;
 	    const isApp = platform === 'android' || platform === 'ios';
 	    
-	    if (isApp) {
 	      if (newVal) {
 	        // 弹窗显示时隐藏tab-bar
 	        uni.hideTabBar();
@@ -52,7 +51,6 @@
 	        // 弹窗隐藏时显示tab-bar
 	        uni.showTabBar();
 	      }
-	    }
 	  }
 	},
     methods: {

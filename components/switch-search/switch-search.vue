@@ -1,3 +1,4 @@
+<!-- components/switch-search/switch-search.vue-->
 <template>
 	<view class="integrated-search-container">
 		<!-- 搜索框区域 -->
