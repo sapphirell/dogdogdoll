@@ -1,48 +1,47 @@
 <template>
   <!-- 透明固定导航条 -->
-<zhouWei-navBar
-  type="transparentFixed"
-  :backState="1000"
-  :homeState="2000"
-  fontColor="#000"
-  transparentFixedFontColor="#000"
-  :scrollTop="scrollTop"
->
-  <!-- 顶部透明态：左侧返回 -->
-  <template #transparentFixedLeft>
-    <view class="nav-back-pill" @click="goBack" aria-label="返回">
-      <uni-icons type="left" size="22" color="#000" />
-    </view>
-  </template>
+  <zhouWei-navBar
+    type="transparentFixed"
+    :backState="1000"
+    :homeState="2000"
+    fontColor="#000"
+    transparentFixedFontColor="#000"
+    :scrollTop="scrollTop"
+  >
+    <!-- 顶部透明态：左侧返回 -->
+    <template #transparentFixedLeft>
+      <view class="nav-back-pill" @click="goBack" aria-label="返回">
+        <uni-icons type="left" size="22" color="#000" />
+      </view>
+    </template>
 
-  <!-- 顶部透明态：中间标题（商品名，超长省略） -->
-  <template #transparentFixed>
-    <text class="nav-title-ellipsis">
-      {{ goods.name || goods.goods_name || '商品详情' }}
-    </text>
-  </template>
+    <!-- 顶部透明态：中间标题（商品名，超长省略） -->
+    <template #transparentFixed>
+      <text class="nav-title-ellipsis">
+        {{ goods.name || goods.goods_name || '商品详情' }}
+      </text>
+    </template>
 
-  <!-- 滚动出现的实底态：左侧同样要放返回，避免“消失” -->
-  <template #left>
-    <view class="nav-back-pill" @click="goBack" aria-label="返回">
-      <uni-icons type="left" size="22" color="#000" />
-    </view>
-  </template>
+    <!-- 滚动出现的实底态：左侧同样要放返回，避免“消失” -->
+    <template #left>
+      <view class="nav-back-pill" @click="goBack" aria-label="返回">
+        <uni-icons type="left" size="22" color="#000" />
+      </view>
+    </template>
 
-  <!-- 滚动出现的实底态：中间显示品牌图片（蓝底），点击跳品牌详情 -->
-  <template #default>
-    <view v-if="goods.goods_brand_name_image" class="nav-brand-wrap" @tap="jumpBrand(goods.brand_id)">
-      <image :src="goods.goods_brand_name_image" mode="heightFix" class="nav-brand-img" />
-    </view>
-    <text v-else class="nav-brand-name" @tap="jumpBrand(goods.brand_id)">
-      {{ goods.brand_name || '品牌' }}
-    </text>
-  </template>
-</zhouWei-navBar>
-
+    <!-- 滚动出现的实底态：中间显示品牌图片（蓝底），点击跳品牌详情 -->
+    <template #default>
+      <view v-if="goods.goods_brand_name_image" class="nav-brand-wrap" @tap="jumpBrand(goods.brand_id)">
+        <image :src="goods.goods_brand_name_image" mode="heightFix" class="nav-brand-img" />
+      </view>
+      <text v-else class="nav-brand-name" @tap="jumpBrand(goods.brand_id)">
+        {{ goods.brand_name || '品牌' }}
+      </text>
+    </template>
+  </zhouWei-navBar>
 
   <!-- 页面主体 -->
-  <view v-if="goods.name" class="goods-detail-container">
+  <view v-if="goods.name" class="goods-detail-container" :key="currentId">
     <meta name="theme-color" content="#F8F8F8"></meta>
     <view-logs />
 
@@ -188,7 +187,12 @@
     </view>
 
     <!-- 表态组件 -->
-    <item-impression :target_id="props.goods_id" type="2" :goods-type="goods.type"></item-impression>
+    <item-impression
+      :key="currentId"
+      :target_id="parseInt(currentId)"
+      type="2"
+      :goods-type="Number(goods.type) || 0"
+    ></item-impression>
 
     <!-- 搭配参考 -->
     <view class="collocation-section">
@@ -201,7 +205,12 @@
       </view>
 
       <scroll-view scroll-x="true" class="collocation-list">
-        <view v-for="collocation in collocationList.collocation_relation_list" :key="collocation.collocation_id" class="collocation-item" @tap="jump2collectionDetail(collocation.collocation_id, collocation.relation_origin)">
+        <view
+          v-for="collocation in collocationList.collocation_relation_list"
+          :key="collocation.collocation_id"
+          class="collocation-item"
+          @tap="jump2collectionDetail(collocation.collocation_id, collocation.relation_origin)"
+        >
           <image :src="getImageForList(collocation.image_urls)" mode="aspectFill"></image>
         </view>
       </scroll-view>
@@ -236,20 +245,31 @@
 
     <!-- 评论区 -->
     <view class="comment-section">
-      <comment-list ref="commentListRef" :type="2" :relation-id="parseInt(props.goods_id)" @reply="handleReplyComment" />
+      <comment-list
+        :key="currentId"
+        ref="commentListRef"
+        :type="2"
+        :relation-id="parseInt(currentId)"
+        @reply="handleReplyComment"
+      />
     </view>
 
     <!-- 输入框 -->
-    <comment-input ref="commentInputRef" :reply-info="replyForItem" :target-id="props.goods_id"
-      @submit="handleCommentSubmit" @update:reply-info="val => replyForItem = val" />
+    <comment-input
+      ref="commentInputRef"
+      :reply-info="replyForItem"
+      :target-id="parseInt(currentId)"
+      @submit="handleCommentSubmit"
+      @update:reply-info="val => replyForItem = val"
+    />
 
     <view class="bottom-placeholder"></view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onPageScroll } from '@dcloudio/uni-app'
+import { ref, computed, watch } from 'vue'
+import { onPageScroll, onLoad, onShow } from '@dcloudio/uni-app'
 import { asyncGetUserInfo } from '../../common/config'
 import { websiteUrl, global } from '../../common/config.js'
 
@@ -264,8 +284,7 @@ function goBack () {
   else uni.switchTab({ url: '/pages/index/index' })
 }
 
-/* ===== 原有逻辑保持不变 ===== */
-const systemInfo = uni.getSystemInfoSync()
+/* ===== 数据区 ===== */
 const loading = ref(false)
 const error = ref(false)
 const errorMsg = ref('')
@@ -291,11 +310,84 @@ const faceupList = ref([]);
 const faceupLoading = ref(false);
 const showFaceupSection = computed(() => goods.value.type === '单头' || goods.value.type === '整体');
 
-const getFaceupList = async () => {
+/* ===== 关键：按 ID 重新拉取 ===== */
+const currentId = ref(String(props.goods_id || ''))
+const lastGoodsId = ref(String(props.goods_id || ''))
+
+function reloadById(id, reason = 'unknown') {
+  const newId = String(id || '')
+  if (!newId) {
+    console.log('【商品】reloadById 失败：ID 为空，原因=', reason)
+    return
+  }
+  console.log('【商品】准备按ID重新拉取，原因=', reason, ' ID=', newId)
+
+  currentId.value = newId
+  lastGoodsId.value = newId
+
+  // 轻量重置视图状态，避免闪旧数据
+  goods.value = {}
+  faceupList.value = []
+  imageHeights.value = []
+  swiperIndex.value = 1
+  swiperHeight.value = 400
+  hasLike.value = false
+  hasWish.value = false
+  wishCount.value = 0
+  replyForItem.value = {}
+
+  uni.showLoading({ title: '加载中' })
+  getGoods(newId)
+  getCollocation(newId)
+  asyncGetUserInfo().then(() => { getHasLike(newId) })
+  getWishInfo(newId)
+}
+
+/* ===== 请求函数（全部支持传入 id） ===== */
+function getGoods(id = currentId.value) {
+  uni.request({
+    url: websiteUrl.value + '/goods?id=' + id, method: 'GET', timeout: 5000,
+    success: (res) => {
+      goods.value = res.data.data || {}
+      console.log('【商品】详情加载完成：id=', id, ' name=', goods.value.name)
+      getWishInfo(id)
+      if (showFaceupSection.value) getFaceupList(id)
+    },
+    fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
+    complete: () => uni.hideLoading()
+  })
+}
+
+function getHasLike(id = currentId.value){
+  const token = uni.getStorageSync('token'); if(!token) return
+  uni.request({
+    url: websiteUrl.value + '/with-state/hasLike?id=' + id + '&type=1', method:'POST', header:{ Authorization: token },
+    success: (res)=>{ if(res.data.status==='success'){ hasLike.value = res.data.data.id > 0 } },
+  })
+}
+
+function getWishInfo(id = currentId.value){
+  const token = uni.getStorageSync('token')
+  uni.request({
+    url: websiteUrl.value + '/with-state/wish-info?goods_id=' + id, method:'GET',
+    header: token ? { Authorization: token } : {},
+    success: (res)=>{ if(res.data.status==='success'){ hasWish.value = res.data.data.user_has_wished; wishCount.value = res.data.data.wish_count } }
+  })
+}
+
+function getCollocation(id = currentId.value){
+  uni.request({
+    url: websiteUrl.value + '/goods-collocation?goods_id=' + id, method:'GET', timeout:5000,
+    success: (res)=>{ collocationList.value = res.data.data },
+    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' })
+  })
+}
+
+const getFaceupList = async (id = currentId.value) => {
   if (!showFaceupSection.value) return;
   faceupLoading.value = true;
   try {
-    const res = await uni.request({ url: `${websiteUrl.value}/rand-bjd-faceup?goods_id=${props.goods_id}`, method: 'GET', timeout: 5000 })
+    const res = await uni.request({ url: `${websiteUrl.value}/rand-bjd-faceup?goods_id=${id}`, method: 'GET', timeout: 5000 })
     if (res.data.status === 'success') faceupList.value = res.data.data || []
     else uni.showToast({ title: res.data.msg || '获取妆图失败', icon: 'none' })
   } catch { uni.showToast({ title: '网络请求失败', icon: 'none' }) }
@@ -305,6 +397,90 @@ const refreshFaceupList = () => { if (!faceupLoading.value) getFaceupList() }
 const getFirstImage = (s) => (s ? s.split(',')[0].trim() : '')
 function jump2faceup(id) { uni.navigateTo({ url: '/pages/artwork/artwork?id=' + id }) }
 
+/* ===== 其它交互 ===== */
+const groupedSizes = computed(() => {
+  if (!goods.value.sizes || goods.value.sizes.length === 0) return []
+  const groups = {}
+  goods.value.sizes.forEach(i => {
+    const cat = i.goods_size
+    if (!groups[cat]) groups[cat] = []
+    if (i.size_detail) groups[cat].push(i.size_detail)
+  })
+  return Object.keys(groups).map(category => ({ category, details: groups[category] }))
+})
+
+function onImageLoad(index) {
+  const query = uni.createSelectorQuery()
+  setTimeout(() => {
+    query.select(`.swiper-image-${index}`).boundingClientRect(rect => {
+      if (!rect) return
+      imageHeights.value[index] = rect.height
+      const valid = imageHeights.value.filter(h => h > 0)
+      if (!valid.length) return
+      const h = Math.max(...valid)
+      swiperHeight.value = Math.min(h, maxHeight.value)
+    }).exec()
+  }, 20)
+}
+function jumpBrand(id) { uni.navigateTo({ url: '/pages/brand/brand?brand_id=' + id }) }
+function onChange(e) { swiperIndex.value = e.detail.current + 1 }
+
+function formatNumber(n) { if (n < 1000) return '' + n; const k = Math.floor(n/1000); return `${k}k+` }
+function formatTimestamp(ts) {
+  if (!ts || ts <= 0) return '未知'
+  const d = new Date(ts*1000)
+  const p = n => (''+n).padStart(2,'0')
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+function viewFullImage(i){ const urls = goods.value.goods_images || []; if(urls.length) uni.previewImage({ current: urls[i], urls }) }
+
+function likeFn(){
+  const id = parseInt(currentId.value)
+  let token = uni.getStorageSync('token')
+  if (!global.isLogin){ uni.showToast({ title:'请先登录', icon:'none' }); return }
+  const requestData = { id, type: 1 }
+  const url = hasLike.value ? '/with-state/unlike' : '/with-state/add-like'
+  uni.request({
+    url: websiteUrl.value + url, method:'POST', header:{ Authorization: token }, data: requestData,
+    success: (res)=>{ if(res.data.status==='success'){ uni.showToast({ title:'操作成功', icon:'success' }); hasLike.value=!hasLike.value; getHasLike(id); getGoods(id) } else { uni.showToast({ title: res.data.msg, icon:'none' }) } },
+    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' })
+  })
+}
+
+function jump2collocation(){
+  const id = currentId.value
+  uni.navigateTo({ url: '/pages/collocation/collocation?goods_id=' + id + '&brand_id=' + goods.value.brand_id + '&goods_name=' + goods.value.name + '&brand_name=' + goods.value.brand_name + '&type=' + goods.value.type })
+}
+function jump2collectionDetail(id, origin){
+  uni.navigateTo({ url: '/pages/collocation_share/collocation_share?collocation_id=' + id + '&origin=' + origin })
+}
+function getImageForList(s){ if(!s) return ''; return s.split(',')[0].trim() }
+function addToStock(){ uni.navigateTo({ url: `/pages/stock/account_book_form/account_book_form?goods_id=${currentId.value}` }) }
+function createBill(sale){
+  const params = { amount: sale.fin_amount, currency: sale.currency, name: goods.value.name, sale_id: sale.id }
+  const q = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
+  uni.navigateTo({ url: `/pages/stock/bill_form/bill_form?${q}` })
+}
+function wishResale(){
+  if (wishLoading.value) return
+  let token = uni.getStorageSync('token')
+  if (!global.isLogin){ uni.showToast({ title:'请先登录', icon:'none' }); return }
+  wishLoading.value = true
+  uni.request({
+    url: websiteUrl.value + '/with-state/wish-restock', method:'POST', header:{ Authorization: token, 'Content-Type':'application/json' },
+    data:{ goods_id: parseInt(currentId.value) },
+    success: (res)=>{ if(res.data.status==='success'){ uni.showToast({ title:'许愿成功', icon:'success' }); hasWish.value = true; wishCount.value = res.data.data.wish_count || wishCount.value + 1 } else { uni.showToast({ title: res.data.msg || '许愿失败', icon:'none' }) } },
+    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }),
+    complete: ()=> { wishLoading.value = false }
+  })
+}
+function getHasToken(){ return !!uni.getStorageSync('token') }
+function addToShowcase(){
+  uni.showToast({ title:'该功能即将开放', icon:'none' })
+}
+
+/* 评论相关 */
 const handleReplyComment = ({ parent, target }) => {
   const item = target ?? parent
   if (replyForItem.value.id === item.id) { replyForItem.value = {}; return }
@@ -317,7 +493,7 @@ const handleCommentSubmit = (submitData) => {
   if (!global.isLogin) { uni.showToast({ title: '请先登录', icon: 'none' }); return }
 
   const requestData = {
-    content: submitData.content, origin: submitData.origin, target_id: parseInt(props.goods_id), type: 2,
+    content: submitData.content, origin: submitData.origin, target_id: parseInt(currentId.value), type: 2,
     image_url: submitData.image_url || "", association_id: submitData.association_id || 0, association_type: submitData.association_type || 0,
     is_anonymous: submitData.is_anonymous || 0,
     ...(replyForItem.value.id && {
@@ -366,114 +542,39 @@ const handleCommentSubmit = (submitData) => {
   })
 }
 
-const groupedSizes = computed(() => {
-  if (!goods.value.sizes || goods.value.sizes.length === 0) return []
-  const groups = {}
-  goods.value.sizes.forEach(i => {
-    const cat = i.goods_size
-    if (!groups[cat]) groups[cat] = []
-    if (i.size_detail) groups[cat].push(i.size_detail)
-  })
-  return Object.keys(groups).map(category => ({ category, details: groups[category] }))
+/* ===== 初始化/路由变化兜底 ===== */
+onLoad((options = {}) => {
+  const idFromLoad = options?.goods_id || props.goods_id
+  console.log('【商品】onLoad，检测到ID=', idFromLoad)
+  reloadById(idFromLoad, 'onLoad')
 })
 
-function onImageLoad(index) {
-  const query = uni.createSelectorQuery()
-  setTimeout(() => {
-    query.select(`.swiper-image-${index}`).boundingClientRect(rect => {
-      if (!rect) return
-      imageHeights.value[index] = rect.height
-      const valid = imageHeights.value.filter(h => h > 0)
-      if (!valid.length) return
-      const h = Math.max(...valid)
-      swiperHeight.value = Math.min(h, maxHeight.value)
-    }).exec()
-  }, 20)
-}
-function jumpBrand(id) { uni.navigateTo({ url: '/pages/brand/brand?brand_id=' + id }) }
-function onChange(e) { swiperIndex.value = e.detail.current + 1 }
+onShow(() => {
+  const pages = getCurrentPages?.() || []
+  const top = pages[pages.length - 1]
+  const idFromRoute = top?.options?.goods_id
+  const newId = String(idFromRoute || props.goods_id || '')
+  console.log("路径ID" + newId)
+  if (newId && newId !== lastGoodsId.value) {
+    console.log('【商品】onShow 检测到ID变更：', lastGoodsId.value, '→', newId)
+    reloadById(newId, 'onShow')
+  } else {
+    console.log('【商品】onShow，无ID变化，跳过拉取（当前=', lastGoodsId.value, '）')
+  }
+})
 
-function getGoods() {
-  uni.request({
-    url: websiteUrl.value + '/goods?id=' + props.goods_id, method: 'GET', timeout: 5000,
-    success: (res) => { goods.value = res.data.data; getWishInfo(); if (showFaceupSection.value) getFaceupList() },
-    fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
-    complete: () => uni.hideLoading()
-  })
-}
+watch(() => props.goods_id, (val, old) => {
+  const v = String(val || '')
+  const o = String(old || '')
+  if (v && v !== o) {
+    console.log('【商品】props.goods_id 变化：', o, '→', v)
+    reloadById(v, 'watch props.goods_id')
+  }
+})
 
-function formatNumber(n) { if (n < 1000) return '' + n; const k = Math.floor(n/1000); return `${k}k+` }
-function formatTimestamp(ts) {
-  if (!ts || ts <= 0) return '未知'
-  const d = new Date(ts*1000)
-  const p = n => (''+n).padStart(2,'0')
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
-
-function viewFullImage(i){ const urls = goods.value.goods_images || []; if(urls.length) uni.previewImage({ current: urls[i], urls }) }
-
-function likeFn(){
-  let token = uni.getStorageSync('token')
-  if (!global.isLogin){ uni.showToast({ title:'请先登录', icon:'none' }); return }
-  const requestData = { id: parseInt(props.goods_id), type: 1 }
-  const url = hasLike.value ? '/with-state/unlike' : '/with-state/add-like'
-  uni.request({
-    url: websiteUrl.value + url, method:'POST', header:{ Authorization: token }, data: requestData,
-    success: (res)=>{ if(res.data.status==='success'){ uni.showToast({ title:'操作成功', icon:'success' }); hasLike.value=!hasLike.value; getHasLike(); getGoods() } else { uni.showToast({ title: res.data.msg, icon:'none' }) } },
-    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' })
-  })
-}
-function getHasLike(){
-  let token = uni.getStorageSync('token'); if(!token) return
-  uni.request({
-    url: websiteUrl.value + '/with-state/hasLike?id=' + props.goods_id + '&type=1', method:'POST', header:{ Authorization: token },
-    success: (res)=>{ if(res.data.status==='success'){ hasLike.value = res.data.data.id > 0 } else { uni.showToast({ title: res.data.msg, icon:'none' }) } },
-    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' })
-  })
-}
-
-function jump2collocation(){
-  uni.navigateTo({ url: '/pages/collocation/collocation?goods_id=' + props.goods_id + '&brand_id=' + goods.value.brand_id + '&goods_name=' + goods.value.name + '&brand_name=' + goods.value.brand_name + '&type=' + goods.value.type })
-}
-function jump2collectionDetail(id, origin){
-  uni.navigateTo({ url: '/pages/collocation_share/collocation_share?collocation_id=' + id + '&origin=' + origin })
-}
-function getCollocation(){
-  uni.request({ url: websiteUrl.value + '/goods-collocation?goods_id=' + props.goods_id, method:'GET', timeout:5000,
-    success: (res)=>{ collocationList.value = res.data.data }, fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }) })
-}
-function getImageForList(s){ if(!s) return ''; return s.split(',')[0].trim() }
-function addToStock(){ uni.navigateTo({ url: `/pages/stock/account_book_form/account_book_form?goods_id=${props.goods_id}` }) }
-function createBill(sale){
-  const params = { amount: sale.fin_amount, currency: sale.currency, name: goods.value.name, sale_id: sale.id }
-  const q = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
-  uni.navigateTo({ url: `/pages/stock/bill_form/bill_form?${q}` })
-}
-function wishResale(){
-  if (wishLoading.value) return
-  let token = uni.getStorageSync('token')
-  if (!global.isLogin){ uni.showToast({ title:'请先登录', icon:'none' }); return }
-  wishLoading.value = true
-  uni.request({
-    url: websiteUrl.value + '/with-state/wish-restock', method:'POST', header:{ Authorization: token, 'Content-Type':'application/json' },
-    data:{ goods_id: parseInt(props.goods_id) },
-    success: (res)=>{ if(res.data.status==='success'){ uni.showToast({ title:'许愿成功', icon:'success' }); hasWish.value = true; wishCount.value = res.data.data.wish_count || wishCount.value + 1 } else { uni.showToast({ title: res.data.msg || '许愿失败', icon:'none' }) } },
-    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }),
-    complete: ()=> { wishLoading.value = false }
-  })
-}
-function getWishInfo(){
-  let token = uni.getStorageSync('token')
-  uni.request({
-    url: websiteUrl.value + '/with-state/wish-info?goods_id=' + props.goods_id, method:'GET',
-    header: token ? { Authorization: token } : {},
-    success: (res)=>{ if(res.data.status==='success'){ hasWish.value = res.data.data.user_has_wished; wishCount.value = res.data.data.wish_count } }
-  })
-}
-
-// 初始化
-uni.showLoading({ title: '加载中' })
-getGoods(); getCollocation(); asyncGetUserInfo().then(() => { getHasLike() })
+/* ============ 你项目里的这两个方法仍被引用，保持存在 =========== */
+function selectType(){/* 占位：你的原逻辑可保留 */ }
+function selectSize(){/* 占位：你的原逻辑可保留 */ }
 </script>
 
 <style lang="scss" scoped>
@@ -499,7 +600,7 @@ getGoods(); getCollocation(); asyncGetUserInfo().then(() => { getHasLike() })
 
 /* 轮播图 */
 .swiper-container { position: relative; background-color: #fff; border-radius: 0 0 20rpx 20rpx; overflow: hidden; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05); }
-.heart { position: absolute; top: 20rpx; right: 30rpx; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 70rpx; height: 70rpx; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 5rpx;
+.heart { position: absolute; top: 70rpx; right: 30rpx; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 70rpx; height: 70rpx; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 5rpx;
   .num { font-size: 20rpx; font-weight: bold; margin-top: 5rpx; width: 100%; text-align: center; }
 }
 .banner-swiper { width: 100%; }
@@ -550,6 +651,22 @@ getGoods(); getCollocation(); asyncGetUserInfo().then(() => { getHasLike() })
   }
 }
 
+/* 妆图展示 */
+.faceup-section {
+  background:#fff; border-radius:20rpx; margin:20rpx; padding:30rpx; box-shadow:0 4rpx 12rpx rgba(0,0,0,0.05);
+  .section-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:25rpx; }
+  .section-title{ font-size:28rpx; font-weight:bold; color:#64c6dc; padding-left:10rpx; border-left:8rpx solid #64c6dc; }
+  .refresh-btn{ display:flex; align-items:center; padding:8rpx 16rpx; border-radius:30rpx; background:#eff6ff; }
+  .refresh-text{ color:#64c6dc; font-size:24rpx; }
+  .refresh-btn.loading{ opacity:.6; }
+
+  .faceup-grid{ display:flex; flex-wrap:wrap; justify-content:space-between; row-gap:20rpx; }
+  .faceup-card{ width:48.5%; border-radius:12rpx; overflow:hidden; box-shadow:0 4rpx 12rpx rgba(0,0,0,.1); background:#fff; }
+  .faceup-cover{ width:100%; height:320rpx; display:block; }
+  .faceup-title{ padding:12rpx 14rpx; font-size:24rpx; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1rpx solid #f2f2f2; }
+  .faceup-empty{ text-align:center; color:#aaa; font-size:24rpx; padding-top:10rpx; }
+}
+
 /* 评论区 */
 .comment-section { background:#fff; border-radius:20rpx; margin:20rpx; box-shadow:0 4rpx 12rpx rgba(0,0,0,0.05); font-size:24rpx; }
 
@@ -574,38 +691,10 @@ getGoods(); getCollocation(); asyncGetUserInfo().then(() => { getHasLike() })
 .goods-info{ margin-bottom:10rpx; .info-item:first-child{ padding-top:10rpx; } }
 .swiper-container{ margin-bottom:0; }
 
-/* 妆图展示 */
-.faceup-section {
-  background:#fff; border-radius:20rpx; margin:20rpx; padding:30rpx; box-shadow:0 4rpx 12rpx rgba(0,0,0,0.05);
-  .section-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:25rpx; }
-  .section-title{ font-size:28rpx; font-weight:bold; color:#64c6dc; padding-left:10rpx; border-left:8rpx solid #64c6dc; }
-  .refresh-btn{ display:flex; align-items:center; padding:8rpx 16rpx; border-radius:30rpx; background:#eff6ff; }
-  .refresh-text{ color:#64c6dc; font-size:24rpx; }
-  .refresh-btn.loading{ opacity:.6; }
-
-  .faceup-grid{ display:flex; flex-wrap:wrap; justify-content:space-between; row-gap:20rpx; }
-  .faceup-card{ width:48.5%; border-radius:12rpx; overflow:hidden; box-shadow:0 4rpx 12rpx rgba(0,0,0,.1); background:#fff; }
-  .faceup-cover{ width:100%; height:320rpx; display:block; }
-  .faceup-title{ padding:12rpx 14rpx; font-size:24rpx; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1rpx solid #f2f2f2; }
-  .faceup-empty{ text-align:center; color:#aaa; font-size:24rpx; padding-top:10rpx; }
-}
-
 /* 尺寸分组 */
 .size-group { margin-bottom: 8rpx; }
 .size-category { font-weight: bold; color: #333; }
 .size-details { color: #666; }
-
-.nav-back-pill{
-  height: 56rpx; padding: 0 18rpx; border-radius: 33rpx;
-  background: rgba(255,255,255,.72); border: 2rpx solid rgba(0,0,0,.10);
-  display: flex; align-items: center; justify-content: center;margin-left:15rpx;
-}
-
-/* 顶部透明态的商品名 */
-.nav-title-ellipsis{
-  max-width: 60vw; font-size: 30rpx; font-weight: 600; color: #000;
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-}
 
 /* 实底态的品牌图片（与 .img_info 视觉一致：蓝底+内边距） */
 .nav-brand-wrap{
@@ -619,6 +708,4 @@ getGoods(); getCollocation(); asyncGetUserInfo().then(() => { getHasLike() })
   font-size: 28rpx; font-weight: 600; color: #333;
   background: rgb(169 231 255); padding: 0 16rpx; border-radius: 10rpx;
 }
-
-.nav-placeholder{ width: 100%; }
 </style>

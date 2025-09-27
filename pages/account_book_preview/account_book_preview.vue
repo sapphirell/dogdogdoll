@@ -53,7 +53,11 @@
     <!-- 标题区域 -->
     <view class="title-container">
       <text class="title">{{ detail.name }}</text>
-      <view class="category-tag">{{ detail.type }}</view>
+      <view class="tag-row">
+        <view class="category-tag">{{ detail.type }}</view>
+        <!-- 付款状态标签（新增） -->
+        <view class="pay-badge" :class="payClass">{{ payLabel }}</view>
+      </view>
     </view>
 
     <!-- 信息列表 -->
@@ -328,6 +332,20 @@ onShow(() => {
 
   asyncGetUserInfo().then(() => fetchDetail(props.account_book_id))
 })
+
+/* ===== 付款状态：显示标签（新增） ===== */
+const payLabel = computed(() => {
+  const v = detail.value?.payment_status
+  if (v === 2) return '已付定金'
+  if (v === 3) return '未购买'
+  return '已全款' // 默认
+})
+const payClass = computed(() => {
+  const v = detail.value?.payment_status
+  if (v === 2) return 'is-deposit'
+  if (v === 3) return 'is-unbought'
+  return 'is-full'
+})
 </script>
 
 <style lang="less">
@@ -351,9 +369,22 @@ onShow(() => {
 /* 标题区域 */
 .title-container{ padding:30rpx; position:relative; text-align:center; margin-top:-60rpx; }
 .title{ font-size:40rpx; font-weight:bold; color:#1a1a1a; display:block; margin-bottom:15rpx; text-shadow:0 2rpx 4rpx rgba(0,0,0,.05); }
-.category-tag{ display:inline-block; padding:6rpx 24rpx; background:#eef2ff; color:#5db7ff; border-radius:50rpx; font-size:24rpx; font-weight:500; }
+.tag-row{
+  display:flex; align-items:center; justify-content:center; gap:16rpx; flex-wrap:wrap;
+}
+.category-tag{
+  display:inline-block; padding:6rpx 24rpx; background:#eef2ff; color:#5db7ff; border-radius:50rpx; font-size:24rpx; font-weight:500;
+}
+/* 付款状态标签（新增） */
+.pay-badge{
+  display:inline-flex; align-items:center; padding:6rpx 24rpx; border-radius:50rpx; font-size:24rpx; font-weight:600;
+  box-shadow:0 4rpx 14rpx rgba(0,0,0,.06);
+}
+.pay-badge.is-full{ background:#eafff4; color:#10b981; border:1rpx solid #bff3d8; }      /* 已全款：绿色 */
+.pay-badge.is-deposit{ background:#fff8e6; color:#f59e0b; border:1rpx solid #ffe0a3; }   /* 已付定金：橙色 */
+.pay-badge.is-unbought{ background:#ffecec; color:#ef4444; border:1rpx solid #ffcccc; }  /* 未购买：红色 */
 
-/* 分区 */
+ /* 分区 */
 .section-title{ padding:20rpx 30rpx; font-size:30rpx; font-weight:bold; color:#333; display:flex; align-items:center; background:#f8faff; border-bottom:1rpx solid #e8ecff; margin-top:20rpx;
   text{ margin-left:10rpx; } }
 

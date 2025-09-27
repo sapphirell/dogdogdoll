@@ -1,5 +1,5 @@
 <template>
-  <common-page head_color="rgb(185 195 253)">
+  <common-page head_color="#def9ff">
      <summary-tab v-if="active==='summary'"></summary-tab>
   </common-page>
 </template>

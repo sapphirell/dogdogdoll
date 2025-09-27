@@ -1,18 +1,33 @@
 <template>
-  <view class="summary-wrap" :style="{ '--safe-top': safeTop + 'px' }">
+  <view class="summary-wrap">
     <view-logs />
 
-    <!-- 顶部：#FCE259 → 淡灰 渐变头部 + 下划线Tab -->
-    <view class="header-gradient">
-      <!-- ✅ 占位：安全距离(状态栏) + 导航条高度 -->
-      <view class="nav-placeholder" :style="{ height: headerPadPx }" />
+    <!-- 吸顶标题栏（滚动后出现，可点击跳品牌/妆师） -->
+    <view
+      class="sticky-titlebar"
+      v-show="showStickyTitle"
+      :style="{ paddingTop: safeTop + 'px' }"
+    >
+      <view class="st-left">
+        <view class="nav-back-pill" @click="goBack" aria-label="返回">
+          <uni-icons type="left" size="22" color="#222" />
+        </view>
+      </view>
+      <view class="st-center" @click="goStickyTarget" aria-label="打开品牌/妆师">
+        <text class="sticky-title">{{ stickyTitle }}</text>
+      </view>
+      <view class="st-right"></view>
+    </view>
 
-      <view class="tabs-underline">
-        <view class="tab" :class="{active: activeTab==='sale'}" @click="switchTab('sale')">
+    <!-- 顶部渐变（整块点击回主页） -->
+    <view class="header-gradient" @click="goHome" aria-label="回主页">
+      <view class="nav-placeholder" :style="{ height: headerPadPx }" />
+      <view class="tabs-underline" @click.stop>
+        <view class="tab" :class="{active: activeTab==='sale'}" @click.stop="switchTab('sale')">
           <text>贩售</text>
           <view class="underline" v-if="activeTab==='sale'"></view>
         </view>
-        <view class="tab" :class="{active: activeTab==='makeup'}" @click="switchTab('makeup')">
+        <view class="tab" :class="{active: activeTab==='makeup'}" @click.stop="switchTab('makeup')">
           <text>约妆</text>
           <view class="underline" v-if="activeTab==='makeup'"></view>
         </view>
@@ -86,6 +101,9 @@
             v-for="good in chooseItem.goods"
             :key="good.id"
             class="goods-card"
+            :data-brand-id="good.brand_id"
+            :data-brand-name="good.brand_name"
+            data-kind="sale"
             @click="jumpGoods(good.id, good.goods_id)"
           >
             <view class="goods-image-container">
@@ -155,7 +173,15 @@
         </view>
 
         <view v-else>
-          <view class="plan-card" v-for="plan in chooseItem.plans" :key="plan.id" @tap="navigateToArtistDetail(plan.artist_info)">
+          <view
+            class="plan-card"
+            v-for="plan in chooseItem.plans"
+            :key="plan.id"
+            :data-brand-id="(plan.artist_info && (plan.artist_info.brand_id || plan.artist_info.BrandId)) || plan.brand_id"
+            :data-brand-name="plan.artist_name || (plan.artist_info && plan.artist_info.BrandName) || ''"
+            data-kind="makeup"
+            @tap="navigateToArtistDetail(plan.artist_info)"
+          >
             <view class="artist-header">
               <view class="artist-info">
                 <image v-if="plan.artist_info && plan.artist_info.LogoImage" :src="plan.artist_info.LogoImage" mode="aspectFill" class="artist-avatar"/>
@@ -174,7 +200,7 @@
               <scroll-view scroll-x class="image-scroll">
                 <image
                   v-for="(img, i) in getHighlightImages(plan.artist_info.artist_highlight_images)"
-                  :key="i" :src="img" mode="aspectFill" class="highlight-image" @click="previewImage(img)"/>
+                  :key="i" :src="img" mode="aspectFill" class="highlight-image" @click.stop="previewImage(img)"/>
               </scroll-view>
             </view>
 
@@ -221,14 +247,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { onLoad, onPullDownRefresh, onPageScroll } from '@dcloudio/uni-app'
+import { ref, computed, watch, nextTick, getCurrentInstance, onMounted } from 'vue'
+import { onLoad, onShow, onHide, onUnload, onPullDownRefresh, onPageScroll, onReady } from '@dcloudio/uni-app'
 import { websiteUrl, getStatusBarHeight, getNavBarHeight, toPx } from '@/common/config.js'
 
-/* 顶部透明导航需要的滚动值 & 返回（如需返回按钮可继续复用） */
+/* ========== 基础状态 ========== */
 const scrollTop = ref(0)
 const safeTop = ref(0)
-onPageScroll(e => { scrollTop.value = e.scrollTop || 0 })
+onPageScroll(e => { scrollTop.value = e?.scrollTop || 0; scheduleScrollSpy() })
+
 const goBack = () => {
   try {
     const pages = getCurrentPages && getCurrentPages()
@@ -236,20 +263,28 @@ const goBack = () => {
     else (uni.switchTab?.({ url: '/pages/index/index' }) || uni.reLaunch({ url: '/pages/index/index' }))
   } catch { uni.navigateBack({ delta: 1 }) }
 }
-/** 顶部占位高度 = 状态栏安全距离 + 导航条高度 */
+function goHome () {
+  // 保留：头部整块是去首页
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
+/* 顶部占位高度 */
+const navBarPx = toPx(getNavBarHeight())
 const headerPadPx = computed(() => toPx(getStatusBarHeight() + getNavBarHeight()))
 
-/* Tab */
+/* Tab（切换即拉取未拉过的数据） */
 const activeTab = ref('sale')
-const switchTab = (t) => {
+const switchTab = async (t) => {
   if (activeTab.value === t) return
   activeTab.value = t
-  chooseDate.value = todayFormat.value
-  if (t === 'makeup' && Object.keys(makeupCalendar.value).length === 0) {
-    fetchMakeupCalendar()
+  console.log('【日历】切换Tab为：', t)
+  if (t === 'makeup') {
+    if (!Object.keys(makeupCalendar.value).length) await fetchMakeupCalendar()
   } else {
-    updateSelectedItem()
+    if (!Object.keys(saleCalendar.value).length) await fetchSaleCalendar()
   }
+  updateSelectedItem()
+  resetStickySoon()
 }
 
 /* 贩售筛选 */
@@ -257,30 +292,42 @@ const tabList = ref(['全部','整体','单头','单体','娃衣','眼珠','娃�
 const sizeList = ref(['全部尺寸','四分','六分','三分','其它大尺寸','八分','十二分','一分','二分','五分','棉花娃','眼珠'])
 let activeType = ref('全部')
 let activeSize = ref('全部尺寸')
-const saleCalendar = ref({})
 
-/* 约妆 */
+/* 日历数据 */
+const saleCalendar = ref({})
 const makeupCalendar = ref({})
 const expandStates = ref({})
-const toggleFold = (id)=>{ expandStates.value[id] = !expandStates.value[id] }
+
+const toggleFold = async (id)=>{
+  expandStates.value[id] = !expandStates.value[id]
+  await nextTick()
+  resetStickySoon()
+  setTimeout(resetStickySoon, 360)
+  setTimeout(resetStickySoon, 720)
+}
 const getHighlightImages = (s)=> (!s ? [] : s.split(',').filter(i=>i.trim()))
 const previewImage = (url)=> uni.previewImage({ urls:[url], current:url })
 
-/* 公共 */
-const today = new Date()
-const year = today.getFullYear()
-const month = String(today.getMonth()+1).padStart(2,'0')
-const day = String(today.getDate()).padStart(2,'0')
-const todayFormat = ref(`${year}-${month}-${day}`)
+/* 今日（每次进入或刷新重算） */
+const todayFormat = ref('')
+function computeTodayFormat(){
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth()+1).padStart(2,'0')
+  const day = String(d.getDate()).padStart(2,'0')
+  return `${y}-${m}-${day}`
+}
+
+/* 列表滚动定位 */
 const screenWidth = uni.getSystemInfoSync().screenWidth
 const itemWidth = screenWidth / 7
 let scrollLeft = ref(0)
 
-let chooseDate = ref(todayFormat.value)
+let chooseDate = ref('')
 let chooseItem = ref({})
 let loading = ref(true)
 
-/* 计算：按筛选实时产出当月数据 */
+/* 过滤后的当月（贩售） */
 const filteredSaleCalendar = computed(()=>{
   const out = {}
   Object.entries(saleCalendar.value).forEach(([date, info])=>{
@@ -302,52 +349,64 @@ const filteredSaleCalendar = computed(()=>{
 })
 const currentCalendar = computed(()=> activeTab.value==='sale' ? filteredSaleCalendar.value : makeupCalendar.value)
 
-/* ✅ 修复点 #1：selectDate 仅收 date，用最新日历计算 */
+/* 选日 */
 const selectDate = (d) => {
   chooseDate.value = d
   updateSelectedItem()
+  resetStickySoon()
 }
 
-/* ✅ 修复点 #2：监听筛选条件与日历变化，保持 chooseItem 同步 */
-watch([activeType, activeSize], () => {
-  if (activeTab.value === 'sale') updateSelectedItem()
-})
-watch(() => filteredSaleCalendar.value, () => {
-  if (activeTab.value === 'sale') updateSelectedItem()
-})
-watch(() => makeupCalendar.value, () => {
-  if (activeTab.value === 'makeup') updateSelectedItem()
-})
+/* 同步 chooseItem */
+watch([activeType, activeSize], () => { if (activeTab.value === 'sale') updateSelectedItem() })
+watch(() => filteredSaleCalendar.value, () => { if (activeTab.value === 'sale') updateSelectedItem() })
+watch(() => makeupCalendar.value, () => { if (activeTab.value === 'makeup') updateSelectedItem() })
 
-/* 请求 */
-const fetchSaleCalendar = ()=>{
+/* 请求（含中文日志） */
+const fetchSaleCalendar = () => new Promise(resolve => {
   loading.value = true
+  console.log('【日历】开始请求贩售日历')
   uni.request({
     url: websiteUrl.value + '/goods-news',
     method: 'GET',
     timeout: 5000,
     success: (res)=>{
-      saleCalendar.value = res.data.data
-      chooseItem.value = saleCalendar.value[todayFormat.value] || { goods:null }
+      saleCalendar.value = res.data?.data || {}
+      console.log('【日历】贩售日历成功，天数=', Object.keys(saleCalendar.value).length)
     },
     fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }),
-    complete: ()=>{ scrollLeft.value = itemWidth * 7 - 5; loading.value = false; updateSelectedItem() }
+    complete: async ()=>{
+      loading.value = false
+      if (!chooseDate.value) chooseDate.value = todayFormat.value
+      updateSelectedItem()
+      scrollLeft.value = itemWidth * 7 - 5
+      await nextTick()
+      resetStickySoon()
+      resolve()
+    }
   })
-}
-const fetchMakeupCalendar = ()=>{
+})
+const fetchMakeupCalendar = () => new Promise(resolve => {
   loading.value = true
+  console.log('【日历】开始请求约妆日历')
   uni.request({
     url: websiteUrl.value + '/bjd-makeup-news',
     method: 'GET',
     timeout: 5000,
     success: (res)=>{
-      makeupCalendar.value = res.data.data
-      chooseItem.value = makeupCalendar.value[todayFormat.value] || { plans:null }
+      makeupCalendar.value = res.data?.data || {}
+      console.log('【日历】约妆日历成功，天数=', Object.keys(makeupCalendar.value).length)
     },
     fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }),
-    complete: ()=>{ loading.value = false; updateSelectedItem() }
+    complete: async ()=>{
+      loading.value = false
+      if (!chooseDate.value) chooseDate.value = todayFormat.value
+      updateSelectedItem()
+      await nextTick()
+      resetStickySoon()
+      resolve()
+    }
   })
-}
+})
 
 /* 工具 */
 const handleTabClick = t => { activeType.value = t }
@@ -355,7 +414,12 @@ const handleSizeClick = s => { activeSize.value = s }
 const isToday = d => d === todayFormat.value
 function updateSelectedItem(){
   const cal = currentCalendar.value
-  if (cal[chooseDate.value]){ chooseItem.value = cal[chooseDate.value]; return }
+  const d = chooseDate.value
+  const goodsLen = cal[d]?.goods?.length || 0
+  const plansLen = cal[d]?.plans?.length || 0
+  console.log('【日历】更新选中项：tab=', activeTab.value, ' 日期=', d, ' goods#=', goodsLen, ' plans#=', plansLen)
+
+  if (cal[d]){ chooseItem.value = cal[d]; return }
   const first = Object.entries(cal).find(([_,v])=>(activeTab.value==='sale'&&v.goods)||(activeTab.value==='makeup'&&v.plans))
   if (first){ chooseDate.value = first[0]; chooseItem.value = first[1] }
   else { chooseItem.value = activeTab.value==='sale' ? {goods:null} : {plans:null} }
@@ -371,17 +435,9 @@ function formatTimestamp(ts){
 function getTiers(plan){ try{ return JSON.parse(plan.order_config).tiers || [] }catch{ return [] } }
 function getAddons(plan){ try{ return JSON.parse(plan.order_config).addons || [] }catch{ return [] } }
 function getOrderTypeText(status) {
-  const map = {
-    0: '未知',          // StatusUnknown
-    1: '长期接单',      // StatusLongTerm
-    2: '限时手速投递',  // StatusSpeedDelivery
-    3: '限时抽选投递',  // StatusLotteryDelivery
-    4: '限时黑箱卡投递',// StatusBlackCard
-    9: '关闭投递',      // StatusClosed
-  }
+  const map = { 0:'未知',1:'长期接单',2:'限时手速投递',3:'限时抽选投递',4:'限时黑箱卡投递',9:'关闭投递' }
   return map[Number(status)] ?? '未知'
 }
-
 function getSizeGroups(sizes){
   if (!sizes || !sizes.length) return []
   const g = {}
@@ -399,26 +455,196 @@ function jumpGoods(id, goodsId){
   uni.request({ url: websiteUrl.value + '/sale-record-click?id=' + id, method:'POST', header:{'Content-Type':'application/json'} })
   uni.navigateTo({ url: '/pages/goods/goods?goods_id=' + goodsId })
 }
-const navigateToArtistDetail = (artist)=> uni.navigateTo({ url: '/pages/artist_info/artist_info?brand_id=' + artist.brand_id })
+const navigateToArtistDetail = (artist)=> {
+  const brandId = artist?.brand_id || artist?.BrandId || 0
+  if (!brandId) return
+  uni.navigateTo({ url: '/pages/artist_info/artist_info?brand_id=' + brandId })
+}
+
+/* ========== 吸顶标题（动态品牌/妆师） ========== */
+const stickyTitle = ref('')
+const stickyTarget = ref({ kind: 'sale', id: 0 }) // kind: 'sale' | 'makeup'
+const stickyShowThreshold = 80
+const showStickyTitle = computed(() => scrollTop.value > stickyShowThreshold && !!stickyTitle.value)
+
+/* 绑定当前页面上下文，避免 H5 误选其它页面元素 */
+const selectorCtx = ref(null)
+onMounted(() => {
+  selectorCtx.value = getCurrentInstance()?.proxy || null
+  console.log('【日历】mounted：查询上下文可用=', !!selectorCtx.value)
+})
+onReady(() => {
+  if (!selectorCtx.value) selectorCtx.value = getCurrentInstance()?.proxy || null
+  console.log('【日历】ready：查询上下文（兜底）可用=', !!selectorCtx.value)
+})
+
+function computeStickyFromViewport () {
+  const selector = activeTab.value === 'sale' ? '.goods-card' : '.plan-card'
+  const topGuard = (safeTop.value || 0) + parseInt(navBarPx) + 8
+
+  console.log('【日历】开始计算吸顶标题，tab=', activeTab.value, ' 选择器=', selector, ' 阈值top=', topGuard)
+  if (!selectorCtx.value) {
+    console.log('【日历】查询上下文不可用，等待下次计算')
+    return
+  }
+  console.log('【日历】查询上下文可用=', true)
+
+  try {
+    uni.createSelectorQuery()
+      .in(selectorCtx.value)
+      .selectAll(selector)
+      .fields({ rect: true, dataset: true }, (nodes) => {
+        const rects = Array.isArray(nodes) ? nodes : []
+        console.log('【日历】获取到卡片矩形数量=', rects.length)
+        if (!rects.length) {
+          stickyTitle.value = ''
+          return
+        }
+
+        // 选出“最靠近顶部”的卡片
+        let idx = -1
+        let minTop = Number.POSITIVE_INFINITY
+        rects.forEach((r, i) => {
+          if (!r) return
+          const t = r.top
+          if (t >= topGuard && t < minTop) { minTop = t; idx = i }
+        })
+        if (idx < 0) {
+          rects.forEach((r, i) => {
+            const t = r.top
+            if (t <= topGuard && (topGuard - t) < minTop) { minTop = (topGuard - t); idx = i }
+          })
+        }
+        if (idx < 0) {
+          stickyTitle.value = ''
+          return
+        }
+
+        // 用 DOM dataset 作为唯一数据源，避免“列表索引”和“节点顺序”不一致
+        const node = rects[idx]
+        const kind = node.dataset?.kind || activeTab.value
+        const bid  = Number(node.dataset?.brandId || 0)
+        const bname = node.dataset?.brandName || ''
+
+        stickyTarget.value = { kind, id: bid }
+        stickyTitle.value = (kind === 'makeup' ? '约妆 · ' : '贩售 · ') + (bname || '')
+        console.log(`【日历】吸顶（${kind === 'makeup' ? '约妆' : '贩售'}）：idx=`, idx, 'brand_id=', bid, 'title=', stickyTitle.value)
+      })
+      .exec()
+  } catch (e) {
+    console.warn('【日历】计算吸顶异常：', e)
+  }
+}
+
+/* 跳转吸顶目标（已统一为 uni.navigateTo，并加防抖与清定时器） */
+let jumping = false
+async function goStickyTarget () {
+  if (jumping) return
+  jumping = true
+
+  const selector = activeTab.value === 'sale' ? '.goods-card' : '.plan-card'
+  const topGuard = (safeTop.value || 0) + parseInt(navBarPx) + 8
+
+  const resolved = await new Promise((resolve) => {
+    try {
+      uni.createSelectorQuery()
+        .in(selectorCtx.value)
+        .selectAll(selector)
+        .fields({ rect: true, dataset: true }, (nodes) => {
+          const rects = Array.isArray(nodes) ? nodes : []
+          let idx = -1; let minTop = Number.POSITIVE_INFINITY
+          rects.forEach((r, i) => { const t = r.top; if (t >= topGuard && t < minTop) { minTop = t; idx = i } })
+          if (idx < 0) rects.forEach((r, i) => { const t = r.top; if (t <= topGuard && (topGuard - t) < minTop) { minTop = (topGuard - t); idx = i } })
+          if (idx < 0) return resolve(null)
+          const n = rects[idx]
+          resolve({
+            kind: n.dataset?.kind || activeTab.value,
+            id: Number(n.dataset?.brandId || 0)
+          })
+        })
+        .exec()
+    } catch { resolve(null) }
+  })
+
+  const kind = resolved?.kind || stickyTarget.value.kind
+  const id   = Number(resolved?.id || stickyTarget.value.id || 0)
+
+  console.log('【日历】点击吸顶，实时计算ID=', resolved?.id, ' 内存ID=', stickyTarget.value.id, ' 使用ID=', id, ' kind=', kind)
+
+  if (!id) {
+    uni.showToast({ title:'未获取到品牌ID', icon:'none' })
+    jumping = false
+    return
+  }
+
+  // 跳转前清理滚动测量定时器
+  if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
+
+  if (kind === 'makeup') {
+    uni.navigateTo({ url: `/pages/artist_info/artist_info?brand_id=${id}` })
+  } else {
+    uni.navigateTo({ url: `/pages/brand/brand?brand_id=${id}` })
+  }
+
+  setTimeout(()=> jumping = false, 500)
+}
+
+/* 节流与重算 */
+let spyTimer = null
+function scheduleScrollSpy() {
+  if (spyTimer) return
+  spyTimer = setTimeout(() => { spyTimer = null; computeStickyFromViewport() }, 120)
+}
+function resetStickySoon() {
+  setTimeout(() => computeStickyFromViewport(), 0)
+  setTimeout(() => computeStickyFromViewport(), 200)
+  setTimeout(() => computeStickyFromViewport(), 600)
+}
+
+/* 统一刷新（进入页面 & 下拉刷新） */
+async function refreshAll () {
+  console.log('【日历】开始刷新全量数据，tab=', activeTab.value)
+  todayFormat.value = computeTodayFormat()
+  if (!chooseDate.value) chooseDate.value = todayFormat.value
+  if (activeTab.value === 'makeup') await fetchMakeupCalendar()
+  else await fetchSaleCalendar()
+  console.log('【日历】刷新完成，开始重新计算吸顶（上下文是否存在？', !!selectorCtx.value, '）')
+  await nextTick()
+  resetStickySoon()
+}
 
 /* 生命周期 */
-onLoad(()=>{
+onLoad((options = {})=>{
   try{
     const wi = uni.getWindowInfo && uni.getWindowInfo()
     safeTop.value = wi?.safeAreaInsets?.top ?? wi?.statusBarHeight ?? 0
   }catch{ safeTop.value = 20 }
-  fetchSaleCalendar()
+
+  const tab = String(options.tab || '').toLowerCase()
+  activeTab.value = (tab === 'makeup' || tab === 'sale') ? tab : 'sale'
+
+  todayFormat.value = computeTodayFormat()
+  chooseDate.value = todayFormat.value
 })
+
+onShow(async ()=>{
+  console.log('【日历】onShow，开始刷新')
+  if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
+  await refreshAll()
+})
+
+onHide(()=>{ console.log('【日历】onHide'); if (spyTimer) { clearTimeout(spyTimer); spyTimer = null } })
+onUnload(()=>{ if (spyTimer) { clearTimeout(spyTimer); spyTimer = null } })
+
 onPullDownRefresh(async ()=>{
-  try{
-    activeTab.value==='sale' ? fetchSaleCalendar() : fetchMakeupCalendar()
-    uni.stopPullDownRefresh()
-  } catch(e){
-    uni.stopPullDownRefresh()
-    uni.showToast({title:'刷新失败',icon:'none'})
-  }
+  try { await refreshAll() } finally { uni.stopPullDownRefresh() }
 })
+
+watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生变化'); resetStickySoon() }, { deep: true })
 </script>
+
+
+
 
 <style lang="less" scoped>
 /* 页面背景淡灰 */
@@ -427,39 +653,48 @@ onPullDownRefresh(async ()=>{
   background:#f5f6f8;
 }
 
-/* 返回圆角胶囊按钮（如后续加入返回按钮可复用） */
+/* ====== 吸顶标题栏（淡蓝色背景、返回、标题置中） ====== */
+.sticky-titlebar{
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  backdrop-filter: blur(6px);
+  border-bottom: 1rpx solid rgba(0,0,0,.06);
+  display: grid;
+  grid-template-columns: 120rpx 1fr 120rpx; /* 左右等宽占位，保证中间始终正中 */
+  align-items: end;
+}
+.st-left, .st-right{ display:flex; align-items:center; justify-content:center; padding: 0 12rpx 10rpx; }
+.st-center{ display:flex; align-items:flex-end; justify-content:center; padding-bottom: 10rpx; }
+.sticky-title{
+  color: #222;
+  font-size: 22rpx; /* 22号 */
+  font-weight: 400;
+  letter-spacing: .3rpx;
+  max-width: 70vw;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  background: rgba(169,231,255,.96); padding: 4rpx 8rpx; border-radius: 5rpx;
+}
+
+/* 返回小胶囊 */
 .nav-back-pill{
-  display:flex; align-items:center; justify-content:center;
-  height: 64rpx; min-width: 64rpx; padding: 0 16rpx;
-  border-radius: 999rpx; background: rgba(255,255,255,.78);
-  box-shadow: 0 6rpx 12rpx rgba(0,0,0,.08);
+  height: 56rpx; padding: 0 18rpx; border-radius: 33rpx;
+  background: rgba(255,255,255,.85);
+  border: 2rpx solid rgba(0,0,0,.08);
+  display: flex; align-items: center; justify-content: center;position: relative;top:10rpx;
 }
 
 /* 顶部渐变头：#FCE259 → 淡灰；增加顶部安全区占位 */
 .header-gradient{
   padding: calc(var(--safe-top, 0px) + 16px) 28rpx 12rpx;
-  background: linear-gradient(
-    180deg,
-    #FCE259 0%,
-    #FFD863 18%,
-    #FFE891 46%,
-    #FFF6CC 70%,
-    #f5f6f8 100%
-  );
-  border-bottom-left-radius: 40rpx;
-  border-bottom-right-radius: 40rpx;
-  box-shadow: 0 12rpx 28rpx rgba(252, 226, 89, .26);
+  background: linear-gradient(180deg,#FCE259 0%,#FFD863 18%,#FFE891 46%,#FFF6CC 70%,#f5f6f8 100%);
+  border-bottom-left-radius: 40rpx; border-bottom-right-radius: 40rpx;
+  box-shadow: 0 12rpx 28rpx rgba(252,226,89,.26);
 }
 
 /* 下划线Tab */
 .tabs-underline{ display:flex; gap: 40rpx; }
 .tab{ position:relative; padding: 8rpx 6rpx 18rpx; font-size:34rpx; font-weight:800; letter-spacing:.5rpx; color:#8a8f9a; }
 .tab.active{ color:#333; }
-.underline{
-  position:absolute; left:0; right:0; bottom:0;
-  height: 6rpx; border-radius: 6rpx;
-  background:#FCE259; box-shadow: 0 2rpx 6rpx rgba(252,226,89,.55);
-}
+.underline{ position:absolute; left:0; right:0; bottom:0; height: 6rpx; border-radius: 6rpx; background:#FCE259; box-shadow: 0 2rpx 6rpx rgba(252,226,89,.55); }
 
 /* 分类/尺寸（保留蓝/粉） */
 .category-container{ padding:20rpx 20rpx 0; background:#f5f6f8; }
@@ -470,10 +705,7 @@ onPullDownRefresh(async ()=>{
   background: rgba(255,255,255,.9); transition:.2s; box-shadow:0 4rpx 10rpx rgba(0,0,0,.05);
   color:#666; font-weight:500; position:relative; top:10rpx;
 }
-.category-item.active{
-  background:#7dc3d3; color:#fff; font-weight:700; box-shadow:0 4rpx 10rpx rgba(125,195,211,.4);
-  transform: translateY(-4rpx);
-}
+.category-item.active{ background:#7dc3d3; color:#fff; font-weight:700; box-shadow:0 4rpx 10rpx rgba(125,195,211,.4); transform: translateY(-4rpx); }
 
 .size-container{ padding:0 20rpx 10rpx; background:#f5f6f8; }
 .size-scroll{ white-space:nowrap; height:80rpx; }
@@ -483,9 +715,7 @@ onPullDownRefresh(async ()=>{
   background: rgba(255,255,255,.9); transition:.2s; box-shadow:0 4rpx 8rpx rgba(0,0,0,.05);
   color:#666; font-weight:500;
 }
-.size-item.active{
-  background:#ff9ab2; color:#fff; font-weight:700; box-shadow:0 4rpx 10rpx rgba(255,154,178,.4);
-}
+.size-item.active{ background:#ff9ab2; color:#fff; font-weight:700; box-shadow:0 4rpx 10rpx rgba(255,154,178,.4); }
 
 /* 日期选择卡片 */
 .date-picker-container{
@@ -508,8 +738,8 @@ onPullDownRefresh(async ()=>{
 .empty-tip{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80rpx 0; color:#999; font-size:32rpx; }
 .empty-tip .empty-icon{ width:180rpx; height:180rpx; margin-bottom:30rpx; opacity:.6; }
 
-.goods-card{ display:flex; background:#fff; border-radius:24rpx; overflow:hidden; margin-bottom:30rpx; box-shadow:0 8rpx 24rpx rgba(0,0,0,.06); transition: transform .2s ease, box-shadow .2s ease; }
-.goods-card:active{ transform:scale(.98); box-shadow:0 6rpx 18rpx rgba(0,0,0,.06); }
+.goods-card{ display:flex; background:#fff; border-radius:24rpx; overflow:hidden; margin-bottom:30rpx; box-shadow:0 8rpx 24rpx rgba(0,0,0,0.06); transition: transform .2s ease, box-shadow .2s ease; }
+.goods-card:active{ transform:scale(.98); box-shadow:0 6rpx 18rpx rgba(0,0,0,0.06); }
 .goods-image-container{ position:relative; width:260rpx; flex-shrink:0; }
 .goods-image{ width:100%; height:10.625rem; display:block; overflow:hidden; border-radius:10px; margin:20rpx 10rpx; }
 .goods-tags{ position:absolute; top:35rpx; left:10rpx; display:flex; flex-direction:column; align-items:flex-start; }
@@ -555,17 +785,20 @@ onPullDownRefresh(async ()=>{
 .highlight-image:active{ transform:scale(.95); }
 .highlight-image:last-child{ margin-right:0; }
 
+/* 折叠区 */
 .foldable-section{ max-height:0; overflow:hidden; transition:max-height .5s, opacity .3s; opacity:0; }
 .foldable-section.expanded{ max-height:1500rpx; opacity:1; }
 .fold-toggle{ display:flex; align-items:center; justify-content:center; padding:20rpx 0; color:#81D8cf; font-size:26rpx; font-weight:500; margin-top:10rpx; }
 .fold-toggle text{ margin-right:10rpx; }
 
+/* 约妆信息块 */
 .plan-info{ background:#f0f9ff; border-radius:12rpx; padding:20rpx; margin-bottom:20rpx; }
 .plan-info .info-row{ display:flex; margin-bottom:15rpx; font-size:26rpx; }
 .plan-info .info-row:last-child{ margin-bottom:0; }
 .plan-info .label{ color:#5da8c0; font-weight:700; width:140rpx; }
 .plan-info .value{ color:#333; flex:1; }
 
+/* 配置清单 */
 .config-section{ margin-bottom:25rpx; }
 .config-section .section-title{ display:block; font-size:26rpx; font-weight:700; color:#5da8c0; margin-bottom:15rpx; padding-bottom:8rpx; border-bottom:1rpx solid #e6f7ff; }
 .tier-item,.addon-item{ display:flex; align-items:center; padding:12rpx 0; border-bottom:1rpx dashed #e6f7ff; }

@@ -347,6 +347,13 @@
 			{
 				"navigationBarTitleText" : ""
 			}
+		},
+		{
+			"path" : "pages/stock-myitems-search/stock-myitems-search",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom" //自定义导航栏
+			}
 		}
 	],
 	"globalStyle": {
@@ -408,5 +415,11 @@
 			}
 		]
 	},
-	"uniIdRouter": {}
+	"uniIdRouter": {},
+	"app-plus": {
+		"popGesture": "close"        // App(iOS/Android)：开启侧滑返回（默认即是 close）
+	},
+	"mp-weixin": {
+		"disableSwipeBack": false     // 微信小程序：允许右滑返回（默认 false）
+	}
 }

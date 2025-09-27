@@ -8,7 +8,7 @@
     </view>
 
     <!-- 今日上新（新增，显示在热榜上方） -->
-    <view class="section">
+    <view class="section s-today" :class="[{ 'is-inview': secInView.today }, { 'is-active': activeSection==='today' }]">
       <view class="section-hd">
         <text class="title">今日</text>
         <view class="sub sub-row">
@@ -40,7 +40,7 @@
     </view>
 
     <!-- 热榜：今日 / 近7日（总榜）切换 -->
-    <view class="section">
+    <view class="section s-hot" :class="[{ 'is-inview': secInView.hot }, { 'is-active': activeSection==='hot' }]">
       <view class="section-hd">
         <text class="title">热榜</text>
         <view class="sub sub-row">
@@ -119,7 +119,7 @@
     </view>
 
     <!-- 主题合集（按后端分组） -->
-    <view class="section">
+    <view class="section s-themes" :class="[{ 'is-inview': secInView.themes }, { 'is-active': activeSection==='themes' }]">
       <view class="section-hd">
         <text class="title">主题合集</text>
         <scroll-view v-if="themeChips.length" scroll-x class="chips-scroll" :show-scrollbar="false">
@@ -157,7 +157,7 @@
     </view>
 
     <!-- 最近入库（Ops Feed） -->
-    <view class="section">
+    <view class="section s-ops" :class="[{ 'is-inview': secInView.ops }, { 'is-active': activeSection==='ops' }]">
       <view class="section-hd">
         <text class="title">最近入库</text>
         <view class="sub" style="display:flex; gap: 12rpx; align-items:center;">
@@ -191,7 +191,7 @@
     </view>
 
     <!-- 订阅品牌 -->
-    <view class="section">
+    <view class="section s-likes" :class="[{ 'is-inview': secInView.likes }, { 'is-active': activeSection==='likes' }]">
       <view class="section-hd">
         <text class="title">订阅品牌</text>
         <text class="sub" v-if="likesLoading">加载中…</text>
@@ -211,7 +211,7 @@
     </view>
 
     <!-- 即将上新 时间线 -->
-    <view class="section">
+    <view class="section s-timeline" :class="[{ 'is-inview': secInView.timeline }, { 'is-active': activeSection==='timeline' }]">
       <view class="section-hd">
         <text class="title">即将上新</text>
         <view class="sub sub-row">
@@ -268,7 +268,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import { websiteUrl, asyncGetUserInfo } from '@/common/config.js'
 
 /** ----------------- 状态 ----------------- */
@@ -279,6 +279,9 @@ const hotList = ref([])       // 今日热榜
 const hot7List = ref([])      // 近7日热榜（总榜）
 const hotMode = ref('today')  // 'today' | '7days'
 const hotLoading = ref(true)
+
+// 防抖：避免并发刷新
+const isRefreshing = ref(false)
 
 const themeGroups = ref([])
 const themeLoading = ref(true)
@@ -331,7 +334,7 @@ function initTlObserver () {
   tlObserver.relativeToViewport({ top: 160 })
   tlObserver.observe('.timeline', (res) => {
     if (!res) return
-    const ratio = res.intersectionRatio || 0
+    const ratio = res?.intersectionRatio || 0
     if (ratio > 0) {
       startStaggerReveal()
       destroyTlObserver()
@@ -343,6 +346,59 @@ function destroyTlObserver () {
     tlObserver.disconnect()
   }
   tlObserver = null
+}
+
+/** ----------------- Section In-View & Active（只允许一个旋转） ----------------- */
+const sectionMap = [
+  { sel: '.s-today', key: 'today' },
+  { sel: '.s-hot', key: 'hot' },
+  { sel: '.s-themes', key: 'themes' },
+  { sel: '.s-ops', key: 'ops' },
+  { sel: '.s-likes', key: 'likes' },
+  { sel: '.s-timeline', key: 'timeline' }
+]
+const secInView = ref({
+  today: false, hot: false, themes: false,
+  ops: false, likes: false, timeline: false
+})
+const lastRatios = ref({})
+const activeSection = ref('')
+let secObservers = []
+let activeSetTimer = null
+
+function pickActiveByMaxRatio () {
+  let bestKey = ''
+  let bestRatio = 0
+  for (const { key } of sectionMap) {
+    const r = lastRatios.value[key] || 0
+    if (r > bestRatio) { bestRatio = r; bestKey = key }
+  }
+  activeSection.value = bestRatio > 0.02 ? bestKey : ''
+}
+function schedulePickActive () {
+  if (activeSetTimer) clearTimeout(activeSetTimer)
+  activeSetTimer = setTimeout(() => {
+    pickActiveByMaxRatio()
+    activeSetTimer = null
+  }, 80)
+}
+function initSectionInViewObservers () {
+  destroySectionInViewObservers()
+  sectionMap.forEach(({ sel, key }) => {
+    const ob = uni.createIntersectionObserver(instance)
+    ob.relativeToViewport({ top: 120, bottom: 120 })
+    ob.observe(sel, (res) => {
+      const ratio = res?.intersectionRatio || 0
+      secInView.value[key] = ratio > 0
+      lastRatios.value[key] = ratio
+      schedulePickActive()
+    })
+    secObservers.push(ob)
+  })
+}
+function destroySectionInViewObservers () {
+  secObservers.forEach(o => { try { o.disconnect() } catch(_){} })
+  secObservers = []
 }
 
 /** ----------------- Token / Auth ----------------- */
@@ -617,6 +673,23 @@ function sizeChips(sizes) {
 function go2recentFeed() {
   uni.navigateTo({ url: "/pages/recent-feed/recent-feed" })
 }
+/** 旧方法（保留） */
+function goOpsFeed () {
+  if (process.env.UNI_PLATFORM === 'h5') {
+    location.href = '/#/pages/ops_feed/ops_feed'
+    return
+  }
+  uni.navigateTo({ url: '/pages/ops_feed/ops_feed' })
+}
+/** 查看日历/全部（恢复） */
+function goCalendar () {
+  if (process.env.UNI_PLATFORM === 'h5') {
+    location.href = '/#/pages/calendar/calendar'
+    return
+  }
+  uni.navigateTo({ url: '/pages/calendar/calendar' })
+}
+
 function deriveTime(it) {
   const cands = []
   if (it.sub_time) cands.push(+it.sub_time)
@@ -678,28 +751,29 @@ function goOpsItem (op) {
     return
   }
 }
-function goOpsFeed () {
-  // 保留旧方法（未再使用）
-  if (process.env.UNI_PLATFORM === 'h5') {
-    location.href = '/#/pages/ops_feed/ops_feed'
-    return
+
+/** ----------------- 下拉刷新 ----------------- */
+async function handlePullDownRefresh () {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+  try {
+    uni.showNavigationBarLoading()
+    await refreshAll(false)
+  } catch (e) {
+  } finally {
+    uni.stopPullDownRefresh()
+    uni.hideNavigationBarLoading()
+    isRefreshing.value = false
   }
-  uni.navigateTo({ url: '/pages/ops_feed/ops_feed' })
 }
-/** 查看日历/全部 */
-function goCalendar () {
-  if (process.env.UNI_PLATFORM === 'h5') {
-    location.href = '/#/pages/calendar/calendar'
-    return
-  }
-  uni.navigateTo({ url: '/pages/calendar/calendar' })
-}
+onPullDownRefresh(handlePullDownRefresh)
 
 /** ----------------- 生命周期 ----------------- */
 onMounted(async () => {
   await ensureAuth()
   await refreshAll(true)   // 统一刷新并记录今天
   initTlObserver()
+  initSectionInViewObservers()
 })
 
 onShow(() => {
@@ -722,19 +796,45 @@ watch(hotMode, (m) => {
 onBeforeUnmount(() => {
   stopStaggerReveal()
   destroyTlObserver()
+  destroySectionInViewObservers()
 })
 </script>
 
 <style lang="less" scoped>
+/* =========================================================
+   统一主题变量（header 渐变除外）
+   ========================================================= */
+.summary-wrap {
+  --c-primary: #63cce7;
+  --c-primary-700: #63cce7;
+  --c-primary-500: #63cce7;
+
+  --c-grad-start: #63cce7;
+  --c-grad-end:   #63cce7;
+  --g-primary: linear-gradient(135deg, var(--c-grad-start), var(--c-grad-end));
+
+  --c-accent-start: #63cce7;
+  --c-accent-end:   #63cce7;
+  --g-accent: linear-gradient(135deg, var(--c-accent-start), var(--c-accent-end));
+
+  --c-soft-rgb: 125,195,211;
+  --c-primary-r: 99;
+  --c-primary-g: 204;
+  --c-primary-b: 231;
+
+  /* 星星旋转速度（调大变慢） */
+  --star-rot-speed: 3.2s;
+}
+
 .summary-wrap{
   padding-bottom: 40rpx;
   background-color: #f5f7fa;
 }
 
-/* 顶部渐变 + 搜索 */
+/* 顶部渐变 + 搜索（header 保持原样） */
 .header{
   padding: 24rpx 24rpx 10rpx;
-  background: linear-gradient(180deg, #def9ff, #d6e4f2);
+  background: linear-gradient(180deg, #def9ff, #e1ebf2);
   border-radius: 0 0 20rpx 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(93, 168, 192, 0.2);
 
@@ -746,7 +846,7 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 区块标题 */
+/* 区块外框 */
 .section{
   padding: 24rpx 24rpx 20rpx;
   margin: 24rpx 24rpx 30rpx;
@@ -755,6 +855,8 @@ onBeforeUnmount(() => {
   box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.04);
   &:last-child { margin-bottom: 0; }
 }
+
+/* 区块标题（星星替代左边框） */
 .section-hd{
   display:flex;
   align-items:flex-start;
@@ -763,24 +865,55 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 
   .title{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 12rpx;
+
     font-size: 32rpx;
     font-weight: 700;
     color:#38374c;
-    padding-left: 14rpx;
-    border-left: 8rpx solid #7dc3d3;
-    margin-bottom: 16rpx;
+
+    padding-left: 0;
+    border-left: none;
+
+    &::before{
+      content: '';
+      width: 28rpx;
+      height: 28rpx;
+      background: url('/static/new-icon/flower.png') no-repeat center / contain;
+      display: inline-block;
+      transform-origin: 50% 50%;
+    }
   }
   .sub{ font-size: 24rpx; color:#999; }
 }
 
+/* 旋转动画（只给唯一激活的 section） */
+@keyframes star-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.section.is-active .section-hd .title::before{
+  animation: star-spin var(--star-rot-speed) linear infinite;
+}
+
 /* 迷你切换按钮 */
 .tab-mini{
-  padding: 8rpx 16rpx; border-radius: 999rpx; font-size: 24rpx; color:#666;
-  background: rgba(125,195,211,.12); border: 1rpx solid rgba(125,195,211,.3);
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color:#666;
+  background: rgba(var(--c-soft-rgb), .12);
+  border: 1rpx solid rgba(var(--c-soft-rgb), .30);
   margin-left: 12rpx;
+  transition: all .2s ease;
+
   &.active{
-    background: linear-gradient(135deg, #7dc3d3, #5da8c0);
-    color:#fff; border-color:#7dc3d3; font-weight: 600;
+    background: var(--g-primary);
+    color:#fff;
+    border-color: var(--c-grad-start);
+    font-weight: 600;
   }
 }
 
@@ -795,16 +928,20 @@ onBeforeUnmount(() => {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
   font-size: 24rpx;
-  color:#2d9bb6;
-  background: rgba(125,195,211,.12);
-  border: 1rpx solid rgba(125,195,211,.35);
+  color: var(--c-primary-700);
+  background: rgba(var(--c-soft-rgb), .12);
+  border: 1rpx solid rgba(var(--c-soft-rgb), .35);
+  transition: all .2s ease;
 }
-.link-calendar:active{ opacity:.8; }
+.link-calendar:active{ opacity:.85; }
 
 /* 查看更多 */
 .link-more{
-  font-size: 24rpx; color:#64c6dc; padding: 6rpx 10rpx; border-radius: 8rpx;
-  background: rgba(125,195,211,.1);
+  font-size: 24rpx;
+  color: var(--c-primary);
+  padding: 6rpx 10rpx;
+  border-radius: 8rpx;
+  background: rgba(var(--c-soft-rgb), .10);
 }
 
 /* ---- 热榜：横向滚动 ---- */
@@ -842,7 +979,7 @@ onBeforeUnmount(() => {
     padding: 20rpx 16rpx; flex: 1; display: flex; flex-direction: column;
 
     .brand-tag{
-      background: linear-gradient(135deg, #85d5e7, #67b9d8);
+      background: var(--g-accent);
       color:#fff; font-size: 22rpx; border-radius: 8rpx; padding: 4rpx 12rpx;
       display:inline-block; font-weight: 500; margin-bottom: 10rpx; align-self: flex-start;
     }
@@ -863,17 +1000,19 @@ onBeforeUnmount(() => {
   .chips{ display:flex; gap: 12rpx; flex-wrap: nowrap; padding-left: 14rpx; padding-bottom: 6rpx; width: max-content; }
 }
 .chip{
-  padding: 12rpx 24rpx; border-radius: 999rpx; font-size: 24rpx; color:#666;
-  background: rgba(125,195,211,.12); border: 1rpx solid rgba(125,195,211,.3);
+  padding: 12rpx 24rpx; font-size: 24rpx; color:#666;
+  background: rgba(var(--c-soft-rgb), .12);
   transition: all 0.3s ease; white-space: nowrap; height: 36rpx; line-height: 32rpx; display: flex; align-items: center;
   &.active{
-    background: #64c6dc;
-    color:#fff; border-color:#7dc3d3; box-shadow: 0 4rpx 8rpx rgba(93, 168, 192, 0.3); font-weight: 500;
+    background: var(--c-primary);
+    color:#fff; border-color: var(--c-grad-start); border-radius:20px 0 20px 0 ; 
+    box-shadow: 0 4rpx 8rpx rgba(var(--c-primary-r), var(--c-primary-g), var(--c-primary-b), 0.30);
+    font-weight: 500;
   }
 }
 .theme-scroll{ white-space: nowrap; padding-top: 10rpx; }
 .goods-mini{
-  display:inline-flex; flex-direction:column; width: 220rpx; height: 450rpx;
+  display:inline-flex; flex-direction:column; width: 220rpx; height: 400rpx;margin-bottom: 20rpx;
   margin-right: 20rpx; background: #fff; border-radius: 20rpx; overflow: hidden;
   box-shadow: 0 6rpx 16rpx rgba(0,0,0,0.08); transition: all 0.3s ease; position: relative;
 
@@ -890,8 +1029,8 @@ onBeforeUnmount(() => {
   .gname{ font-size: 24rpx; margin: 14rpx 12rpx 0; color:#333; font-weight: 500; }
 
   .meta{
-    display:flex; justify-content:space-between; align-items:center; margin: 8rpx 12rpx 16rpx; height: 150rpx;
-    .size{ font-size: 22rpx; color:#5da8c0; font-weight: 500; margin-left: 10rpx; }
+    display:flex; justify-content:space-between; align-items:center; margin: 8rpx 12rpx 16rpx; height: 80rpx;
+    .size{ font-size: 22rpx; color: var(--c-primary-500); font-weight: 500; margin-left: 10rpx; }
   }
 }
 .empty-slim{ text-align:center; color:#999; padding: 16rpx 0; font-size: 26rpx; }
@@ -919,7 +1058,14 @@ onBeforeUnmount(() => {
 
 /* ---- 时间轴 ---- */
 .timeline{ position: relative; padding: 20rpx 0; }
-.timeline-connector { position: absolute; left: 115rpx; top: 40rpx; bottom: 40rpx; width: 4rpx; background: linear-gradient(to bottom, #b7e1ea, #e6f6fa); z-index: 1; }
+.timeline-connector {
+  position: absolute; left: 115rpx; top: 40rpx; bottom: 40rpx; width: 4rpx;
+  background: linear-gradient(to bottom,
+    rgba(var(--c-soft-rgb), .55),
+    rgba(var(--c-primary-r), var(--c-primary-g), var(--c-primary-b), .15)
+  );
+  z-index: 1;
+}
 
 .tl-item{
   display: flex;
@@ -943,11 +1089,16 @@ onBeforeUnmount(() => {
 
 .tl-left{
   width: 78rpx; text-align: right; padding-right: 24rpx; padding-top: 6rpx;
-  .tl-time{ font-size: 32rpx; color:#2d9bb6; font-weight: 700; line-height: 1.2; }
+  .tl-time{ font-size: 32rpx; color: var(--c-primary-700); font-weight: 700; line-height: 1.2; }
   .tl-date{ font-size: 24rpx; color:#9aa4b2; margin-top: 6rpx; }
 }
 .tl-middle{ position: relative; width: 30rpx; height: 100%; display: flex; justify-content: center;
-  .dot{ width: 24rpx; height:24rpx; border-radius:50%; background:#fff; border: 4rpx solid #7dc3d3; box-shadow: 0 0 0 4rpx rgba(125, 195, 211, 0.2); z-index: 3; margin-top: 10rpx; }
+  .dot{
+    width: 24rpx; height:24rpx; border-radius:50%; background:#fff;
+    border: 4rpx solid var(--c-grad-start);
+    box-shadow: 0 0 0 4rpx rgba(var(--c-soft-rgb), .20);
+    z-index: 3; margin-top: 10rpx;
+  }
 }
 
 .tl-card{
@@ -970,7 +1121,7 @@ onBeforeUnmount(() => {
     .row-1{
       display:flex; align-items:center; gap:12rpx; margin-bottom: 10rpx; min-width: 0;
       .brand-tag{
-        background: #64c6dc;
+        background: var(--c-primary);
         color:#fff; padding: 4rpx 12rpx; font-size: 22rpx; border-radius: 8rpx; font-weight: 500; flex-shrink: 0;
       }
       .gname{ font-size: 28rpx; color:#333; flex:1; font-weight: 500; min-width: 0; }
@@ -981,7 +1132,9 @@ onBeforeUnmount(() => {
 
       .type-badge{
         padding: 6rpx 14rpx; border-radius: 999rpx; font-size: 22rpx; font-weight: 600;
-        background: rgba(125,195,211,.12); color:#2d9bb6; border: 1rpx solid rgba(125,195,211,.35);
+        background: rgba(var(--c-soft-rgb), .12);
+        color: var(--c-primary-700);
+        border: 1rpx solid rgba(var(--c-soft-rgb), .35);
         max-width: 70%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
       }
       .hotness{ display: flex; align-items: center;
@@ -993,8 +1146,9 @@ onBeforeUnmount(() => {
       display: flex; flex-wrap: wrap; gap: 8rpx 10rpx; margin-top: 12rpx; max-height: none;
       .size-chip{
         padding: 6rpx 12rpx; border-radius: 999rpx;
-        font-size: 22rpx; line-height: 1.4; color:#2d9bb6;
-        background: rgba(125,195,211,.08); border: 1rpx solid rgba(125,195,211,.35);
+        font-size: 22rpx; line-height: 1.4; color: var(--c-primary-700);
+        background: rgba(var(--c-soft-rgb), .08);
+        border: 1rpx solid rgba(var(--c-soft-rgb), .35);
         max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
     }

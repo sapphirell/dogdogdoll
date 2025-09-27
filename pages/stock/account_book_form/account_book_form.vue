@@ -1,6 +1,6 @@
 <template>
   <view-logs />
-  <view class="container">
+  <view class="container" @tap="showPayPopup = false">
     <meta name="theme-color" content="#F8F8F8"></meta>
 
     <!-- 分类管理组件 -->
@@ -47,6 +47,30 @@
       <view class="form-item">
         <text class="form-label">价值</text>
         <input class="form-input" type="digit" placeholder="请输入价值" placeholder-class="placeholder-style" v-model="price" />
+      </view>
+
+      <!-- 付款状态 -->
+      <view class="form-item">
+        <text class="form-label">付款状态</text>
+        <!-- 可点击的“输入框”外观 -->
+        <view class="form-input" @tap.stop="openPayPopup">
+          <view class="picker-content">{{ paymentLabel }}</view>
+          <uni-icons type="right" size="20" class="input-icon"></uni-icons>
+        </view>
+
+        <!-- 下方 PopUp（锚定在当前 form-item 下方） -->
+        <view v-if="showPayPopup" class="dropdown-popup" @tap.stop>
+          <view
+            v-for="opt in PAYMENT_OPTIONS"
+            :key="opt.value"
+            class="option-item"
+            :class="{ active: paymentStatus === opt.value }"
+            @tap="choosePayment(opt.value)"
+          >
+            <text>{{ opt.label }}</text>
+            <uni-icons v-if="paymentStatus === opt.value" type="checkmarkempty" size="18"></uni-icons>
+          </view>
+        </view>
       </view>
 
       <!-- 个数 -->
@@ -225,8 +249,6 @@
 import { ref, computed } from 'vue'
 import { onShow, onLoad } from '@dcloudio/uni-app'
 
-
-
 import {
   websiteUrl,
   image1Url,
@@ -261,6 +283,21 @@ const imageList = ref([])
 let name = ref("")
 let price = ref("")
 const form = ref({ isRemind: false, finalPrice: 0, finalTime: '' })
+
+// —— 付款状态 ——
+// 1=已全款 2=已付定金 3=未购买
+const PAYMENT_OPTIONS = [
+  { value: 1, label: '已全款' },
+  { value: 2, label: '已付定金' },
+  { value: 3, label: '未购买' }
+]
+const paymentStatus = ref(1)        // 默认 1
+const showPayPopup = ref(false)
+const paymentLabel = computed(() => {
+  return (PAYMENT_OPTIONS.find(o => o.value === paymentStatus.value)?.label) || '已全款'
+})
+const openPayPopup = () => { showPayPopup.value = !showPayPopup.value }
+const choosePayment = (v) => { paymentStatus.value = v; showPayPopup.value = false }
 
 const showMoreInfo = ref(false)
 const sizeOptions = ref([])
@@ -362,6 +399,9 @@ function getAccountBookById(id) {
         additionalValue: d.additional_value || ''
       }
       if (d.size) { selectedSizePath.value = [d.size, d.size_detail || '']; moreInfo.value.sizeDetail = d.size_detail || '' }
+
+      // —— 付款状态回填（后端未下发时默认 1） ——
+      paymentStatus.value = d.payment_status || 1
     }
   })
 }
@@ -474,6 +514,8 @@ function buildPostData() {
     count: parseInt(count.value, 10),
     type: typeOptions.value[selectedType.value],
     image_url: imageList.value.join(','),
+    // —— 新增：付款状态（后端可选，默认1） ——
+    payment_status: paymentStatus.value,
     is_remind: form.value.isRemind,
     final_price: parseInt(form.value.finalPrice || 0, 10),
     final_time: form.value.finalTime,
@@ -603,4 +645,25 @@ $radius: 24rpx;
 .size-picker { padding: 20rpx 0; ::v-deep .input-value-border { border: 2rpx solid $border-color; border-radius: 16rpx; height: 100rpx; padding: 0 20rpx; } }
 .date-picker-wrapper { padding: 0px 10px; border: 1px solid #e6e6e6; border-radius: 10px; height: 100rpx; line-height: 100rpx; }
 .input-icon { position: absolute; right: 30rpx; top: 50%; transform: translateY(-50%); z-index: 2; color: #999; }
+
+/* 付款状态下拉 PopUp（定位在当前 form-item 下方） */
+.form-item { position: relative; } // 保证定位参照
+.dropdown-popup {
+  position: absolute;
+  left: 0; right: 0;
+  top: 110rpx; // 紧贴“输入框”下方
+  background: #fff;
+  border: 2rpx solid $border-color;
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.option-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 26rpx 28rpx; font-size: 28rpx; color: #333;
+  &:active { background: rgba(0,0,0,0.03); }
+  &.active { background: rgba($primary-color, 0.06); }
+}
 </style>
