@@ -272,7 +272,7 @@ onShow(() => {
 		background: #fff;
 		width: 100%;
 		height: 100rpx;
-		margin: 70rpx 0 30rpx 0;
+		margin: 50rpx 0 30rpx 0;
 		position: relative;
 		background: transparent;
 		/* 移除原渐变色背景 */

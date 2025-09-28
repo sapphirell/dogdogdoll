@@ -15,7 +15,7 @@ export const usURL = 'https://us-api.dogdogdoll.com'
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
 // 客户端版本号
-export const dogdogdollVersion = "1.1.3"
+export const dogdogdollVersion = "1.1.4"
 
 // 全局状态
 export let global = reactive({
@@ -398,3 +398,90 @@ function handleRequestError(error, message = '请求失败') {
 	});
 }
 
+/** ================== 安全区 / 导航尺寸工具（追加） ================== */
+
+function _isWxMP() {
+  return process.env.UNI_PLATFORM === 'mp-weixin'
+}
+
+let _sysInfoCache = null
+export function getSystemInfoCached() {
+  if (!_sysInfoCache) {
+    try { _sysInfoCache = uni.getSystemInfoSync() } catch (e) { _sysInfoCache = {} }
+  }
+  return _sysInfoCache
+}
+
+/** 状态栏高度（px，可能为 0） */
+export function getStatusBarHeight() {
+  const s = getSystemInfoCached()
+  return Number(s?.statusBarHeight) || 0
+}
+
+/** 小程序胶囊信息（仅微信小程序可用） */
+export function getMenuButtonRect() {
+  if (!_isWxMP()) return null
+  try { return uni.getMenuButtonBoundingClientRect() } catch (e) { return null }
+}
+
+/** 导航栏内容高度（不含状态栏），微信小程序通过胶囊估算，其它端取 44 */
+export function getNavBarHeight() {
+  if (!_isWxMP()) return 44
+  const mb = getMenuButtonRect()
+  const status = getStatusBarHeight() || 32
+  if (mb && typeof mb.bottom === 'number' && typeof mb.top === 'number') {
+    const h = mb.bottom + mb.top - 2 * status
+    return h > 0 ? h : 44
+  }
+  return 44
+}
+
+/** window 顶部（状态栏 + 导航栏内容），微信小程序返回两者之和，其它端返回状态栏高度 */
+export function getWindowTop() {
+  return _isWxMP()
+    ? (getStatusBarHeight() + getNavBarHeight())
+    : getStatusBarHeight()
+}
+
+/** safeAreaInsets：若无则用 safeArea 估算 */
+export function getSafeAreaInsets() {
+  const s = getSystemInfoCached()
+  if (s?.safeAreaInsets) return s.safeAreaInsets
+  const sa = s?.safeArea
+  const sh = s?.screenHeight
+  const sw = s?.screenWidth
+  let top = 0, bottom = 0, left = 0, right = 0
+  if (sa && sh && sw) {
+    top = sa.top || 0
+    bottom = Math.max(0, sh - sa.bottom)
+    left = sa.left || 0
+    right = Math.max(0, sw - sa.right)
+  }
+  return { top, bottom, left, right }
+}
+
+/** 底部安全区高度（px） */
+export function getSafeBottom() {
+  const s = getSystemInfoCached()
+  if (s?.safeAreaInsets && typeof s.safeAreaInsets.bottom === 'number') {
+    return s.safeAreaInsets.bottom
+  }
+  const sa = s?.safeArea
+  const sh = s?.screenHeight
+  return (sa && sh) ? Math.max(0, sh - sa.bottom) : 0
+}
+
+/** 用于 v-bind() 的 px 字符串 */
+export function toPx(n) {
+  return `${Math.max(0, Math.round(Number(n) || 0))}px`
+}
+
+/** 顶部占位高度（按平台）：微信小程序用导航内容高，其它端用状态栏高 */
+export function getHeaderPlaceholderHeight() {
+  return _isWxMP() ? getNavBarHeight() : getStatusBarHeight()
+}
+
+/** 底部占位高度（安全区） */
+export function getFooterPlaceholderHeight() {
+  return getSafeBottom()
+}

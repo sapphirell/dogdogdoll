@@ -41,7 +41,8 @@
 				"navigationBarTitleText": "商品页面",
 				"app-plus": {
 					"softinputmode": "adjustResize"
-				}
+				},
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -55,6 +56,15 @@
 			"style": {
 				"navigationBarTitleText": "上新",
 				"navigationStyle": "custom" ,//自定义导航栏
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path" : "pages/summary/summary",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"navigationStyle": "custom" ,
 				"enablePullDownRefresh": true
 			}
 		},
@@ -146,14 +156,14 @@
 			"path": "pages/collocation_square/collocation_square",
 			"style": {
 				"navigationBarTitleText": "",
-				"navigationStyle": "custom", //自定义导航栏
-				"enablePullDownRefresh": true
+				"navigationStyle": "custom" //自定义导航栏
 			}
 		},
 		{
 			"path": "pages/sale_news/sale_news",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -228,9 +238,9 @@
 		},
 		{
 			"path" : "pages/account_book_preview/account_book_preview",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -330,6 +340,28 @@
 			{
 				"navigationBarTitleText" : ""
 			}
+		},
+		{
+			"path" : "pages/recent-feed/recent-feed",
+			"style" : 
+			{
+				"navigationBarTitleText" : ""
+			}
+		},
+		{
+			"path" : "pages/stock-myitems-search/stock-myitems-search",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom" //自定义导航栏
+			}
+		},
+		{
+			"path" : "pages/search/search",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"navigationStyle": "custom" //自定义导航栏
+			}
 		}
 	],
 	"globalStyle": {
@@ -365,7 +397,7 @@
 			},
 
 			{
-				"pagePath": "pages/calendar/calendar",
+				"pagePath": "pages/summary/summary",
 				"text": "上新",
 				// "iconPath": "static/new-icon/date-w.png",
 				"iconPath": "static/new-icon/tab2.png",
@@ -391,5 +423,11 @@
 			}
 		]
 	},
-	"uniIdRouter": {}
+	"uniIdRouter": {},
+	"app-plus": {
+		"popGesture": "close"        // App(iOS/Android)：开启侧滑返回（默认即是 close）
+	},
+	"mp-weixin": {
+		"disableSwipeBack": false     // 微信小程序：允许右滑返回（默认 false）
+	}
 }

@@ -1,706 +1,703 @@
 <template>
+  <view>
+    <meta name="theme-color" content="#F8F8F8">
+      <view-logs />
+    </meta>
 
-	<view>
-		<meta name="theme-color" content="#F8F8F8">
-		<view-logs />
-		</meta>
-		<view v-if="!isEditable" class="edit-tip">
-			<text>当前状态不可编辑</text>
-		</view>
+    <view v-if="!isEditable" class="edit-tip">
+      <text>当前状态不可编辑</text>
+    </view>
 
-		<!-- 上传图片列表 -->
-		<view style="width: 100%;overflow: hidden;">
+    <!-- ========== 图片（长按拖拽排序） ========== -->
+    <view class="image-block">
+      <shmily-drag-image
+        :model-value="dragItems"
+        keyName="image_url"
+        :showDelete="isEditable"
+        :showItemInfo="false"
+        :cols="3"
+        :imageWidth="0"
+        :padding="12"
+        :scale="1.06"
+        :opacity="0.88"
+        :customClick="true"
+        @update:modelValue="onDragUpdate"
+        @sort-change="onDragSort"
+        @delete="onDragDelete"
+        @item-click="onDragItemClick"
+      />
+      <view class="add-row" v-if="isEditable">
+        <button class="add-btn" @tap="selectImage">
+          <image src="/static/add2.png" class="add-icon" />
+          <text>添加图片</text>
+        </button>
+      </view>
+    </view>
 
-			<scroll-view scroll-x="true" class="upload_box" ll-with-animation="true" :show-scrollbar="false">
-				<view class="upload_item" v-for="(item, index) in uploadList" :key="index">
-					<image :src="item" class="uploaded_image" @tap="viewFullImage" mode="aspectFill" />
-					<image v-if="isEditable" src="/static/cancel.png" class="close_icon" @tap="deleteImage(index)" />
-				</view>
-				<view class="uploadImageBox" style="background: #f8f8f8;" v-if="isEditable">
-					<image src="/static/add2.png" class="upload_img" @tap="selectImage(index)"
-						style="width: 50px;height: 50px;margin: 25px;" />
-				</view>
+    <!-- ========== Tabs（基本 / 人设 / 关联） ========== -->
+    <view class="tabs-underline" id="tabs-underline">
+      <view
+        v-for="t in tabs"
+        :key="t.key"
+        class="tab-item"
+        :id="`tab-${t.key}`"
+        :class="{ active: activeTab === t.key }"
+        @tap="switchTab(t.key)"
+      >
+        {{ t.label }}
+      </view>
+      <view class="underline" :style="underlineStyle"></view>
+    </view>
 
-			</scroll-view>
-		</view>
-		<!-- 标题 -->
-		<input v-model="name" type="text" :disabled="!isEditable" placeholder="请输入标题"
-			style="padding: 10px;margin: 20px 15px 5px 15px;display: block;">
-		<view class="oneLine"></view>
-		<textarea v-model="description" :disabled="!isEditable" placeholder="请输入描述"
-			style="padding: 10px;margin:10px 15px 5px 15px;display: block;line-height: 28px;width: calc(100% - 50px);"></textarea>
-		<view class="oneLine"></view>
-		<view class="">
-			<view class="relation-trigger" v-if="isEditable" @tap="showRelationPicker">
-				<text class="placeholder">点击关联娃物</text>
-				<image src="/static/right2.png" class="arrow-icon" />
-			</view>
-		</view>
-		<view class="publish-detail">
-			<text>* 展示您的宝宝们 。</text>
-			<text>* 不关联商品的展示柜不会出现在广场中。</text>
-		</view>
-		<!-- 相关 -->
-		<view class="saveCollocationDataList">
-			<view v-for="(item, index) in saveCollocationDataList" :key="index">
-				<view class="saveCollocationDataItem">
-					<image v-if="item.goods_image" :src="item.goods_image" mode="aspectFill"
-						style="width: 70px;height: 70px;"></image>
-					<text v-else class="no-image">?</text>
-					<text class="info-tap" style="width: calc(100% - 120px);display: inline-block;">{{item.type}}
-						{{item.brand_name}} -
-						{{item.goods_name}} </text>
-					<image src="/static/cancel.png" v-if="isEditable" class="close_icon"
-						@tap="deleteCollcation(index)" />
-				</view>
-			</view>
-		</view>
+    <!-- ========== Tab 面板：基本 ========== -->
+    <view v-show="activeTab==='basic'">
+      <!-- 标题 -->
+      <input
+        v-model="name"
+        type="text"
+        :disabled="!isEditable"
+        placeholder="请输入标题"
+        class="field-input"
+      />
 
+      <!-- 描述 -->
+      <textarea
+        v-model="description"
+        :disabled="!isEditable"
+        placeholder="请输入内容"
+        class="desc-area"
+      ></textarea>
 
-		<relation-picker v-model:visible="showSelectTab" :typeList="typeList" :goodsList="goodsList"
-			@confirm="handleRelationConfirm" @cancel="handleRelationCancel" />
+      <view class="publish-detail">
+        <text>* 展示您的宝宝们。🩵</text>
+        <text>* 不关联商品的展示柜不会出现在广场中。</text>
+      </view>
+    </view>
 
+    <!-- ========== Tab 面板：人设（出生日期/性别/性格） ========== -->
+    <view v-show="activeTab==='persona'">
+      <view class="card-block">
+        <!-- 出生日期（使用现成日期组件） -->
+        <view class="form-row equal">
+          <text class="label">出生日期</text>
+          <view
+            class="cell"
+            :class="{disabled:!isEditable}"
+            @tap="isEditable && (showBirthSheet = true)"
+          >
+            <text class="cell-value" :class="{ placeholder: !birthDate }">
+              {{ birthDate || '请选择出生日期' }}
+            </text>
+            <uni-icons type="right" size="16" color="#bbb" />
+          </view>
+        </view>
 
-		<view class="footer">
-			<button v-if="showDelete" @click="handleDelete" class="delete-btn">删除</button>
-			<button @click="submitForm">发表</button>
-		</view>
+        <!-- 性别 -->
+        <view class="form-row equal">
+          <text class="label">性别</text>
+          <picker
+            mode="selector"
+            :range="genderOptions"
+            range-key="label"
+            :value="genderIndex"
+            :disabled="!isEditable"
+            @change="onGenderChange"
+            class="cell"
+          >
+            <view class="cell-value" :class="{ placeholder: genderIndex === -1 }">
+              {{ genderIndex === -1 ? '请选择性别' : genderOptions[genderIndex].label }}
+            </view>
+          </picker>
+        </view>
 
-	</view>
+        <!-- 性格（同等长度、灰底无边框） -->
+        <view class="form-row equal">
+          <text class="label">性格</text>
+          <input
+            v-model="personality"
+            :disabled="!isEditable"
+            placeholder="设定中的性格"
+            class="cell-input"
+            type="text"
+            maxlength="50"
+          />
+        </view>
+      </view>
+    </view>
+
+    <!-- ========== Tab 面板：关联（妆师 / 关联娃物） ========== -->
+    <view v-show="activeTab==='relation'">
+      <!-- 妆师 -->
+      <view class="card-block">
+        <view class="form-row" :class="{ disabled: !isEditable }" style="border-bottom:none;">
+          <text class="label">妆师</text>
+          <view style="flex:1;">
+            <common-search
+              v-if="isEditable"
+              mode="fill"
+              :showIndexSelector="false"
+              defaultIndex="bjd_artist"
+              background="#f8f8f8"
+              :hideHintText="true"
+              @select="onArtistSelect"
+              @close-associate="onArtistClose"
+              class="artist-search"
+            />
+            <view v-else class="readonly-row">
+              <text class="readonly-name">{{ makeupArtist || '（未填写）' }}</text>
+            </view>
+  <!--          <view class="mini-hint">
+              选中即填入ID；若没有匹配，点“关闭联想”
+            </view> -->
+          </view>
+        </view>
+      </view>
+
+      <!-- 关联娃物 -->
+      <view>
+        <view class="relation-trigger" v-if="isEditable" @tap="showRelationPicker">
+          <text class="placeholder">点击关联娃物</text>
+          <image src="/static/right2.png" class="arrow-icon" />
+        </view>
+      </view>
+
+      <view class="saveCollocationDataList">
+        <view v-for="(item, index) in saveCollocationDataList" :key="index">
+          <view class="saveCollocationDataItem">
+            <image
+              v-if="item.goods_image"
+              :src="item.goods_image"
+              mode="aspectFill"
+              style="width: 70px;height: 70px;"
+            />
+            <text v-else class="no-image">?</text>
+            <text class="info-tap" style="width: calc(100% - 120px);display: inline-block;">
+              {{item.type}} {{item.brand_name}} - {{item.goods_name}}
+            </text>
+            <image src="/static/cancel.png" v-if="isEditable" class="close_icon" @tap="deleteCollcation(index)" />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 关联弹窗 -->
+    <relation-picker
+      v-model:visible="showSelectTab"
+      :typeList="typeList"
+      :goodsList="goodsList"
+      @confirm="handleRelationConfirm"
+      @cancel="handleRelationCancel"
+    />
+
+    <!-- 日期弹层 -->
+    <common-date-picker
+      v-model:show="showBirthSheet"
+      v-model="birthDate"
+      title="选择出生日期"
+      minDate="1970-01-01"
+      maxDate="2035-12-31"
+      @confirm="onBirthConfirm"
+    />
+
+    <!-- 底部操作 -->
+    <view class="footer">
+      <text
+        v-if="showDelete"
+        class="delete-link"
+        @tap="handleDelete"
+      >删除</text>
+      <button class="publish-btn" @click="submitForm">发表</button>
+    </view>
+  </view>
 </template>
 
 <script setup>
-	import {
-		onMounted,
-		ref,
-		computed,
-	} from 'vue';
-	import {
-		onLoad
-	} from '@dcloudio/uni-app';
-	import {
-		websiteUrl,
-		image1Url,
-		wechatSignLogin,
-		getUserInfo,
-		global,
-		asyncGetUserInfo,
-		getScene,
-	} from "../../../common/config.js";
+import { ref, computed, watch, nextTick, getCurrentInstance, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { websiteUrl, image1Url, getScene } from "../../../common/config.js"
+import { getQiniuToken, uploadImageToQiniu, chooseImageList } from "../../../common/image.js"
 
-	import {
-		chooseImage,
-		jumpToCroper,
-		getQiniuToken,
-		uploadImageToQiniu,
-		chooseImageList,
-	} from "../../../common/image.js";
+/* ================= 图片：长按拖拽排序 ================= */
+const uploadList = ref([]) // string[]（URL）
 
-	//接受参数 propsGoodsId propsGoodsName propsBrandId propsBrandName如果是非空或非0，添加一条
-	const props = defineProps(["showcase_id"])
+// 用 URL 生成稳定 id，顺序变化 id 不变，避免内部 movable 失配
+const hash = (s) => String(s).split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)
 
-	const uploadList = ref([]);
-	const goodsList = ref([
-		// {"name":"aa", "id":1}
-	]);
-	const typeList = ref([]);
-	const showSelectTab = ref(false);
-	// // 信息输入框临时信息
-	const chooseBrandName = ref("")
-	const chooseBrandId = ref(0)
-	const chooseGoodsName = ref("")
-	const chooseGoodsId = ref(0)
-	const chooseType = ref("")
+// 拖拽组件的数据：只传必要字段（不传 name/引导字符）
+const dragItems = computed(() =>
+  uploadList.value.map((url, i) => ({
+    id: `img_${hash(url)}`,     // ⚠️ 仅用 url 生成，顺序变化 id 也稳定
+    image_url: url
+  }))
+)
 
+// 拖拽：根据 sortedIds 重新排列 uploadList
+function onDragSort(sortedIds) {
+  const idToUrl = new Map(dragItems.value.map(it => [it.id, it.image_url]))
+  const newList = sortedIds.map(id => idToUrl.get(id)).filter(Boolean)
+  // 使用新数组，避免同引用导致的渲染抖动
+  uploadList.value = [...newList]
+}
 
+// 拖拽：组件整批更新（新增/删除/换序）
+function onDragUpdate(newItems) {
+  uploadList.value = newItems.map(it => it.image_url)
+}
 
-	// 处理确认事件
-	// const handleRelationConfirm = (selectedData) => {
-	//   // 这里处理选择后的数据保存逻辑
-	//   console.log('收到选择数据:', selectedData)
-	//   // 将数据添加到 saveCollocationDataList
-	//   saveCollocationDataList.value.push({
-	// 	brand_id: selectedData.brand_id,
-	// 	goods_id: selectedData.goods.id,
-	// 	brand_name: selectedData.brand.name,
-	// 	goods_name: selectedData.goods.name,
-	// 	goods_image: selectedData.goods.image,
-	// 	type: selectedData.type
-	//   })
-	// }
-	const handleRelationConfirm = (data) => {
-		try {
-			const relationData = {
-				goods_id: data.goods.id || 0,
-				goods_name: data.goods.name,
-				goods_image: data.goods.image || '',
-				brand_id: data.brand.id || 0,
-				brand_name: data.brand.name || (data.isFuzzy ? '' : '未知品牌'),
-				type: data.type || (data.isFuzzy ? '未知类型' : '')
-			}
+// 删除单张
+function onDragDelete(id) {
+  const idx = dragItems.value.findIndex(it => it.id === id)
+  if (idx >= 0) {
+    const list = [...uploadList.value]
+    list.splice(idx, 1)
+    uploadList.value = list
+  }
+}
 
-			// 去重检查（同时匹配ID和名称）
-			const isExist = saveCollocationDataList.value.some(item =>
-				(item.goods_id !== 0 && item.goods_id === relationData.goods_id) ||
-				item.goods_name === relationData.goods_name
-			)
+// 点击仅预览，不跳转
+function onDragItemClick(item) {
+  const idx = dragItems.value.findIndex(x => x.id === item.id)
+  if (idx >= 0) viewFullImage(idx)
+}
 
-			if (!isExist) {
-				saveCollocationDataList.value.push(relationData)
-			} else {
-				uni.showToast({
-					title: '已存在相同关联项',
-					icon: 'none'
-				})
-			}
-		} catch (error) {
-			console.error('保存关联数据失败:', error)
-			uni.showToast({
-				title: '保存关联信息失败',
-				icon: 'none'
-			})
-		}
-	}
-	// 处理取消事件
-	const handleRelationCancel = () => {
-		console.log('用户取消选择')
-	}
+/* ============== Tabs ============== */
+const tabs = [
+  { key: 'basic',   label: '基本' },
+  { key: 'persona', label: '人设' },
+  { key: 'relation',label: '关联' },
+]
+const activeTab = ref('basic')
+const underlineStyle = ref('')          // 用 px 精准定位
+const instance = getCurrentInstance()
 
-	const showRelationPicker = () => {
-		showSelectTab.value = true;
-	}
+function updateUnderline() {
+  nextTick(() => {
+    const q = uni.createSelectorQuery().in(instance)
+    q.select(`#tab-${activeTab.value}`).boundingClientRect()
+     .select('#tabs-underline').boundingClientRect()
+     .exec((res) => {
+        const tabRect = res?.[0]
+        const wrapRect = res?.[1]
+        if (tabRect && wrapRect) {
+          const left = tabRect.left - wrapRect.left
+          const width = tabRect.width
+          underlineStyle.value = `left:${left}px;width:${width}px;`
+        }
+     })
+  })
+}
+function switchTab(key) { activeTab.value = key; updateUnderline() }
+onMounted(updateUnderline)
+watch(activeTab, updateUnderline)
 
-	// 是否可编辑
-	const isEditable = computed(() => [-1, 1, 3].includes(display.value));
-	// const displayText = computed(() => displayOptions.value[display.value]);
-	const showDelete = computed(() => {
-		if (props.showcase_id > 0) {
-			return true
-		}
-		return false
-	});
+/* ============== 表单字段 ============== */
+const display = ref(-1) // 0=审核中
+const isEditable = computed(() => [-1, 1, 3].includes(display.value))
+const showDelete = computed(() => Number(props.showcase_id) > 0)
 
+const props = defineProps(["showcase_id"])
 
-	// 修改响应式数据
-	const name = ref("")
-	const description = ref("")
-	const display = ref(-1) // 0=审核中
+const name = ref('')
+const description = ref('')
 
+// 人设
+const birthDate = ref('')      // YYYY-MM-DD
+const showBirthSheet = ref(false)
+function onBirthConfirm(val) { birthDate.value = val }
 
-	//获取商品详情
-	function getGoodsInfo(id) {
-		return new Promise((resolve, reject) => {
-			uni.request({
-				url: websiteUrl.value + '/goods?id=' + id,
-				method: 'GET',
-				timeout: 5000,
-				success: (res) => {
-					console.log(res.data.data);
-					resolve(res.data); // 请求成功，返回数据
-				},
-				fail: (err) => {
-					console.log(err);
-					uni.showToast({
-						title: '网络请求失败',
-						icon: 'none'
-					})
-					reject(err); // 请求失败，抛出错误
-				},
-				complete: () => {
-					uni.hideLoading()
-				}
-			})
-		});
-	}
+// 性别
+const gender = ref('') // 'male' | 'female' | 'other' | ''
+const genderOptions = [
+  { value: "male", label: "男" },
+  { value: "female", label: "女" },
+  { value: "other", label: "其他" },
+]
+const genderIndex = computed(() => {
+  const idx = genderOptions.findIndex(g => g.value === gender.value)
+  return idx >= 0 ? idx : -1
+})
+const onGenderChange = (e) => {
+  const idx = Number(e.detail.value)
+  if (idx >= 0 && idx < genderOptions.length) {
+    gender.value = genderOptions[idx].value
+  }
+}
 
-	//存储的信息框内容列表
-	const saveCollocationDataList = ref([])
+// 性格
+const personality = ref('')
 
+// 妆师/关联
+const makeupArtist = ref('')
+const makeupArtistBrandId = ref(0)
+const saveCollocationDataList = ref([])
+const goodsList = ref([])
+const typeList = ref([])
+const showSelectTab = ref(false)
 
-	// 获取Showcase详情
-	async function getShowCaseInfo() {
-		if (!props.showcase_id) return
+/* ============== 工具：性别/日期映射 ============== */
+function toGenderInt(v) { if (!v) return undefined; switch (v) { case 'male': return 1; case 'female': return 2; case 'other': return 3; default: return 0 } }
+function toGenderStr(v) { if (v===1) return 'male'; if (v===2) return 'female'; if (v===3) return 'other'; return '' }
+function dateToUnixSec(d){ if(!d) return undefined; const t=new Date(String(d).replace(/-/g,'/')); if(isNaN(t)) return undefined; return Math.floor(t.getTime()/1000) }
+function unixSecToDate(s){
+  if (s===null || s===undefined) return ""
+  const sec=Number(s); const ms=sec>2147483647?sec:sec*1000
+  const d=new Date(ms); if(isNaN(d)) return ""
+  const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0')
+  return `${y}-${m}-${day}`
+}
 
+/* ============== 妆师搜索联动 ============== */
+function onArtistSelect(id, name) {
+  if (!isEditable.value) return
+  if (id && Number(id) > 0) {
+    makeupArtistBrandId.value = Number(id)
+    makeupArtist.value = name || ""
+  } else {
+    makeupArtist.value = name || ""
+  }
+}
+function onArtistClose(currentInput) {
+  if (!isEditable.value) return
+  makeupArtistBrandId.value = 0
+  makeupArtist.value = (currentInput || "").trim()
+}
 
-		try {
-			const res = await uni.request({
-				url: `${websiteUrl.value}/with-state/showcase-detail?id=${props.showcase_id}`,
-				method: 'GET',
-				header: {
-					'Authorization': uni.getStorageSync('token'),
-				},
-			})
+/* ============== 关联 ============== */
+const handleRelationConfirm = (data) => {
+  try {
+    const relationData = {
+      goods_id: data.goods.id || 0,
+      goods_name: data.goods.name,
+      goods_image: data.goods.image || '',
+      brand_id: data.brand.id || 0,
+      brand_name: data.brand.name || (data.isFuzzy ? '' : '未知品牌'),
+      type: data.type || (data.isFuzzy ? '未知类型' : '')
+    }
+    const isExist = saveCollocationDataList.value.some(item =>
+      (item.goods_id !== 0 && item.goods_id === relationData.goods_id) ||
+      item.goods_name === relationData.goods_name
+    )
+    if (!isExist) saveCollocationDataList.value.push(relationData)
+    else uni.showToast({ title: '已存在相同关联项', icon: 'none' })
+  } catch {
+    uni.showToast({ title: '保存关联信息失败', icon: 'none' })
+  }
+}
+const handleRelationCancel = () => {}
+const showRelationPicker = () => { showSelectTab.value = true }
 
-			const data = res.data.data
-			name.value = data.name
-			description.value = data.description
-			display.value = data.display
-			uploadList.value = data.image_urls?.split(',') || [] // 确保处理空值
-			console.log(data)
-			// 如果有关联商品需要加载
-			if (data.relations) {
-				saveCollocationDataList.value = data.relations.map(r => ({
-					goods_id: r.relation_goods_id,
-					goods_name: r.relation_goods_name,
-					brand_id: r.relation_brand_id,
-					brand_name: r.relation_brand_name,
-					type: r.type,
-					goods_image: r.relation_goods_image
-				}))
-			}
-		} catch (err) {
-			uni.showToast({
-				title: '加载失败',
-				icon: 'none'
-			})
-		}
-	}
+/* ============== 详情回填 ============== */
+async function getShowCaseInfo() {
+  if (!props.showcase_id) return
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/showcase-detail?id=${props.showcase_id}`,
+      method: 'GET',
+      header: { 'Authorization': uni.getStorageSync('token') },
+    })
+    const data = res.data?.data || {}
 
-	function viewFullImage(index) {
-		uni.previewImage({
-			current: uploadList.value[index],
-			urls: uploadList.value
-		});
-	}
+    name.value = data.name || ""
+    description.value = data.description || ""
+    display.value = data.display
 
-	//选择图片
-	async function selectImage() {
-		try {
-			// 选择多张图片
-			const imagePaths = await chooseImageList(9);
+    uploadList.value = data.image_urls ? data.image_urls.split(',').filter(Boolean) : []
 
-			// 逐个上传
-			for (const path of imagePaths) {
-				// 为每个图片获取独立token
-				const tokenData = await getQiniuToken();
+    if (Array.isArray(data.relations)) {
+      saveCollocationDataList.value = data.relations.map(r => ({
+        goods_id: r.relation_goods_id,
+        goods_name: r.relation_goods_name,
+        brand_id: r.relation_brand_id,
+        brand_name: r.relation_brand_name,
+        type: r.type,
+        goods_image: r.relation_goods_image
+      }))
+    }
 
-				// 上传到七牛云
-				await uploadImageToQiniu(path, tokenData.token, tokenData.path);
+    birthDate.value = (data.birth_at !== undefined && data.birth_at !== null) ? unixSecToDate(data.birth_at) : ""
+    gender.value = toGenderStr(data.gender)
+    personality.value = data.personality || ""
+    makeupArtist.value = data.makeup_artist || ""
+    makeupArtistBrandId.value = data.makeup_artist_id ? Number(data.makeup_artist_id) : 0
 
-				// 添加到展示列表
-				uploadList.value.push(image1Url + tokenData.path);
-			}
+    updateUnderline()
+  } catch {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
+}
 
-			uni.showToast({
-				title: `成功上传${imagePaths.length}张图片`,
-				icon: 'success'
-			});
-		} catch (error) {
-			console.error('上传出错:', error);
-			uni.showToast({
-				title: '部分图片上传失败',
-				icon: 'none'
-			});
-		}
-	}
+/* ============== 预览 / 新增图片 ============== */
+function viewFullImage(index) {
+  uni.previewImage({ current: uploadList.value[index], urls: uploadList.value })
+}
+async function selectImage() {
+  try {
+    const imagePaths = await chooseImageList(9)
+    for (const path of imagePaths) {
+      const tokenData = await getQiniuToken()
+      await uploadImageToQiniu(path, tokenData.token, tokenData.path)
+      uploadList.value.push(image1Url + tokenData.path)
+    }
+    uni.showToast({ title: `成功上传${imagePaths.length}张图片`, icon: 'success' })
+  } catch {
+    uni.showToast({ title: '部分图片上传失败', icon: 'none' })
+  }
+}
 
-	async function handleDelete() {
-		uni.showModal({
-			title: '确认删除',
-			content: '确定要删除这个展示吗？',
-			success: async (res) => {
-				if (res.confirm) {
-					try {
-						const res = await uni.request({
-							url: `${websiteUrl.value}/with-state/delete-showcase?id=` + props
-								.showcase_id,
-							method: 'POST',
+/* ============== 删除当前展示 ============== */
+async function handleDelete() {
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这个展示吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          const resp = await uni.request({
+            url: `${websiteUrl.value}/with-state/delete-showcase?id=${props.showcase_id}`,
+            method: 'POST',
+            header: { 'Authorization': uni.getStorageSync('token') }
+          })
+          if ((resp.data || {}).status === "success") {
+            uni.showToast({ title: '删除成功' })
+            setTimeout(() => uni.navigateBack(), 800)
+          } else {
+            uni.showToast({ title: (resp.data || {}).msg || '删除失败', icon: 'none' })
+          }
+        } catch {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
 
-							header: {
-								'Authorization': uni.getStorageSync('token'),
-							}
-						})
+/* ============== 提交 ============== */
+async function submitForm() {
+  const token = uni.getStorageSync('token')
+  if (!token) return uni.showToast({ title: '请先登录', icon: 'none' })
+  if (!name.value.trim()) return uni.showToast({ title: '名字不能为空', icon: 'none' })
+  if (!description.value.trim()) return uni.showToast({ title: '描述不能为空', icon: 'none' })
+  if (uploadList.value.length === 0) return uni.showToast({ title: '请至少上传一张图片', icon: 'none' })
 
-						if (res.data.status === "success") {
-							uni.showToast({
-								title: '删除成功'
-							})
-							setTimeout(() => uni.navigateBack(), 1000)
-						}
-					} catch (err) {
-						uni.showToast({
-							title: '删除失败',
-							icon: 'none'
-						})
-					}
-				}
-			}
-		})
-	}
+  const genderVal = toGenderInt(gender.value)
+  const birthAtVal = dateToUnixSec(birthDate.value)
 
+  let postData = {
+    name: name.value,
+    description: description.value,
+    image_urls: uploadList.value.join(','), // 已按拖拽顺序
+    origin: getScene(),
+    relations: saveCollocationDataList.value.map(item => ({
+      relation_goods_id: item.goods_id,
+      relation_goods_name: item.goods_name,
+      relation_brand_id: item.brand_id,
+      relation_brand_name: item.brand_name,
+      type: item.type,
+      relation_origin: 2
+    })),
+    personality: personality.value || "",
+    makeup_artist: makeupArtist.value || "",
+    makeup_artist_id: Number(makeupArtistBrandId.value) || 0
+  }
+  if (typeof genderVal === 'number') postData.gender = genderVal
+  if (birthAtVal !== undefined) postData.birth_at = birthAtVal
 
-	// 实现提交方法
-	async function submitForm() {
-		const token = uni.getStorageSync('token');
-		if (!token) {
-			uni.showToast({
-				title: '请先登录',
-				icon: 'none'
-			});
-			return;
-		}
-		// 基本验证
-		if (!name.value.trim() || !description.value.trim()) {
-			uni.showToast({
-				title: '标题和正文不能为空',
-				icon: 'none'
-			});
-			return;
-		}
-		if (uploadList.value.length === 0) {
-			uni.showToast({
-				title: '请至少上传一张图片',
-				icon: 'none'
-			});
-			return;
-		}
-		let scene = getScene()
-		let postData = {
-			name: name.value,
-			description: description.value,
-			image_urls: uploadList.value.join(','),
-			display: display.value,
-			origin: scene,
-			relations: saveCollocationDataList.value.map(item => ({
-				relation_goods_id: item.goods_id,
-				relation_goods_name: item.goods_name,
-				relation_brand_id: item.brand_id,
-				relation_brand_name: item.brand_name,
-				type: item.type,
-				relation_origin: 2 // 标识关联的是showcase
-			}))
-		};
+  try {
+    let url = `${websiteUrl.value}/with-state/add-showcase`
+    if (props.showcase_id) {
+      url = `${websiteUrl.value}/with-state/update-showcase`
+      postData = { ...postData, id: parseInt(props.showcase_id, 10) }
+    }
+    const res = await uni.request({
+      url, method: 'POST', data: postData,
+      header: { 'Content-Type': 'application/json', 'Authorization': token }
+    })
+    const resp = res.data || {}
+    const ok = resp.status === 'success' || resp.code === 'success' || resp.code === 0 || resp.success === true
+    if (ok) {
+      uni.showToast({ title: '提交成功' })
+      setTimeout(() => uni.navigateBack(), 1000)
+    } else {
+      uni.showToast({ title: resp.msg || '提交失败', icon: 'none' })
+    }
+  } catch {
+    uni.showToast({ title: '提交失败', icon: 'none' })
+  }
+}
 
-		try {
-			let url = `${websiteUrl.value}/with-state/add-showcase`
-			// id 转int
-			if (props.showcase_id) {
-				url = `${websiteUrl.value}/with-state/update-showcase`
-				postData = {
-					...postData,
-					id: parseInt(props.showcase_id, 10)
-				}
-			}
+/* ============== 其它 ============== */
+function getTypes() {
+  uni.request({
+    url: websiteUrl.value + '/goods-types',
+    method: 'GET',
+    timeout: 5000,
+    success: (res) => { typeList.value = res.data?.data || [] },
+    fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' })
+  })
+}
+function deleteCollcation(index) { saveCollocationDataList.value.splice(index, 1) }
 
-			const res = await uni.request({
-				url,
-				method: 'POST',
-				data: postData,
-				header: {
-					'Content-Type': 'application/json',
-					'Authorization': uni.getStorageSync('token'),
-				}
-			})
-
-			if (res.data.code !== "failed") {
-				uni.showToast({
-					title: '提交成功'
-				})
-				setTimeout(() => uni.navigateBack(), 1500)
-			} else {
-				uni.showToast({
-					title: '提交失败',
-					icon: 'none'
-				})
-				return
-			}
-		} catch (err) {
-			console.log(err)
-			uni.showToast({
-				title: '提交失败',
-				icon: 'none'
-			})
-		}
-
-
-	}
-
-
-
-	// 获取types列表
-	function getTypes() {
-		///goods-types
-		uni.request({
-			url: websiteUrl.value + '/goods-types',
-			method: 'GET',
-			timeout: 5000,
-			success: (res) => {
-				console.log(res.data.data);
-				typeList.value = res.data.data
-			},
-			fail: (err) => {
-				console.log(err);
-				uni.showToast({
-					title: '网络请求失败',
-					icon: 'none'
-				})
-			}
-		})
-	}
-
-	// 存储一条搭配信息
-	function saveCollocation() {
-		if (chooseBrandName.value == "") {
-			uni.showToast({
-				title: '请选择或填写品牌名称',
-				icon: 'none'
-			})
-			return
-		}
-		if (chooseGoodsName.value == "") {
-			uni.showToast({
-				title: '请选择或填写商品名称',
-				icon: 'none'
-			})
-			return
-		}
-
-		//如果没有goods_id，存储goods_name进去即可
-		if (chooseGoodsId.value == 0) {
-			let data = {
-				"brand_id": chooseBrandId.value,
-				"goods_id": 0,
-				"brand_name": chooseBrandName.value,
-				"goods_name": chooseGoodsName.value,
-				"goods_image": "",
-				"type": chooseType.value,
-			}
-			saveCollocationDataList.value.push(data)
-			showSelectTab.value = false
-			chooseBrandId.value = 0
-			chooseBrandName.value = ""
-			chooseGoodsId.value = 0
-			chooseGoodsName.value = ""
-			chooseType.value = ""
-			return
-		}
-
-
-		getGoodsInfo(chooseGoodsId.value).then((res) => {
-			let data = {
-				"brand_id": chooseBrandId.value,
-				"goods_id": chooseGoodsId.value,
-				"brand_name": chooseBrandName.value,
-				"goods_name": chooseGoodsName.value,
-				"goods_image": res.data.goods_images[0],
-				"type": chooseType.value,
-			}
-			saveCollocationDataList.value.push(data)
-			showSelectTab.value = false
-			chooseBrandId.value = 0
-			chooseBrandName.value = ""
-			chooseGoodsId.value = 0
-			chooseGoodsName.value = ""
-			chooseType.value = ""
-		})
-	}
-
-	function deleteImage(index) {
-		uploadList.value.splice(index, 1)
-	}
-
-	function deleteCollcation(index) {
-		saveCollocationDataList.value.splice(index, 1)
-	}
-	// 设置标题
-	uni.setNavigationBarTitle({
-		title: '展示柜'
-	})
-
-
-
-	
-	onLoad(async (options) => {
-		// 解析 URL 参数
-		if (options.goods_id && options.goods_name && options.brand_id && options.brand_name && options.type) {
-			// 获取商品图片
-			let goodsImage = '';
-			try {
-				const goodsInfo = await getGoodsInfo(parseInt(options.goods_id));
-				goodsImage = goodsInfo.data.goods_images[0] || '';
-			} catch (error) {
-				console.error('获取商品图片失败:', error);
-			}
-
-			// 添加到关联列表
-			saveCollocationDataList.value.push({
-				brand_id: parseInt(options.brand_id, 10),
-				goods_id: parseInt(options.goods_id, 10),
-				brand_name: options.brand_name,
-				goods_name: options.goods_name,
-				goods_image: goodsImage,
-				type: options.type
-			});
-		}
-		getTypes();
-		getShowCaseInfo();
-	});
+uni.setNavigationBarTitle({ title: '私养展示' })
+onLoad(async (options) => {
+  // 从搭配页带参数回填
+  if (options.goods_id && options.goods_name && options.brand_id && options.brand_name && options.type) {
+    let goodsImage = ''
+    try {
+      const res = await uni.request({ url: websiteUrl.value + '/goods?id=' + parseInt(options.goods_id), method: 'GET' })
+      const gi = (res.data || {}).data || {}
+      goodsImage = Array.isArray(gi.goods_images) ? gi.goods_images[0] : (gi.goods_images?.[0] || '')
+    } catch {}
+    saveCollocationDataList.value.push({
+      brand_id: parseInt(options.brand_id, 10),
+      goods_id: parseInt(options.goods_id, 10),
+      brand_name: options.brand_name,
+      goods_name: options.goods_name,
+      goods_image: goodsImage,
+      type: options.type
+    })
+  }
+  getTypes()
+  getShowCaseInfo()
+})
 </script>
 
 <style lang="less" scoped>
-	.uploaded_image {
-		width: 100px;
-		height: 100px;
-		margin-right: 10px;
+/* 顶部提示 */
+.edit-tip {
+  padding: 10px;
+  background: #fff3cd;
+  color: #856404;
+  text-align: center;
+  font-size: 14px;
+}
 
-	}
+/* 图片块 */
+.image-block { padding: 10px 12px 0; background:#fff; }
+.add-row { padding: 8px 6px 2px; display:flex; justify-content:flex-end; }
+.add-btn {
+  display:flex; align-items:center; gap:8px;
+  height: 40px; line-height: 40px; padding: 0 12px;
+  background: #f3f5f7; border-radius: 10px; color:#333; font-size:14px; border:none;
+}
+.add-btn::after{ border:none; }
+.add-icon { width:20px; height:20px; }
 
-	.upload_box {
-		// 核心修改点：
-		width: 100%; // 避免使用 100vw（可能因滚动条导致宽度溢出）
-		white-space: nowrap; // 强制子元素不换行
-		overflow-x: auto; // 确保横向滚动生效（UniApp的scroll-view组件已封装滚动逻辑，此处为保险可保留）
-		display: block; // 明确容器为块级元素
-		margin-top: 15px;
-		padding: 10px;
-		margin-left: 10px;
+/* Tabs（精准下划线） */
+.tabs-underline {
+  display: flex;
+  position: relative;
+  background:#fff;
+  margin-top: 10px;
+  border-bottom: 1px solid #eee;
+}
+.tab-item{
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #666;
+}
+.tab-item.active{ color: #222; }
+.tabs-underline .underline{
+  position: absolute; bottom: 0;
+  height: 2px; background: linear-gradient(90deg, #63cce7, #63cce7);
+  transition: left .2s ease, width .2s ease;
+}
 
-		view {
-			display: inline-block; // 关键！强制子元素横向排列（替代 float）
-			vertical-align: top; // 对齐方式（避免图片底部留白）
-		}
+/* 基本文字输入：灰底无边框 */
+.field-input{
+  padding: 10px; margin: 12px 15px 6px; display: block;
+  background:#f8f8f8; border-radius: 10px; border:none;
+  font-size: 15px;
+}
+.field-input::placeholder{ color:#999; }
 
-		.upload_item {
-			position: relative;
-			width: 100px;
-			margin-right: 10px;
+.desc-area{
+  padding: 10px; margin:10px 15px 6px; display: block;
+  line-height: 28px; width: calc(100% - 50px);
+  background:#f8f8f8; border-radius: 10px; border:none;
+  min-height: 120px; font-size: 14px;
+}
+.desc-area::placeholder{ color:#999; }
 
-			border-radius: 5px;
-			overflow: hidden;
+.publish-detail {
+  margin: 30rpx 20rpx;
+  text { display: block; color: #888; margin: 18rpx 40rpx; }
+}
 
-			.uploaded_image {
-				width: 100px;
-				height: 100px;
-			}
+/* 卡片与表单（人设/关联） */
+.card-block {
+  background: #fff;
+  margin: 10px 15px 12px;
+  border-radius: 12px;
+  padding: 6px 10px;
+}
+.form-row{
+  display:flex; align-items:center; padding: 8px 2px; gap: 10px;
+  &.disabled { opacity:.7; }
+}
+.form-row.equal .label{
+  width: 80px; flex-shrink: 0; color:#666; font-size:14px;
+  font-weight: 600;
+}
+.form-row .cell,
+.form-row .cell-input{
+  flex:1; height: 44px; line-height: 44px;
+  background:#f8f8f8; border-radius: 8px; padding: 0 12px;
+  display:flex; align-items:center; justify-content:space-between;
+  border:none;                     /* ✅ 无边框 */
+}
+.cell-input{ outline: none; border:none; }
+.cell-input::placeholder{ color:#999; }
+.cell-value{ color:#222; font-size:14px; }
+.cell-value.placeholder{ color:#999; }
 
-			.close_icon {
-				position: absolute;
-				right: 0;
-				top: 0;
-				width: 20px;
-				height: 20px;
-			}
-		}
-	}
+/* 妆师块 */
+.artist-search { width: 100%; }
+.mini-hint { margin-top: 6px; color: #999; font-size: 12px; }
+.readonly-row .readonly-name { color: #333; }
 
-	.saveCollocationDataList {
-		padding-bottom: 80px;
-		min-height: 300rpx;
+/* 关联娃物 */
+.relation-trigger {
+  display: flex; align-items: center;
+  padding: 20rpx 30rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  margin: 20rpx;
+  .placeholder { flex:1; color:#999; font-size: 28rpx; }
+  .arrow-icon { width: 30rpx; height: 30rpx; }
+}
+.saveCollocationDataList {
+  padding-bottom: 100px; min-height: 300rpx;
+  .saveCollocationDataItem {
+    position: relative; background: #fafafa;
+    width: 90vw; margin: 10px auto; border-radius: 10px; overflow:hidden;
+    .info-tap { position: absolute; bottom: 30px; margin-left: 10px; }
+    .no-image {
+      display: inline-block; width: 70px; height: 70px;
+      color: #fda7a7; font-size: 30px; text-align: center; line-height: 70px; font-weight: 1000;
+    }
+    .close_icon {
+      width: 20px; height: 20px; position: absolute; bottom: 30px; right: 10px;
+      background:#fff; border-radius: 100%;
+    }
+  }
+}
 
-		.saveCollocationDataItem {
-			position: relative;
-			background: #fafafa;
-			width: 90vw;
-			margin: 10px auto;
-
-			.info-tap {
-				position: absolute;
-				bottom: 30px;
-				margin-left: 10px;
-			}
-
-			.no-image {
-				display: inline-block;
-				width: 70px;
-				height: 70px;
-				bottom: 0px;
-				margin-left: 0px;
-				color: #fda7a7;
-				font-size: 30px;
-				text-align: center;
-				line-height: 70px;
-				font-weight: 1000;
-			}
-
-			.close_icon {
-				width: 20px;
-				height: 20px;
-				position: absolute;
-				bottom: 30px;
-				right: 10px;
-				margin-left: 10px;
-				background: #fff;
-				border-radius: 100%;
-			}
-		}
-
-
-	}
-
-	.footer {
-		position: fixed;
-		bottom: 0px;
-		width: 100%;
-		box-shadow: 0 0 5px rbga(0, 0, 0, 0.2);
-		align-items: center;
-		display: flex;
-		justify-content: space-around;
-		gap: 20px;
-		margin-bottom: 20rpx;
-
-		button {
-
-			background-color: #78d0dd;
-			color: #fff;
-			font-size: 16px;
-			text-align: center;
-			padding: 10px;
-			border-radius: 30px;
-			margin-bottom: 10px;
-			flex: 1;
-			max-width: 45%;
-		}
-
-		.delete-btn {
-			// opacity: 0.6;
-			// pointer-events: none;
-		}
-	}
-
-	.oneLine {
-		border-bottom: 1px solid #dadada;
-		width: calc(100vw - 50px);
-		margin: 0px 25px;
-		box-sizing: border-box;
-	}
-
-
-	.edit-tip {
-		padding: 10px;
-		background: #fff3cd;
-		color: #856404;
-		text-align: center;
-		font-size: 14px;
-	}
-
-
-
-	// 关联娃物
-	.relation-trigger {
-		display: flex;
-		align-items: center;
-		padding: 20rpx 30rpx;
-		background: #f8f8f8;
-		border-radius: 12rpx;
-		margin: 20rpx;
-
-		.placeholder {
-			flex: 1;
-			color: #999;
-			font-size: 28rpx;
-		}
-
-		.arrow-icon {
-			width: 30rpx;
-			height: 30rpx;
-		}
-	}
-
-	.publish-detail {
-		text {
-			display: block;
-			color: #888;
-			margin: 20rpx 40rpx;
-		}
-	}
+/* 底部操作：贴右 */
+.footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 12px; padding: 10px 16px env(safe-area-inset-bottom);margin-bottom: 10rpx;
+  background: #ffffffd9; backdrop-filter: blur(4px);
+}
+.publish-btn {
+  flex: 0 0 48%;
+  height: 44px; line-height: 44px;
+  background: linear-gradient(135deg, #97e7f7, #d5acd6);
+  color: #fff; font-size: 16px; text-align: center;
+  border-radius: 18px; font-weight: 600; margin: auto 0;
+}
+.delete-link { flex: 0 0 auto; color: #999; font-size: 15px; padding: 6px 4px; }
 </style>
