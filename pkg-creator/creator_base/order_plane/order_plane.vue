@@ -456,9 +456,7 @@ const chooseAndUploadImages = async () => {
     const tempFilePaths = await chooseImageList(remaining)
     if (!tempFilePaths || tempFilePaths.length === 0) return
 
-    const qiniuData = await getQiniuToken()
-    const token = qiniuData.token
-    const basePath = qiniuData.path
+
 
     uploading.value = true
     totalToUpload.value = tempFilePaths.length
@@ -467,6 +465,10 @@ const chooseAndUploadImages = async () => {
     const uploadedUrls = []
     for (let i = 0; i < tempFilePaths.length; i++) {
       try {
+		  let qiniuData = await getQiniuToken()
+		  let token = qiniuData.token
+		  let basePath = qiniuData.path
+		  
         const filePath = tempFilePaths[i]
         uploadStatusText.value = `上传中 (${i + 1}/${tempFilePaths.length})`
         uploadedCount.value = i + 1

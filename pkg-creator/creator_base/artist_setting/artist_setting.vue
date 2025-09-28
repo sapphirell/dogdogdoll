@@ -68,17 +68,17 @@ const navigateTo = (type) => {
   let url = ''
   switch(type) {
     case 'makeupGallery':
-      url = '/pages/creator_base/set_showcase/set_showcase'
+      url = '/pkg-creator/creator_base/set_showcase/set_showcase'
       break
     case 'wigGallery':
 
-      url = '/pages/creator_base/set_hair_showcase/set_hair_showcase'
+      url = '/pkg-creator/creator_base/set_hair_showcase/set_hair_showcase'
       break
     case 'profileEdit':
-      url = '/pages/creator_base/artist_info/artist_info'
+      url = '/pkg-creator/creator_base/artist_info/artist_info'
       break
     case 'orderPlan':
-      url = '/pages/creator_base/order_plane/order_plane'
+      url = '/pkg-creator/creator_base/order_plane/order_plane'
       break
     default:
       return

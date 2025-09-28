@@ -398,22 +398,22 @@
 		switch (type) {
 			case 'info-setting':
 				uni.navigateTo({
-					url: '/pages/creator_base/brand_edit/brand_edit'
+					url: '/pkg-creator/creator_base/brand_edit/brand_edit'
 				});
 				break;
 			case 'goods-manage':
 				uni.navigateTo({
-					url: '/pages/creator_base/goods_list/goods_list'
+					url: '/pkg-creator/creator_base/goods_list/goods_list'
 				});
 				break;
 			case 'image-manage':
 				uni.navigateTo({
-					url: '/pages/creator_base/news/news'
+					url: '/pkg-creator/creator_base/news/news'
 				});
 				break;
 			case 'artist_info':
 				uni.navigateTo({
-					url: '/pages/creator_base/artist_setting/artist_setting'
+					url: '/pkg-creator/creator_base/artist_setting/artist_setting'
 				});
 				break;
 		}

@@ -332,16 +332,18 @@ const handleUploadImage = async () => {
     uploading.value = true;
     uploadStatusText.value = '准备上传...';
 
-    // 获取七牛云token
-    uploadStatusText.value = '获取上传凭证...';
-    const qiniuTokenData = await getQiniuToken();
-    if (!qiniuTokenData || !qiniuTokenData.token) {
-      throw new Error('获取上传凭证失败');
-    }
+
 
     // 上传所有图片
     for (let i = 0; i < tempFilePaths.length; i++) {
       try {
+		  // 获取七牛云token
+		  uploadStatusText.value = '获取上传凭证...';
+		  let qiniuTokenData = await getQiniuToken();
+		  if (!qiniuTokenData || !qiniuTokenData.token) {
+		    throw new Error('获取上传凭证失败');
+		  }
+		  
         const filePath = tempFilePaths[i];
         
         // 更新上传状态

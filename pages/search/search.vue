@@ -5,7 +5,7 @@
     fixed
     :statusBar="true"
     :border="false"
-    backgroundColor="#efe9ff"
+    backgroundColor="#d6e4f2"
     color="#111"
   >
     <!-- 中间槽：Tabs（等分四栏，完全显示） -->
@@ -280,12 +280,13 @@ onMounted(() => { nextTick(measureFold) })
 </script>
 
 <style lang="scss" scoped>
-.page{ min-height:100vh; background:#f7f8fa; }
+.page{ min-height:100vh; backgroundColor:rgb(233 248 255) }
 
 /* ===== 导航中间 Tabs（等分四栏） ===== */
 .nav-center{
   width: 100vw;
   box-sizing: border-box;
+  
 }
 .nav-tabs{
   height: 65rpx;
@@ -321,7 +322,8 @@ onMounted(() => { nextTick(measureFold) })
 /* ===== 搜索 & 联想 ===== */
 .sticky-search{
   position: sticky; z-index: 9; background:#fff; padding: 18rpx 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,.04);background-color: rgb(239, 233, 255);
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,.04);
+      background: linear-gradient(180deg, #def9ff, #d6e4f2);
 }
 .search-box{ display:flex; align-items:center; background:#fff; border-radius: 12rpx; height:72rpx; padding:0 20rpx; box-shadow: 0 2rpx 10rpx rgba(0,0,0,.03); }
 .icon{ width:36rpx; height:36rpx; }

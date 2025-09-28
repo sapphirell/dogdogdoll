@@ -311,16 +311,16 @@ const fetchTypeCount = async () => {
 
 // ---- 跳转 ----
 const jump2postGoods = () => {
-  uni.navigateTo({ url: `/pages/creator_base/goods_editor/goods_editor` })
+  uni.navigateTo({ url: `/pkg-creator/creator_base/goods_editor/goods_editor` })
 }
 const previewGoods = (goodsId) => {
   uni.navigateTo({ url: `/pages/goods/goods?goods_id=${goodsId}` })
 }
 const editGoods = (goodsId) => {
-  uni.navigateTo({ url: `/pages/creator_base/goods_editor/goods_editor?goods_id=${goodsId}` })
+  uni.navigateTo({ url: `/pkg-creator/creator_base/goods_editor/goods_editor?goods_id=${goodsId}` })
 }
 const openCollocation = (goodsId) => {
-  uni.navigateTo({ url: `/pages/creator_base/collocation_list/collocation_list?goods_id=${goodsId}` })
+  uni.navigateTo({ url: `/pkg-creator/creator_base/collocation_list/collocation_list?goods_id=${goodsId}` })
 }
 
 // ---- 分类切换 ----

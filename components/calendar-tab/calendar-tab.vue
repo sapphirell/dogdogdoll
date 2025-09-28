@@ -13,7 +13,7 @@
           <uni-icons type="left" size="22" color="#222" />
         </view>
       </view>
-      <view class="st-center" @click="goStickyTarget" aria-label="打开品牌/妆师">
+      <view class="st-center" @click="goStickyTarget" aria-label="打开品牌/作者">
         <text class="sticky-title">{{ stickyTitle }}</text>
       </view>
       <view class="st-right"></view>
@@ -30,6 +30,10 @@
         <view class="tab" :class="{active: activeTab==='makeup'}" @click.stop="switchTab('makeup')">
           <text>约妆</text>
           <view class="underline" v-if="activeTab==='makeup'"></view>
+        </view>
+        <view class="tab" :class="{active: activeTab==='hair'}" @click.stop="switchTab('hair')">
+          <text>约毛</text>
+          <view class="underline" v-if="activeTab==='hair'"></view>
         </view>
       </view>
     </view>
@@ -60,7 +64,7 @@
       </scroll-view>
     </view>
 
-    <view v-if="activeTab === 'makeup'" style="height: 50rpx; background:#f5f6f8;"></view>
+    <view v-if="activeTab !== 'sale'" style="height: 50rpx; background:#f5f6f8;"></view>
 
     <!-- 日期选择 -->
     <view class="date-picker-container">
@@ -71,8 +75,12 @@
           class="date-item"
           @click="selectDate(date)"
         >
-          <view class="date-badge" v-if="activeTab === 'sale' && item.goods_number > 0">{{ item.goods_number }}</view>
-          <view class="date-badge" v-else-if="activeTab === 'makeup' && item.plans_number > 0">{{ item.plans_number }}</view>
+          <view
+            class="date-badge"
+            v-if="activeTab === 'sale' ? (item.goods_number > 0) : (item.plans_number > 0)"
+          >
+            {{ activeTab === 'sale' ? item.goods_number : item.plans_number }}
+          </view>
 
           <view class="weekday" :class="{'weekend': item.weekday==='周日'||item.weekday==='周六'}">{{ item.weekday }}</view>
           <view class="day-number" :class="{'selected': chooseDate === date}">
@@ -160,16 +168,16 @@
         </view>
       </template>
 
-      <!-- 约妆 -->
+      <!-- 约妆 / 约毛 共用 -->
       <template v-else>
         <view class="date-title">
           <text class="highlight">{{chooseDate}} 日</text>
-          <text> 星期{{chooseItem.weekday}}约妆</text>
+          <text> 星期{{chooseItem.weekday}}{{ planLabel }}</text>
         </view>
 
         <view v-if="chooseItem.plans == null || chooseItem.plans.length === 0" class="empty-tip">
           <image src="/static/empty-box.png" class="empty-icon"></image>
-          <text>这天没有开妆计划呢...</text>
+          <text>这天没有{{ planLabel }}计划呢...</text>
         </view>
 
         <view v-else>
@@ -178,38 +186,62 @@
             v-for="plan in chooseItem.plans"
             :key="plan.id"
             :data-brand-id="(plan.artist_info && (plan.artist_info.brand_id || plan.artist_info.BrandId)) || plan.brand_id"
-            :data-brand-name="plan.artist_name || (plan.artist_info && plan.artist_info.BrandName) || ''"
-            data-kind="makeup"
+            :data-brand-name="plan.artist_name || (plan.artist_info && (plan.artist_info.BrandName || plan.artist_info.brand_name)) || ''"
+            :data-kind="activeTab"
             @tap="navigateToArtistDetail(plan.artist_info)"
           >
             <view class="artist-header">
               <view class="artist-info">
-                <image v-if="plan.artist_info && plan.artist_info.LogoImage" :src="plan.artist_info.LogoImage" mode="aspectFill" class="artist-avatar"/>
+                <image
+                  v-if="plan.artist_info && (plan.artist_info.LogoImage || plan.artist_info.logo_image)"
+                  :src="plan.artist_info.LogoImage || plan.artist_info.logo_image"
+                  mode="aspectFill"
+                  class="artist-avatar"
+                />
                 <view class="artist-details">
                   <text class="artist-name">{{plan.artist_name}}</text>
-                  <view class="makeup-price-range"><text>妆费: {{ getPriceRange(plan) }}</text></view>
+                  <view class="makeup-price-range">
+                    <text>{{ priceLabel }}: {{ getPriceRange(plan) }}</text>
+                  </view>
                 </view>
               </view>
             </view>
 
-            <view class="artist-description" v-if="plan.artist_info && plan.artist_info.Description">
-              {{plan.artist_info.Description}}
+            <view class="artist-description" v-if="plan.artist_info && (plan.artist_info.Description || plan.artist_info.description)">
+              {{plan.artist_info.Description || plan.artist_info.description}}
             </view>
 
-            <view class="highlight-images" v-if="plan.artist_info && plan.artist_info.artist_highlight_images">
+            <view class="highlight-images" v-if="getPlanImages(plan).length">
               <scroll-view scroll-x class="image-scroll">
                 <image
-                  v-for="(img, i) in getHighlightImages(plan.artist_info.artist_highlight_images)"
-                  :key="i" :src="img" mode="aspectFill" class="highlight-image" @click.stop="previewImage(img)"/>
+                  v-for="(img, i) in getPlanImages(plan)"
+                  :key="i"
+                  :src="img"
+                  mode="aspectFill"
+                  class="highlight-image"
+                  @click.stop="previewImage(img)"
+                />
               </scroll-view>
             </view>
 
             <view class="foldable-section" :class="{ expanded: expandStates[plan.id] }">
               <view class="plan-info">
-                <view class="info-row"><text class="label">开放时间:</text><text class="value">{{formatTimestamp(plan.open_time)}} - {{formatTimestamp(plan.close_time)}}</text></view>
-                <view class="info-row"><text class="label">接单类型:</text><text class="value">{{getOrderTypeText(plan.order_type)}}</text></view>
-                <view class="info-row"><text class="label">最大人数:</text><text class="value">{{plan.max_participants === 0 ? '不限量' : plan.max_participants}}</text></view>
-                <view class="info-row"><text class="label">每人限投:</text><text class="value">{{plan.max_submissions_per_user}}次</text></view>
+                <view class="info-row">
+                  <text class="label">开放时间:</text>
+                  <text class="value">{{formatTimestamp(plan.open_time)}} - {{formatTimestamp(plan.close_time)}}</text>
+                </view>
+                <view class="info-row">
+                  <text class="label">接单类型:</text>
+                  <text class="value">{{getOrderTypeText(plan.order_type)}}</text>
+                </view>
+                <view class="info-row">
+                  <text class="label">最大人数:</text>
+                  <text class="value">{{plan.max_participants === 0 ? '不限量' : plan.max_participants}}</text>
+                </view>
+                <view class="info-row">
+                  <text class="label">每人限投:</text>
+                  <text class="value">{{plan.max_submissions_per_user}}次</text>
+                </view>
               </view>
 
               <view class="plan-config">
@@ -264,7 +296,6 @@ const goBack = () => {
   } catch { uni.navigateBack({ delta: 1 }) }
 }
 function goHome () {
-  // 保留：头部整块是去首页
   uni.switchTab({ url: '/pages/index/index' })
 }
 
@@ -280,6 +311,8 @@ const switchTab = async (t) => {
   console.log('【日历】切换Tab为：', t)
   if (t === 'makeup') {
     if (!Object.keys(makeupCalendar.value).length) await fetchMakeupCalendar()
+  } else if (t === 'hair') {
+    if (!Object.keys(hairCalendar.value).length) await fetchHairCalendar()
   } else {
     if (!Object.keys(saleCalendar.value).length) await fetchSaleCalendar()
   }
@@ -296,6 +329,7 @@ let activeSize = ref('全部尺寸')
 /* 日历数据 */
 const saleCalendar = ref({})
 const makeupCalendar = ref({})
+const hairCalendar = ref({})
 const expandStates = ref({})
 
 const toggleFold = async (id)=>{
@@ -305,7 +339,24 @@ const toggleFold = async (id)=>{
   setTimeout(resetStickySoon, 360)
   setTimeout(resetStickySoon, 720)
 }
-const getHighlightImages = (s)=> (!s ? [] : s.split(',').filter(i=>i.trim()))
+
+/* 图片工具 */
+const getHighlightImages = (s)=> (!s ? [] : s.split(',').map(i=>i.trim()).filter(Boolean))
+
+/* 约妆/约毛：根据当前Tab返回要展示的图片数组（合并后的字段已由后端处理） */
+function getPlanImages(plan){
+  const info = plan?.artist_info || {}
+  if (activeTab.value === 'hair') {
+    const hairStr = info.hairstylist_highlight_images || info.HairstylistHighlightImages
+    const fallback = info.artist_highlight_images || info.ArtistHighlightImages
+    const imgs = getHighlightImages(hairStr || fallback)
+    return imgs
+  }
+  // makeup
+  const makeupStr = info.artist_highlight_images || info.ArtistHighlightImages
+  return getHighlightImages(makeupStr)
+}
+
 const previewImage = (url)=> uni.previewImage({ urls:[url], current:url })
 
 /* 今日（每次进入或刷新重算） */
@@ -347,7 +398,11 @@ const filteredSaleCalendar = computed(()=>{
   })
   return out
 })
-const currentCalendar = computed(()=> activeTab.value==='sale' ? filteredSaleCalendar.value : makeupCalendar.value)
+const currentCalendar = computed(()=>{
+  if (activeTab.value === 'sale') return filteredSaleCalendar.value
+  if (activeTab.value === 'makeup') return makeupCalendar.value
+  return hairCalendar.value
+})
 
 /* 选日 */
 const selectDate = (d) => {
@@ -360,6 +415,7 @@ const selectDate = (d) => {
 watch([activeType, activeSize], () => { if (activeTab.value === 'sale') updateSelectedItem() })
 watch(() => filteredSaleCalendar.value, () => { if (activeTab.value === 'sale') updateSelectedItem() })
 watch(() => makeupCalendar.value, () => { if (activeTab.value === 'makeup') updateSelectedItem() })
+watch(() => hairCalendar.value, () => { if (activeTab.value === 'hair') updateSelectedItem() })
 
 /* 请求（含中文日志） */
 const fetchSaleCalendar = () => new Promise(resolve => {
@@ -385,16 +441,42 @@ const fetchSaleCalendar = () => new Promise(resolve => {
     }
   })
 })
+
+/* 约妆（type=1） */
 const fetchMakeupCalendar = () => new Promise(resolve => {
   loading.value = true
   console.log('【日历】开始请求约妆日历')
   uni.request({
-    url: websiteUrl.value + '/bjd-makeup-news',
+    url: websiteUrl.value + '/bjd-makeup-news?type=1',
     method: 'GET',
     timeout: 5000,
     success: (res)=>{
       makeupCalendar.value = res.data?.data || {}
       console.log('【日历】约妆日历成功，天数=', Object.keys(makeupCalendar.value).length)
+    },
+    fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }),
+    complete: async ()=>{
+      loading.value = false
+      if (!chooseDate.value) chooseDate.value = todayFormat.value
+      updateSelectedItem()
+      await nextTick()
+      resetStickySoon()
+      resolve()
+    }
+  })
+})
+
+/* 约毛（type=2） */
+const fetchHairCalendar = () => new Promise(resolve => {
+  loading.value = true
+  console.log('【日历】开始请求约毛日历')
+  uni.request({
+    url: websiteUrl.value + '/bjd-makeup-news?type=2',
+    method: 'GET',
+    timeout: 5000,
+    success: (res)=>{
+      hairCalendar.value = res.data?.data || {}
+      console.log('【日历】约毛日历成功，天数=', Object.keys(hairCalendar.value).length)
     },
     fail: ()=> uni.showToast({ title:'网络请求失败', icon:'none' }),
     complete: async ()=>{
@@ -420,7 +502,7 @@ function updateSelectedItem(){
   console.log('【日历】更新选中项：tab=', activeTab.value, ' 日期=', d, ' goods#=', goodsLen, ' plans#=', plansLen)
 
   if (cal[d]){ chooseItem.value = cal[d]; return }
-  const first = Object.entries(cal).find(([_,v])=>(activeTab.value==='sale'&&v.goods)||(activeTab.value==='makeup'&&v.plans))
+  const first = Object.entries(cal).find(([_,v])=> (activeTab.value==='sale'&&v.goods) || ((activeTab.value!=='sale')&&v.plans))
   if (first){ chooseDate.value = first[0]; chooseItem.value = first[1] }
   else { chooseItem.value = activeTab.value==='sale' ? {goods:null} : {plans:null} }
 }
@@ -461,13 +543,16 @@ const navigateToArtistDetail = (artist)=> {
   uni.navigateTo({ url: '/pages/artist_info/artist_info?brand_id=' + brandId })
 }
 
-/* ========== 吸顶标题（动态品牌/妆师） ========== */
+/* ========== 吸顶标题（动态：贩售/约妆/约毛） ========== */
 const stickyTitle = ref('')
-const stickyTarget = ref({ kind: 'sale', id: 0 }) // kind: 'sale' | 'makeup'
+const stickyTarget = ref({ kind: 'sale', id: 0 }) // 'sale' | 'makeup' | 'hair'
 const stickyShowThreshold = 80
 const showStickyTitle = computed(() => scrollTop.value > stickyShowThreshold && !!stickyTitle.value)
+const labelMap = { sale:'贩售', makeup:'约妆', hair:'约毛' }
+const planLabel = computed(()=> activeTab.value === 'hair' ? '约毛' : '约妆')
+const priceLabel = computed(()=> activeTab.value === 'hair' ? '毛费' : '妆费')
 
-/* 绑定当前页面上下文，避免 H5 误选其它页面元素 */
+/* 绑定当前页面上下文 */
 const selectorCtx = ref(null)
 onMounted(() => {
   selectorCtx.value = getCurrentInstance()?.proxy || null
@@ -479,15 +564,10 @@ onReady(() => {
 })
 
 function computeStickyFromViewport () {
-  const selector = activeTab.value === 'sale' ? '.goods-card' : '.plan-card'
+  const selector = (activeTab.value === 'sale') ? '.goods-card' : '.plan-card'
   const topGuard = (safeTop.value || 0) + parseInt(navBarPx) + 8
 
-  console.log('【日历】开始计算吸顶标题，tab=', activeTab.value, ' 选择器=', selector, ' 阈值top=', topGuard)
-  if (!selectorCtx.value) {
-    console.log('【日历】查询上下文不可用，等待下次计算')
-    return
-  }
-  console.log('【日历】查询上下文可用=', true)
+  if (!selectorCtx.value) return
 
   try {
     uni.createSelectorQuery()
@@ -495,40 +575,22 @@ function computeStickyFromViewport () {
       .selectAll(selector)
       .fields({ rect: true, dataset: true }, (nodes) => {
         const rects = Array.isArray(nodes) ? nodes : []
-        console.log('【日历】获取到卡片矩形数量=', rects.length)
-        if (!rects.length) {
-          stickyTitle.value = ''
-          return
-        }
+        if (!rects.length) { stickyTitle.value = ''; return }
 
-        // 选出“最靠近顶部”的卡片
+        // 选出最靠近topGuard的卡片
         let idx = -1
         let minTop = Number.POSITIVE_INFINITY
-        rects.forEach((r, i) => {
-          if (!r) return
-          const t = r.top
-          if (t >= topGuard && t < minTop) { minTop = t; idx = i }
-        })
-        if (idx < 0) {
-          rects.forEach((r, i) => {
-            const t = r.top
-            if (t <= topGuard && (topGuard - t) < minTop) { minTop = (topGuard - t); idx = i }
-          })
-        }
-        if (idx < 0) {
-          stickyTitle.value = ''
-          return
-        }
+        rects.forEach((r, i) => { const t = r.top; if (t >= topGuard && t < minTop) { minTop = t; idx = i } })
+        if (idx < 0) rects.forEach((r, i) => { const t = r.top; if (t <= topGuard && (topGuard - t) < minTop) { minTop = (topGuard - t); idx = i } })
+        if (idx < 0) { stickyTitle.value = ''; return }
 
-        // 用 DOM dataset 作为唯一数据源，避免“列表索引”和“节点顺序”不一致
         const node = rects[idx]
         const kind = node.dataset?.kind || activeTab.value
         const bid  = Number(node.dataset?.brandId || 0)
         const bname = node.dataset?.brandName || ''
 
         stickyTarget.value = { kind, id: bid }
-        stickyTitle.value = (kind === 'makeup' ? '约妆 · ' : '贩售 · ') + (bname || '')
-        console.log(`【日历】吸顶（${kind === 'makeup' ? '约妆' : '贩售'}）：idx=`, idx, 'brand_id=', bid, 'title=', stickyTitle.value)
+        stickyTitle.value = `${labelMap[kind] || '贩售'} · ${bname || ''}`
       })
       .exec()
   } catch (e) {
@@ -536,13 +598,13 @@ function computeStickyFromViewport () {
   }
 }
 
-/* 跳转吸顶目标（已统一为 uni.navigateTo，并加防抖与清定时器） */
+/* 跳转吸顶目标 */
 let jumping = false
 async function goStickyTarget () {
   if (jumping) return
   jumping = true
 
-  const selector = activeTab.value === 'sale' ? '.goods-card' : '.plan-card'
+  const selector = (activeTab.value === 'sale') ? '.goods-card' : '.plan-card'
   const topGuard = (safeTop.value || 0) + parseInt(navBarPx) + 8
 
   const resolved = await new Promise((resolve) => {
@@ -557,10 +619,7 @@ async function goStickyTarget () {
           if (idx < 0) rects.forEach((r, i) => { const t = r.top; if (t <= topGuard && (topGuard - t) < minTop) { minTop = (topGuard - t); idx = i } })
           if (idx < 0) return resolve(null)
           const n = rects[idx]
-          resolve({
-            kind: n.dataset?.kind || activeTab.value,
-            id: Number(n.dataset?.brandId || 0)
-          })
+          resolve({ kind: n.dataset?.kind || activeTab.value, id: Number(n.dataset?.brandId || 0) })
         })
         .exec()
     } catch { resolve(null) }
@@ -569,18 +628,13 @@ async function goStickyTarget () {
   const kind = resolved?.kind || stickyTarget.value.kind
   const id   = Number(resolved?.id || stickyTarget.value.id || 0)
 
-  console.log('【日历】点击吸顶，实时计算ID=', resolved?.id, ' 内存ID=', stickyTarget.value.id, ' 使用ID=', id, ' kind=', kind)
+  if (!id) { uni.showToast({ title:'未获取到品牌ID', icon:'none' }); jumping = false; return }
 
-  if (!id) {
-    uni.showToast({ title:'未获取到品牌ID', icon:'none' })
-    jumping = false
-    return
-  }
-
-  // 跳转前清理滚动测量定时器
+  // 清计时器
   if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
 
-  if (kind === 'makeup') {
+  // 约妆 & 约毛都跳作者详情
+  if (kind === 'makeup' || kind === 'hair') {
     uni.navigateTo({ url: `/pages/artist_info/artist_info?brand_id=${id}` })
   } else {
     uni.navigateTo({ url: `/pages/brand/brand?brand_id=${id}` })
@@ -606,9 +660,11 @@ async function refreshAll () {
   console.log('【日历】开始刷新全量数据，tab=', activeTab.value)
   todayFormat.value = computeTodayFormat()
   if (!chooseDate.value) chooseDate.value = todayFormat.value
-  if (activeTab.value === 'makeup') await fetchMakeupCalendar()
-  else await fetchSaleCalendar()
-  console.log('【日历】刷新完成，开始重新计算吸顶（上下文是否存在？', !!selectorCtx.value, '）')
+
+  if (activeTab.value === 'makeup')      await fetchMakeupCalendar()
+  else if (activeTab.value === 'hair')   await fetchHairCalendar()
+  else                                    await fetchSaleCalendar()
+
   await nextTick()
   resetStickySoon()
 }
@@ -621,30 +677,26 @@ onLoad((options = {})=>{
   }catch{ safeTop.value = 20 }
 
   const tab = String(options.tab || '').toLowerCase()
-  activeTab.value = (tab === 'makeup' || tab === 'sale') ? tab : 'sale'
+  activeTab.value = (tab === 'makeup' || tab === 'sale' || tab === 'hair') ? tab : 'sale'
 
   todayFormat.value = computeTodayFormat()
   chooseDate.value = todayFormat.value
 })
 
 onShow(async ()=>{
-  console.log('【日历】onShow，开始刷新')
   if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
   await refreshAll()
 })
 
-onHide(()=>{ console.log('【日历】onHide'); if (spyTimer) { clearTimeout(spyTimer); spyTimer = null } })
+onHide(()=>{ if (spyTimer) { clearTimeout(spyTimer); spyTimer = null } })
 onUnload(()=>{ if (spyTimer) { clearTimeout(spyTimer); spyTimer = null } })
 
 onPullDownRefresh(async ()=>{
   try { await refreshAll() } finally { uni.stopPullDownRefresh() }
 })
 
-watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生变化'); resetStickySoon() }, { deep: true })
+watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 </script>
-
-
-
 
 <style lang="less" scoped>
 /* 页面背景淡灰 */
@@ -653,20 +705,20 @@ watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生
   background:#f5f6f8;
 }
 
-/* ====== 吸顶标题栏（淡蓝色背景、返回、标题置中） ====== */
+/* ====== 吸顶标题栏 ====== */
 .sticky-titlebar{
   position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
   backdrop-filter: blur(6px);
   border-bottom: 1rpx solid rgba(0,0,0,.06);
   display: grid;
-  grid-template-columns: 120rpx 1fr 120rpx; /* 左右等宽占位，保证中间始终正中 */
+  grid-template-columns: 120rpx 1fr 120rpx;
   align-items: end;
 }
 .st-left, .st-right{ display:flex; align-items:center; justify-content:center; padding: 0 12rpx 10rpx; }
 .st-center{ display:flex; align-items:flex-end; justify-content:center; padding-bottom: 10rpx; }
 .sticky-title{
   color: #222;
-  font-size: 22rpx; /* 22号 */
+  font-size: 22rpx;
   font-weight: 400;
   letter-spacing: .3rpx;
   max-width: 70vw;
@@ -682,7 +734,7 @@ watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生
   display: flex; align-items: center; justify-content: center;position: relative;top:10rpx;
 }
 
-/* 顶部渐变头：#FCE259 → 淡灰；增加顶部安全区占位 */
+/* 顶部渐变头 */
 .header-gradient{
   padding: calc(var(--safe-top, 0px) + 16px) 28rpx 12rpx;
   background: linear-gradient(180deg,#FCE259 0%,#FFD863 18%,#FFE891 46%,#FFF6CC 70%,#f5f6f8 100%);
@@ -696,7 +748,7 @@ watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生
 .tab.active{ color:#333; }
 .underline{ position:absolute; left:0; right:0; bottom:0; height: 6rpx; border-radius: 6rpx; background:#FCE259; box-shadow: 0 2rpx 6rpx rgba(252,226,89,.55); }
 
-/* 分类/尺寸（保留蓝/粉） */
+/* 分类/尺寸（仅贩售） */
 .category-container{ padding:20rpx 20rpx 0; background:#f5f6f8; }
 .category-scroll{ white-space:nowrap; height:100rpx; }
 .category-item{
@@ -768,7 +820,7 @@ watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生
 .full-price{ font-size:36rpx; color:#ff6b9c; font-weight:700; margin:0 5rpx; }
 .currency{ font-size:24rpx; color:#999; transform: translateY(-2rpx); }
 
-/* 约妆卡片 */
+/* 约妆/约毛卡片 */
 .plan-card{ background:#fff; border-radius:24rpx; padding:30rpx; margin-bottom:30rpx; box-shadow:0 8rpx 25rpx rgba(125,195,211,.15); position:relative; }
 .artist-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20rpx; }
 .artist-info{ display:flex; align-items:center; }
@@ -791,7 +843,7 @@ watch(() => chooseItem.value, () => { console.log('【日历】chooseItem 发生
 .fold-toggle{ display:flex; align-items:center; justify-content:center; padding:20rpx 0; color:#81D8cf; font-size:26rpx; font-weight:500; margin-top:10rpx; }
 .fold-toggle text{ margin-right:10rpx; }
 
-/* 约妆信息块 */
+/* 约妆/约毛 信息块 */
 .plan-info{ background:#f0f9ff; border-radius:12rpx; padding:20rpx; margin-bottom:20rpx; }
 .plan-info .info-row{ display:flex; margin-bottom:15rpx; font-size:26rpx; }
 .plan-info .info-row:last-child{ margin-bottom:0; }

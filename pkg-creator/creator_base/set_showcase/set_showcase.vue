@@ -309,10 +309,10 @@ const formatDate = (dateStr) => {
 
 // 跳转
 const navigateToAddFaceup = () => {
-  uni.navigateTo({ url: `/pages/creator_base/faceup_editor/faceup_editor` });
+  uni.navigateTo({ url: `/pkg-creator/creator_base/faceup_editor/faceup_editor` });
 };
 const navigateToEditFaceup = (id) => {
-  uni.navigateTo({ url: `/pages/creator_base/faceup_editor/faceup_editor?id=${id}` });
+  uni.navigateTo({ url: `/pkg-creator/creator_base/faceup_editor/faceup_editor?id=${id}` });
 };
 
 // 初始化
@@ -363,16 +363,16 @@ onMounted(async () => {
   }
 }
 
-/* 滚动容器 */
+/* 滚动容器（根据你页面头部高度自行微调） */
 .faceup-scroll,
 .highlight-scroll {
   height: calc(100vh - 240rpx);
 }
 
-/* ==== 妆图卡片风格 ==== */
+/* ==== 妆图卡片风格 → 两列 ==== */
 .faceup-list {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 强制两列 */
   gap: 20rpx;
 }
 .faceup-card {
@@ -389,29 +389,30 @@ onMounted(async () => {
 }
 .card-cover {
   width: 100%;
-  height: 340rpx;
+  height: 300rpx; /* 两列下略降高度，避免首屏过长 */
   display: block;
+  object-fit: cover;
 }
 .card-body {
-  padding: 20rpx;
+  padding: 16rpx 18rpx;
 }
 .card-title {
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
 }
 .faceup-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 10rpx;
-  margin-bottom: 12rpx;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
 }
 .tag {
   font-size: 22rpx;
   color: #666;
   background-color: #f5f5f5;
-  padding: 6rpx 14rpx;
+  padding: 6rpx 12rpx;
   border-radius: 20rpx;
 }
 .card-meta {
@@ -424,12 +425,12 @@ onMounted(async () => {
   padding: 2rpx 12rpx;
   border-radius: 20rpx;
   &.male {
-    background-color: #E8F5FF;
-    color: #1890FF;
+    background-color: rgb(143, 236, 255);
+    color: #fff;
   }
   &.female {
-    background-color: #FFEEF2;
-    color: #FF4D6A;
+	background-color: #ffb0c2;
+    color: #ffffff;
   }
 }
 .date {
@@ -438,14 +439,14 @@ onMounted(async () => {
 }
 .card-arrow {
   position: absolute;
-  right: 18rpx;
-  bottom: 18rpx;
+  right: 16rpx;
+  bottom: 16rpx;
 }
 
-/* ==== 置顶展示图 ==== */
+/* ==== 置顶展示图（保持两列不变） ==== */
 .highlight-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20rpx;
 }
 .highlight-item {
@@ -457,6 +458,7 @@ onMounted(async () => {
 .highlight-img {
   width: 100%;
   height: 320rpx;
+  object-fit: cover;
 }
 .highlight-actions {
   position: absolute;
@@ -508,11 +510,5 @@ onMounted(async () => {
     color: #666;
   }
 }
-
-/* 简单的平板适配：妆图卡片两列 */
-@media (min-width: 768px) {
-  .faceup-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 </style>
+
