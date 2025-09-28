@@ -33,9 +33,9 @@
             :style="{
               width: childWidth,
               height: childHeight,
-              borderRadius: borderRadius + 'rpx',
+              borderRadius: props.borderRadius + 'rpx',
               transform: 'scale(' + item.scale + ')',
-              margin: itemMargin + 'px'
+              margin: props.itemMargin + 'px'
             }"
             :class="{ 'ready': !item.disable && item.ready }"
           >
@@ -54,12 +54,11 @@
             <!-- 底部信息 + 左上角分类 -->
             <view class="info-container" v-if="props.showItemInfo">
               <text class="name">{{ item.name }}</text>
-              <!-- ✅ 价格清洗，去掉【...】后缀 -->
               <text class="price">{{ getDisplayPrice(item.price) }}</text>
               <text class="type">{{ item.type }}</text>
             </view>
 
-            <!-- ✅ 付款状态“糖果色”小标签：放在分类标签正下方 -->
+            <!-- 付款状态糖果色标签 -->
             <view
               v-if="props.showPaymentTag && getPaymentText(item)"
               class="pay-badge candy"
@@ -77,6 +76,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick, getCurrentInstance } from 'vue'
 
+/* ================== Props & Emits ================== */
 const props = defineProps({
   value: { type: Array, default: () => [] },
   customClick: { type: Boolean, default: false },
@@ -94,7 +94,7 @@ const props = defineProps({
   showItemInfo: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: false },
 
-  /* 付款状态标签（可选，默认关闭） */
+  /* 付款状态标签（可选） */
   showPaymentTag: { type: Boolean, default: false },
   paymentField: { type: String, default: 'payment_status' },
   paymentMap: {
@@ -104,7 +104,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['input', 'update:modelValue', 'sort-change', 'delete', 'item-click'])
 
-/* ===== 无图兜底 ===== */
+/* ================== 无图兜底 ================== */
 const NO_IMG =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
@@ -129,7 +129,7 @@ function getDisplayImg(item) {
 }
 function onImgError(item) { item.__imgBroken = true }
 
-/* ===== 拖拽与布局（保持原逻辑） ===== */
+/* ================== 拖拽与布局 ================== */
 const imageList = ref([])
 const width = ref(0)
 const add = ref({ x: 0, y: 0 })
@@ -147,12 +147,15 @@ const isDragging = ref(false)
 const isMounted = ref(false)
 
 const areaHeight = computed(() => {
-  if (imageList.value.length < props.number) return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + 'px'
+  if (imageList.value.length < props.number) {
+    return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + 'px'
+  }
   return Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value + 'px'
 })
 const childWidth = computed(() => (viewWidth.value - rpx2px(props.padding) * 2) + 'px')
 const childHeight = computed(() => (viewHeight.value - rpx2px(props.padding) * 2) + 'px')
 
+/* 删除 */
 const deleteImage = (item) => {
   emit('delete', item.id)
   const idx = imageList.value.findIndex(img => img.id === item.id)
@@ -173,7 +176,7 @@ const getItemData = (item) => ({
   payStatus: item[props.paymentField] ?? 1
 })
 
-/* —— 省略：拖拽/移动/事件的原有函数（未变动） —— */
+/* —— 拖拽流程 —— */
 const onChange = (e, item) => {
   if (!item) return
   item.oldX = e.detail.x; item.oldY = e.detail.y
@@ -275,8 +278,10 @@ const delImageMp = (item, index) => {}
 function go2preview(id) { uni.navigateTo({ url: '/pkg-stock/account_book_preview/account_book_preview?account_book_id=' + id }) }
 const handleItemClick = (item) => { emit('item-click', item); if (!props.customClick) go2preview(item.id) }
 
+/* ================== 工具 & 初始化 ================== */
 const rpx2px = (v) => width.value * v / 750
 const instanceRef = ref(null)
+
 onMounted(() => {
   width.value = uni.getSystemInfoSync().windowWidth
   instanceRef.value = getCurrentInstance()
@@ -298,6 +303,7 @@ onMounted(() => {
     }).exec()
   })
 })
+
 const addProperties = (item) => {
   const data = getItemData(item)
   const absX = imageList.value.length % colsValue.value
@@ -315,6 +321,7 @@ const addProperties = (item) => {
   add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
   add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
 }
+
 const updateItemsPosition = () => {
   imageList.value.forEach((item, index) => {
     item.index = index
@@ -326,6 +333,7 @@ const updateItemsPosition = () => {
     item.absX = newAbsX; item.absY = newAbsY
   })
 }
+
 const initViewSize = () => new Promise(resolve => {
   if (!instanceRef.value || !instanceRef.value.proxy) return resolve()
   const query = uni.createSelectorQuery().in(instanceRef.value.proxy)
@@ -342,19 +350,48 @@ const initViewSize = () => new Promise(resolve => {
     resolve()
   }).exec()
 })
+
+/* === 关键修复：补齐 sortList（被多处调用） === */
+function sortList(emitNow = false) {
+  // 统一按当前数组顺序重排坐标与索引
+  imageList.value.forEach((obj, idx) => {
+    obj.index = idx
+    obj.absX = idx % colsValue.value
+    obj.absY = Math.floor(idx / colsValue.value)
+    obj.x = obj.absX * viewWidth.value
+    obj.y = obj.absY * viewHeight.value
+    obj.oldX = obj.x
+    obj.oldY = obj.y
+  })
+  // 维护“新增占位”的坐标（如果你后续加“+”按钮会用到）
+  add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
+  add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
+
+  if (emitNow) {
+    emit('sort-change', imageList.value.map(i => i.id))
+  }
+}
+
 watch(() => props.modelValue, (newVal) => {
   if (isDragging.value) return
-  if (isMounted.value) nextTick(() => { initViewSize().then(() => updateImageList(newVal)) })
+  if (isMounted.value) {
+    nextTick(() => {
+      initViewSize().then(() => updateImageList(newVal))
+    })
+  }
 }, { deep: true, immediate: true })
-const updateImageList = (newList) => {
+
+const updateImageList = (newList = []) => {
   const oldItems = imageList.value.reduce((map, item) => (map[item.id] = item, map), {})
   imageList.value = newList.map(item => {
     const existing = oldItems[item.id]
     const fresh = getItemData(item)
     return existing ? { ...existing, ...fresh } : createNewItem(item)
   })
-  updateItemsPosition()
+  // 修正坐标/索引（避免因 createNewItem 使用旧 length 导致错位）
+  sortList(false)
 }
+
 const createNewItem = (item) => {
   const data = getItemData(item)
   const absX = imageList.value.length % colsValue.value
@@ -371,12 +408,11 @@ const createNewItem = (item) => {
   }
 }
 
-/* ===== 文本与颜色 ===== */
+/* ================== 文本与颜色 ================== */
 function getPaymentText(item){
   const st = Number(item?.payStatus ?? 1)
   return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
 }
-/* 清洗价格字符串，去掉类似 “365【已全款】” 的后缀 */
 function getDisplayPrice(price){
   if (price === null || price === undefined) return ''
   return String(price).replace(/【.*?】/g, '').trim()
@@ -404,32 +440,19 @@ function getDisplayPrice(price){
   }
 }
 
-/* ✅ 糖果配色的小标签：位于“分类标签”正下方（左上角对齐） */
+/* 糖果配色标签 */
 .pay-badge.candy{
-  position: absolute; left: 8rpx; top: 56rpx;  /* 放到分类标签下方 */
+  position: absolute; left: 8rpx; top: 56rpx;
   padding: 8rpx 16rpx; border-radius: 20rpx;
   font-size: 22rpx; font-weight: 800; line-height: 1;
   letter-spacing: 1rpx;
-  transform: translateZ(0);  /* 更锐利的阴影 */
+  transform: translateZ(0);
   opacity: 0.6;
   backdrop-filter: blur(6px);
 }
-
-/* 三种状态的糖果色 */
-.s-1{  /* 已全款 - 薄荷糖绿 */
-	box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18);
-      background: linear-gradient(135deg, #e3e3e3, #d6ecdf);
-      color: #686868;
-
-}
-.s-2{  /* 已付定金 - 蜜桃橙 */
-  background: linear-gradient(135deg,#ffe9d6,#ffd2ad);
-  color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18);
-}
-.s-3{  /* 未购买 - 草莓粉 */
-  background: linear-gradient(135deg,#ffe0ea,#ffc2d4);
-  color: #686868;box-shadow: 0 2rpx 10rpx rgba(216,58,86,.18);
-}
+.s-1{ background: linear-gradient(135deg, #e3e3e3, #d6ecdf); color: #686868; box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18); }
+.s-2{ background: linear-gradient(135deg,#ffe9d6,#ffd2ad); color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18); }
+.s-3{ background: linear-gradient(135deg,#ffe0ea,#ffc2d4); color: #686868; box-shadow: 0 2rpx 10rpx rgba(216,58,86,.18); }
 
 /* 删除按钮 */
 .delete-btn{
