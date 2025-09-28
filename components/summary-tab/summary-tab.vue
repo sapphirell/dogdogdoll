@@ -1,7 +1,18 @@
 <template>
   <view class="summary-wrap">
-    <!-- 顶部渐变 + 搜索 -->
+    <!-- 顶部渐变 + 伪Tab + 搜索 -->
     <view class="header">
+      <!-- 伪Tab：摘要 / 日历 -->
+      <view class="top-tabs" @click.stop>
+        <view class="t-tab active" @tap="onTapSummary">
+          <text>摘要</text>
+          <view class="underline"></view>
+        </view>
+        <view class="t-tab" @tap="onTapCalendar">
+          <text>日历</text>
+        </view>
+      </view>
+
       <view class="search-box">
         <view class="fake-search" @tap="goSearchPage">
           <image class="icon" src="/static/search.png" mode="widthFix" />
@@ -451,6 +462,25 @@ async function refreshAll (isInit = false) {
   }
 }
 
+/** ----------------- 顶部伪Tab行为 ----------------- */
+async function onTapSummary () {
+  if (isRefreshing.value) return
+  isRefreshing.value = true
+  try {
+    uni.showNavigationBarLoading()
+    uni.showToast({ title: '正在刷新', icon: 'none', duration: 700 })
+    await refreshAll(false)
+    uni.showToast({ title: '已更新', icon: 'success', duration: 800 })
+    try { uni.vibrateShort({}) } catch(_) {}
+  } finally {
+    uni.hideNavigationBarLoading()
+    isRefreshing.value = false
+  }
+}
+function onTapCalendar () {
+  goCalendar()
+}
+
 /** ----------------- API ----------------- */
 function normalizeGoodsList(list) {
   return (list || []).map(it => {
@@ -844,19 +874,24 @@ onBeforeUnmount(() => {
   background-color: #f5f7fa;
 }
 
-/* 顶部渐变 + 搜索（header 保持原样） */
+/* 顶部渐变 + 伪Tab + 搜索 */
 .header{
   padding: 24rpx 24rpx 10rpx;
   background: linear-gradient(180deg, #def9ff, #e1ebf2);
   border-radius: 0 0 20rpx 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(93, 168, 192, 0.2);
 
-  .search-box{
-    // background: rgba(255, 255, 255, 0.9);
-    // border-radius: 36rpx;
-    // padding: 8rpx 24rpx;
-    // box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+  .top-tabs{
+    display: flex; gap: 40rpx; align-items: flex-end; padding: 8rpx 4rpx 4rpx;margin-bottom:20rpx;margin-left: 10rpx;
+    .t-tab{
+      position: relative; padding: 8rpx 6rpx 14rpx; font-size: 34rpx; font-weight: 800; color:#8a8f9a;
+      .underline{ display:none; position:absolute; left:0; right:0; bottom:0; height:6rpx; border-radius:6rpx; background: var(--g-primary); }
+      &.active{ color:#333; .underline{ display:block; } }
+      &:active{ opacity:.9; }
+    }
   }
+
+  .search-box{ /* 保留占位，样式见下方 .fake-search */ }
 }
 
 /* 区块外框 */
@@ -1208,5 +1243,4 @@ onBeforeUnmount(() => {
 
   &:active { opacity: .9; }
 }
-
 </style>

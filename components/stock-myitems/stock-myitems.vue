@@ -153,14 +153,21 @@ function handleSortChange(sortedIds){
 
 /* ===== 跳转搜索页 ===== */
 function openSearch(){
-  const list = baseList.value || []
+  // 1) 深拷贝成普通对象，避免把 Proxy 直接塞进通道/存储
+  const list = JSON.parse(JSON.stringify(baseList.value || []))
+  // 2) 全端兜底：写入 uniStorage（小程序/H5/App 都可用）
+  try { uni.setStorageSync('__stockList', list) } catch (e) {}
+  // 3) H5 旧兜底（保留）
   try { history.replaceState({ ...(history.state||{}), __stockList: list }, '') } catch {}
   try { localStorage.setItem('__stockList', JSON.stringify(list)) } catch {}
   uni.navigateTo({
     url: '/pkg-stock/stock-myitems-search/stock-myitems-search',
     success(res){
       const ec = res.eventChannel
-      ec && ec.emit && ec.emit('initList', { list })
+    
+		// 延后一帧发送，避免目标页还没完成 onLoad 里的绑定
+	  const push = () => ec && ec.emit && ec.emit('initList', { list })
+	  setTimeout(push, 0)
     }
   })
 }
