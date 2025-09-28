@@ -1,3 +1,4 @@
+<!-- shmily-drag-image.vue (基于你的无问题版本 + 功能合入) -->
 <template>
   <view class="con">
     <template v-if="viewWidth">
@@ -33,17 +34,18 @@
             :style="{
               width: childWidth,
               height: childHeight,
-              borderRadius: borderRadius + 'rpx',
+              borderRadius: props.borderRadius + 'rpx',
               transform: 'scale(' + item.scale + ')',
-              margin: itemMargin + 'px'
+              margin: props.itemMargin + 'px'
             }"
             :class="{ 'ready': !item.disable && item.ready }"
           >
+            <!-- 可选删除 -->
             <view v-if="props.showDelete" class="delete-btn" @click.stop="deleteImage(item)">
               <uni-icons type="clear" color="#9b9b9b" size="30" />
             </view>
 
-            <!-- 图片 -->
+            <!-- 图片（带兜底） -->
             <image
               class="pre-image"
               :src="getDisplayImg(item)"
@@ -54,12 +56,11 @@
             <!-- 底部信息 + 左上角分类 -->
             <view class="info-container" v-if="props.showItemInfo">
               <text class="name">{{ item.name }}</text>
-              <!-- ✅ 价格清洗，去掉【...】后缀 -->
               <text class="price">{{ getDisplayPrice(item.price) }}</text>
               <text class="type">{{ item.type }}</text>
             </view>
 
-            <!-- ✅ 付款状态“糖果色”小标签：放在分类标签正下方 -->
+            <!-- 付款状态糖果色标签 -->
             <view
               v-if="props.showPaymentTag && getPaymentText(item)"
               class="pay-badge candy"
@@ -77,6 +78,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick, getCurrentInstance } from 'vue'
 
+/* ========= Props / Emits ========= */
 const props = defineProps({
   value: { type: Array, default: () => [] },
   customClick: { type: Boolean, default: false },
@@ -94,7 +96,7 @@ const props = defineProps({
   showItemInfo: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: false },
 
-  /* 付款状态标签（可选，默认关闭） */
+  /* 付款状态标签（新增能力） */
   showPaymentTag: { type: Boolean, default: false },
   paymentField: { type: String, default: 'payment_status' },
   paymentMap: {
@@ -104,7 +106,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['input', 'update:modelValue', 'sort-change', 'delete', 'item-click'])
 
-/* ===== 无图兜底 ===== */
+/* ========= 图片兜底 / 文本清洗 ========= */
 const NO_IMG =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
@@ -129,7 +131,12 @@ function getDisplayImg(item) {
 }
 function onImgError(item) { item.__imgBroken = true }
 
-/* ===== 拖拽与布局（保持原逻辑） ===== */
+function getDisplayPrice(price){
+  if (price === null || price === undefined) return ''
+  return String(price).replace(/【.*?】/g, '').trim()
+}
+
+/* ========= 拖拽与布局（沿用你的稳定实现） ========= */
 const imageList = ref([])
 const width = ref(0)
 const add = ref({ x: 0, y: 0 })
@@ -147,23 +154,26 @@ const isDragging = ref(false)
 const isMounted = ref(false)
 
 const areaHeight = computed(() => {
-  if (imageList.value.length < props.number) return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + 'px'
+  if (imageList.value.length < props.number) {
+    return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + 'px'
+  }
   return Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value + 'px'
 })
 const childWidth = computed(() => (viewWidth.value - rpx2px(props.padding) * 2) + 'px')
 const childHeight = computed(() => (viewHeight.value - rpx2px(props.padding) * 2) + 'px')
 
+/* 删除（保持原位更新 + 同步外部） */
 const deleteImage = (item) => {
   emit('delete', item.id)
-  const idx = imageList.value.findIndex(img => img.id === item.id)
-  if (idx !== -1) {
-    imageList.value.splice(idx, 1)
+  const index = imageList.value.findIndex(img => img.id === item.id)
+  if (index !== -1) {
+    imageList.value.splice(index, 1)
     updateItemsPosition()
     sortList()
   }
 }
 
-/* 统一装配数据：增加 payStatus */
+/* 统一装配：加入 payStatus 字段（新增能力） */
 const getItemData = (item) => ({
   id: item.id,
   src: getSrc(item),
@@ -173,35 +183,57 @@ const getItemData = (item) => ({
   payStatus: item[props.paymentField] ?? 1
 })
 
-/* —— 省略：拖拽/移动/事件的原有函数（未变动） —— */
 const onChange = (e, item) => {
   if (!item) return
-  item.oldX = e.detail.x; item.oldY = e.detail.y
+  item.oldX = e.detail.x
+  item.oldY = e.detail.y
   if (e.detail.source === 'touch') {
     if (item.moveEnd) {
-      item.offset = Math.sqrt(Math.pow(item.oldX - item.absX * viewWidth.value, 2) + Math.pow(item.oldY - item.absY * viewHeight.value, 2))
+      item.offset = Math.sqrt(
+        Math.pow(item.oldX - item.absX * viewWidth.value, 2) +
+        Math.pow(item.oldY - item.absY * viewHeight.value, 2)
+      )
     }
     const x = Math.floor((e.detail.x + viewWidth.value / 2) / viewWidth.value)
     if (x >= colsValue.value) return
     const y = Math.floor((e.detail.y + viewHeight.value / 2) / viewHeight.value)
     const index = colsValue.value * y + x
+
     if (item.index !== index && index < imageList.value.length) {
       changeStatus.value = false
       imageList.value.forEach(obj => {
         if (item.index > index && obj.index >= index && obj.index < item.index) changeObj(obj, 1)
         else if (item.index < index && obj.index <= index && obj.index > item.index) changeObj(obj, -1)
         else if (obj.id !== item.id) {
-          obj.offset = 0; obj.x = obj.oldX; obj.y = obj.oldY
-          setTimeout(() => { nextTick(() => { obj.x = obj.absX * viewWidth.value; obj.y = obj.absY * viewHeight.value }) }, 0)
+          obj.offset = 0
+          obj.x = obj.oldX
+          obj.y = obj.oldY
+          setTimeout(() => {
+            nextTick(() => {
+              obj.x = obj.absX * viewWidth.value
+              obj.y = obj.absY * viewHeight.value
+            })
+          }, 0)
         }
       })
+
       moveItem(item, index)
-      item.index = index; item.absX = x; item.absY = y
-      if (!item.moveEnd) setTimeout(() => nextTick(() => { item.x = item.absX * viewWidth.value; item.y = item.absY * viewHeight.value }), 0)
+      item.index = index
+      item.absX = x
+      item.absY = y
+      if (!item.moveEnd) {
+        setTimeout(() => {
+          nextTick(() => {
+            item.x = item.absX * viewWidth.value
+            item.y = item.absY * viewHeight.value
+          })
+        }, 0)
+      }
       sortList()
     }
   }
 }
+
 const moveItem = (item, newIndex) => {
   const oldIndex = imageList.value.findIndex(i => i.id === item.id)
   if (oldIndex === -1 || oldIndex === newIndex) return
@@ -210,73 +242,131 @@ const moveItem = (item, newIndex) => {
   sortList()
 }
 const changeObj = (obj, i) => {
-  obj.index += i; obj.offset = 0; obj.x = obj.oldX; obj.y = obj.oldY
-  obj.absX = obj.index % colsValue.value; obj.absY = Math.floor(obj.index / colsValue.value)
-  setTimeout(() => nextTick(() => { obj.x = obj.absX * viewWidth.value; obj.y = obj.absY * viewHeight.value }), 0)
+  obj.index += i
+  obj.offset = 0
+  obj.x = obj.oldX
+  obj.y = obj.oldY
+  obj.absX = obj.index % colsValue.value
+  obj.absY = Math.floor(obj.index / colsValue.value)
+  setTimeout(() => {
+    nextTick(() => {
+      obj.x = obj.absX * viewWidth.value
+      obj.y = obj.absY * viewHeight.value
+    })
+  }, 0)
 }
+
+/* 长按进入拖拽（保持原逻辑） */
 const onLongPressStart = (item, e) => {
   touchStartY.value = e.touches[0].clientY
-  if (longPressTimer.value) clearTimeout(longPressTimer.value)
-  imageList.value.forEach(i => { i.ready = false; i.disable = true })
+  if (longPressTimer.value) { clearTimeout(longPressTimer.value); longPressTimer.value = null }
+  imageList.value.forEach(it => { it.ready = false; it.disable = true })
   longPressTimer.value = setTimeout(() => {
     uni.vibrateShort?.()
-    item.ready = true; item.disable = false; isDragging.value = true; touchstart(item)
+    item.ready = true
+    item.disable = false
+    isDragging.value = true
+    touchstart(item)
   }, 240)
 }
 const touchstart = (item) => {
   imageList.value.forEach(v => { v.zIndex = v.index + 9 })
-  item.zIndex = 99; item.moveEnd = true; tempItem.value = item
-  timer.value = setTimeout(() => { item.scale = props.scale; item.opacity = props.opacity; clearTimeout(timer.value); timer.value = null }, 200)
+  item.zIndex = 99
+  item.moveEnd = true
+  tempItem.value = item
+  timer.value = setTimeout(() => {
+    item.scale = props.scale
+    item.opacity = props.opacity
+    clearTimeout(timer.value)
+    timer.value = null
+  }, 200)
 }
 const touchend = (item) => {
-  item.scale = 1; item.opacity = 1; item.x = item.oldX; item.y = item.oldY
-  item.offset = 0; item.moveEnd = false
-  imageList.value.forEach(i => { i.ready = false; i.disable = true })
-  if (isDragging.value) emit('sort-change', imageList.value.map(i => i.id))
+  item.scale = 1
+  item.opacity = 1
+  item.x = item.oldX
+  item.y = item.oldY
+  item.offset = 0
+  item.moveEnd = false
+
+  imageList.value.forEach(it => { it.ready = false; it.disable = true })
+
+  if (isDragging.value) {
+    // 结束时向父级上报当前顺序（你的稳定实现做法）
+    emit('sort-change', imageList.value.map(it => it.id))
+  }
   isDragging.value = false
+
   if (longPressTimer.value) { clearTimeout(longPressTimer.value); longPressTimer.value = null }
+
   setTimeout(() => {
     imageList.value.forEach(obj => {
       if (obj.ready) return
-      obj.x = obj.absX * viewWidth.value; obj.y = obj.absY * viewHeight.value
-      obj.offset = 0; obj.moveEnd = false
+      obj.x = obj.absX * viewWidth.value
+      obj.y = obj.absY * viewHeight.value
+      obj.offset = 0
+      obj.moveEnd = false
     })
-    nextTick(() => { item.x = item.absX * viewWidth.value; item.y = item.absY * viewHeight.value; tempItem.value = null; changeStatus.value = true })
+    nextTick(() => {
+      item.x = item.absX * viewWidth.value
+      item.y = item.absY * viewHeight.value
+      tempItem.value = null
+      changeStatus.value = true
+    })
   }, 50)
 }
+
 const previewImage = (item) => {}
 const mouseenter = () => { /* #ifdef H5 */ imageList.value.forEach(v => { v.disable = false }) /* #endif */ }
-const mouseleave = () => { /* #ifdef H5 */ if (tempItem.value) { imageList.value.forEach(v => {
-  v.disable = true; v.zIndex = v.index + 9; v.offset = 0; v.moveEnd = false
-  if (v.id === tempItem.value.id) { if (timer.value) { clearTimeout(timer.value); timer.value = null }
-    v.scale = 1; v.opacity = 1; v.x = v.oldX; v.y = v.oldY
-    nextTick(() => { v.x = v.absX * viewWidth.value; v.y = v.absY * viewHeight.value; tempItem.value = null })
+const mouseleave = () => {
+  /* #ifdef H5 */
+  if (tempItem.value) {
+    imageList.value.forEach(v => {
+      v.disable = true
+      v.zIndex = v.index + 9
+      v.offset = 0
+      v.moveEnd = false
+      if (v.id === tempItem.value.id) {
+        if (timer.value) { clearTimeout(timer.value); timer.value = null }
+        v.scale = 1
+        v.opacity = 1
+        v.x = v.oldX
+        v.y = v.oldY
+        nextTick(() => {
+          v.x = v.absX * viewWidth.value
+          v.y = v.absY * viewHeight.value
+          tempItem.value = null
+        })
+      }
+    })
+    changeStatus.value = true
   }
-}); changeStatus.value = true } /* #endif */ }
+  /* #endif */
+}
 const onTouchMove = (e) => {
   if (isDragging.value) return
   const deltaY = Math.abs(e.touches[0].clientY - touchStartY.value)
   if (deltaY > 10 && longPressTimer.value) { clearTimeout(longPressTimer.value); longPressTimer.value = null }
 }
-const delImageHandle = (item, index) => {
-  imageList.value.splice(index, 1)
-  imageList.value.forEach(obj => {
-    if (obj.index > item.index) {
-      obj.index -= 1; obj.x = obj.oldX; obj.y = obj.oldY
-      obj.absX = obj.index % colsValue.value; obj.absY = Math.floor(obj.index / colsValue.value)
-      nextTick(() => { obj.x = obj.absX * viewWidth.value; obj.y = obj.absY * viewHeight.value })
-    }
-  })
-  add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
-  add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
-  sortList()
-}
-const delImageMp = (item, index) => {}
-function go2preview(id) { uni.navigateTo({ url: '/pkg-stock/account_book_preview/account_book_preview?account_book_id=' + id }) }
-const handleItemClick = (item) => { emit('item-click', item); if (!props.customClick) go2preview(item.id) }
 
+/* 删除（小程序端） */
+const delImageMp = (item, index) => { /* 预留 */ }
+
+/* 点击：对外透出 & 默认跳预览（可被 customClick 关闭） */
+function go2preview(id) {
+  uni.navigateTo({
+    url: '/pkg-stock/account_book_preview/account_book_preview?account_book_id=' + id
+  })
+}
+const handleItemClick = (item) => {
+  emit('item-click', item)
+  if (!props.customClick) go2preview(item.id)
+}
+
+/* ========= 工具 & 初始化 ========= */
 const rpx2px = (v) => width.value * v / 750
 const instanceRef = ref(null)
+
 onMounted(() => {
   width.value = uni.getSystemInfoSync().windowWidth
   instanceRef.value = getCurrentInstance()
@@ -294,10 +384,12 @@ onMounted(() => {
       }
       const list = props.modelValue.length ? props.modelValue : props.value
       list.forEach(item => addProperties(item))
-      first.value = false; isMounted.value = true
+      first.value = false
+      isMounted.value = true
     }).exec()
   })
 })
+
 const addProperties = (item) => {
   const data = getItemData(item)
   const absX = imageList.value.length % colsValue.value
@@ -315,6 +407,7 @@ const addProperties = (item) => {
   add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
   add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
 }
+
 const updateItemsPosition = () => {
   imageList.value.forEach((item, index) => {
     item.index = index
@@ -322,10 +415,13 @@ const updateItemsPosition = () => {
     const newAbsY = Math.floor(index / colsValue.value)
     item.x = newAbsX * viewWidth.value
     item.y = newAbsY * viewHeight.value
-    item.oldX = item.x; item.oldY = item.y
-    item.absX = newAbsX; item.absY = newAbsY
+    item.oldX = item.x
+    item.oldY = item.y
+    item.absX = newAbsX
+    item.absY = newAbsY
   })
 }
+
 const initViewSize = () => new Promise(resolve => {
   if (!instanceRef.value || !instanceRef.value.proxy) return resolve()
   const query = uni.createSelectorQuery().in(instanceRef.value.proxy)
@@ -342,19 +438,44 @@ const initViewSize = () => new Promise(resolve => {
     resolve()
   }).exec()
 })
+
+/* 同步父级（保持你的无问题版本做法） */
+const sortList = () => {
+  const result = []
+  const source = props.modelValue.length ? props.modelValue : props.value
+  const list = [...imageList.value].sort((a, b) => a.index - b.index)
+  for (const s of list) {
+    const item = source.find(d => getSrc(d) === s.src)
+    if (item) result.push(item)
+    else {
+      if (props.keyName !== null) result.push({ [props.keyName]: s.src })
+      else result.push(s.src)
+    }
+  }
+  emit('input', result)
+  emit('update:modelValue', result)
+}
+
+/* 父 -> 子 列表变化时（避免拖拽中抖动） */
 watch(() => props.modelValue, (newVal) => {
   if (isDragging.value) return
-  if (isMounted.value) nextTick(() => { initViewSize().then(() => updateImageList(newVal)) })
+  if (isMounted.value) {
+    nextTick(() => {
+      initViewSize().then(() => updateImageList(newVal))
+    })
+  }
 }, { deep: true, immediate: true })
-const updateImageList = (newList) => {
+
+const updateImageList = (newList = []) => {
   const oldItems = imageList.value.reduce((map, item) => (map[item.id] = item, map), {})
   imageList.value = newList.map(item => {
     const existing = oldItems[item.id]
-    const fresh = getItemData(item)
-    return existing ? { ...existing, ...fresh } : createNewItem(item)
+    if (existing) return { ...existing, ...getItemData(item) }
+    return createNewItem(item)
   })
   updateItemsPosition()
 }
+
 const createNewItem = (item) => {
   const data = getItemData(item)
   const absX = imageList.value.length % colsValue.value
@@ -371,15 +492,10 @@ const createNewItem = (item) => {
   }
 }
 
-/* ===== 文本与颜色 ===== */
+/* 付款状态文本 */
 function getPaymentText(item){
   const st = Number(item?.payStatus ?? 1)
   return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
-}
-/* 清洗价格字符串，去掉类似 “365【已全款】” 的后缀 */
-function getDisplayPrice(price){
-  if (price === null || price === undefined) return ''
-  return String(price).replace(/【.*?】/g, '').trim()
 }
 </script>
 
@@ -404,32 +520,19 @@ function getDisplayPrice(price){
   }
 }
 
-/* ✅ 糖果配色的小标签：位于“分类标签”正下方（左上角对齐） */
+/* 糖果配色标签（新增） */
 .pay-badge.candy{
-  position: absolute; left: 8rpx; top: 56rpx;  /* 放到分类标签下方 */
+  position: absolute; left: 8rpx; top: 56rpx;
   padding: 8rpx 16rpx; border-radius: 20rpx;
   font-size: 22rpx; font-weight: 800; line-height: 1;
   letter-spacing: 1rpx;
-  transform: translateZ(0);  /* 更锐利的阴影 */
+  transform: translateZ(0);
   opacity: 0.6;
   backdrop-filter: blur(6px);
 }
-
-/* 三种状态的糖果色 */
-.s-1{  /* 已全款 - 薄荷糖绿 */
-	box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18);
-      background: linear-gradient(135deg, #e3e3e3, #d6ecdf);
-      color: #686868;
-
-}
-.s-2{  /* 已付定金 - 蜜桃橙 */
-  background: linear-gradient(135deg,#ffe9d6,#ffd2ad);
-  color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18);
-}
-.s-3{  /* 未购买 - 草莓粉 */
-  background: linear-gradient(135deg,#ffe0ea,#ffc2d4);
-  color: #686868;box-shadow: 0 2rpx 10rpx rgba(216,58,86,.18);
-}
+.s-1{ background: linear-gradient(135deg, #e3e3e3, #d6ecdf); color: #686868; box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18); }
+.s-2{ background: linear-gradient(135deg,#ffe9d6,#ffd2ad); color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18); }
+.s-3{ background: linear-gradient(135deg,#ffe0ea,#ffc2d4); color: #686868; box-shadow: 0 2rpx 10rpx rgba(216,58,86,.18); }
 
 /* 删除按钮 */
 .delete-btn{
