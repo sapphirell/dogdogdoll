@@ -323,7 +323,7 @@
 	// 跳转到店铺
 	const jumpBrandBase = async () => {
 		uni.navigateTo({
-			url: '/pages/creator_base/creator_base',
+			url: '/pkg-creator/creator_base/creator_base',
 		})
 	}
 	// 获取关注数量

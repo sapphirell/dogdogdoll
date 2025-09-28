@@ -368,8 +368,8 @@ const uploadFormImages = async () => {
   if (!remain) { uni.showToast({ title:'最多上传9张', icon:'none' }); return }
   const imgs = await chooseImageList(remain); if (!imgs?.length) return
   try {
-    const tk = await getQiniuToken()
     for (const filePath of imgs) {
+	  let tk = await getQiniuToken()
       const up = await uploadImageToQiniu(filePath, tk.token, tk.path)
       if (up?.imageUrl) formImages.value.push(up.imageUrl)
     }

@@ -1,433 +1,283 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
-		{
-			"path": "pages/index/index",
-			"style": {
-				"navigationBarTitleText": "首页",
-				"navigationStyle": "custom", //自定义导航栏
-				"enablePullDownRefresh": true
-			}
-		},
-		{
-			"path": "pages/homepage/homepage",
-			"style": {
-				"navigationBarTitleText": "home",
-				"navigationStyle": "custom" //自定义导航栏
-			}
-		},
-		{
-			"path": "pages/stock/stock",
-			"style": {
-				"navigationBarTitleText": "我的娃柜",
-				"navigationStyle": "custom" //自定义导航栏
-			}
-		},
-		{
-			"path": "pages/mine/mine",
-			"style": {
-				"navigationBarTitleText": "个人信息",
-				"navigationStyle": "custom" //自定义导航栏
-			}
-		},
-		{
-			"path": "pages/watch_demo/watch_demo",
-			"style": {
-				"navigationBarTitleText": "watch_demo"
-			}
-		},
-		{
-			"path": "pages/goods/goods",
-			"style": {
-				"navigationBarTitleText": "商品页面",
-				"app-plus": {
-					"softinputmode": "adjustResize"
-				},
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/brand/brand",
-			"style": {
-				"navigationBarTitleText": "品牌页面"
-			}
-		},
-		{
-			"path": "pages/calendar/calendar",
-			"style": {
-				"navigationBarTitleText": "上新",
-				"navigationStyle": "custom" ,//自定义导航栏
-				"enablePullDownRefresh": true
-			}
-		},
-		{
-			"path" : "pages/summary/summary",
-			"style" : 
-			{
-				"navigationBarTitleText" : "",
-				"navigationStyle": "custom" ,
-				"enablePullDownRefresh": true
-			}
-		},
-		{
-			"path": "pages/pop_croper/pop_croper",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/setting/setting",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/setting/password/password",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/setting/tel_phone/tel_phone",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/stock/account_book_form/account_book_form",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/stock/showcase_form/showcase_form",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/stock/bill_form/bill_form",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/collocation/collocation",
-			"style": {
-				"navigationBarTitleText": "分享搭配"
-			}
-		},
-		{
-			"path": "pages/collocation_share/collocation_share",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/user_page/user_page",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/message_list/message_list",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/message_info/message_info",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/register/register",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/user_like/user_like",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/collocation_square/collocation_square",
-			"style": {
-				"navigationBarTitleText": "",
-				"navigationStyle": "custom" //自定义导航栏
-			}
-		},
-		{
-			"path": "pages/sale_news/sale_news",
-			"style": {
-				"navigationBarTitleText": "",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/treehole_publish/treehole_publish",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/treehole_detail/treehole_detail",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/reset_password/reset_password",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/setting/username/username",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/my_comment/my_comment",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/my_collocation/my_collocation",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path": "pages/article_detail/article_detail",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
-			"path" : "pages/loadding/loadding",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/private/private",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/permission/permission",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/drag-image-test/drag-image-test",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/account_book_preview/account_book_preview",
-			"style": {
-				"navigationBarTitleText": "",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path" : "pages/creator_base/creator_base",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/brand_edit/brand_edit",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/goods_list/goods_list",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/goods_editor/goods_editor",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/collocation_list/collocation_list",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/artist_info/artist_info",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/artist_setting/artist_setting",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/artist_info/artist_info",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/set_showcase/set_showcase",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/faceup_editor/faceup_editor",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/order_plane/order_plane",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/artwork/artwork",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/news/news",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/creator_base/set_hair_showcase/set_hair_showcase",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/recent-feed/recent-feed",
-			"style" : 
-			{
-				"navigationBarTitleText" : ""
-			}
-		},
-		{
-			"path" : "pages/stock-myitems-search/stock-myitems-search",
-			"style": {
-				"navigationBarTitleText": "",
-				"navigationStyle": "custom" //自定义导航栏
-			}
-		},
-		{
-			"path" : "pages/search/search",
-			"style" : 
-			{
-				"navigationBarTitleText" : "",
-				"navigationStyle": "custom" //自定义导航栏
-			}
-		}
-	],
-	"globalStyle": {
-		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8",
-		
-		"rpxCalcMaxDeviceWidth": 750,
-		"rpxCalcBaseDeviceWidth": 375, 
-		"rpxCalcIncludeWidth": 750
-		// "enablePullDownRefresh": true 是否开启下拉刷新
-	},
-	"tabBar": {
-		"selectedColor": "#7cc1d2",
-		"backgroundColor": "#fefefe",
-		"borderStyle": "white",
-		"list": [{
-				"pagePath": "pages/index/index",
-				"text": "百科",
-				// "iconPath": "static/new-icon/home-w.png",
-				"iconPath": "static/new-icon/tab1.png",
-				// "selectedIconPath": "static/new-icon/home-b.png"
-				"selectedIconPath": "static/new-icon/tab1.png"
-			},
-			{
-				"pagePath": "pages/collocation_square/collocation_square",
-				"text": "广场",
-				// "iconPath": "static/new-icon/home-w.png",
-				"iconPath": "static/new-icon/tab4.png",
-				// "selectedIconPath": "static/new-icon/home-b.png"
-				"selectedIconPath": "static/new-icon/tab4.png"
-			},
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/homepage/homepage",
+      "style": {
+        "navigationBarTitleText": "home",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/stock/stock",
+      "style": {
+        "navigationBarTitleText": "我的娃柜",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mine/mine",
+      "style": {
+        "navigationBarTitleText": "个人信息",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/watch_demo/watch_demo",
+      "style": {
+        "navigationBarTitleText": "watch_demo"
+      }
+    },
+    {
+      "path": "pages/goods/goods",
+      "style": {
+        "navigationBarTitleText": "商品页面",
+        "app-plus": { "softinputmode": "adjustResize" },
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/brand/brand",
+      "style": {
+        "navigationBarTitleText": "品牌页面"
+      }
+    },
+    {
+      "path": "pages/calendar/calendar",
+      "style": {
+        "navigationBarTitleText": "上新",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/summary/summary",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/pop_croper/pop_croper",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/setting/setting",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/setting/password/password",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/setting/tel_phone/tel_phone",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/collocation/collocation",
+      "style": { "navigationBarTitleText": "分享搭配" }
+    },
+    {
+      "path": "pages/collocation_share/collocation_share",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/user_page/user_page",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/message_list/message_list",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/message_info/message_info",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/register/register",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/user_like/user_like",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/collocation_square/collocation_square",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/sale_news/sale_news",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/treehole_publish/treehole_publish",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/treehole_detail/treehole_detail",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/reset_password/reset_password",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/setting/username/username",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/my_comment/my_comment",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/my_collocation/my_collocation",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/article_detail/article_detail",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/loadding/loadding",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/private/private",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/permission/permission",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/drag-image-test/drag-image-test",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/artist_info/artist_info",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/artwork/artwork",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/recent-feed/recent-feed",
+      "style": { "navigationBarTitleText": "" }
+    },
+    {
+      "path": "pages/search/search",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
 
-			{
-				"pagePath": "pages/summary/summary",
-				"text": "上新",
-				// "iconPath": "static/new-icon/date-w.png",
-				"iconPath": "static/new-icon/tab2.png",
-				// "selectedIconPath": "static/new-icon/date-b.png"
-				"selectedIconPath": "static/new-icon/tab2.png"
-				
-			},
-			{
-				"pagePath": "pages/stock/stock",
-				"text": "娃柜",
-				// "iconPath": "static/new-icon/stock-w.png",
-				"iconPath": "static/new-icon/tab3.png",
-				// "selectedIconPath": "static/new-icon/stock-b.png"
-				"selectedIconPath": "static/new-icon/tab3.png"
-			},
-			{
-				"pagePath": "pages/mine/mine",
-				"text": "我的",
-				// "iconPath": "static/new-icon/mine-w.png",
-				"iconPath": "static/new-icon/tab5.png",
-				// "selectedIconPath": "static/new-icon/mine-b.png"
-				"selectedIconPath": "static/new-icon/tab5.png"
-			}
-		]
-	},
-	"uniIdRouter": {},
-	"app-plus": {
-		"popGesture": "close"        // App(iOS/Android)：开启侧滑返回（默认即是 close）
-	},
-	"mp-weixin": {
-		"disableSwipeBack": false     // 微信小程序：允许右滑返回（默认 false）
-	}
+  "subPackages": [
+    {
+      "root": "pkg-stock",
+      "pages": [
+        { "path": "stock/account_book_form/account_book_form" },
+        { "path": "stock/showcase_form/showcase_form" },
+        { "path": "stock/bill_form/bill_form" },
+        { "path": "account_book_preview/account_book_preview", "style": { "navigationStyle": "custom" } },
+        { "path": "stock-myitems-search/stock-myitems-search", "style": { "navigationStyle": "custom" } }
+      ]
+    },
+    {
+      "root": "pkg-creator",
+      "pages": [
+        { "path": "creator_base/creator_base" },
+        { "path": "creator_base/brand_edit/brand_edit" },
+        { "path": "creator_base/goods_list/goods_list" },
+        { "path": "creator_base/goods_editor/goods_editor" },
+        { "path": "creator_base/collocation_list/collocation_list" },
+        { "path": "creator_base/artist_info/artist_info" },
+        { "path": "creator_base/artist_setting/artist_setting" },
+        { "path": "creator_base/set_showcase/set_showcase" },
+        { "path": "creator_base/faceup_editor/faceup_editor" },
+        { "path": "creator_base/order_plane/order_plane" },
+        { "path": "creator_base/news/news" },
+        { "path": "creator_base/set_hair_showcase/set_hair_showcase" }
+      ]
+    }
+  ],
+
+  "preloadRule": {
+    "pages/stock/stock": {
+      "packages": ["pkg-stock"],
+      "network": "all"
+    },
+    "pages/mine/mine": {
+      "packages": ["pkg-creator"],
+      "network": "all"
+    }
+  },
+
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8",
+    "rpxCalcMaxDeviceWidth": 750,
+    "rpxCalcBaseDeviceWidth": 375,
+    "rpxCalcIncludeWidth": 750
+  },
+
+  "tabBar": {
+    "selectedColor": "#7cc1d2",
+    "backgroundColor": "#fefefe",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "百科",
+        "iconPath": "static/new-icon/tab1.png",
+        "selectedIconPath": "static/new-icon/tab1.png"
+      },
+      {
+        "pagePath": "pages/collocation_square/collocation_square",
+        "text": "广场",
+        "iconPath": "static/new-icon/tab4.png",
+        "selectedIconPath": "static/new-icon/tab4.png"
+      },
+      {
+        "pagePath": "pages/summary/summary",
+        "text": "上新",
+        "iconPath": "static/new-icon/tab2.png",
+        "selectedIconPath": "static/new-icon/tab2.png"
+      },
+      {
+        "pagePath": "pages/stock/stock",
+        "text": "娃柜",
+        "iconPath": "static/new-icon/tab3.png",
+        "selectedIconPath": "static/new-icon/tab3.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "static/new-icon/tab5.png",
+        "selectedIconPath": "static/new-icon/tab5.png"
+      }
+    ]
+  },
+
+  "uniIdRouter": {},
+  "app-plus": { "popGesture": "close" },
+  "mp-weixin": { "disableSwipeBack": false }
 }
