@@ -3,8 +3,8 @@ import {
 } from 'vue';
 
 // 网站域名
-// export const websiteUrl = ref('https://api.fantuanpu.com');
-export const websiteUrl = ref('http://localhost:8080');
+export const websiteUrl = ref('https://api.fantuanpu.com');
+// export const websiteUrl = ref('http://localhost:8080');
 // 测试环境
 export const devUrl = 'http://localhost:8080';
 // 中国服务器API
@@ -15,7 +15,7 @@ export const usURL = 'https://us-api.dogdogdoll.com'
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
 // 客户端版本号
-export const dogdogdollVersion = "1.1.3"
+export const dogdogdollVersion = "1.1.4"
 
 // 全局状态
 export let global = reactive({

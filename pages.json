@@ -354,6 +354,14 @@
 				"navigationBarTitleText": "",
 				"navigationStyle": "custom" //自定义导航栏
 			}
+		},
+		{
+			"path" : "pages/search/search",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"navigationStyle": "custom" //自定义导航栏
+			}
 		}
 	],
 	"globalStyle": {

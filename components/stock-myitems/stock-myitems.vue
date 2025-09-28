@@ -215,6 +215,9 @@ onShow(async ()=>{
   font-size: 26rpx; color: #fff; border-radius: 12rpx;
   background: linear-gradient(135deg, #97e7f7, #d5acd6);
   box-shadow: 0 2rpx 10rpx rgba(116,126,229,.15); white-space: nowrap;
+  text {
+	  color: #fff;
+  }
 }
 
 /* 🔎 放大镜按钮 */

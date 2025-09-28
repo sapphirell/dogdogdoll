@@ -411,7 +411,7 @@ function getDisplayPrice(price){
   font-size: 22rpx; font-weight: 800; line-height: 1;
   letter-spacing: 1rpx;
   transform: translateZ(0);  /* 更锐利的阴影 */
-  opacity: 6;
+  opacity: 0.6;
   backdrop-filter: blur(6px);
 }
 

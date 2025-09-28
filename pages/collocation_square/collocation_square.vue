@@ -185,6 +185,7 @@
                   class="card-image"
                   lazy-load
                   @error="onCardImgError(item)"
+                  @load="onCardImgLoad"
                 />
 
                 <view class="card-content">
@@ -296,6 +297,10 @@ function onCardImgError (item) {
   if (!Array.isArray(item.image_urls)) item.image_urls = []
   item.image_urls[0] = NO_IMG
 }
+function onCardImgLoad () {
+  // 单张图片加载完成后再补测一次，避免高度为 0
+  layoutFunction(true)
+}
 
 /* ======== 统一用 rpx 计算高度（含状态栏） ======== */
 const si = global?.systemInfo || uni.getSystemInfoSync()
@@ -304,8 +309,10 @@ const rpx2px = (rpx) => (si && si.windowWidth ? (si.windowWidth / 750) * rpx : r
 const windowHeightRpx = Math.round(px2rpx(si.windowHeight || 0))
 const statusBarRpx   = Math.round(px2rpx(si.statusBarHeight || 0))
 
-/** 间距常量（与“找找”tab 视觉密度接近） */
-const GUTTER_RPX = 0               // 列间距 / 行间距（统一）
+/** 间距常量（恢复旧版：左右 20rpx 容器内边距 + 列间距 12rpx） */
+const SIDE_PADDING_RPX = 20
+const GUTTER_RPX = 12
+const SIDE_PADDING_PX = rpx2px(SIDE_PADDING_RPX)
 const GUTTER_PX  = rpx2px(GUTTER_RPX)
 
 /** 折叠参数 */
@@ -383,7 +390,9 @@ const pageSize = 10
 
 const containerHeight = ref(0)
 const cardWidth = ref(0)
+/** 旧版逻辑：两列高度累加表 + 列数固定为 2 */
 const columnsHeight = reactive([0, 0])
+const COLUMN_COUNT = 2
 
 const instance = getCurrentInstance()
 const miniProgram = process.env.VUE_APP_PLATFORM === 'mp-weixin'
@@ -403,16 +412,16 @@ const selectedType = ref('全部')
 const selectedSize = ref('全部')
 const goodsTypes = ref([])
 const sizes = ref([])
-const goodsOptions = ref([]) // 兼容你之前的变量
+const goodsOptions = ref([])
 
-/** Tab 切换（保留你之前的写法） */
+/** Tab 切换（保留你的写法） */
 const handleTabSwitch = (tab) => {
   showPostMenu.value = false
   closeFilter()
+  // 切换离开“看看”时清空布局缓存
   if (currentTab.value === 'view') {
     collocationList.value.forEach(item => { delete item.position })
-    columnsHeight[0] = 0
-    columnsHeight[1] = 0
+    resetColumns()
   }
   switchTab(tab)
 }
@@ -475,44 +484,66 @@ const fetchRandomGoods = async (reset = false) => {
 }
 const loadMoreGoods = () => { fetchRandomGoods() }
 
-/** 瀑布流布局（看看） */
+/** ====== 瀑布流布局（旧版思路的稳态实现） ====== */
+/** 单卡片 style */
 const cardStyle = (index) => {
   const item = collocationList.value[index]
   if (!item?.position) return {}
   return { left: `${item.position.left}px`, top: `${item.position.top}px`, width: `${cardWidth.value}px` }
 }
-const calculateLayout = (inst) => {
+/** 重置列高 */
+const resetColumns = () => { for (let i = 0; i < COLUMN_COUNT; i++) columnsHeight[i] = 0 }
+/** 主计算：一次性 selectAll('.card')，顺序落位 */
+const calculateLayout = (inst, { force = false } = {}) => {
   if (!inst || !collocationList.value?.length) return
+
   const query = uni.createSelectorQuery().in(inst.proxy)
-  const tasks = collocationList.value.map((_, index) =>
-    new Promise((resolve) => {
-      query.select(`#card-${index}`).boundingClientRect(rect => resolve({ index, rect }))
-    })
-  )
-  query.exec(async () => {
-    columnsHeight[0] = 0; columnsHeight[1] = 0
-    const results = await Promise.all(tasks)
-    results.forEach(({ index, rect }) => {
+  // 关键：一次 selectAll，避免逐个 select 的 race 问题
+  query.selectAll('.card').boundingClientRect(rects => {
+    if (!rects || !rects.length) return
+    // 如果大多数高度仍为 0，说明图片尚未加载，稍后重试
+    const zeroCount = rects.filter(r => !r || !r.height).length
+    if (zeroCount > 0 && !force) {
+      // 轻量退避：等一帧后再来
+      setTimeout(() => calculateLayout(inst), 120)
+      return
+    }
+
+    resetColumns()
+
+    rects.forEach((rect, i) => {
       if (!rect) return
-      const item = collocationList.value[index]
-      const colIdx = columnsHeight[0] <= columnsHeight[1] ? 0 : 1
-      const left  = colIdx * (cardWidth.value + GUTTER_PX + 20)  // 横向统一间距
-      const top   = columnsHeight[colIdx] + (columnsHeight[colIdx] === 0 ? 0 : GUTTER_PX) // 第一行不加顶间距
-      columnsHeight[colIdx] = top + rect.height
-      item.position = { left, top }
+      // 找到当前最短列
+      let colIdx = 0
+      for (let c = 1; c < COLUMN_COUNT; c++) {
+        if (columnsHeight[c] < columnsHeight[colIdx]) colIdx = c
+      }
+      // const left = colIdx * (cardWidth.value + GUTTER_PX)
+	  const left = SIDE_PADDING_PX + colIdx * (cardWidth.value + GUTTER_PX)
+      const top  = columnsHeight[colIdx]
+      columnsHeight[colIdx] = top + rect.height + GUTTER_PX
+
+      const item = collocationList.value[i]
+      if (item) item.position = { left, top }
     })
-    containerHeight.value = Math.max(...columnsHeight) + GUTTER_PX // 底部留等距
-  })
+
+    containerHeight.value = Math.max(...columnsHeight) // 已含最后一行的底部间距
+  }).exec()
 }
-const layoutFunction = async () => {
+/** 触发布局（首帧 + 两次补算，兼容图片懒加载） */
+let layoutTimer = null
+const layoutFunction = async (force = false) => {
   await nextTick()
-  calculateLayout(instance)
-  setTimeout(() => calculateLayout(instance), 500)
+  if (layoutTimer) { clearTimeout(layoutTimer); layoutTimer = null }
+  calculateLayout(instance, { force })
+  // 补算：等待图片/字体渲染完成
+  layoutTimer = setTimeout(() => calculateLayout(instance, { force }), 250)
+  setTimeout(() => calculateLayout(instance, { force }), 600)
 }
 
 /** 搭配列表（看看） */
 const fetchCollocations = async (reset = false) => {
-  if (reset) { collocationList.value = []; currentPage.value = 1; noMore.value = false; loading.value = false }
+  if (reset) { collocationList.value = []; currentPage.value = 1; noMore.value = false; loading.value = false; resetColumns() }
   if (loading.value || noMore.value) { layoutFunction(); return }
   try {
     loading.value = true
@@ -572,9 +603,9 @@ const goToShowcase   = () => uni.showToast({ title: 'TODO: 发展示柜', icon: 
 
 /** 初始化 */
 onMounted(() => {
-  // 与“找找”tab 统一：左右 20rpx 内边距 + 中间 12rpx 列间距
-  const sidePaddingPx = rpx2px(10)
-  cardWidth.value = (si.windowWidth - sidePaddingPx * 2 - GUTTER_PX) / 2
+  // 计算卡片宽度（旧版：容器左右 20rpx padding + 列间距 12rpx，2 列）
+  const containerWidthPx = si.windowWidth - SIDE_PADDING_PX * 2
+  cardWidth.value = (containerWidthPx - GUTTER_PX) / 2
 
   fetchGoodsTypes()
   fetchSizes()
@@ -606,7 +637,7 @@ $hover-color: #1ed1e1;
 .tab{ width: 200rpx; height: 100%; display:flex; align-items:center; justify-content:center; position: relative; }
 .tab-image{ width: 100rpx; height: 100rpx; border-radius: 16rpx; filter: grayscale(1) saturate(0); opacity: .65; transition: filter .2s, opacity .2s, transform .2s; }
 .image-layer .tab.active .tab-image{ filter: none; opacity: 1; }
-.tab.text .tab-text{ font-size: 32rpx; font-weight: 700; letter-spacing: 2rpx; color: #9aa4ad; transition: color .2s; }
+.tab.text .tab-text{ font-size: 26rpx; font-weight: 400; letter-spacing: 2rpx; color: #9aa4ad; transition: color .2s; }
 .tab.text.active .tab-text{ color: #516272; }
 .tab.active::after{ content:''; position:absolute; bottom: 8rpx; left:50%; transform:translateX(-50%); width: 80rpx; height: 6rpx; background: #516272; border-radius: 3rpx; }
 
@@ -635,7 +666,13 @@ $hover-color: #1ed1e1;
 }
 
 /** ===== 主体区 / 列表 ===== */
-.page-body{height: 100vh;}
+.page-root{
+  height: 100vh;
+  overflow: hidden;
+  /* H5 防止滚动链式传递/回弹 */
+  overscroll-behavior: contain;
+}
+.page-body{ overflow: hidden;}
 .goods-list, .card-list{ position: relative; z-index: 0; }
 .goods-list{ background:#f5f5f5; }
 .goods-container{ display:flex; flex-wrap:wrap; padding:0 20rpx 20rpx; gap:10rpx; background: linear-gradient(1deg,#e4e4e4,#fff); }
@@ -646,10 +683,11 @@ $hover-color: #1ed1e1;
 .goods-brand{ display:block; font-size:24rpx; color:#666; margin-top:10rpx; }
 .goods-price{ display:block; font-size:26rpx; color:#f9a1a0; font-weight:bold; margin-top:10rpx; }
 
-/** 看看：瀑布流卡片（间距更紧凑，统一与“找找”） */
+/** 看看：瀑布流卡片（与旧版一致的紧凑间距） */
 .card-list .cards-container{
   position:relative; width:100%;
-  padding: 0 20rpx 20rpx; /* 左右 20rpx，底部 20rpx，与“找找”一致 */
+  // padding: 0 20rpx 20rpx; /* 左右 20rpx，与计算一致 */
+  padding: 0;     
   box-sizing: border-box;
 }
 .card-list .card{
@@ -660,10 +698,10 @@ $hover-color: #1ed1e1;
     width: calc(100% - 24rpx);
     height: 360rpx;
     border-radius: 15rpx;
-    margin: 0 12rpx; /* 与 GUTTER_RPX=12 呼应 */
+    margin: 0 12rpx;
   }
   .card-content{
-    padding: 20rpx; /* 略收紧 */
+    padding: 20rpx;
     .title{
       font-size:26rpx; font-weight:500; color:#515151; margin-bottom:12rpx;
       display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden;

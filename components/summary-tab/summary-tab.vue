@@ -3,7 +3,11 @@
     <!-- 顶部渐变 + 搜索 -->
     <view class="header">
       <view class="search-box">
-        <switch-search mode="jump" @submit="onSearchSubmit" />
+        <view class="fake-search" @tap="goSearchPage">
+          <image class="icon" src="/static/search.png" mode="widthFix" />
+          <text class="placeholder">搜索娃物 / 店铺 / 妆师 / 毛娘</text>
+          <view class="action">搜 索</view>
+        </view>
       </view>
     </view>
 
@@ -752,6 +756,15 @@ function goOpsItem (op) {
   }
 }
 
+function goSearchPage () {
+  // 配置：1234；模式：跳转模式
+  const tabs = '1,2,3,4'
+  const mode = 'jump'
+  uni.navigateTo({
+    url: `/pages/search/search?mode=${mode}&tabs=${tabs}`
+  })
+}
+
 /** ----------------- 下拉刷新 ----------------- */
 async function handlePullDownRefresh () {
   if (isRefreshing.value) return
@@ -839,10 +852,10 @@ onBeforeUnmount(() => {
   box-shadow: 0 4rpx 12rpx rgba(93, 168, 192, 0.2);
 
   .search-box{
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 36rpx;
-    padding: 8rpx 24rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+    // background: rgba(255, 255, 255, 0.9);
+    // border-radius: 36rpx;
+    // padding: 8rpx 24rpx;
+    // box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
   }
 }
 
@@ -1014,7 +1027,7 @@ onBeforeUnmount(() => {
 .goods-mini{
   display:inline-flex; flex-direction:column; width: 220rpx; height: 400rpx;margin-bottom: 20rpx;
   margin-right: 20rpx; background: #fff; border-radius: 20rpx; overflow: hidden;
-  box-shadow: 0 6rpx 16rpx rgba(0,0,0,0.08); transition: all 0.3s ease; position: relative;
+  transition: all 0.3s ease; position: relative;
 
   &:active { transform: scale(0.96); box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1); }
 
@@ -1030,7 +1043,7 @@ onBeforeUnmount(() => {
 
   .meta{
     display:flex; justify-content:space-between; align-items:center; margin: 8rpx 12rpx 16rpx; height: 80rpx;
-    .size{ font-size: 22rpx; color: var(--c-primary-500); font-weight: 500; margin-left: 10rpx; }
+    .size{ font-size: 22rpx; color: #949494; font-weight: 500; margin-left: 10rpx; }
   }
 }
 .empty-slim{ text-align:center; color:#999; padding: 16rpx 0; font-size: 26rpx; }
@@ -1158,4 +1171,42 @@ onBeforeUnmount(() => {
 /* 文字截断 */
 .ellipsis-1{ overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .ellipsis-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* 假搜索框样式 */
+.fake-search{
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 0 16rpx;
+  border-radius: 36rpx;
+  background: #fff;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.06);
+
+  .icon{
+    width: 36rpx;
+    height: 36rpx;
+    opacity: .85;
+    flex-shrink: 0;
+  }
+
+  .placeholder{
+    flex: 1;
+    color: #9aa4b2;
+    font-size: 24rpx;
+  }
+
+  .action{
+    padding: 6rpx 14rpx;
+    border-radius: 999rpx;
+    font-size: 22rpx;
+    color: #fff;
+    background: linear-gradient(135deg, #63cce7, #63cce7);
+    box-shadow: 0 4rpx 10rpx rgba(99,204,231,.25);
+    flex-shrink: 0;
+  }
+
+  &:active { opacity: .9; }
+}
+
 </style>
