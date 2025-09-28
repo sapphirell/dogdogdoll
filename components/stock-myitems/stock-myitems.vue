@@ -24,9 +24,9 @@
         </text>
 
         <!-- 🔎 搜索：跳转独立页面 -->
-        <button class="search-icon-btn" @click="openSearch">
+        <view class="search-icon-btn" @click="openSearch">
           <uni-icons type="search" size="18" color="#fff" />
-        </button>
+        </view>
       </view>
     </view>
 

@@ -456,12 +456,6 @@ function jump2collectionDetail(id, origin){
   uni.navigateTo({ url: '/pages/collocation_share/collocation_share?collocation_id=' + id + '&origin=' + origin })
 }
 function getImageForList(s){ if(!s) return ''; return s.split(',')[0].trim() }
-function addToStock(){ uni.navigateTo({ url: `/pages/stock/account_book_form/account_book_form?goods_id=${currentId.value}` }) }
-function createBill(sale){
-  const params = { amount: sale.fin_amount, currency: sale.currency, name: goods.value.name, sale_id: sale.id }
-  const q = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
-  uni.navigateTo({ url: `/pages/stock/bill_form/bill_form?${q}` })
-}
 function wishResale(){
   if (wishLoading.value) return
   let token = uni.getStorageSync('token')
@@ -476,9 +470,7 @@ function wishResale(){
   })
 }
 function getHasToken(){ return !!uni.getStorageSync('token') }
-function addToShowcase(){
-  uni.showToast({ title:'该功能即将开放', icon:'none' })
-}
+
 
 /* 评论相关 */
 const handleReplyComment = ({ parent, target }) => {
@@ -541,6 +533,54 @@ const handleCommentSubmit = (submitData) => {
     fail: () => { commentListRef.value?.removeTempComment(tempComment.id); uni.showToast({ title: '网络请求失败', icon: 'none' }) }
   })
 }
+
+// 放入物品栏（分包）
+function addToStock () {
+  const gid = parseInt(currentId.value)
+  if (!gid) { uni.showToast({ title: '缺少商品ID', icon: 'none' }); return }
+  uni.navigateTo({
+    url: `/pkg-stock/stock/account_book_form/account_book_form?goods_id=${gid}`
+  })
+}
+
+// 加入展示柜（分包）
+function addToShowcase () {
+  const g = goods.value || {}
+  if (!g.id || !g.name || !g.brand_id || !g.brand_name || !g.type) {
+    uni.showToast({ title: '商品信息不完整', icon: 'none' })
+    return
+  }
+  const params = {
+    goods_id: g.id,
+    goods_name: g.name,
+    brand_id: g.brand_id,
+    brand_name: g.brand_name,
+    type: g.type
+  }
+  const q = Object.keys(params)
+    .map(k => `${k}=${encodeURIComponent(params[k])}`)
+    .join('&')
+  uni.navigateTo({
+    url: `/pkg-stock/stock/showcase_form/showcase_form?${q}`
+  })
+}
+
+// 创建尾款账单（分包）
+function createBill (sale) {
+  const params = {
+    amount: sale.fin_amount,
+    currency: sale.currency,
+    name: goods.value.name,
+    sale_id: sale.id
+  }
+  const q = Object.keys(params)
+    .map(k => `${k}=${encodeURIComponent(params[k])}`)
+    .join('&')
+  uni.navigateTo({
+    url: `/pkg-stock/stock/bill_form/bill_form?${q}`
+  })
+}
+
 
 /* ===== 初始化/路由变化兜底 ===== */
 onLoad((options = {}) => {
