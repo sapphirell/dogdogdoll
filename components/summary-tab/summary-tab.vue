@@ -53,6 +53,37 @@
         </view>
       </scroll-view>
     </view>
+	
+	<!-- 等待贩售（新增，显示在“今日”下方） -->
+	<view class="section s-waiting" :class="[{ 'is-inview': secInView.waiting }, { 'is-active': activeSection==='waiting' }]">
+	  <view class="section-hd">
+	    <text class="title">蹲开售</text>
+	    <view class="sub sub-row">
+	      <text v-if="waitingLoading" class="loading-mini">加载中…</text>
+	    </view>
+	  </view>
+	
+	  <view v-if="waitingList.length === 0 && !waitingLoading" class="empty">
+	    <image src="/static/empty-box.png" mode="aspectFit"></image>
+	    <text>暂无等待贩售的商品</text>
+	  </view>
+	
+	  <scroll-view v-else scroll-x class="theme-scroll" :show-scrollbar="false">
+	    <view
+	      class="goods-mini"
+	      v-for="it in waitingList"
+	      :key="'wait-' + it.goodsId"
+	      @tap="goGoods(it.goodsId)"
+	    >
+	      <image :src="it.cover" mode="aspectFill"></image>
+	      <text class="type-badge" v-if="it.type">{{ it.type }}</text>
+	      <view class="gname ellipsis-2">{{ it.goods_name }}</view>
+	      <scroll-view class="meta" scroll-y="true">
+	        <text class="size" v-if="it.sizeText">{{ it.sizeText }}</text>
+	      </scroll-view>
+	    </view>
+	  </scroll-view>
+	</view>
 
     <!-- 热榜：今日 / 近7日（总榜）切换 -->
     <view class="section s-hot" :class="[{ 'is-inview': secInView.hot }, { 'is-active': activeSection==='hot' }]">
@@ -363,9 +394,50 @@ function destroyTlObserver () {
   tlObserver = null
 }
 
+/** 等待贩售 */
+const waitingList = ref([])
+const waitingLoading = ref(true)
+
+/** 商品列表（非贩售记录）归一化：不产生 recordId，避免误上报 */
+function normalizePlainGoods (list) {
+  return (list || []).map(it => {
+    const cover = it.goods_image || (Array.isArray(it.goods_images) ? it.goods_images[0] : '')
+    const sizes = Array.isArray(it.sizes) ? it.sizes : []
+    return {
+      recordId: 0, // 关键：不产生记录ID，避免 /sale-record-click
+      goodsId: it.goods_id || it.id,
+      cover,
+      brand_name: it.brand_name || it.brand?.brand_name || '',
+      goods_name: it.goods_name || it.name || '',
+      type: it.type || '',
+      views: it.views || 0,
+      sizeText: sizeText(sizes)
+    }
+  })
+}
+
+/** 拉取等待贩售 */
+function fetchWaitingSale () {
+  waitingLoading.value = true
+  return uni.request({
+    url: websiteUrl.value + '/goods/waiting-sale',
+    method: 'GET',
+    data: { page: 1, page_size: 12, watermark: 1 },
+    timeout: 5000
+  }).then(res => {
+    const list =
+      res?.data?.data?.goods_list ||
+      res?.data?.data?.list ||
+      res?.data?.data ||
+      []
+    waitingList.value = normalizePlainGoods(list)
+  }).finally(() => { waitingLoading.value = false })
+}
+
 /** ----------------- Section In-View & Active（只允许一个旋转） ----------------- */
 const sectionMap = [
   { sel: '.s-today', key: 'today' },
+  { sel: '.s-waiting', key: 'waiting' },
   { sel: '.s-hot', key: 'hot' },
   { sel: '.s-themes', key: 'themes' },
   { sel: '.s-ops', key: 'ops' },
@@ -373,7 +445,7 @@ const sectionMap = [
   { sel: '.s-timeline', key: 'timeline' }
 ]
 const secInView = ref({
-  today: false, hot: false, themes: false,
+  today: false, waiting: false, hot: false, themes: false,
   ops: false, likes: false, timeline: false
 })
 const lastRatios = ref({})
@@ -451,6 +523,7 @@ async function refreshAll (isInit = false) {
   try {
     await Promise.all([
       fetchTodaySales(),    // 今日上新
+	  fetchWaitingSale(),  // 等待贩售
       fetchHotToday(),      // 今日热榜
       fetchThemes(),        // 主题合集
       fetchLikes(),         // 订阅品牌
