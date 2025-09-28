@@ -18,6 +18,9 @@
           />
         </view>
         <view class="cancel" @click="goBack">取消</view>
+		<!-- 小程序端：在右侧加一个占位符，避让胶囊 -->
+		<view v-if="isMP" class="capsule-ph" :style="{ width: capsulePad + 'px' }"></view>
+
       </view>
     </view>
 
@@ -66,16 +69,47 @@ const safePadPx = `${Math.max(0, safeTop.value)}px`
 /* ========= 接收原页传来的列表 ========= */
 const baseList = ref([])
 
+
+/* ========= 小程序胶囊避让 ========= */
+const isMP = ref(false)
+const capsulePad = ref(0) // 右侧占位宽度（像素）
+// #ifdef MP
+isMP.value = true
+// #endif
+// #ifdef MP-WEIXIN
+try {
+  const sys = uni.getSystemInfoSync()
+  // Weixin 小程序专有：获取胶囊位置尺寸
+  const mb = wx.getMenuButtonBoundingClientRect()
+ // 需要占位的区域：从胶囊左侧到屏幕右侧，避免任何控件进入这片区域
+  const rightPad = Math.max(0, sys.windowWidth - mb.left + 6) // 多给 6px 缓冲
+  capsulePad.value = rightPad
+} catch (e) {
+  capsulePad.value = 0
+}
+// #endif
+
 /** H5/小程序通用的 opener 通道 + H5 的后备方案 */
 onLoad(() => {
   // 1) 事件通道
   try {
     const ec = uni.getOpenerEventChannel && uni.getOpenerEventChannel()
     ec && ec.on && ec.on('initList', (data) => {
-      baseList.value = data?.list || []
+           baseList.value = Array.isArray(data?.list)
+             ? data.list
+             : []
     })
   } catch {}
-  // 2) H5 后备：用 history.state 或 localStorage 兜底
+ // 2) 小程序/全端兜底：优先读 uniStorage
+ if (!baseList.value.length) {
+   try {
+     const cached = uni.getStorageSync('__stockList')
+     if (Array.isArray(cached)) baseList.value = cached
+     else if (typeof cached === 'string' && cached) baseList.value = JSON.parse(cached)
+   } catch {}
+ }
+
+ // 3) H5 后备：用 history.state 或 localStorage 兜底（原逻辑保留）
   if (!baseList.value.length) {
     try {
       const fromState = history.state && history.state.__stockList
@@ -238,5 +272,11 @@ const noop = () => {}
 .ellipsis2 {
   overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
   -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+
+/* 小程序胶囊占位（仅在 MP 渲染） */
+.capsule-ph{
+  flex: 0 0 auto;
+  height: 64rpx; /* 与 bar 内控件高度接近即可，不影响布局 */
 }
 </style>
