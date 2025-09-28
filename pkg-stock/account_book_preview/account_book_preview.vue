@@ -308,7 +308,7 @@ const fetchDetail = async (id) => {
 }
 
 const navigateToEdit = () => {
-  uni.navigateTo({ url: `/pages/stock/account_book_form/account_book_form?account_book_id=${props.account_book_id}` })
+  uni.navigateTo({ url: `/pkg-stock/stock/account_book_form/account_book_form?account_book_id=${props.account_book_id}` })
 }
 
 onShow(() => {

@@ -170,7 +170,7 @@ function openPreview(it) {
     it.AccountBookId ||
     it.book_id
   if (!id) { uni.showToast({ title: '缺少ID', icon: 'none' }); return }
-  const url = `/pages/account_book_preview/account_book_preview?account_book_id=${id}`
+  const url = `/pkg-stock/account_book_preview/account_book_preview?account_book_id=${id}`
   if (process.env.UNI_PLATFORM === 'h5') {
     location.href = `/#${url}`
   } else {

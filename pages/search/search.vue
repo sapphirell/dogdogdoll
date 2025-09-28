@@ -5,7 +5,7 @@
     fixed
     :statusBar="true"
     :border="false"
-    backgroundColor="#d6e4f2"
+    backgroundColor="#def9ff"
     color="#111"
   >
     <!-- 中间槽：Tabs（等分四栏，完全显示） -->

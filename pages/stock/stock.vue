@@ -223,13 +223,13 @@ function getBillData(){
 
 // 跳转们（保持原逻辑）
 function jump2test(){ uni.navigateTo({ url: '/pages/drag-image-test/drag-image-test' }) }
-function go2addAccountBook(){ uni.navigateTo({ url: '/pages/stock/account_book_form/account_book_form' }) }
-function go2editor(id){ uni.navigateTo({ url: '/pages/stock/account_book_form/account_book_form?account_book_id=' + id }) }
-function go2addShowCase(){ uni.navigateTo({ url: '/pages/stock/showcase_form/showcase_form' }) }
-function go2editorShowCase(id){ uni.navigateTo({ url: '/pages/stock/showcase_form/showcase_form?showcase_id=' + id }) }
+function go2addAccountBook(){ uni.navigateTo({ url: '/pkg-stock/stock/account_book_form/account_book_form' }) }
+function go2editor(id){ uni.navigateTo({ url: '/pkg-stock/stock/account_book_form/account_book_form?account_book_id=' + id }) }
+function go2addShowCase(){ uni.navigateTo({ url: '/pkg-stock/stock/showcase_form/showcase_form' }) }
+function go2editorShowCase(id){ uni.navigateTo({ url: '/pkg-stock/stock/showcase_form/showcase_form?showcase_id=' + id }) }
 function go2addBill(id){
-  if (id === false) return uni.navigateTo({ url: '/pages/stock/bill_form/bill_form' })
-  uni.navigateTo({ url: '/pages/stock/bill_form/bill_form?bill_id=' + id })
+  if (id === false) return uni.navigateTo({ url: '/pkg-stock/stock/bill_form/bill_form' })
+  uni.navigateTo({ url: '/pkg-stock/stock/bill_form/bill_form?bill_id=' + id })
 }
 function getStatusText(display){
   const map = { 0:'审核中', 2:'人工复核中', 3:'违规隐藏中' }
