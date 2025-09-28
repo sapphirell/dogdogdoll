@@ -272,7 +272,7 @@ const delImageHandle = (item, index) => {
   sortList()
 }
 const delImageMp = (item, index) => {}
-function go2preview(id) { uni.navigateTo({ url: '/pages/account_book_preview/account_book_preview?account_book_id=' + id }) }
+function go2preview(id) { uni.navigateTo({ url: '/pkg-stock/account_book_preview/account_book_preview?account_book_id=' + id }) }
 const handleItemClick = (item) => { emit('item-click', item); if (!props.customClick) go2preview(item.id) }
 
 const rpx2px = (v) => width.value * v / 750

@@ -709,7 +709,7 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 .sticky-titlebar{
   position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
   backdrop-filter: blur(6px);
-  border-bottom: 1rpx solid rgba(0,0,0,.06);
+  border-bottom: none;
   display: grid;
   grid-template-columns: 120rpx 1fr 120rpx;
   align-items: end;

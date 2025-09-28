@@ -157,7 +157,7 @@ function openSearch(){
   try { history.replaceState({ ...(history.state||{}), __stockList: list }, '') } catch {}
   try { localStorage.setItem('__stockList', JSON.stringify(list)) } catch {}
   uni.navigateTo({
-    url: '/pages/stock-myitems-search/stock-myitems-search',
+    url: '/pkg-stock/stock-myitems-search/stock-myitems-search',
     success(res){
       const ec = res.eventChannel
       ec && ec.emit && ec.emit('initList', { list })

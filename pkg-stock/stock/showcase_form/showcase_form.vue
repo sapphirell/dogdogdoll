@@ -693,11 +693,15 @@ onLoad(async (options) => {
   background: #ffffffd9; backdrop-filter: blur(4px);
 }
 .publish-btn {
-  flex: 0 0 48%;
-  height: 44px; line-height: 44px;
+  flex: 0 0 80%;
+  height: 44px; line-height: 44px; width: 500rpx;
   background: linear-gradient(135deg, #97e7f7, #d5acd6);
   color: #fff; font-size: 16px; text-align: center;
   border-radius: 18px; font-weight: 600; margin: auto 0;
+  width: 600rpx;border: none!important;
+}
+.publish-btn:after {
+	border: none!important;
 }
 .delete-link { flex: 0 0 auto; color: #999; font-size: 15px; padding: 6px 4px; }
 </style>
