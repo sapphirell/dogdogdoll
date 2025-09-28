@@ -25,12 +25,17 @@
 						<!-- <text class="font-alimamashuhei logo"
 							style="">娃圈狗狗助手</text> -->
 						<image src="/static/new-icon/title.gif" mode="widthFix"
-							style="width: 400rpx;max-height: 180rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;">
+							style="width: 300rpx;max-height: 150rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;">
 						</image>
 						<server-selector @server-change="handleServerChange"></server-selector>
 					</view>
 					<!-- <goods-search width="720rpx" :hiddenIcon="false"></goods-search> -->
-					<switch-search @select="handleSearchSelect" mode="jump" width="95%" background="#f8f8f8" />
+					<!-- <switch-search @select="handleSearchSelect" mode="jump" width="95%" background="#f8f8f8" /> -->
+					<!-- 假搜索框：点击跳转到搜索页 -->
+					<view class="fake-search" @tap="goSearch" hover-class="fake-search--hover">
+					  <uni-icons type="search" size="18" color="#9aa0a6" />
+					  <text class="fake-search__placeholder">搜索娃物 / 店铺 / 妆师 / 毛娘</text>
+					</view>
 				</view>
 				<view style="margin: 20rpx 0rpx 0rpx 0rpx; padding: 5px 10px 0px 10px;border-radius: 20px 20px 0 0;">
 					<!-- 四个小方块按钮 -->
@@ -453,6 +458,13 @@
 			url: "/pages/sale_news/sale_news?id=" + item.id + "&brand_id=" + item.brand_id
 		})
 	}
+	
+	const goSearch = () => {
+	  uni.navigateTo({
+	    url: '/pages/search/search?tabs=1,2,3,4&mode=jump'
+	  })
+	}
+
 	// 新增获取文章列表方法
 	const getArticles = () => {
 		uni.request({
@@ -1716,5 +1728,25 @@
 		&.loaded {
 			opacity: 1;
 		}
+	}
+	
+	.fake-search{
+	  width: 670rpx;
+	  height: 72rpx;
+	  margin: 12rpx 0 8rpx;
+	  padding: 0 24rpx;
+	  background: #f8f8f8;
+	  border-radius: 40rpx;
+	  display: flex;
+	  align-items: center;
+	  gap: 14rpx;
+	  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.03);
+	}
+	.fake-search__placeholder{
+	  font-size: 26rpx;
+	  color: #9aa0a6;
+	}
+	.fake-search--hover{
+	  opacity: .9;
 	}
 </style>
