@@ -5,10 +5,10 @@
 
     <!-- 右上角小按钮（仅刷新，不可切换时段） -->
     <view class="top-tools">
-      <view class="refresh-chip mini" @tap="manualRefresh">
+<!--      <view class="refresh-chip mini" @tap="manualRefresh">
         <uni-icons type="reload" size="18" color="#fff"></uni-icons>
         <text class="refresh-text">{{ lastUpdatedText }}</text>
-      </view>
+      </view> -->
     </view>
 
     <!-- 列表 -->
@@ -246,7 +246,6 @@ $text-light: #8c7aa8;
   box-shadow:0 10rpx 30rpx rgba(154,101,255,.1); margin-bottom:24rpx;
   transition: transform .3s ease, box-shadow .3s ease;
 }
-.card:active{ transform: translateY(-4rpx); box-shadow:0 16rpx 36rpx rgba(154,101,255,.15); }
 .left{ width:200rpx; height:200rpx; position:relative; flex-shrink:0;
   .img{ width:100%; height:100%; border-radius:20rpx; object-fit:cover;
     background: linear-gradient(135deg, #f0f7ff, #f8f0ff); }
@@ -296,5 +295,4 @@ $text-light: #8c7aa8;
   box-shadow: 0 12rpx 32rpx rgba(154,101,255,.35);
   z-index: 999; transition: transform .3s ease;
 }
-.to-top:active{ transform: scale(.95); }
 </style>

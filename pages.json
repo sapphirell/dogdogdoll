@@ -215,6 +215,13 @@
         { "path": "creator_base/news/news" },
         { "path": "creator_base/set_hair_showcase/set_hair_showcase" }
       ]
+    },
+	{
+      "root": "pkg-common",
+      "pages": [
+        { "path": "brand-pick/brand-pick", "style": { "navigationBarTitleText": "请选择品牌" } },
+        { "path": "goods-pick/goods-pick", "style": { "navigationBarTitleText": "请选择商品" } }
+      ]
     }
   ],
 
