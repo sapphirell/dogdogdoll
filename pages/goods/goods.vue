@@ -558,7 +558,7 @@ function addToShowcase () {
     type: g.type
   }
   const q = Object.keys(params)
-    .map(k => `${k}=${encodeURIComponent(params[k])}`)
+    .map(k => `${k}=${(params[k])}`)
     .join('&')
   uni.navigateTo({
     url: `/pkg-stock/stock/showcase_form/showcase_form?${q}`
@@ -574,7 +574,7 @@ function createBill (sale) {
     sale_id: sale.id
   }
   const q = Object.keys(params)
-    .map(k => `${k}=${encodeURIComponent(params[k])}`)
+    .map(k => `${k}=${(params[k])}`)
     .join('&')
   uni.navigateTo({
     url: `/pkg-stock/stock/bill_form/bill_form?${q}`
