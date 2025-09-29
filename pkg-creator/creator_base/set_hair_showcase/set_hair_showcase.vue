@@ -1,5 +1,6 @@
 <template>
   <view class="artist-container">
+	  <view-logs />
     <!-- 顶部 Tab，与妆图设置同风格 -->
     <view class="tabs">
       <view class="tab-item" :class="{ active: activeTab === 'list' }" @click="switchTab('list')">毛图列表</view>
@@ -157,6 +158,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue'
@@ -397,6 +399,14 @@ onMounted(async () => {
   await Promise.all([fetchMaterials(), fetchWigStyleMap(), fetchArtistInfo()])
   reload()
 })
+ // 返回本页时刷新：列表页重置分页拉首屏；置顶页刷新艺术家信息
+ onShow(() => {
+   if (activeTab.value === 'list') {
+    reload();               // page=1、noMore=false、list=[] 后 fetchList()
+  } else {
+     fetchArtistInfo();      // 置顶图取最新
+   }
+ })
 </script>
 
 <style lang="less" scoped>

@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
   <!-- 透明固定自定义导航 -->
   <zhouWei-navBar
     type="transparentFixed"

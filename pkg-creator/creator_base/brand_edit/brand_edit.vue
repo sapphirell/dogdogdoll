@@ -1,5 +1,6 @@
 <template>
 	<view class="brand-edit-container">
+		<view-logs />
 		<view class="form-wrapper">
 			<!-- 新增LOGO编辑区域 -->
 			<view class="logo-editor">

@@ -130,7 +130,7 @@
 	  
 	  <!-- 妆师 -->
 	  <view class="card-block">
-	    <view class="form-row" :class="{ disabled: !isEditable }" style="border-bottom:none;">
+	    <view class="form-row artist-row" :class="{ disabled: !isEditable }" style="border-bottom:none;">
 	      <text class="label">妆师</text>
 	      <view style="flex:1;">
 	        <common-search
@@ -644,9 +644,16 @@ onLoad(async (options) => {
   padding: 6px 10px;
 }
 .form-row{
-  display:flex; align-items:baseline;padding: 8px 2px; gap: 10px;
+  display:flex; align-items:baseline; padding: 8px 2px; gap: 10px;
   &.disabled { opacity:.7; }
 }
+
+/* 仅对“妆师”这一行覆写 */
+ .artist-row { align-items: flex-start; }          /* 顶部对齐，规避 baseline 差异 */
+ .artist-row .label { height: 72rpx; line-height: 72rpx; } /* 与搜索框同高，视觉居中 */
+ .artist-search { height: 72rpx; display:flex; align-items:center; } /* 约束宿主高度 */
+ 
+ 
 .form-row.equal .label{
   width: 80px; flex-shrink: 0; color:#666; font-size:14px;
   font-weight: 600;

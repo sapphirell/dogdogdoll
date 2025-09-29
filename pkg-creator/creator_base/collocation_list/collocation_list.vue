@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<view-logs />
 		<!-- 顶部天蓝色半圆背景 -->
 		<view class="top-bg"></view>
 

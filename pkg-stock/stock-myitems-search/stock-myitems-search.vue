@@ -1,5 +1,6 @@
 <!-- pages/stock/stock-myitems-search.vue -->
 <template>
+	<view-logs />
   <view class="wrap" :style="{ '--safe-top': safeTop + 'px' }">
     <!-- 吸顶搜索 -->
     <view class="search-bar" :style="{ paddingTop: safePadPx }">

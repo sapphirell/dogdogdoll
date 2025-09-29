@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<view-logs />
 		<!-- 有品牌时显示的品牌管理页面 -->
 		<view v-if="hasBrand">
 			<!-- 头部品牌信息 -->

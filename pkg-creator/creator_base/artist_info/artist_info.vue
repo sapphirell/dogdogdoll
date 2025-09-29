@@ -1,5 +1,6 @@
 <template>
   <view class="container">
+	  <view-logs />
     <!-- 顶部标签栏 -->
     <view class="tabs">
       <view class="tab-item" :class="{ active: activeTab === 'artist' }" @click="switchTab('artist')">

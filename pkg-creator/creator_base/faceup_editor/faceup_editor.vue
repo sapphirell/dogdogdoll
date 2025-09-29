@@ -1,5 +1,6 @@
 <template>
   <view class="faceup-form-container">
+	  <view-logs />
     <scroll-view class="form-scroll" scroll-y>
       <view class="form-body">
         <!-- 标题 -->

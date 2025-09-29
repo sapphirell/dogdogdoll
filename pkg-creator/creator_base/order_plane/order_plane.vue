@@ -1,5 +1,6 @@
 <template>
   <view class="order-plan-page">
+	  <view-logs />
     <!-- 状态筛选 -->
     <view class="filter-tabs">
       <view

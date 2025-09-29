@@ -1,5 +1,6 @@
 <template>
   <view class="brand-news-page">
+	  <view-logs />
     <!-- 文章列表 -->
     <scroll-view
       class="news-list"
