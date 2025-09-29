@@ -1,6 +1,6 @@
 <!-- components/relation-picker/relation-picker.vue -->
 <template>
-	<common-modal :visible="internalVisible" @update:visible="handleModalVisibilityChange" top="200rpx">
+	<common-modal :visible="internalVisible" @update:visible="handleModalVisibilityChange" top="100rpx">
 		<view class="relation-picker-container">
 			<view class="picker-header">
 				<view class="mode-switch">

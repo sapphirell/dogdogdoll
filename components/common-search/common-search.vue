@@ -77,35 +77,14 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { websiteUrl } from "../../common/config.js";
 
-// 新增 props 接收父组件参数
+// ====== props（保持不变）======
 const props = defineProps({
-  mode: {
-    type: String,
-    default: 'jump', // 默认跳转模式
-    validator: (value) => ['jump', 'fill'].includes(value)
-  },
-  width: {
-    type: String,
-    default: '100%'
-  },
-  background: {
-    type: String,
-    default: ''
-  },
-  fontSize: {
-    type: String,
-    default: ''
-  },
-  hiddenIcon: {
-    type: Boolean,
-    default: false
-  },
-  // 是否显示索引选择器
-  showIndexSelector: {
-    type: Boolean,
-    default: false
-  },
-  // 索引选项配置
+  mode: { type: String, default: 'jump', validator: v => ['jump', 'fill'].includes(v) },
+  width: { type: String, default: '100%' },
+  background: { type: String, default: '' },
+  fontSize: { type: String, default: '' },
+  hiddenIcon: { type: Boolean, default: false },
+  showIndexSelector: { type: Boolean, default: false },
   indexOptions: {
     type: Array,
     default: () => [
@@ -114,23 +93,15 @@ const props = defineProps({
       { label: "毛娘", value: "hairstylist" }
     ]
   },
-  // 默认选中的索引
-  defaultIndex: {
-    type: String,
-    default: ""
-  },
-  // ★ 新增：是否隐藏“拼音、缩写、别名都可以搜”提示
-  hideHintText: {
-    type: Boolean,
-    default: false
-  }
+  defaultIndex: { type: String, default: "" },
+  hideHintText: { type: Boolean, default: false }
 });
-
 defineOptions({ inheritAttrs: false });
 
-// 事件
+// ====== emits（保持不变）======
 const emit = defineEmits(['select', 'close-associate', 'index-change']);
 
+// ====== state ======
 const searchTerm = ref('');
 const results = ref([]);
 const currentIndex = ref(props.defaultIndex || (props.indexOptions[0]?.value || ""));
@@ -139,107 +110,123 @@ const currentIndex = ref(props.defaultIndex || (props.indexOptions[0]?.value || 
 const showTip = ref(false);
 let tipTimer = null;
 
+// ✅ 关键修复点：一次性抑制“选中后立刻再次搜索”
+const suppressSearchOnce = ref(false);
+
+// ✅ 输入请求防抖，避免抖动
+let inputDebounceTimer = null;
+
+// ====== tip 控制 ======
 const triggerTip = () => {
   if (!props.showIndexSelector) return;
   clearTimeout(tipTimer);
   showTip.value = true;
   tipTimer = setTimeout(() => (showTip.value = false), 2000);
 };
-
-watch(() => props.showIndexSelector, (val) => {
-  if (val) triggerTip();
-});
-
-onMounted(() => {
-  if (props.showIndexSelector) triggerTip();
-});
+watch(() => props.showIndexSelector, (val) => { if (val) triggerTip(); });
+onMounted(() => { if (props.showIndexSelector) triggerTip(); });
 onUnmounted(() => {
   clearTimeout(tipTimer);
+  clearTimeout(inputDebounceTimer);
 });
 
-// 当前索引对应的标签
+// ====== 选择器派生 ======
 const currentIndexLabel = computed(() => {
   const option = props.indexOptions.find(opt => opt.value === currentIndex.value);
   return option ? option.label : "选择类型";
 });
-
-// 索引标签数组（用于picker的range属性）
 const indexLabels = computed(() => props.indexOptions.map(opt => opt.label));
-
-// 当前选中的索引位置
 const selectedIndex = computed(() =>
   props.indexOptions.findIndex(opt => opt.value === currentIndex.value)
 );
 
-// 关闭联想功能（★ 同步把ID清零给父组件）
+// ====== 关闭联想（保留原语义，同时抑制一次搜索）======
 const closeAssociate = () => {
   results.value = [];
+  suppressSearchOnce.value = true; // 防止立即又搜一遍
   emit('close-associate', searchTerm.value);
-  emit('select', 0, searchTerm.value); // ★ 强制回传 id=0，满足“关闭=清零ID”
+  emit('select', 0, searchTerm.value); // 清零ID
 };
 
-// 处理索引变更
+// ====== 切换索引 ======
 const handleIndexChange = (e) => {
   const index = e.detail.value;
   currentIndex.value = props.indexOptions[index]?.value || "";
   emit('index-change', currentIndex.value);
-  // 切换时关闭提示
   showTip.value = false;
 
-  // 如果已有搜索词，则重新搜索
-  if (searchTerm.value.trim() !== '') {
+  // 有词时重搜（若被一次性抑制则跳过）
+  if (searchTerm.value.trim() !== '' && !suppressSearchOnce.value) {
     onSearchInput();
+  } else {
+    suppressSearchOnce.value = false; // 用过就复位
   }
 };
 
+// ====== 输入搜索（带防抖 + 抑制一次）======
 const onSearchInput = async () => {
-  if (searchTerm.value.trim() === '') {
-    results.value = [];
+  // 选中后本次输入直接跳过，避免“关了又开”
+  if (suppressSearchOnce.value) {
+    suppressSearchOnce.value = false;
     return;
   }
 
-  emit('select', 0, searchTerm.value); // 输入时先把ID清空
-
-  // 构建请求URL
-  let url = `${websiteUrl.value}/search-brand?search=${encodeURIComponent(searchTerm.value)}`;
-  if (currentIndex.value) {
-    url += `&index=${currentIndex.value}`;
+  const kw = searchTerm.value.trim();
+  if (kw === '') {
+    results.value = [];
+    emit('select', 0, ''); // 清空时也同步通知父级清零
+    return;
   }
 
-  try {
-    const res = await uni.request({
-      url,
-      method: 'GET',
-      header: { 'Content-Type': 'application/json' }
-    });
+  // 输入时先把ID清空
+  emit('select', 0, kw);
 
-    if (res.data.status == "success") {
-      results.value = res.data.data || [];
-      return;
-    } else {
+  clearTimeout(inputDebounceTimer);
+  inputDebounceTimer = setTimeout(async () => {
+    // 构建请求URL
+    let url = `${websiteUrl.value}/search-brand?search=${encodeURIComponent(kw)}`;
+    if (currentIndex.value) url += `&index=${currentIndex.value}`;
+
+    try {
+      const res = await uni.request({
+        url,
+        method: 'GET',
+        header: { 'Content-Type': 'application/json' }
+      });
+      if (res.data?.status == "success") {
+        results.value = res.data.data || [];
+      } else {
+        results.value = [];
+      }
+    } catch (error) {
+      console.error('请求错误:', error);
       results.value = [];
-      return;
     }
-  } catch (error) {
-    console.error('请求错误:', error);
-    results.value = [];
-    return;
-  }
+  }, 150);
 };
 
+// ====== 点选结果 ======
 const onTap = (brandId, brandName) => {
   if (props.mode === 'jump') {
     uni.navigateTo({ url: `/pages/brand/brand?brand_id=${brandId}` });
   } else if (props.mode === 'fill') {
+    // 1) 设定输入框文案
     searchTerm.value = brandName;
+    // 2) 立刻关闭结果
     results.value = [];
+    // 3) 通知父级已选择
     emit('select', brandId, brandName);
+    // 4) 抑制紧随其后的 onSearchInput（一次）
+    suppressSearchOnce.value = true;
   }
 };
 
+// 清空输入
 function cancel() {
   searchTerm.value = '';
   results.value = [];
+  // 清空也算一次“人为关闭”，抑制 onSearchInput 的即时触发
+  suppressSearchOnce.value = true;
 }
 </script>
 
@@ -284,36 +271,24 @@ function cancel() {
       color: white;
       transition: all 0.3s ease;
 
-      &:active {
-        transform: translateY(2rpx);
-      }
+      &:active { transform: translateY(2rpx); }
 
-      text {
-        font-weight: 500;
-      }
+      text { font-weight: 500; }
     }
 
     .selector-tip {
       position: absolute;
-      top: 66rpx;
-      left: 0;
+      top: 66rpx; left: 0;
       background: rgba(0, 0, 0, 0.8);
-      color: #fff;
-      font-size: 22rpx;
-      padding: 10rpx 16rpx;
-      border-radius: 10rpx;
-      white-space: nowrap;
-      box-shadow: 0 6rpx 18rpx rgba(0,0,0,0.15);
-      animation: tipFade .2s ease both;
-      z-index: 2;
+      color: #fff; font-size: 22rpx;
+      padding: 10rpx 16rpx; border-radius: 10rpx;
+      white-space: nowrap; box-shadow: 0 6rpx 18rpx rgba(0,0,0,0.15);
+      animation: tipFade .2s ease both; z-index: 2;
 
       &:after {
         content: "";
-        position: absolute;
-        top: -10rpx;
-        left: 22rpx;
-        border-width: 6rpx;
-        border-style: solid;
+        position: absolute; top: -10rpx; left: 22rpx;
+        border-width: 6rpx; border-style: solid;
         border-color: transparent transparent rgba(0,0,0,0.8) transparent;
       }
     }
@@ -343,13 +318,8 @@ function cancel() {
     color: #333;
     border-bottom: 1px solid #ececec;
 
-    &:last-child {
-      border-bottom: none;
-    }
-
-    &:hover {
-      color: #007aff;
-    }
+    &:last-child { border-bottom: none; }
+    &:hover { color: #007aff; }
   }
 }
 
@@ -379,12 +349,7 @@ function cancel() {
 }
 
 .close-associate {
-  text {
-    font-size: 22rpx;
-    color: #ccc;
-  }
-  &:active {
-    background-color: #f0f0f0;
-  }
+  text { font-size: 22rpx; color: #ccc; }
+  &:active { background-color: #f0f0f0; }
 }
 </style>

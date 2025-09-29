@@ -208,7 +208,7 @@
         <text class="title">最近入库</text>
         <view class="sub" style="display:flex; gap: 12rpx; align-items:center;">
           <text v-if="opsLoading">加载中…</text>
-          <text class="link-more" @tap="go2recentFeed">查看更多 ></text>
+          <text class="link-more" @tap="go2recentFeed">查看更多</text>
         </view>
       </view>
 
@@ -1080,7 +1080,6 @@ onBeforeUnmount(() => {
   position:relative;
   transition: all 0.3s ease;
 
-  &:active{ transform: scale(0.98); box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1); }
 
   .rank{
     position:absolute; top: 16rpx; left: 16rpx;
@@ -1137,7 +1136,6 @@ onBeforeUnmount(() => {
   margin-right: 20rpx; background: #fff; border-radius: 20rpx; overflow: hidden;
   transition: all 0.3s ease; position: relative;
 
-  &:active { transform: scale(0.96); box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1); }
 
   image{ width: 220rpx; height: 220rpx; background: linear-gradient(135deg, #f0f4f8, #e2e8f0); }
 
