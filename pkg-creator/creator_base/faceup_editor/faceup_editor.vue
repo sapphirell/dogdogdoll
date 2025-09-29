@@ -13,15 +13,15 @@
           />
         </view>
 
-        <!-- 头型名称（使用两步关联选择：品牌→商品） -->
+        <!-- 头型名称（品牌→商品，可选） -->
         <view class="form-item">
-          <text class="label">头型名称</text>
+          <text class="label">头型名称（可选）</text>
           <view class="relation-picker-trigger" @click="goPickHead">
             <view class="rp-left">
               <image v-if="selectedGoods.cover" :src="selectedGoods.cover" mode="aspectFill" class="thumb" />
               <view class="rp-texts">
                 <text v-if="form.head_name" class="selected-value">{{ form.head_name }}</text>
-                <text v-else class="placeholder">请选择头型（先选品牌再选商品）</text>
+                <text v-else class="placeholder">可选择头型（先选品牌再选商品）</text>
                 <text v-if="selectedBrand.brand_name" class="sub">{{ selectedBrand.brand_name }}</text>
               </view>
             </view>
@@ -29,7 +29,7 @@
           </view>
         </view>
 
-        <!-- 关联商品ID（隐藏） -->
+        <!-- 关联商品ID（隐藏，可选） -->
         <input v-model="form.goods_id" type="hidden" style="visibility:hidden;" />
 
         <!-- 性别 -->
@@ -97,7 +97,6 @@
 
     <!-- 底部操作 -->
     <view class="form-footer">
-      <!-- 新增：灰色“删除”小字（无背景，点击区域小） -->
       <text v-if="isEdit" class="delete-link" @click="handleDelete">删除</text>
       <button class="btn cancel" @click="handleCancel">取消</button>
       <button class="btn submit" @click="handleSubmit">{{ isEdit ? '保存修改' : '添加妆面' }}</button>
@@ -126,13 +125,13 @@ const form = ref({
   id: 0,
   title: '',
   head_name: '',
-  goods_id: '',
+  goods_id: '',           // 可选
   sex: '男',
   styles_tags: [],
   face_up_image_urls: []
 })
 
-/** 新增：本地保存已选品牌/商品的更多信息（用于显示缩略图/品牌名） */
+/** 本地已选品牌/商品（展示用，可空） */
 const selectedBrand = ref({})
 const selectedGoods = ref({})
 
@@ -158,15 +157,14 @@ onLoad(async (options) => {
   })
 })
 
-/** —— 关联选择入口：跳转到 /pkg-common/brand-pick/brand-pick—— */
+/** —— 关联选择入口（可选）—— */
 function goPickHead () {
- // 一次性监听全局事件，等待子页回传
- uni.$once('associate:done', (payload) => {
-   selectedBrand.value = payload?.brand || {}
-   selectedGoods.value = payload?.goods || {}
-   form.value.head_name = selectedGoods.value?.name || ''
-   form.value.goods_id  = selectedGoods.value?.id   || ''
- })
+  uni.$once('associate:done', (payload) => {
+    selectedBrand.value = payload?.brand || {}
+    selectedGoods.value = payload?.goods || {}
+    form.value.head_name = selectedGoods.value?.name || ''
+    form.value.goods_id  = selectedGoods.value?.id   || ''
+  })
 
   uni.navigateTo({
     url: '/pkg-common/brand-pick/brand-pick',
@@ -210,8 +208,8 @@ async function fetchFaceupDetail (id) {
       form.value = {
         id: d.id,
         title: d.title,
-        head_name: d.head_name,
-        goods_id: d.goods_id,
+        head_name: d.head_name || '',
+        goods_id: d.goods_id || '',
         sex: d.sex === 1 ? '男' : '女',
         styles_tags: d.styles_tags ? d.styles_tags.split(',').filter(Boolean) : [],
         face_up_image_urls: d.images || (d.face_up_image_urls ? d.face_up_image_urls.split(',') : [])
@@ -268,7 +266,7 @@ async function handleUploadImage () {
     }
     uni.showToast({ title: `成功上传${files.length}张`, icon: 'success' })
   } catch (e) {
-    uni.showToast({ title: '上传失败', icon: 'none' })
+    uni.showToast({ title: e?.message || '上传失败', icon: 'none' })
   } finally {
     uploading.value = false
     uploadProgress.value = 0
@@ -291,8 +289,8 @@ function removeImage (index) {
   })
 }
 
-/** 删除（仅编辑态显示） */
-function handleDelete () {
+/** 删除（编辑态），id 改为拼接到 URL，并回显后端 msg */
+async function handleDelete () {
   if (!isEdit.value) return
   uni.showModal({
     title: '删除确认',
@@ -304,19 +302,20 @@ function handleDelete () {
       try {
         uni.showLoading({ title: '删除中...' })
         const resp = await uni.request({
-          url: `${websiteUrl.value}/brand-manager/faceup/delete`,
-          method: 'POST',
-          data: { id: form.value.id },
+          // 👇 id 拼接到 URL
+          url: `${websiteUrl.value}/brand-manager/faceup/delete?id=${encodeURIComponent(form.value.id)}`,
+          method: 'POST', // 若后端支持 DELETE，可改为 method: 'DELETE'
           header: { 'Content-Type': 'application/json', 'Authorization': token }
         })
-        if (resp.data?.status === 'success') {
-          uni.showToast({ title: '已删除', icon: 'success' })
+        if (resp.statusCode >= 200 && resp.statusCode < 300 && resp.data?.status === 'success') {
+          uni.showToast({ title: resp.data?.msg || '已删除', icon: 'success' })
           setTimeout(() => uni.navigateBack(), 800)
         } else {
-          uni.showToast({ title: resp.data?.msg || '删除失败', icon: 'none' })
+          // 显示后端返回的 msg
+          uni.showToast({ title: resp.data?.msg || `删除失败(${resp.statusCode})`, icon: 'none' })
         }
       } catch (e) {
-        uni.showToast({ title: '删除失败', icon: 'none' })
+        uni.showToast({ title: e?.message || '删除失败', icon: 'none' })
       } finally {
         uni.hideLoading()
       }
@@ -324,41 +323,54 @@ function handleDelete () {
   })
 }
 
-/** 提交 */
+/** 提交：关联娃头可选；失败时回显后端 msg */
 async function handleSubmit () {
-  if (!form.value.title) return uni.showToast({ title: '请输入妆面标题', icon: 'none' })
-  if (!form.value.head_name) return uni.showToast({ title: '请选择头型名称', icon: 'none' })
-  if (!form.value.goods_id) return uni.showToast({ title: '请选择关联商品', icon: 'none' })
-  if (!form.value.face_up_image_urls.length) return uni.showToast({ title: '请至少上传一张图片', icon: 'none' })
+  if (!form.value.title?.trim()) {
+    return uni.showToast({ title: '请输入妆面标题', icon: 'none' })
+  }
+  if (!form.value.face_up_image_urls.length) {
+    return uni.showToast({ title: '请至少上传一张图片', icon: 'none' })
+  }
 
   try {
     uni.showLoading({ title: '提交中...' })
+
+    // 基础必传
     const submitData = {
       id: form.value.id,
-      title: form.value.title,
-      head_name: form.value.head_name,
-      goods_id: form.value.goods_id,
+      title: form.value.title.trim(),
       sex: form.value.sex === '男' ? 1 : 2,
-      styles_tags: form.value.styles_tags.join(','),
-      face_up_image_urls: form.value.face_up_image_urls.join(',')
+      styles_tags: form.value.styles_tags.join(','),                // 可空字符串
+      face_up_image_urls: form.value.face_up_image_urls.join(',')   // 至少1张
     }
+    // 关联娃头：可选，有就带上，没有就不发这个字段
+    if (form.value.head_name?.trim()) submitData.head_name = form.value.head_name.trim()
+    if (form.value.goods_id) submitData.goods_id = form.value.goods_id
+
     const apiUrl = isEdit.value
       ? `${websiteUrl.value}/brand-manager/faceup/update`
       : `${websiteUrl.value}/brand-manager/faceup/add`
+
     const token = uni.getStorageSync('token')
     if (!token) { uni.showToast({ title: '未登录，请先登录', icon: 'none' }); return }
+
     const res = await uni.request({
       url: apiUrl,
       method: 'POST',
       data: submitData,
       header: { 'Content-Type': 'application/json', 'Authorization': token }
     })
-    if (res.data.status === 'success') {
-      uni.showToast({ title: isEdit.value ? '更新成功' : '添加成功', icon: 'success' })
+
+    // 成功与失败均回显后端 msg
+    if (res.statusCode >= 200 && res.statusCode < 300 && res.data?.status === 'success') {
+      uni.showToast({ title: res.data?.msg || (isEdit.value ? '更新成功' : '添加成功'), icon: 'success' })
       setTimeout(() => uni.navigateBack(), 1200)
     } else {
-      uni.showToast({ title: res.data.msg || '提交失败', icon: 'none' })
+      // 典型失败示例：{"data":null,"msg":"参数错误: 缺少id","status":"failed"}
+      uni.showToast({ title: res.data?.msg || `提交失败(${res.statusCode})`, icon: 'none' })
     }
+  } catch (e) {
+    uni.showToast({ title: e?.message || '提交失败', icon: 'none' })
   } finally {
     uni.hideLoading()
   }
@@ -388,7 +400,7 @@ function handleCancel () { uni.navigateBack() }
   .radio-label { display:flex; align-items:center; font-size:28rpx; text{ margin-left:8rpx; } }
 }
 
-/* 关联选择触发样式（新增缩略图与副标题） */
+/* 关联选择触发样式 */
 .relation-picker-trigger {
   border: 1rpx solid #eee;
   border-radius: 8rpx;
@@ -404,7 +416,6 @@ function handleCancel () { uni.navigateBack() }
   .sub { font-size: 22rpx; color:#9aa4b2; margin-top: 4rpx; }
 }
 
-/* 标签区域同原样式 */
 .tag-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12rpx; }
 .tags-container { display:flex; flex-wrap:wrap; gap:12rpx; min-height:60rpx; padding:10rpx; border:1rpx solid #eee; border-radius:8rpx; background:#fafafa;
   .tag-item { background:#f5f5f5; border-radius:20rpx; padding:8rpx 16rpx; display:flex; align-items:center; gap:6rpx;
@@ -433,7 +444,7 @@ function handleCancel () { uni.navigateBack() }
 /* 底部操作：新增“删除”小字 */
 .form-footer{
   display:flex; align-items:center; gap:20rpx; padding:20rpx; background:#fff; position:sticky; bottom:0;
-  .delete-link{ color:#999; font-size:26rpx; line-height:1; /* 无 padding、点击区域小 */ }
+  .delete-link{ color:#999; font-size:26rpx; line-height:1; }
   .btn{
     flex:1; border-radius:40rpx; font-size:28rpx; padding:20rpx 0;
     &::after{ border:none; }

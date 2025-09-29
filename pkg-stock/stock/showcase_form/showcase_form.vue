@@ -77,7 +77,7 @@
     <!-- ========== Tab 面板：人设（出生日期/性别/性格） ========== -->
     <view v-show="activeTab==='persona'">
       <view class="card-block">
-        <!-- 出生日期（使用现成日期组件） -->
+        <!-- 出生日期 -->
         <view class="form-row equal">
           <text class="label">出生日期</text>
           <view
@@ -110,7 +110,7 @@
           </picker>
         </view>
 
-        <!-- 性格（同等长度、灰底无边框） -->
+        <!-- 性格 -->
         <view class="form-row equal">
           <text class="label">性格</text>
           <input
@@ -127,33 +127,42 @@
 
     <!-- ========== Tab 面板：关联（妆师 / 关联娃物） ========== -->
     <view v-show="activeTab==='relation'">
-      <!-- 妆师 -->
-      <view class="card-block">
-        <view class="form-row" :class="{ disabled: !isEditable }" style="border-bottom:none;">
-          <text class="label">妆师</text>
-          <view style="flex:1;">
-            <common-search
-              v-if="isEditable"
-              mode="fill"
-              :showIndexSelector="false"
-              defaultIndex="bjd_artist"
-              background="#f8f8f8"
-              :hideHintText="true"
-              @select="onArtistSelect"
-              @close-associate="onArtistClose"
-              class="artist-search"
-            />
-            <view v-else class="readonly-row">
-              <text class="readonly-name">{{ makeupArtist || '（未填写）' }}</text>
-            </view>
-  <!--          <view class="mini-hint">
-              选中即填入ID；若没有匹配，点“关闭联想”
-            </view> -->
-          </view>
-        </view>
-      </view>
+	  
+	  <!-- 妆师 -->
+	  <view class="card-block">
+	    <view class="form-row" :class="{ disabled: !isEditable }" style="border-bottom:none;">
+	      <text class="label">妆师</text>
+	      <view style="flex:1;">
+	        <common-search
+	          v-if="isEditable"
+	          mode="fill"
+	          :showIndexSelector="false"
+	          defaultIndex="bjd_artist"
+	          background="#f8f8f8"
+	          :hideHintText="true"
+	          @select="onArtistSelect"
+	          @close-associate="onArtistClose"
+	          class="artist-search"
+	          :keywords="makeupArtist"
+	        />
+	        <!-- ✅ 新增：可编辑态下也显示已选择结果 -->
+	        <view v-if="isEditable && (makeupArtist || makeupArtistBrandId)" class="selected-artist">
+	          <text class="prefix">已选择：</text>
+	          <text class="name">{{ makeupArtist || '（未命名）' }}</text>
+	          <text class="id" v-if="makeupArtistBrandId">（ID：{{ makeupArtistBrandId }}）</text>
+	          <text class="clear" @tap="clearArtist">清除</text>
+	        </view>
+	  
+	        <!-- 只读态保持原样 -->
+	        <view v-else-if="!isEditable" class="readonly-row">
+	          <text class="readonly-name">{{ makeupArtist || '（未填写）' }}</text>
+	        </view>
+	      </view>
+	    </view>
+	  </view>
 
-      <!-- 关联娃物 -->
+
+      <!-- 关联娃物（改为跳转新版关联页面） -->
       <view>
         <view class="relation-trigger" v-if="isEditable" @tap="showRelationPicker">
           <text class="placeholder">点击关联娃物</text>
@@ -161,6 +170,7 @@
         </view>
       </view>
 
+      <!-- 已关联列表（保持原逻辑） -->
       <view class="saveCollocationDataList">
         <view v-for="(item, index) in saveCollocationDataList" :key="index">
           <view class="saveCollocationDataItem">
@@ -180,15 +190,7 @@
       </view>
     </view>
 
-    <!-- 关联弹窗 -->
-    <relation-picker
-      v-model:visible="showSelectTab"
-      :typeList="typeList"
-      :goodsList="goodsList"
-      @confirm="handleRelationConfirm"
-      @cancel="handleRelationCancel"
-    />
-
+    <!--（旧）关联弹窗：已移除，改用新版页面返回 associate:done -->
     <!-- 日期弹层 -->
     <common-date-picker
       v-model:show="showBirthSheet"
@@ -219,42 +221,22 @@ import { getQiniuToken, uploadImageToQiniu, chooseImageList } from "../../../com
 
 /* ================= 图片：长按拖拽排序 ================= */
 const uploadList = ref([]) // string[]（URL）
-
-// 用 URL 生成稳定 id，顺序变化 id 不变，避免内部 movable 失配
 const hash = (s) => String(s).split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)
-
-// 拖拽组件的数据：只传必要字段（不传 name/引导字符）
 const dragItems = computed(() =>
-  uploadList.value.map((url, i) => ({
-    id: `img_${hash(url)}`,     // ⚠️ 仅用 url 生成，顺序变化 id 也稳定
+  uploadList.value.map((url) => ({
+    id: `img_${hash(url)}`,
     image_url: url
   }))
 )
-
-// 拖拽：根据 sortedIds 重新排列 uploadList
 function onDragSort(sortedIds) {
   const idToUrl = new Map(dragItems.value.map(it => [it.id, it.image_url]))
-  const newList = sortedIds.map(id => idToUrl.get(id)).filter(Boolean)
-  // 使用新数组，避免同引用导致的渲染抖动
-  uploadList.value = [...newList]
+  uploadList.value = sortedIds.map(id => idToUrl.get(id)).filter(Boolean)
 }
-
-// 拖拽：组件整批更新（新增/删除/换序）
-function onDragUpdate(newItems) {
-  uploadList.value = newItems.map(it => it.image_url)
-}
-
-// 删除单张
+function onDragUpdate(newItems) { uploadList.value = newItems.map(it => it.image_url) }
 function onDragDelete(id) {
   const idx = dragItems.value.findIndex(it => it.id === id)
-  if (idx >= 0) {
-    const list = [...uploadList.value]
-    list.splice(idx, 1)
-    uploadList.value = list
-  }
+  if (idx >= 0) { const list = [...uploadList.value]; list.splice(idx, 1); uploadList.value = list }
 }
-
-// 点击仅预览，不跳转
 function onDragItemClick(item) {
   const idx = dragItems.value.findIndex(x => x.id === item.id)
   if (idx >= 0) viewFullImage(idx)
@@ -267,17 +249,15 @@ const tabs = [
   { key: 'relation',label: '关联' },
 ]
 const activeTab = ref('basic')
-const underlineStyle = ref('')          // 用 px 精准定位
+const underlineStyle = ref('')
 const instance = getCurrentInstance()
-
 function updateUnderline() {
   nextTick(() => {
     const q = uni.createSelectorQuery().in(instance)
     q.select(`#tab-${activeTab.value}`).boundingClientRect()
      .select('#tabs-underline').boundingClientRect()
      .exec((res) => {
-        const tabRect = res?.[0]
-        const wrapRect = res?.[1]
+        const tabRect = res?.[0], wrapRect = res?.[1]
         if (tabRect && wrapRect) {
           const left = tabRect.left - wrapRect.left
           const width = tabRect.width
@@ -293,9 +273,8 @@ watch(activeTab, updateUnderline)
 /* ============== 表单字段 ============== */
 const display = ref(-1) // 0=审核中
 const isEditable = computed(() => [-1, 1, 3].includes(display.value))
-const showDelete = computed(() => Number(props.showcase_id) > 0)
-
 const props = defineProps(["showcase_id"])
+const showDelete = computed(() => Number(props.showcase_id) > 0)
 
 const name = ref('')
 const description = ref('')
@@ -306,7 +285,7 @@ const showBirthSheet = ref(false)
 function onBirthConfirm(val) { birthDate.value = val }
 
 // 性别
-const gender = ref('') // 'male' | 'female' | 'other' | ''
+const gender = ref('')
 const genderOptions = [
   { value: "male", label: "男" },
   { value: "female", label: "女" },
@@ -318,9 +297,7 @@ const genderIndex = computed(() => {
 })
 const onGenderChange = (e) => {
   const idx = Number(e.detail.value)
-  if (idx >= 0 && idx < genderOptions.length) {
-    gender.value = genderOptions[idx].value
-  }
+  if (idx >= 0 && idx < genderOptions.length) gender.value = genderOptions[idx].value
 }
 
 // 性格
@@ -330,9 +307,6 @@ const personality = ref('')
 const makeupArtist = ref('')
 const makeupArtistBrandId = ref(0)
 const saveCollocationDataList = ref([])
-const goodsList = ref([])
-const typeList = ref([])
-const showSelectTab = ref(false)
 
 /* ============== 工具：性别/日期映射 ============== */
 function toGenderInt(v) { if (!v) return undefined; switch (v) { case 'male': return 1; case 'female': return 2; case 'other': return 3; default: return 0 } }
@@ -362,29 +336,58 @@ function onArtistClose(currentInput) {
   makeupArtist.value = (currentInput || "").trim()
 }
 
-/* ============== 关联 ============== */
-const handleRelationConfirm = (data) => {
-  try {
+/* ============== 关联：改为跳转新版关联页面 ============== */
+/** 旧的 relation-picker 已移除；保留函数名 showRelationPicker，内部改成跳转新页并监听 associate:done */
+function showRelationPicker () {
+  if (!isEditable.value) return
+  // 只监听一次，避免重复叠加
+  uni.$once('associate:done', (payload) => {
+    // 统一适配 payload 结构
+    const brand = payload?.brand || {}
+    const goods = payload?.goods || {}
+    // 生成 relationData（与原 saveCollocationDataList 项一致）
     const relationData = {
-      goods_id: data.goods.id || 0,
-      goods_name: data.goods.name,
-      goods_image: data.goods.image || '',
-      brand_id: data.brand.id || 0,
-      brand_name: data.brand.name || (data.isFuzzy ? '' : '未知品牌'),
-      type: data.type || (data.isFuzzy ? '未知类型' : '')
+      goods_id: Number(goods.id) || 0,
+      goods_name: goods.name || '',
+      goods_image: goods.cover || goods.image || '',
+      brand_id: Number(brand.id) || 0,
+      brand_name: brand.brand_name || brand.name || '',
+      type: goods.type || ''
     }
+    // 复用原有去重规则：id 或 名称同名即视为重复
     const isExist = saveCollocationDataList.value.some(item =>
-      (item.goods_id !== 0 && item.goods_id === relationData.goods_id) ||
-      item.goods_name === relationData.goods_name
+      (relationData.goods_id && item.goods_id === relationData.goods_id) ||
+      (!!relationData.goods_name && item.goods_name === relationData.goods_name)
     )
-    if (!isExist) saveCollocationDataList.value.push(relationData)
-    else uni.showToast({ title: '已存在相同关联项', icon: 'none' })
-  } catch {
-    uni.showToast({ title: '保存关联信息失败', icon: 'none' })
-  }
+    if (!relationData.goods_name && !relationData.goods_id) {
+      uni.showToast({ title: '未选择有效的娃物', icon: 'none' })
+      return
+    }
+    if (isExist) {
+      uni.showToast({ title: '已存在相同关联项', icon: 'none' })
+    } else {
+      saveCollocationDataList.value.push(relationData)
+      uni.showToast({ title: '已添加', icon: 'success' })
+    }
+  })
+
+  // 跳转新版关联页（品牌→商品二段式）
+  uni.navigateTo({
+    url: '/pkg-common/brand-pick/brand-pick',
+    // 可选：预选最近一次关联的品牌/商品（若你希望带入）
+    success(res) {
+      const last = saveCollocationDataList.value.slice(-1)[0]
+      if (last && last.brand_id) {
+        res.eventChannel.emit('associate:init', {
+          preselect: {
+            brand: { id: last.brand_id, brand_name: last.brand_name },
+            goods: last.goods_id ? { id: last.goods_id, name: last.goods_name } : null
+          }
+        })
+      }
+    }
+  })
 }
-const handleRelationCancel = () => {}
-const showRelationPicker = () => { showSelectTab.value = true }
 
 /* ============== 详情回填 ============== */
 async function getShowCaseInfo() {
@@ -485,7 +488,7 @@ async function submitForm() {
   let postData = {
     name: name.value,
     description: description.value,
-    image_urls: uploadList.value.join(','), // 已按拖拽顺序
+    image_urls: uploadList.value.join(','), // 按拖拽顺序
     origin: getScene(),
     relations: saveCollocationDataList.value.map(item => ({
       relation_goods_id: item.goods_id,
@@ -525,21 +528,28 @@ async function submitForm() {
   }
 }
 
-/* ============== 其它 ============== */
+/* ============== 其它（保持原有） ============== */
 function getTypes() {
   uni.request({
     url: websiteUrl.value + '/goods-types',
     method: 'GET',
     timeout: 5000,
-    success: (res) => { typeList.value = res.data?.data || [] },
+    success: (res) => { /* 兼容保留：若后续需要 */ },
     fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' })
   })
 }
 function deleteCollcation(index) { saveCollocationDataList.value.splice(index, 1) }
 
+
+function clearArtist () {
+  if (!isEditable.value) return
+  makeupArtist.value = ''
+  makeupArtistBrandId.value = 0
+}
+
 uni.setNavigationBarTitle({ title: '私养展示' })
 onLoad(async (options) => {
-  // 从搭配页带参数回填
+  // 从搭配页带参数回填（保留原逻辑）
   if (options.goods_id && options.goods_name && options.brand_id && options.brand_name && options.type) {
     let goodsImage = ''
     try {
@@ -605,7 +615,7 @@ onLoad(async (options) => {
   transition: left .2s ease, width .2s ease;
 }
 
-/* 基本文字输入：灰底无边框 */
+/* 基本文字输入 */
 .field-input{
   padding: 10px; margin: 12px 15px 6px; display: block;
   background:#f8f8f8; border-radius: 10px; border:none;
@@ -634,7 +644,7 @@ onLoad(async (options) => {
   padding: 6px 10px;
 }
 .form-row{
-  display:flex; align-items:center; padding: 8px 2px; gap: 10px;
+  display:flex; align-items:baseline;padding: 8px 2px; gap: 10px;
   &.disabled { opacity:.7; }
 }
 .form-row.equal .label{
@@ -646,7 +656,7 @@ onLoad(async (options) => {
   flex:1; height: 44px; line-height: 44px;
   background:#f8f8f8; border-radius: 8px; padding: 0 12px;
   display:flex; align-items:center; justify-content:space-between;
-  border:none;                     /* ✅ 无边框 */
+  border:none;
 }
 .cell-input{ outline: none; border:none; }
 .cell-input::placeholder{ color:#999; }
@@ -689,7 +699,7 @@ onLoad(async (options) => {
 .footer {
   position: fixed; bottom: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: flex-end;
-  gap: 12px; padding: 10px 16px env(safe-area-inset-bottom);margin-bottom: 10rpx;
+  gap: 12px; padding: 10px 16px env(safe-area-inset-bottom); margin-bottom: 10rpx;
   background: #ffffffd9; backdrop-filter: blur(4px);
 }
 .publish-btn {
@@ -698,10 +708,18 @@ onLoad(async (options) => {
   background: linear-gradient(135deg, #97e7f7, #d5acd6);
   color: #fff; font-size: 16px; text-align: center;
   border-radius: 18px; font-weight: 600; margin: auto 0;
-  width: 600rpx;border: none!important;
+  width: 600rpx; border: none!important;
 }
-.publish-btn:after {
-	border: none!important;
-}
+.publish-btn:after { border: none!important; }
 .delete-link { flex: 0 0 auto; color: #999; font-size: 15px; padding: 6px 4px; }
+
+.selected-artist {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px; padding: 8px 10px;
+  background: #f6f7f9; border-radius: 8px;
+  .prefix { color:#888; font-size: 12px; }
+  .name { color:#222; font-weight: 600; font-size: 14px; }
+  .id { color:#999; font-size: 12px; }
+  .clear { margin-left: auto; color:#999; font-size: 12px; padding: 4px 6px; }
+}
 </style>
