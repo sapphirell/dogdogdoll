@@ -1,5 +1,6 @@
 <template>
   <view class="artist-container">
+	  <view-logs />
     <!-- 顶部Tab切换（顺序已对调） -->
     <view class="tabs">
       <view 
@@ -105,7 +106,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { websiteUrl } from "@/common/config.js";
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js';
 
@@ -316,11 +318,17 @@ const navigateToEditFaceup = (id) => {
 };
 
 // 初始化
-onMounted(async () => {
+onShow(async () => {
   uni.setNavigationBarTitle({ title: "作品展示设置" });
+ // 关键：重置分页，避免保留旧页码导致看不到新数据
+ currentPage.value = 1;
+ hasMore.value = true;
+
   await fetchArtistInfo();
   // 默认即加载妆图列表
-  if (activeTab.value === 'faceup') fetchFaceupList();
+ if (activeTab.value === 'faceup') {
+   await fetchFaceupList();
+ }
 });
 </script>
 

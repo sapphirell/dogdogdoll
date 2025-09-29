@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
   <common-page head_color="#def9ff">
      <summary-tab v-if="active==='summary'"></summary-tab>
   </common-page>

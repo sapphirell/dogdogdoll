@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
   <view class="page" :style="{ transform: `translateY(-${liftPx}px)` }">
     <!-- 顶部大图背景：未选商品时为空背景；选中后展示商品图，并加底部白色渐变 -->
     <view class="hero">

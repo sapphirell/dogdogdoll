@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<view-logs />
 		<!-- 表单区域 -->
 		<scroll-view scroll-y class="form-container">
 			<view class="form-item">

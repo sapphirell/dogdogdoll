@@ -1,5 +1,6 @@
 <template>
   <view class="container">
+	  <view-logs />
     <!-- 分类导航栏 -->
     <scroll-view scroll-x="true" class="category-scroll" :scroll-with-animation="true">
       <view class="category-list">

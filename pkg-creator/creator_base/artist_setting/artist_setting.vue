@@ -1,6 +1,6 @@
 <template>
 	<view>
-		
+		<view-logs />
 		<!-- 功能按钮区域 -->
 		<view class="function-section">
 			<view class="function-item" @click="navigateTo('makeupGallery')">

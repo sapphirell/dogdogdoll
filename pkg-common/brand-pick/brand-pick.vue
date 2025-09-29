@@ -1,7 +1,8 @@
 <template>
+	<view-logs />
   <view class="page" :style="{ transform: `translateY(-${liftPx}px)` }">
     <!-- 圆形占位图 / logo -->
-    <view class="avatar-wrap">
+    <view class="avatar-wrap"  @tap="focusInput">
       <image
         v-if="brand.logo_image"
         :src="brand.logo_image"
@@ -20,6 +21,7 @@
       <view class="input-row">
         <input
           v-model="keyword"
+		  :focus="inputFocus"
           placeholder="请输入品牌名称"
           :maxlength="20"
           confirm-type="search"
@@ -53,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, getCurrentInstance, onUnmounted } from 'vue'
+import { ref, getCurrentInstance, onUnmounted, nextTick } from 'vue'
 import { searchBrands, getBrandInfo } from '@/api/associate.js'
 
 const brand = ref({
@@ -65,25 +67,34 @@ const keyword = ref('')
 const results = ref([])
 const focusing = ref(false) // 仅做状态记录
 const liftPx = ref(0)       // JS 计算的抬起像素（px）
+const inputFocus = ref(false)  
 
 // 父级 eventChannel（用于完成时回传）
 const parentEC = getCurrentInstance()?.proxy?.getOpenerEventChannel?.()
+
+
+function focusInput() {
+  // 保险写法：先关再开，确保各端都能重新触发一次 focus
+  inputFocus.value = false
+  nextTick(() => { inputFocus.value = true })
+}
 
 function onFocus() {
   focusing.value = true
   // 目标：上移 300rpx
   try {
     // uni.upx2px 在各端可用，把 rpx 转成 px
-    const px = typeof uni?.upx2px === 'function' ? uni.upx2px(300) : 300
+    const px = typeof uni?.upx2px === 'function' ? uni.upx2px(200) : 200
     liftPx.value = px
   } catch (e) {
     // 兜底：没有 upx2px 时近似处理
-    liftPx.value = 300
+    liftPx.value = 200
   }
 }
 function onBlur() {
   focusing.value = false
   liftPx.value = 0
+  inputFocus.value = false 
 }
 
 function doSearch() {
