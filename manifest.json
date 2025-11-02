@@ -20,7 +20,8 @@
         "modules" : {
             "VideoPlayer" : {},
             "Camera" : {},
-            "Push" : {}
+            "Push" : {},
+            "OAuth" : {}
         },
         /* 应用发布信息 */
         "distribute" : {
@@ -58,6 +59,11 @@
                     "NSCalendarsUsageDescription" : "用于向您添加购买提醒事项",
                     "NSContactsUsageDescription" : "用于添加您的好友",
                     "NSLocalNetworkUsageDescription" : "App需要联网获取贩售资讯信息"
+                },
+                "capabilities" : {
+                    "entitlements" : {
+                        "com.apple.developer.associated-domains" : [ "applinks:m.dogdogdoll.com" ]
+                    }
                 }
             },
             /* SDK配置 */
@@ -76,6 +82,12 @@
                                 "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/72x72.png"
                             }
                         }
+                    }
+                },
+                "oauth" : {
+                    "weixin" : {
+                        "appid" : "",
+                        "UniversalLinks" : "https://m.dogdogdoll.com/uni-universallinks/__UNI__5D7AAEE/"
                     }
                 }
             },
@@ -215,5 +227,6 @@
         "uniStatistics" : {
             "enable" : false
         }
-    }
+    },
+    "_spaceID" : "mp-ad066e0c-9ee2-418a-8419-a43b2365f3be"
 }

@@ -157,6 +157,8 @@
 
 
 		</view>
+		
+		<im-fab></im-fab>
 	</view>
 
 </template>

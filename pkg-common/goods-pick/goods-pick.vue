@@ -2,7 +2,7 @@
 	<view-logs />
   <view class="page" :style="{ transform: `translateY(-${liftPx}px)` }">
     <!-- 顶部大图背景：未选商品时为空背景；选中后展示商品图，并加底部白色渐变 -->
-    <view class="hero">
+    <view class="hero" :style="{ height: heroHeight }">
       <image
         v-if="hasGoods"
         class="hero-bg"
@@ -66,6 +66,9 @@ const keyword = ref('')
 const results = ref([])
 const hasGoods = computed(() => !!goods.value.id)
 const liftPx = ref(0) // JS 计算抬起像素（px）
+
+// ★ 新增：根据是否已选中商品，动态控制 hero 高度（rpx）
+const heroHeight = computed(() => (hasGoods.value ? '650rpx' : '400rpx'))
 
 // 接收上个页面传来的 brand 参数
 onLoad((opts) => {
@@ -154,12 +157,13 @@ function confirm(){
   will-change: transform;
 }
 
-/* 顶部大图区域（高度略降，缩短与输入框距离） */
+/* 顶部大图区域（高度随是否选中商品而变，默认 400rpx；选中后由内联样式设为 650rpx） */
 .hero{
   position: relative;
-  height: 440rpx; /* 原 500rpx -> 440rpx */
+  height: 400rpx;                 /* 默认高度，未选中时 */
   background: linear-gradient(180deg,#f6f8fb,#ffffff);
   overflow: hidden;
+  transition: height .24s ease;   /* 平滑过渡高度变化 */
 }
 .hero-bg{
   position:absolute; left:0; top:0; right:0; bottom:0;
@@ -221,7 +225,7 @@ function confirm(){
   flex:1; height:88rpx; line-height:88rpx; border-radius:999rpx; font-weight:600;
 }
 .actions .ghost{ background:#f5f5f5; color:#666; }
-.actions .primary{ background:#ffd84d; color:#111; }
+.actions .primary{ background: #a0e8ff; color: #fff;     box-shadow: 0 0 30px #00c1ff40; }
 .actions .primary:disabled{ background:#f0f0f0; color:#bbb; }
 /* 去除 uni-button 默认::after 边框 */
 .actions .ghost::after, .actions .primary::after { border: none; }

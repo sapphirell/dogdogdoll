@@ -1169,7 +1169,7 @@
 	}
 
 	.brand_box {
-		display: flex;
+		// display: flex;
 		flex-wrap: wrap;
 		justify-content: flex-start;
 		/* 修改为从左开始 */

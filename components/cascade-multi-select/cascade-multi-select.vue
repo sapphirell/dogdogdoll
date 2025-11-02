@@ -1,4 +1,4 @@
-<!-- components/cascade-multi-selector.vue -->
+<!-- components/cascade-multi-select.vue -->
 <template>
   <bottom-popup :show="show" @close="closePopup">
     <view class="cascade-container">

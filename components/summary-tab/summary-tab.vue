@@ -313,7 +313,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue' // FIX: 增加 nextTick
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import { websiteUrl, asyncGetUserInfo } from '@/common/config.js'
 
@@ -392,6 +392,26 @@ function destroyTlObserver () {
     tlObserver.disconnect()
   }
   tlObserver = null
+}
+
+// FIX: 新增——每次时间线数据变化后，重置显隐状态并重建观察器
+function resetTimelineRevealAndObserve () {
+  stopStaggerReveal()
+  visibleCount.value = 0
+  staggerStarted.value = false
+  nextTick(() => {
+    initTlObserver()
+    forceRevealIfStuck()
+  })
+}
+
+// FIX: 新增——极限兜底：若短时间内仍未显现任何一条，强制全部可见，避免空白
+function forceRevealIfStuck () {
+  setTimeout(() => {
+    if (timeline.value.length > 0 && visibleCount.value === 0 && !staggerStarted.value) {
+      visibleCount.value = timeline.value.length
+    }
+  }, 800)
 }
 
 /** 等待贩售 */
@@ -684,6 +704,10 @@ function fetchTimeline() {
     norm.sort((a, b) => a.time - b.time)
     timeline.value = norm
 
+    // FIX: 每次时间线数据变更，都重置显隐状态并重建观察器
+    resetTimelineRevealAndObserve()
+
+    // 保留你的兜底：当下已在视口内时立即尝试启动
     setTimeout(() => {
       if (!staggerStarted.value) {
         uni.createSelectorQuery().in(instance).select('.timeline').boundingClientRect(rect => {
@@ -875,6 +899,11 @@ async function handlePullDownRefresh () {
   try {
     uni.showNavigationBarLoading()
     await refreshAll(false)
+    // FIX: 若 timeline 有数据但未显现，重置并尝试启动
+    if (timeline.value.length > 0 && visibleCount.value === 0) {
+      resetTimelineRevealAndObserve()
+      startStaggerReveal()
+    }
   } catch (e) {
   } finally {
     uni.stopPullDownRefresh()
@@ -898,7 +927,13 @@ onShow(() => {
     const now = todayKey()
     if (last && last !== now) {
       // 隔天自动刷新数据
-      refreshAll(false)
+      refreshAll(false).then(() => {
+        // FIX: 隔天刷新后兜底一次（只影响时间线显隐/观察器）
+        if (timeline.value.length > 0) {
+          resetTimelineRevealAndObserve()
+          startStaggerReveal()
+        }
+      })
     }
   } catch (_) {}
 })

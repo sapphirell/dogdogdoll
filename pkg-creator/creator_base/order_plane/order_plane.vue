@@ -264,6 +264,20 @@
         </button>
       </view>
     </uni-popup>
+	
+	<!-- 类型选择弹层（居中） -->
+	<uni-popup ref="choosePopup" type="center" :is-mask-click="true">
+	  <view class="choose-type-modal">
+	    <text class="choose-title">选择创建类型</text>
+	    <view class="choose-btns">
+	      <button class="choose-btn artist" @click="gotoCreate(1)">妆师</button>
+	      <button class="choose-btn wig" @click="gotoCreate(2)">毛娘</button>
+	    </view>
+	    <button class="choose-cancel" @click="choosePopup.close()">取消</button>
+	  </view>
+	</uni-popup>
+	
+	
   </view>
 </template>
 
@@ -564,75 +578,107 @@ const switchTab = (tab) => {
 }
 
 // 显示新增弹窗
+// const showAddDialog = () => {
+//   resetForm()
+//   isEditMode.value = false
+//   popup.value.open()
+// }
 const showAddDialog = () => {
-  resetForm()
-  isEditMode.value = false
-  popup.value.open()
+  choosePopup.value?.open?.()
 }
+
 
 // 编辑开单计划
+// const editPlan = (plan) => {
+//   resetForm()
+//   isEditMode.value = true
+//   currentPlanId.value = plan.id
+//   formData.value = {
+//     artist_name: plan.artist_name,
+//     artist_type: plan.artist_type,
+//     order_type: plan.order_type,
+//     max_participants: plan.max_participants,
+//     max_submissions_per_user: plan.max_submissions_per_user,
+//     images: [...(plan.images || [])],
+//     order_config: {
+//       tiers: [...(plan.order_config?.tiers || [])],
+//       addons: [...(plan.order_config?.addons || [])]
+//     }
+//   }
+//   if (plan.open_time) {
+//     formData.value.open_date = formatDate(plan.open_time * 1000, 'yyyy-MM-dd')
+//     formData.value.open_time = formatDate(plan.open_time * 1000, 'HH:mm')
+//   }
+//   if (plan.close_time) {
+//     formData.value.close_date = formatDate(plan.close_time * 1000, 'yyyy-MM-dd')
+//     formData.value.close_time = formatDate(plan.close_time * 1000, 'HH:mm')
+//   }
+//   // 按该计划类型刷新默认配置（支持毛娘）
+//   fetchCommonConfigs(plan.artist_type)
+//   popup.value.open()
+// }
+
+// 2) 编辑 => 带 id 跳转到表单页（编辑）
 const editPlan = (plan) => {
-  resetForm()
-  isEditMode.value = true
-  currentPlanId.value = plan.id
-  formData.value = {
-    artist_name: plan.artist_name,
-    artist_type: plan.artist_type,
-    order_type: plan.order_type,
-    max_participants: plan.max_participants,
-    max_submissions_per_user: plan.max_submissions_per_user,
-    images: [...(plan.images || [])],
-    order_config: {
-      tiers: [...(plan.order_config?.tiers || [])],
-      addons: [...(plan.order_config?.addons || [])]
-    }
-  }
-  if (plan.open_time) {
-    formData.value.open_date = formatDate(plan.open_time * 1000, 'yyyy-MM-dd')
-    formData.value.open_time = formatDate(plan.open_time * 1000, 'HH:mm')
-  }
-  if (plan.close_time) {
-    formData.value.close_date = formatDate(plan.close_time * 1000, 'yyyy-MM-dd')
-    formData.value.close_time = formatDate(plan.close_time * 1000, 'HH:mm')
-  }
-  // 按该计划类型刷新默认配置（支持毛娘）
-  fetchCommonConfigs(plan.artist_type)
-  popup.value.open()
+	if (plan.artist_type == 1) {
+		uni.navigateTo({ url: `/pkg-creator/creator_base/order_plane/form-artist?id=${plan.id}` })
+	}else {
+	    uni.navigateTo({ url: `/pkg-creator/creator_base/order_plane/form-wig?id=${plan.id}` })
+	}
 }
 
-// 复制开单计划 → 新增表单
+
+// // 复制开单计划 → 新增表单
+// const copyPlan = (plan) => {
+//   uni.showModal({
+//     title: '复制开单计划',
+//     content: '将该开单计划复制到新增表单。建议修改接单方式与时间后再提交。',
+//     success: (res) => {
+//       if (!res.confirm) return
+//       resetForm()
+//       isEditMode.value = false
+//       currentPlanId.value = null
+//       formData.value = {
+//         artist_name: plan.artist_name,
+//         artist_type: plan.artist_type,
+//         order_type: plan.order_type,
+//         max_participants: plan.max_participants,
+//         max_submissions_per_user: plan.max_submissions_per_user,
+//         open_date: '',
+//         open_time: '',
+//         close_date: '',
+//         close_time: '',
+//         images: [...(plan.images || [])],
+//         order_config: {
+//           tiers: [...(plan.order_config?.tiers || [])],
+//           addons: [...(plan.order_config?.addons || [])]
+//         }
+//       }
+//       fetchCommonConfigs(plan.artist_type)
+//       popup.value.open()
+//       uni.showToast({ title: '已复制到新增表单', icon: 'success' })
+//     }
+//   })
+// }
+// 3) 复制 => 通过 eventChannel 把整条 plan 传给表单页
 const copyPlan = (plan) => {
   uni.showModal({
     title: '复制开单计划',
     content: '将该开单计划复制到新增表单。建议修改接单方式与时间后再提交。',
     success: (res) => {
       if (!res.confirm) return
-      resetForm()
-      isEditMode.value = false
-      currentPlanId.value = null
-      formData.value = {
-        artist_name: plan.artist_name,
-        artist_type: plan.artist_type,
-        order_type: plan.order_type,
-        max_participants: plan.max_participants,
-        max_submissions_per_user: plan.max_submissions_per_user,
-        open_date: '',
-        open_time: '',
-        close_date: '',
-        close_time: '',
-        images: [...(plan.images || [])],
-        order_config: {
-          tiers: [...(plan.order_config?.tiers || [])],
-          addons: [...(plan.order_config?.addons || [])]
+      // 为稳妥：把 images/order_config 维持列表里你已经解析后的结构
+      uni.navigateTo({
+        url: '/pkg-creator/creator_base/order_plane/form',
+        success: (r) => {
+          // 传“复制来的计划”，表单页会清空时间并切换为新增模式
+          r.eventChannel.emit('copyFromPlan', plan)
         }
-      }
-      fetchCommonConfigs(plan.artist_type)
-      popup.value.open()
+      })
       uni.showToast({ title: '已复制到新增表单', icon: 'success' })
     }
   })
 }
-
 // 重置表单
 const resetForm = () => {
   formData.value = {
@@ -822,6 +868,29 @@ const getStatusClass = (plan) => {
   if (now > plan.close_time) return 'inactive'
   return 'active'
 }
+
+// 顶部已有：import { ref, onMounted, watch, computed } from 'vue'
+const choosePopup = ref(null)
+
+// 新增：两个不同页面路径（按需改成你的实际路径）
+const CREATE_PAGE_MAP = {
+  1: '/pkg-creator/creator_base/order_plane/form-artist', // 妆师
+  2: '/pkg-creator/creator_base/order_plane/form-wig'     // 毛娘
+}
+
+
+// 新增：根据选择跳转不同页面
+const gotoCreate = (artistType) => {
+  const url = CREATE_PAGE_MAP[artistType]
+  if (!url) {
+    uni.showToast({ title: '未配置的页面路径', icon: 'none' })
+    return
+  }
+  choosePopup.value?.close?.()
+  uni.navigateTo({ url })
+}
+
+
 </script>
 
 <style lang="less" scoped>
@@ -1324,4 +1393,55 @@ const getStatusClass = (plan) => {
     box-shadow: 0 4rpx 12rpx rgba(30, 209, 225, 0.3);
   }
 }
+
+.choose-type-modal{
+  width: 560rpx;
+  max-width: 88vw;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx 28rpx;
+  box-shadow: 0 12rpx 40rpx rgba(0,0,0,0.12);
+  text-align: center;
+}
+.choose-title{
+  display:block;
+  font-size: 32rpx;
+  font-weight: 700;
+  color:#333;
+  margin-bottom: 24rpx;
+}
+.choose-btns{
+  display:flex;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+.choose-btn{
+  flex:1;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  margin: 0;
+}
+.choose-btn::after{ border:none; }
+.choose-btn.artist{
+  background: linear-gradient(135deg, #8fecff, #c1ddff);
+  color:#2c3e50;
+}
+.choose-btn.wig{
+  background: linear-gradient(135deg, #ffd2f8, #ffc1d9);
+  color:#5a2c3e;
+}
+.choose-cancel{
+  width: 100%;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 36rpx;
+  background:#fff;
+  color:#666;
+  font-size: 26rpx;
+  margin-top: 40rpx;
+}
+.choose-cancel::after{ border:none; }
+
 </style>

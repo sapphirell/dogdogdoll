@@ -45,20 +45,28 @@
 
       <!-- 价值 -->
       <view class="form-item">
-        <text class="form-label">价值</text>
-        <input class="form-input" type="digit" placeholder="请输入价值" placeholder-class="placeholder-style" v-model="price" />
+        <text class="form-label">价值(一位小数)</text>
+        <!-- 允许输入小数，最多一位；若为整数不补 .0 -->
+        <input
+          class="form-input"
+          type="text"
+          inputmode="decimal"
+          placeholder="请输入价值"
+          placeholder-class="placeholder-style"
+          v-model="price"
+          @input="onPriceInput"
+          @blur="onPriceBlur"
+        />
       </view>
 
       <!-- 付款状态 -->
       <view class="form-item">
         <text class="form-label">付款状态</text>
-        <!-- 可点击的“输入框”外观 -->
         <view class="form-input" @tap.stop="openPayPopup">
           <view class="picker-content">{{ paymentLabel }}</view>
           <uni-icons type="right" size="20" class="input-icon"></uni-icons>
         </view>
 
-        <!-- 下方 PopUp（锚定在当前 form-item 下方） -->
         <view v-if="showPayPopup" class="dropdown-popup" @tap.stop>
           <view
             v-for="opt in PAYMENT_OPTIONS"
@@ -113,49 +121,41 @@
       </view>
 
       <view v-if="showMoreInfo" class="more-info-form">
-        <!-- 尺寸详情 -->
         <view class="form-item size_detail">
           <text class="form-label">尺寸详情</text>
           <input v-model="moreInfo.sizeDetail" placeholder="请输入尺寸详情" class="form-input" />
         </view>
 
-        <!-- 颜色 -->
         <view class="form-item">
           <text class="form-label">颜色</text>
           <input v-model="moreInfo.color" placeholder="请输入颜色" class="form-input" />
         </view>
 
-        <!-- 店名 -->
         <view class="form-item">
           <text class="form-label">店名</text>
           <input v-model="moreInfo.shopName" placeholder="请输入店名" class="form-input" />
         </view>
 
-        <!-- 头围 -->
         <view class="form-item">
           <text class="form-label">头围</text>
           <input v-model="moreInfo.headCircumference" placeholder="请输入头围(cm)" class="form-input" type="digit" />
         </view>
 
-        <!-- 肩宽 -->
         <view class="form-item">
           <text class="form-label">肩宽</text>
           <input v-model="moreInfo.shoulderWidth" placeholder="请输入肩宽(cm)" class="form-input" type="digit" />
         </view>
 
-        <!-- 妆师 -->
         <view class="form-item">
           <text class="form-label">妆师</text>
           <input v-model="moreInfo.makeupArtist" placeholder="请输入妆师" class="form-input" />
         </view>
 
-        <!-- 备注 -->
         <view class="form-item">
           <text class="form-label">备注</text>
           <input v-model="moreInfo.remark" placeholder="请输入备注" class="form-input" />
         </view>
 
-        <!-- 购入时间（使用自定义日期选择器） -->
         <view class="form-item">
           <text class="form-label">购入时间</text>
           <view class="date-picker-wrapper" @tap="showBuyPicker = true">
@@ -163,7 +163,6 @@
           </view>
         </view>
 
-        <!-- 到家日期（使用自定义日期选择器） -->
         <view class="form-item">
           <text class="form-label">到家日期</text>
           <view class="date-picker-wrapper" @tap="showArrivalPicker = true">
@@ -171,13 +170,11 @@
           </view>
         </view>
 
-        <!-- 附加值 -->
         <view class="form-item">
           <text class="form-label">附加值（妆费或h了多少入）</text>
           <input v-model="moreInfo.additionalValue" placeholder="请输入附加值" class="form-input" type="digit" />
         </view>
 
-        <!-- 存放位置 -->
         <view class="form-item">
           <text class="form-label">存放位置</text>
           <input v-model="moreInfo.position" placeholder="请输入存放位置" class="form-input" />
@@ -212,14 +209,13 @@
         <text>仅用于记录您所购买过的物品，其他人不会看到</text>
       </view>
 
-      <!-- 操作按钮 -->
       <view class="button-group">
         <button class="delete-button" v-if="isEdit" @click="handleDelete">删除账本</button>
         <button class="submit-button" @click="postSubmit">记录{{ isEdit ? '修改' : '新增' }}</button>
       </view>
     </view>
 
-    <!-- ===== 自定义日期选择器挂载处 ===== -->
+    <!-- 日期选择器 -->
     <common-date-picker
       v-model:show="showBuyPicker"
       v-model="moreInfo.buyDate"
@@ -241,23 +237,14 @@
       :min-date="'2000-01-01'"
       :max-date="'2035-12-31'"
     />
-    <!-- ===== /自定义日期选择器 ===== -->
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow, onLoad } from '@dcloudio/uni-app'
-
-import {
-  websiteUrl,
-  image1Url,
-  asyncGetUserInfo,
-} from "../../../common/config.js"
-import {
-  getQiniuToken,
-  uploadImageToQiniu
-} from "../../../common/image.js"
+import { websiteUrl, image1Url, asyncGetUserInfo } from "../../../common/config.js"
+import { getQiniuToken, uploadImageToQiniu } from "../../../common/image.js"
 
 const props = defineProps(["account_book_id"])
 const isEdit = props.account_book_id ? true : false
@@ -281,21 +268,18 @@ const onTypesUpdated = (list) => { customTypes.value = list || []; if (selectedT
 const count = ref(1)
 const imageList = ref([])
 let name = ref("")
-let price = ref("")
+let price = ref("") // 用字符串控制展示格式（整数或一位小数）
 const form = ref({ isRemind: false, finalPrice: 0, finalTime: '' })
 
 // —— 付款状态 ——
-// 1=已全款 2=已付定金 3=未购买
 const PAYMENT_OPTIONS = [
   { value: 1, label: '已全款' },
   { value: 2, label: '已付定金' },
   { value: 3, label: '未购买' }
 ]
-const paymentStatus = ref(1)        // 默认 1
+const paymentStatus = ref(1)
 const showPayPopup = ref(false)
-const paymentLabel = computed(() => {
-  return (PAYMENT_OPTIONS.find(o => o.value === paymentStatus.value)?.label) || '已全款'
-})
+const paymentLabel = computed(() => (PAYMENT_OPTIONS.find(o => o.value === paymentStatus.value)?.label) || '已全款')
 const openPayPopup = () => { showPayPopup.value = !showPayPopup.value }
 const choosePayment = (v) => { paymentStatus.value = v; showPayPopup.value = false }
 
@@ -363,6 +347,44 @@ const toggleRemind = () => {
   if (!form.value.isRemind) { form.value.finalPrice = 0; form.value.finalTime = '' }
 }
 
+/** ================== 价格相关 ================== */
+/** 输入限制：仅数字与一个小数点，小数位最多 1 位（截断不四舍五入） */
+function onPriceInput(e) {
+  let s = String(e?.detail?.value ?? '')
+  s = s.replace(/[^0-9.]/g, '')
+  const firstDot = s.indexOf('.')
+  if (firstDot !== -1) {
+    s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, '')
+    const parts = s.split('.')
+    s = parts[0] + (parts[1] !== undefined ? ('.' + parts[1].slice(0, 1)) : '')
+  }
+  if (s.startsWith('.')) s = '0' + s
+  price.value = s
+}
+/** 失焦时去掉末尾孤立的小数点（如 "12." -> "12"） */
+function onPriceBlur() {
+  if (typeof price.value === 'string' && price.value.endsWith('.')) {
+    price.value = price.value.slice(0, -1)
+  }
+}
+/** 展示为：整数或 1 位小数；不强制补 .0 */
+function formatPriceDisplay(val) {
+  const n = Number(val)
+  if (!isFinite(n)) return ''
+  if (Math.floor(n) === n) return String(Math.trunc(n))
+  const trimmed = Math.sign(n) * Math.floor(Math.abs(n) * 10) / 10
+  return String(trimmed)
+}
+/** 提交用：转 number，最多 1 位小数；不返回字符串，不带 .0 */
+function normalizePriceForSubmit(s) {
+  if (!s) return 0
+  const n = parseFloat(s)
+  if (!isFinite(n)) return 0
+  const trimmed = Math.sign(n) * Math.floor(Math.abs(n) * 10) / 10
+  return Number(String(trimmed))
+}
+/** ================== /价格相关 ================== */
+
 // —— 获取详情（编辑态） ——
 function getAccountBookById(id) {
   let token = uni.getStorageSync('token')
@@ -374,17 +396,15 @@ function getAccountBookById(id) {
     success: (res) => {
       const d = res.data.data
       name.value = d.name
-      price.value = parseInt(d.price)
+      price.value = formatPriceDisplay(d.price)
       count.value = d.count || 1
       if (d.image_url) imageList.value = d.image_url.split(',')
       form.value = { isRemind: d.is_remind, finalPrice: d.final_price, finalTime: d.final_time }
 
-      // 分类选中修正
       const typeName = d.type
       const idx = typeOptions.value.findIndex(opt => opt === typeName)
       selectedType.value = idx !== -1 ? idx : 0
 
-      // 更多信息
       moreInfo.value = {
         sizeDetail: d.size_detail || '',
         color: d.color || '',
@@ -400,7 +420,6 @@ function getAccountBookById(id) {
       }
       if (d.size) { selectedSizePath.value = [d.size, d.size_detail || '']; moreInfo.value.sizeDetail = d.size_detail || '' }
 
-      // —— 付款状态回填（后端未下发时默认 1） ——
       paymentStatus.value = d.payment_status || 1
     }
   })
@@ -413,7 +432,9 @@ const handleGoodsSelect = async (goods) => {
     if (res.data.status === "success") {
       const detail = res.data.data
       name.value = detail.name
-      price.value = detail.fin_amount + detail.sub_amount
+      const sub = Number(detail.sub_amount) || 0
+      const fin = Number(detail.fin_amount) || 0
+      price.value = formatPriceDisplay(sub + fin)
       if (detail.goods_images?.[0]) imageList.value = [detail.goods_images[0]]
     }
   } catch (e) {
@@ -510,11 +531,11 @@ function updateAccountBook() {
 function buildPostData() {
   return {
     name: name.value,
-    price: parseInt(price.value, 10),
+    // 改为保留最多 1 位小数的 number
+    price: normalizePriceForSubmit(price.value),
     count: parseInt(count.value, 10),
     type: typeOptions.value[selectedType.value],
     image_url: imageList.value.join(','),
-    // —— 新增：付款状态（后端可选，默认1） ——
     payment_status: paymentStatus.value,
     is_remind: form.value.isRemind,
     final_price: parseInt(form.value.finalPrice || 0, 10),
@@ -560,8 +581,8 @@ const getGoodsInfo = (id) => new Promise((resolve, reject) => {
 })
 const fillFormWithGoodsInfo = (g) => {
   name.value = g.name
-  const totalPrice = g.total_amount ? g.total_amount : (parseFloat(g.sub_amount) || 0) + (parseFloat(g.fin_amount) || 0)
-  price.value = totalPrice
+  const totalPrice = g.total_amount ? Number(g.total_amount) : (Number(g.sub_amount) || 0) + (Number(g.fin_amount) || 0)
+  price.value = formatPriceDisplay(totalPrice)
   if (g.goods_images?.length) imageList.value = [g.goods_images[0]]
   if (g.size) { selectedSizePath.value = [g.size, g.size_detail || '']; moreInfo.value.sizeDetail = g.size_detail || '' }
 }
@@ -646,12 +667,11 @@ $radius: 24rpx;
 .date-picker-wrapper { padding: 0px 10px; border: 1px solid #e6e6e6; border-radius: 10px; height: 100rpx; line-height: 100rpx; }
 .input-icon { position: absolute; right: 30rpx; top: 50%; transform: translateY(-50%); z-index: 2; color: #999; }
 
-/* 付款状态下拉 PopUp（定位在当前 form-item 下方） */
-.form-item { position: relative; } // 保证定位参照
+.form-item { position: relative; }
 .dropdown-popup {
   position: absolute;
   left: 0; right: 0;
-  top: 110rpx; // 紧贴“输入框”下方
+  top: 110rpx;
   background: #fff;
   border: 2rpx solid $border-color;
   border-radius: 16rpx;
@@ -659,7 +679,6 @@ $radius: 24rpx;
   overflow: hidden;
   z-index: 10;
 }
-
 .option-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 26rpx 28rpx; font-size: 28rpx; color: #333;

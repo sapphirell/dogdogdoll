@@ -301,9 +301,17 @@ const resetFilters = () => {
 
 // 跳转详情
 const navigateToArtistDetail = (artist) => {
-  uni.navigateTo({
-    url: "/pages/artist_info/artist_info?brand_id=" + artist.brand_id
-  });
+	if (roleType.value === 'artist') {
+		uni.navigateTo({
+		  url: "/pages/artist_info/bjd_faceup_artist?brand_id=" + artist.brand_id
+		});
+	} else {
+		uni.navigateTo({
+		  url: "/pages/artist_info/artist_info?brand_id=" + artist.brand_id
+		});
+	}
+	
+
 };
 
 // 状态标签样式

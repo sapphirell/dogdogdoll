@@ -830,7 +830,7 @@
 .view { display: flex; justify-content: center; align-items: center; }
 .ready { border: 3px solid #65c6d9; box-shadow: 0 0 5px #65c6d9; }
 
-.area-con { position: relative; overflow: hidden; background-color: #fff; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08); display: flex; flex-direction: column; }
+.area-con { min-width: 80px;min-height: 100px;position: relative; overflow: hidden; background-color: #fff; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08); display: flex; flex-direction: column; }
 .pre-image { width: 100%; height: 85%; display: block; }
 .info-container {
   padding: 8rpx; display: flex; flex-direction: column; height: 30%;

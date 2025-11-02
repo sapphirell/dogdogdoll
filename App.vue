@@ -85,6 +85,10 @@ function loadFonts() {
 	.font-alimamashuhei {
 		font-family: "alimamamshuhei" !important;
 	}
+	
+	.font-title {
+		font-family: "title-font";
+	}
 
 	.font-cute {
 		font-family: "cutefont";
