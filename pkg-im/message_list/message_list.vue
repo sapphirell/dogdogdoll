@@ -5,7 +5,6 @@
 
     <!-- 空态 -->
     <view v-if="!loading && sessions.length === 0" class="empty">
-      <image class="empty-img" src="/static/empty.png" mode="aspectFit"></image>
       <text class="empty-tips">还没有消息</text>
     </view>
 
@@ -43,6 +42,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import {  onShow } from '@dcloudio/uni-app'
 import { websiteUrl, global, getHeaderPlaceholderHeight, getFooterPlaceholderHeight } from '@/common/config.js'
 import { listSessions, connectIM, closeIM, onIMEvent } from '@/common/im.js'
 
@@ -280,9 +280,16 @@ function goChat (s) {
 
 /** 生命周期 */
 onMounted(async () => {
-  await fetchList(true)
+
   connectIM()
   onIMEvent(handleIMEvent)
+})
+
+onShow(async () => {
+	uni.setNavigationBarTitle({
+		title: "聊天列表"
+	})
+	await fetchList(true)
 })
 
 onUnmounted(() => {

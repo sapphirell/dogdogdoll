@@ -33,24 +33,29 @@
           :id="'msg-' + (m.local_key || m.id || idx)"
         >
           <image class="avatar" :src="m.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar" />
-          <view class="bubble">
-            <template v-if="m.kind === 'text'">
-              <rich-text :nodes="safeText(m.text)"></rich-text>
-            </template>
-            <template v-else-if="m.kind === 'emoji'">
-              <text class="emoji">{{ m.emoji }}</text>
-            </template>
-            <template v-else-if="m.kind === 'image'">
-              <image class="img-msg" :src="m.url" mode="widthFix" @click="previewImage(m.url)" />
-            </template>
-            <template v-else>
-              <view class="other-card">
-                <text class="title">[{{ m.sub_type || '其它' }}]</text>
-                <text class="desc">{{ briefOther(m) }}</text>
-              </view>
-            </template>
 
-            <view class="meta">
+          <!-- 包裹：气泡 + meta 垂直排列 -->
+          <view class="content">
+            <view class="bubble">
+              <template v-if="m.kind === 'text'">
+                <rich-text :nodes="safeText(m.text)"></rich-text>
+              </template>
+              <template v-else-if="m.kind === 'emoji'">
+                <text class="emoji">{{ m.emoji }}</text>
+              </template>
+              <template v-else-if="m.kind === 'image'">
+                <image class="img-msg" :src="m.url" mode="widthFix" @click="previewImage(m.url)" />
+              </template>
+              <template v-else>
+                <view class="other-card">
+                  <text class="title">[{{ m.sub_type || '其它' }}]</text>
+                  <text class="desc">{{ briefOther(m) }}</text>
+                </view>
+              </template>
+            </view>
+
+            <!-- meta 挪到气泡下方 -->
+            <view class="meta font-alimamashuhei">
               <text class="time">{{ fmtTime(m.ts) }}</text>
               <text class="status" v-if="m.from_uid === selfUid">{{ statusText(m) }}</text>
             </view>
@@ -216,7 +221,7 @@ onShow(async () => {
 onHide(() => { if (offIM) { offIM(); offIM = null } })
 onUnload(() => {
   if (offIM) { offIM(); offIM = null }
-  leaveActiveSession() // ← 本地函数，避免与导入名冲突
+  leaveActiveSession()
 })
 
 /** 本地封装：离开页面时取消激活 */
@@ -254,7 +259,6 @@ async function loadHistory() {
   if (!hasMore.value || loadingMore.value) return
   loadingMore.value = true
 
-  // 用于保持位置的锚点（旧列表顶部）
   let keepAnchor = ''
   if (messages.value.length > 0) {
     const top = messages.value[0]
@@ -286,7 +290,6 @@ async function loadHistory() {
           hasMore.value = !!resp.data?.has_more
           page.value += 1
 
-          // 同步对方已读
           const peerPtsFromSync = Number(
             resp?.data?.peer_read_pts ?? resp?.data?.peerReadPts ?? resp?.data?.read_pts_peer ?? 0
           )
@@ -321,7 +324,6 @@ async function loadHistory() {
       hasMore.value = total > 0 ? (messages.value.length < total) : list.length === pageSize
       page.value += 1
 
-      // 首屏带回对方已读
       const peerPtsFromHttp = Number(
         d?.peer_read_pts ?? d?.peerReadPts ?? d?.peer_read ?? d?.read_pts_peer ?? 0
       )
@@ -409,7 +411,6 @@ function sendPayload(msgPart) {
     if (Number(d.session_id || 0) > 0 && numericSid.value === 0) {
       numericSid.value = Number(d.session_id)
     }
-    // 吸收对方已读进度（ACK 可选返回）
     const peerPtsFromAck = Number(
       d?.peer_read_pts ?? d?.peerReadPts ?? d?.read_pts_peer ?? 0
     )
@@ -455,7 +456,6 @@ function handleIMEvent(payload) {
     if (Number(d.session_id || 0) > 0 && numericSid.value === 0) {
       numericSid.value = Number(d.session_id)
     }
-    // 过滤非当前会话
     if (typeof d.session_id === 'string' && d.session_id !== sessionKey.value) return
     if (numericSid.value > 0 && Number(d.session_id || 0) !== Number(numericSid.value)) return
 
@@ -463,7 +463,6 @@ function handleIMEvent(payload) {
     const isSelf = ui.from_uid === selfUid.value
 
     if (isSelf) {
-      // 用 PTS 或指纹合并“发送中”
       let idx = ui.pts > 0 ? messages.value.findIndex(x => x.from_uid === selfUid.value && Number(x.pts || 0) === ui.pts) : -1
       if (idx < 0) {
         const sig = buildSig(ui)
@@ -482,9 +481,8 @@ function handleIMEvent(payload) {
       }
     }
 
-    messages.value.push(ui) // 对方消息或未匹配成功
+    messages.value.push(ui)
     scrollToBottomSoon()
-    // 来消息后也尽快发一次 read_ack（进入聊天页后应始终保持“已读到最底”）
     markReadToBottom()
     return
   }
@@ -591,11 +589,9 @@ function statusText(m) {
 }
 function fmtTime(ts) {
   const d = new Date(Number(ts) * 1000)
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
   const hh = String(d.getHours()).padStart(2, '0')
   const m  = String(d.getMinutes()).padStart(2, '0')
-  return `${mm}-${dd} ${hh}:${m}`
+  return `${hh}:${m}`
 }
 function briefOther(m) {
   try {
@@ -619,7 +615,7 @@ function genClientMID() { return 'm_' + Date.now().toString(36) + '_' + Math.ran
 /* 顶部固定 */
 .chat-header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 9;
-  height:88rpx; padding:0 20rpx; display:flex; align-items:center; background:#fff; box-shadow:0 2rpx 6rpx rgba(0,0,0,0.06);
+  height:88rpx; padding:0 20rpx; display:flex; align-items:center; background:#fff; 
   .left,.right{ width:80rpx; display:flex; align-items:center; }
   .center{ flex:1; display:flex; flex-direction:column; align-items:center;
     .peer-name{ font-size:30rpx; color:#222; font-weight:600; }
@@ -636,26 +632,86 @@ function genClientMID() { return 'm_' + Date.now().toString(36) + '_' + Math.ran
   background: #fff;
 }
 .load-more{ width:100%; text-align:center; color:#6b7280; font-size:24rpx; padding:16rpx 0; }
-.msg-list{ display:flex; flex-direction:column; gap:18rpx; }
-.msg-item{ display:flex; gap:12rpx;
-  &.self{ flex-direction:row-reverse;
-    .bubble{ background:#ffeded; border-top-right-radius:8rpx; border-top-left-radius:18rpx; }
+
+/* 列表与气泡布局 */
+.msg-list{
+  display:flex; flex-direction:column;
+  gap:26rpx; /* 4) 加大气泡间距 */
+}
+.msg-item{
+  display:flex; align-items:flex-start; gap:24rpx; /* 头像与内容对齐到底部，间距略大 */
+  &.self{
+    flex-direction:row-reverse;
   }
 }
-.msg-item .avatar{ width:68rpx; height:68rpx; border-radius:50%; background:#eee; }
+.msg-item .avatar{
+  width:68rpx; height:68rpx; border-radius:50%; background:#eee;
+}
+
+/* 垂直内容：气泡 + meta */
+.content{
+  max-width:78%;
+  display:flex; flex-direction:column;
+  align-items:flex-start;
+}
+.msg-item.self .content{
+  align-items:flex-end;
+}
+
+/* 气泡 */
 .bubble{
-  max-width:68%; background:#fff; border-radius:18rpx; padding:16rpx 18rpx; box-shadow:0 2rpx 6rpx rgba(0,0,0,0.05);
-  .emoji{ font-size:40rpx; line-height:1.2; }
-  .img-msg{ max-width:500rpx; border-radius:12rpx; }
-  .other-card{ min-width:300rpx; background:#f7fafc; border:1rpx solid #e5e7eb; border-radius:12rpx; padding:12rpx;
-    .title{ font-weight:600; color:#374151; }
-    .desc{ display:block; color:#6b7280; margin-top:8rpx; font-size:24rpx; }
-  }
-  .meta{ display:flex; align-items:center; gap:12rpx; margin-top:8rpx;
-    .time{ color:#9aa0a6; font-size:22rpx; }
-    .status{ color:#9aa0a6; font-size:22rpx; }
-  }
+  position:relative;
+  max-width:100%;
+  background:#fff;
+  border-radius:18rpx;
+  padding:16rpx 18rpx;
+  box-shadow:0 2rpx 6rpx rgba(0,0,0,0.05);
+  word-break: break-word;
 }
+/* 右侧（自己）气泡特殊底色与圆角处理 */
+.msg-item.self .bubble{
+  background:#ffeded;
+  border-top-right-radius:8rpx;
+  border-top-left-radius:18rpx;
+}
+
+/* 3) 带圆角小三角 —— 使用旋转方块模拟 */
+.bubble::after{
+  content:'';
+  position:absolute;
+  width:18rpx; height:18rpx;
+  border-radius:5rpx;       /* 略带圆角 */
+  background:#fff;
+  transform:rotate(45deg);
+  left:-8rpx;               /* 指向左侧头像 */
+  bottom:22rpx;
+}
+.msg-item.self .bubble::after{
+  background:#ffeded;
+  left:auto; right:-8rpx;   /* 指向右侧头像 */
+}
+
+/* 文本/图片/卡片细节 */
+.bubble .emoji{ font-size:40rpx; line-height:1.2; }
+.bubble .img-msg{ max-width:500rpx; border-radius:12rpx; }
+.bubble .other-card{
+  min-width:300rpx; background:#f7fafc; border:1rpx solid #e5e7eb; border-radius:12rpx; padding:12rpx;
+  .title{ font-weight:600; color:#374151; }
+  .desc{ display:block; color:#6b7280; margin-top:8rpx; font-size:24rpx; }
+}
+
+/* 1 & 2) meta 在气泡下方 + 灰色 + 小字号 */
+.meta{
+  display:flex; align-items:center; gap:12rpx;
+  margin-top:10rpx;
+  color: #9aa0a6!important;            /* 灰色 */
+  font-size:20rpx;          /* 略小 */
+  line-height:1;
+}
+.meta .time{ opacity:0.95; color: #9aa0a6!important;font-size:20rpx;    }
+.meta .status{ opacity:0.95;  color: #9aa0a6!important; font-size:20rpx;   }
+
+/* 锚点 */
 .bottom-anchor{ height:1rpx; }
 
 /* 底部输入条固定 */
