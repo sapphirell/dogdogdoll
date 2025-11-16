@@ -4,9 +4,9 @@
 	<view-logs />
 	<view>
 		<privacy-permission-modal></privacy-permission-modal>
-		<version-check :show-up-to-date-toast="true" />
 		<loading-toast :show="showLoadding"></loading-toast>
 		<view-logs></view-logs>
+		<version-check ref="versionCheckRef" :show-up-to-date-toast="true" />
 
 
 
@@ -29,6 +29,9 @@
 						</image>
 						<server-selector @server-change="handleServerChange"></server-selector>
 					</view>
+					<!-- 调试按钮：清空忽略期 -->
+					<!-- <button class="debug-btn" @tap="debugClearIgnore">清空忽略期</button> -->
+					
 					<!-- <goods-search width="720rpx" :hiddenIcon="false"></goods-search> -->
 					<!-- <switch-search @select="handleSearchSelect" mode="jump" width="95%" background="#f8f8f8" /> -->
 					<!-- 假搜索框：点击跳转到搜索页 -->
@@ -880,7 +883,20 @@
 	}
 
 
+	// 版本检查组件实例（用于调用子组件暴露的方法）
+	const versionCheckRef = ref(null)
 
+	// 调试：清空忽略期并提示
+	function debugClearIgnore () {
+	  try {
+		versionCheckRef.value?.debugClearIgnore?.()
+		console.log('[Debug] 手动清空忽略期成功')
+		uni.showToast({ title: '已清空忽略期', icon: 'none' })
+	  } catch (e) {
+		console.error('[Debug] 清空忽略期失败', e)
+		uni.showToast({ title: '清空失败', icon: 'none' })
+	  }
+	}
 	// 时间格式化方法
 	const formatTime = (timestamp) => {
 		const date = new Date(timestamp * 1000)

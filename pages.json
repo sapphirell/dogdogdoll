@@ -237,7 +237,12 @@
         { "path": "creator_base/news/news" },
         { "path": "creator_base/set_hair_showcase/set_hair_showcase" },
         { "path": "creator_base/order_plane/form-artist"},
-        { "path": "creator_base/order_plane/form-wig"}
+        { "path": "creator_base/order_plane/form-wig"},
+		{
+			"path" : "creator_order/plane_detail/plane_detail",
+			"style" : 
+			{ "navigationStyle": "custom" } 
+		}
       ]
     },
 	{

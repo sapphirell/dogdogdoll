@@ -32,6 +32,13 @@ export let global = reactive({
 	userInfo: {},
 });
 
+
+export function getAppShellVersion() {
+  const info = uni.getAppBaseInfo?.() || {}
+  return info.appVersion || dogdogdollVersion // 外壳版本
+}
+
+
 // 微信登录
 export function wechatSignLogin() {
 	if (process.env.VUE_APP_PLATFORM !== 'mp-weixin') {
@@ -494,3 +501,4 @@ export function getHeaderPlaceholderHeight() {
 export function getFooterPlaceholderHeight() {
   return getSafeBottom()
 }
+

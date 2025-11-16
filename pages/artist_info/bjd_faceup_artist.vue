@@ -493,7 +493,7 @@
 	function openOrder(id) {
 		// 替换为你的路由/详情页
 		uni.navigateTo({
-			url: `/pages/order-plan/detail?id=${id}`
+			url: `/pkg-creator/creator_order/plane_detail/plane_detail?id=${id}`
 		})
 	}
 
