@@ -298,7 +298,7 @@ export default {
 			return u.addUnit(this.refresherThreshold, this.unit);
 		},
 		finalRefresherEnabled() {
-			if (this.useChatRecordMode) return false;
+			if (this.layoutOnly || this.useChatRecordMode) return false;
 			if (this.privateRefresherEnabled === -1) return this.refresherEnabled;
 			return this.privateRefresherEnabled === 1;
 		},
@@ -382,6 +382,10 @@ export default {
 		// 手动更新自定义下拉刷新view高度
 		updateCustomRefresherHeight() {
 			u.delay(() => this.$nextTick(this._updateCustomRefresherHeight));
+		},
+		// 进入二楼
+		goF2() {
+			this._handleGoF2();
 		},
 		// 关闭二楼
 		closeF2() {
@@ -546,7 +550,7 @@ export default {
 			this.refresherReachMaxAngle = true;
 			this.isTouchEnded = true;
 			const refresherThreshold = this.finalRefresherThreshold;
-			if (moveDis >= refresherThreshold && (this.refresherStatus === Enum.Refresher.ReleaseToRefresh || this.refresherStatus === Enum.Refresher.GoF2)) {
+			if (moveDis >= refresherThreshold && [Enum.Refresher.ReleaseToRefresh, Enum.Refresher.GoF2].indexOf(this.refresherStatus) >= 0) {
 				// 如果是松手进入二楼状态，则触发进入二楼
 				if (this.refresherStatus === Enum.Refresher.GoF2) {
 					this._handleGoF2();
@@ -615,8 +619,8 @@ export default {
 		// 下拉刷新结束
 		_refresherEnd(shouldEndLoadingDelay = true, fromAddData = false, isUserPullDown = false, setLoading = true) {
 			if (this.loadingType === Enum.LoadingType.Refresher) {
-				// 计算当前下拉刷新结束需要延迟的时间
-				const refresherCompleteDelay = (fromAddData && (isUserPullDown || this.showRefresherWhenReload)) ? this.refresherCompleteDelay : 0;
+				// 计算当前下拉刷新结束需要延迟的时间(用户主动下拉刷新或reload时显示下拉刷新view才需要计算延迟时间)
+				const refresherCompleteDelay = (fromAddData && (isUserPullDown || this.finalShowRefresherWhenReload)) ? this.refresherCompleteDelay : 0;
 				// 如果延迟时间大于0，则展示刷新结束状态，否则直接展示默认状态
 				const refresherStatus = refresherCompleteDelay > 0 ? Enum.Refresher.Complete : Enum.Refresher.Default;
 				if (this.finalShowRefresherWhenReload) {
@@ -793,7 +797,7 @@ export default {
 		// 判断touch手势是否要触发
 		_touchDisabled() {
 			const checkOldScrollTop = this.oldScrollTop > 5;
-			return this.loading || this.isRefresherInComplete || this.useChatRecordMode || !this.refresherEnabled || !this.useCustomRefresher ||(this.usePageScroll && this.useCustomRefresher && this.pageScrollTop > 10) || (!(this.usePageScroll && this.useCustomRefresher) && checkOldScrollTop);
+			return this.loading || this.isRefresherInComplete || this.useChatRecordMode || this.layoutOnly || !this.refresherEnabled || !this.useCustomRefresher || (this.usePageScroll && this.useCustomRefresher && this.pageScrollTop > 10) || (!(this.usePageScroll && this.useCustomRefresher) && checkOldScrollTop);
 		},
 		// #endif
 		// 更新自定义下拉刷新view高度

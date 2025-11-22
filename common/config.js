@@ -356,6 +356,30 @@ export function getGoodsInfo (id) {
 			})
 		})
 	}
+	
+// config.js 中追加：
+export async function initLoginState() {
+  // 1. 尝试从本地读取 token 和 userInfo
+  const token = uni.getStorageSync('token');
+  const userInfo = uni.getStorageSync('userInfo');
+
+  if (token && userInfo) {
+    // 有 token 且有缓存的 userInfo，直接还原状态
+    global.isLogin = true;
+    global.userInfo = userInfo;
+    return userInfo;
+  }
+
+  if (token && !userInfo) {
+    // 有 token 但没有 userInfo，去后端拉一次
+    const data = await asyncGetUserInfo(); // asyncGetUserInfo 已经会内部调用 saveUserInfo
+    return data;
+  }
+
+  // 没有 token，清空状态
+  clearUserInfo();
+  return null;
+}
 
 
 // export const showModal = (options) => {

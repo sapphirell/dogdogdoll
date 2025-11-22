@@ -122,6 +122,8 @@
         <text class="label font-title">每颗头工期</text>
         <text class="val">{{ perHeadCycleDays }} 天</text>
       </view>
+	  <!-- max_submissions_per_user -->
+
     </view>
 
     <!-- 开单详情 -->
@@ -193,6 +195,52 @@
       <text class="desc">{{ descText }}</text>
     </view>
 
+    <!-- 我的待投递（草稿项） -->
+    <view v-if="isLocalPlan" class="card draft-card">
+      <view class="draft-header">
+        <text class="draft-title font-title">我的待投递</text>
+        <button class="draft-add-btn" @click="goCreateDraft">
+          <uni-icons type="plusempty" size="18" color="#ffffff" />
+          <text class="draft-add-text">新增预投递</text>
+        </button>
+      </view>
+      <view v-if="draftItems.length" class="draft-list">
+        <view
+          class="draft-item"
+          v-for="item in draftItems"
+          :key="item.id"
+        >
+          <view class="draft-main" @click="goEditDraft(item)">
+            <text class="draft-subject">
+              {{ item.work_subject || '未填写主体' }}
+            </text>
+            <view class="draft-meta">
+              <text v-if="item.size" class="draft-meta-chip">{{ item.size }}</text>
+              <text v-if="item.tier_title" class="draft-meta-chip">{{ item.tier_title }}</text>
+              <text class="draft-price">¥{{ Number(item.price_total || 0) }}</text>
+            </view>
+          </view>
+          <view class="draft-actions">
+            <uni-icons
+              type="compose"
+              size="20"
+              color="#999999"
+              @click.stop="goEditDraft(item)"
+            />
+            <uni-icons
+              type="trash"
+              size="20"
+              color="#999999"
+              @click.stop="confirmDeleteDraft(item)"
+            />
+          </view>
+        </view>
+      </view>
+      <view v-else class="draft-empty">
+        <text class="draft-empty-text">暂无待投递内容，点击右上角按钮添加</text>
+      </view>
+    </view>
+
     <!-- 底部 buybar：左关注；右胶囊按钮 显示 价格｜库存｜操作 -->
     <view class="buybar" :class="{ safe: safeArea }">
       <view class="buy-left">
@@ -222,7 +270,7 @@
       :visible="finishingVisible"
       @update:visible="v => finishingVisible = v"
       top="200rpx"
-	  width="calc(80vw)"
+      width="calc(80vw)"
     >
       <view class="cm-wrapper">
         <view class="cm-title">定妆方式说明</view>
@@ -275,30 +323,28 @@
       :visible="shippingVisible"
       @update:visible="v => shippingVisible = v"
       top="200rpx"
-	  width="80vw"
+      width="80vw"
     >
       <view class="cm-wrapper">
         <view class="cm-title">寄送约定</view>
         <view class="cm-body">
-			<view v-if="isUnifiedShipping">
-				<text class="cm-desc-text">
-					需要在指定日期前寄送到妆师地址。
-				</text>
-				<text class="cm-desc-text">
-					如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师取消订单。
-				</text>
-			</view>
-			
-			<view v-else>
-				<text class="cm-desc-text">
-					会根据排单顺序约定寄送日期.
-				</text>
-				<text class="cm-desc-text">
-					如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师有权利取消订单。
-				</text>
-			</view>
-          
-          
+          <view v-if="isUnifiedShipping">
+            <text class="cm-desc-text">
+              需要在指定日期前寄送到妆师地址。
+            </text>
+            <text class="cm-desc-text">
+              如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师取消订单。
+            </text>
+          </view>
+
+          <view v-else>
+            <text class="cm-desc-text">
+              会根据排单顺序约定寄送日期.
+            </text>
+            <text class="cm-desc-text">
+              如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师有权利取消订单。
+            </text>
+          </view>
         </view>
       </view>
     </common-modal>
@@ -307,7 +353,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { onLoad, onPageScroll } from '@dcloudio/uni-app'
+import { onLoad, onPageScroll, onShow } from '@dcloudio/uni-app'
 import { websiteUrl, global } from '@/common/config.js'
 
 /** ====== 滚动 & 吸顶标题栏 ====== */
@@ -345,7 +391,8 @@ const plan = reactive({
   is_local: 1,
   tiers: [],
   addons: [],
-  extra: {}
+  extra: {},
+  inventory: 0
 })
 
 /** 返回 */
@@ -384,6 +431,7 @@ async function fetchPlan() {
   plan.brand = d.brand || null
   plan.external_url = d.external_url || ''
   plan.is_local = plan.external_url ? 0 : 1
+  plan.inventory = Number(d.inventory || 0)
 
   try {
     if (plan.order_config) {
@@ -485,13 +533,12 @@ function tick() {
 function startTimer() { stopTimer(); tick(); timer = setInterval(tick, 1000) }
 function stopTimer() { if (timer) { clearInterval(timer); timer = null } }
 
-/** 名额/库存文本（示意） */
-const remainSlots = computed(() => null)
+/** 库存文本：使用 inventory 字段 */
 const stockText = computed(() => {
-  const total = Number(plan.max_participants || 0)
-  const remain = remainSlots.value
-  if (total > 0 && Number.isFinite(remain)) return `库存 ${remain}/${total}`
-  if (total > 0) return `库存 ${total}`
+  const inv = Number(plan.inventory ?? 0)
+  if (Number.isNaN(inv)) return '库存 不限'
+  if (inv > 0) return `库存 ${inv}`
+  if (inv === 0) return '库存 0'
   return '库存 不限'
 })
 
@@ -546,7 +593,7 @@ const tierRangeText = computed(() => {
 })
 const tierRangePriceText = computed(() => tierRangeText.value)
 
-/** CTA */
+/** CTA 文案/状态 */
 const btnText = computed(() => {
   if (!isLocalPlan.value) return '在其它平台开单'
   if (phase.value === 'upcoming') return '即将开始'
@@ -563,6 +610,7 @@ const ctaClass = computed(() => ({
   'btn-warn': phase.value === 'upcoming',
   'btn-primary': phase.value === 'ongoing' && !btnDisabled.value
 }))
+
 function goArtistHome() {
   const url = `/pages/artist_info/bjd_faceup_artist?brand_id=${plan.brand_id}`
   // #ifdef H5
@@ -572,7 +620,14 @@ function goArtistHome() {
   uni.navigateTo({ url })
   // #endif
 }
-function handleCTA() {
+
+/**
+ * 立即购买按钮：
+ * - 外部平台：复制链接（原逻辑保留）
+ * - 本平台：调用新投递接口 /with-state/artist-order/submit
+ */
+async function handleCTA() {
+  // 其它平台：复制链接
   if (!isLocalPlan.value) {
     if (plan.external_url) {
       uni.setClipboardData({
@@ -582,9 +637,149 @@ function handleCTA() {
     }
     return
   }
+
+  // 本平台但按钮不可用（未开始/已结束）
   if (btnDisabled.value) return
-  uni.navigateTo({
-    url: `/pkg-artist-order/submit/submit?plan_id=${plan.id}&brand_id=${plan.brand_id}&mode=${plan.order_type}`
+
+	// 改为只看 token：
+	const token = uni.getStorageSync('token') || ''
+	if (!token) {
+	  uni.showToast({ title: '请先登录', icon: 'none' })
+	  return
+	}
+
+  try {
+    uni.showLoading({ title: '投递中...', mask: true })
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submit`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        plan_id: plan.id,
+        // 这里先用空字符串占位，后续如果有账号/备注输入，再从表单取值
+        platform_account: '',
+        requirement: ''
+      }
+    })
+    uni.hideLoading()
+
+    if (String(res.data?.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: res.data?.msg || '投递失败', icon: 'none' })
+      return
+    }
+
+    const data = res.data?.data || {}
+    const code = data.code
+    const counter = data.brand_counter
+    let msg = ''
+
+    if (code === 1) {
+      msg = '投递成功'
+    } else if (code === 0) {
+      msg = '当前不在开单时间段'
+    } else if (code === 2) {
+      msg = '请勿重复投递'
+    } else if (code === 3) {
+      msg = '排队人数已满，投递未成功'
+    } else {
+      msg = '投递失败，请稍后重试'
+    }
+
+    if (typeof counter === 'number' && counter > 0) {
+      msg += `（当前品牌投递计数：${counter}）`
+    }
+
+    uni.showToast({ title: msg, icon: 'none', duration: 3000 })
+  } catch (e) {
+    uni.hideLoading()
+    uni.showToast({ title: '网络异常，投递失败', icon: 'none' })
+  }
+}
+
+/** ====== 待投递草稿列表（submission_id=0） ====== */
+const draftItems = ref([])
+
+async function fetchDraftItems() {
+  const token = uni.getStorageSync('token') || ''
+  if (!token || !plan.id) {
+    draftItems.value = []
+    return
+  }
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/plan-draft-items`,
+      method: 'GET',
+      header: { Authorization: token },
+      data: { plan_id: plan.id }
+    })
+    if (String(res.data?.status).toLowerCase() !== 'success') {
+      return
+    }
+    const list = res.data?.data?.items
+    draftItems.value = Array.isArray(list) ? list : []
+  } catch (e) {
+    // 忽略错误
+  }
+}
+
+function goCreateDraft() {
+  if (!plan.id) return
+
+  const url = `/pkg-creator/creator_order/submission_item_form/submission_item_form?submission_id=0&plan_id=${plan.id}`
+
+  uni.navigateTo({ url })
+}
+
+function goEditDraft(item) {
+  if (!item || !item.id) return
+  const id = item.id
+  const url = `/pkg-creator/creator_order/submission_item_form/submission_item_form?submission_item_id=${id}&plan_id=${plan.id}`
+
+  uni.navigateTo({ url })
+}
+
+
+function confirmDeleteDraft(item) {
+  if (!item || !item.id) return
+  const id = item.id
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '删除预投递',
+    content: '确定要删除这条预投递吗？',
+    confirmText: '删除',
+    confirmColor: '#ff4d4f',
+    success: async res => {
+      if (!res.confirm) return
+      try {
+        uni.showLoading({ title: '删除中...', mask: true })
+        const resp = await uni.request({
+          url: `${websiteUrl.value}/with-state/artist-order/item/delete`,
+          method: 'POST',
+          header: {
+            Authorization: token,
+            'Content-Type': 'application/json'
+          },
+          data: { item_id: id }
+        })
+        uni.hideLoading()
+        if (String(resp.data?.status).toLowerCase() !== 'success') {
+          uni.showToast({ title: resp.data?.msg || '删除失败', icon: 'none' })
+          return
+        }
+        uni.showToast({ title: '已删除', icon: 'none' })
+        fetchDraftItems()
+      } catch (e) {
+        uni.hideLoading()
+        uni.showToast({ title: '删除失败', icon: 'none' })
+      }
+    }
   })
 }
 
@@ -601,8 +796,11 @@ async function fetchHasLikeBrand() {
   } catch { }
 }
 async function toggleFollow() {
-  if (!global.isLogin) { uni.showToast({ title: '请先登录', icon: 'none' }); return }
-  const token = uni.getStorageSync('token') || ''
+	const token = uni.getStorageSync('token') || ''
+	if (!token) {
+	  uni.showToast({ title: '请先登录', icon: 'none' })
+	  return
+	}
   try {
     const url = `${websiteUrl.value}/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
     const res = await uni.request({
@@ -680,13 +878,17 @@ onLoad((q = {}) => {
 onMounted(async () => {
   if (!planId.value) { uni.showToast({ title: '缺少参数：id', icon: 'none' }); return }
   uni.showLoading({ title: '加载中...' })
-  try {
-    await fetchPlan()
-    startTimer()
-    if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
-  } finally {
-    uni.hideLoading()
-  }
+  startTimer()
+})
+
+onShow(async () => {
+	try {
+	  await fetchPlan()
+	  if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
+	  if (global.isLogin) await fetchDraftItems()
+	} finally {
+	  uni.hideLoading()
+	}
 })
 onUnmounted(stopTimer)
 
@@ -793,6 +995,91 @@ const descText = computed(() => '')
 .desc-card { margin: 20rpx 24rpx 0; padding: 22rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06); }
 .desc-title { font-size: 28rpx; color: #333; }
 .desc { margin-top: 8rpx; font-size: 26rpx; color: #555; line-height: 1.7; }
+
+/* 我的待投递卡片 */
+.draft-card { margin-top: 20rpx; }
+.draft-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+.draft-title {
+  font-size: 28rpx;
+  color: #333;
+}
+.draft-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 20rpx;
+  background: #000000;
+  border-radius: 999rpx;
+  border: none;
+  color: #ffffff;
+  font-size: 24rpx;
+  line-height: 1;
+  margin: 0;
+}
+.draft-add-btn::after { border: none; }
+.draft-add-text {
+  color: #ffffff;
+}
+.draft-list {
+  margin-top: 4rpx;
+}
+.draft-item {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f2f2f2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.draft-item:last-child {
+  border-bottom: none;
+}
+.draft-main {
+  flex: 1;
+  min-width: 0;
+}
+.draft-subject {
+  font-size: 26rpx;
+  color: #222;
+  font-weight: 500;
+}
+.draft-meta {
+  margin-top: 6rpx;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 22rpx;
+  color: #888;
+}
+.draft-meta-chip {
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  background: #f5f5f5;
+}
+.draft-price {
+  margin-left: auto;
+  font-size: 24rpx;
+  color: #333;
+}
+.draft-actions {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding-left: 8rpx;
+}
+.draft-empty {
+  margin-top: 8rpx;
+}
+.draft-empty-text {
+  font-size: 24rpx;
+  color: #999;
+}
 
 /* 底部 buybar 与按钮 */
 .buybar {

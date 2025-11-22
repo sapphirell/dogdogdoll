@@ -242,6 +242,24 @@
 			"path" : "creator_order/plane_detail/plane_detail",
 			"style" : 
 			{ "navigationStyle": "custom" } 
+		},
+		{
+			"path": "creator_order/my_submissions/my_submissions",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/submission_detail/submission_detail",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/submission_item_form/submission_item_form",
+			"style": {
+				"navigationBarTitleText": ""
+			}
 		}
       ]
     },
