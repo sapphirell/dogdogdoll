@@ -43,27 +43,138 @@ function getSelfId() {
 }
 function log(...args) { console.log('[IM]', ...args) }
 
+/**
+ * 安全解析 websiteUrl，生成 host:port + 协议
+ * 只依赖 websiteUrl.value，兼容 App / 小程序 无 location / URL 的环境
+ */
+function parseBaseForWS() {
+  let base = (websiteUrl && websiteUrl.value) ? String(websiteUrl.value).trim() : ''
+  // 如果没配置就直接给一个兜底域名（你现在就是 api.fantuanpu.com）
+  if (!base) {
+    return { scheme: 'wss', hostPort: 'api.fantuanpu.com' }
+  }
+
+  // 如果没有协议，默认 https -> wss
+  let scheme = 'wss'
+  if (/^https:\/\//i.test(base)) {
+    scheme = 'wss'
+    base = base.replace(/^https:\/\//i, '')
+  } else if (/^http:\/\//i.test(base)) {
+    scheme = 'ws'
+    base = base.replace(/^http:\/\//i, '')
+  } else {
+    // 没写协议，按 https 处理
+    scheme = 'wss'
+  }
+
+  // 去掉后面的 path，只保留 host[:port]
+  const slashIndex = base.indexOf('/')
+  let hostPort = slashIndex >= 0 ? base.slice(0, slashIndex) : base
+  hostPort = hostPort.replace(/\/+$/, '')
+
+  if (!hostPort) hostPort = 'api.fantuanpu.com'
+  return { scheme, hostPort }
+}
+
+/**
+ * 构建 WebSocket URL（统一走 https -> wss）
+ * 例如： websiteUrl = https://api.fantuanpu.com
+ *       => wss://api.fantuanpu.com/v1/websocket?token=...
+ */
 function buildWSUrl() {
   const token = uni.getStorageSync('token') || ''
-  let host = ''
-  let port = ''
-  let scheme = 'ws'
-  try {
-    host = location.hostname
-    port = location.port || (location.protocol === 'https:' ? '443' : '80')
-    scheme = location.protocol === 'https:' ? 'wss' : 'ws'
-  } catch (_) {}
-  const base = websiteUrl?.value || ''
-  if (base) {
-    try {
-      const u = new URL(base)
-      host = u.hostname
-      port = u.port || (u.protocol === 'https:' ? '443' : '80')
-      scheme = (u.protocol === 'https:') ? 'wss' : 'ws'
-    } catch (_) {}
-  }
-  return `${scheme}://${host}:${port}/v1/websocket?token=${encodeURIComponent(token)}`
+  const { scheme, hostPort } = parseBaseForWS()
+  return `${scheme}://${hostPort}/v1/websocket?token=${encodeURIComponent(token)}`
 }
+
+/**
+ * 跨端创建 WebSocket：
+ * - H5：使用原生 new WebSocket
+ * - App / 小程序：使用 uni.connectSocket 包一层，模拟 WebSocket 接口
+ */
+function createWS(url) {
+  // 1️⃣ H5：有原生 WebSocket 就直接用
+  if (typeof WebSocket === 'function') {
+    try {
+      return new WebSocket(url)
+    } catch (e) {
+      console.error('[IM] new WebSocket failed:', e)
+    }
+  }
+
+  // 2️⃣ 非 H5（App、小程序）：走 uni.connectSocket
+  if (typeof uni !== 'undefined' && typeof uni.connectSocket === 'function') {
+    // 关键点：一定要传 success 回调，否则返回的是 Promise
+    const socketTask = uni.connectSocket({
+      url,
+      success () {},      // 👈 这一行非常重要
+      fail (err) {
+        console.error('[IM] connectSocket fail', err)
+      }
+    })
+
+    // 2.1 小程序端：SocketTask 风格（有 onOpen / onMessage / onClose / onError 方法）
+    if (socketTask && typeof socketTask.onOpen === 'function') {
+      const wrapper = {
+        _task: socketTask,
+        readyState: 0, // 0-连接中, 1-已打开, 2-关闭中, 3-已关闭
+
+        send (data) {
+          try {
+            if (this.readyState !== 1) {
+              console.warn('[IM] send skipped, ws not open')
+              return
+            }
+            // 小程序的 send 需要 { data }
+            this._task.send({ data })
+          } catch (e) {
+            console.error('[IM] send error', e)
+          }
+        },
+
+        close (code = 1000, reason = 'client close') {
+          try {
+            this.readyState = 2
+            this._task.close({ code, reason })
+          } catch (e) {
+            console.error('[IM] close error', e)
+          }
+        },
+
+        // 供外部赋值的回调（connectIM 那边会写 ws.onopen / ws.onmessage 等）
+        onopen: null,
+        onmessage: null,
+        onclose: null,
+        onerror: null
+      }
+
+      socketTask.onOpen((res) => {
+        wrapper.readyState = 1
+        wrapper.onopen && wrapper.onopen(res)
+      })
+      socketTask.onMessage((res) => {
+        wrapper.onmessage && wrapper.onmessage({ data: res.data })
+      })
+      socketTask.onClose((res) => {
+        wrapper.readyState = 3
+        wrapper.onclose && wrapper.onclose(res)
+      })
+      socketTask.onError((err) => {
+        wrapper.onerror && wrapper.onerror(err)
+      })
+
+      return wrapper
+    }
+
+    // 2.2 App 端：多数情况下 connectSocket 返回的就是“类 WebSocket”对象
+    // 没有 onOpen 方法，就当作标准 WebSocket 用，让外面直接 ws.onopen = ... 即可
+    return socketTask
+  }
+
+  console.error('[IM] 当前环境不支持 WebSocket / uni.connectSocket')
+  return null
+}
+
 
 function startHeartbeat() {
   stopHeartbeat()
@@ -115,7 +226,14 @@ export function connectIM(force = false) {
 
   const url = buildWSUrl()
   log('connecting...', url)
-  ws = new WebSocket(url)
+
+  const socket = createWS(url)
+  if (!socket) {
+    log('createWS failed')
+    return null
+  }
+  ws = socket
+
   try { if (typeof window !== 'undefined') window.__IM_WS__ = ws } catch(_) {}
 
   ws.onopen = async () => {
@@ -158,7 +276,12 @@ export function connectIM(force = false) {
     } catch (_) {}
   }
 
-  ws.onclose = (evt) => { log('close', evt.code, evt.reason); stopHeartbeat(); scheduleReconnect() }
+  ws.onclose = (evt) => { 
+    console.log(evt)
+    log('close', evt.code, evt.reason)
+    stopHeartbeat()
+    scheduleReconnect()
+  }
   ws.onerror = (err) => { log('error', err) }
 
   return ws
@@ -221,6 +344,8 @@ export function clearActiveSession(sessionId) {
   if (sessionId === undefined || sessionId === null) return
   activeSessions.delete(String(sessionId))
 }
+
+/** 下面保持你原来的实现不变：listSessions 等等 **/
 
 export async function listSessions({ page = 1, page_size = 20 } = {}) {
   const token = uni.getStorageSync('token') || ''

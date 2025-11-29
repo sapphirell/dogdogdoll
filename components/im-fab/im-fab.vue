@@ -1,7 +1,15 @@
 <template>
   <view class="im-fab" @click="goMessageList" hover-class="im-fab--hover">
-    <uni-icons type="chatboxes" :size="28" color="#006a57" />
-    <view v-if="badge > 0" class="dot">{{ badge > 99 ? '99+' : badge }}</view>
+    <!-- 彩虹光晕：永远在按钮下方 -->
+    <view class="im-fab-glow"></view>
+
+    <!-- 按钮主体 -->
+    <view class="im-fab-inner">
+      <uni-icons type="chat-filled" :size="28" color="#141a23" />
+      <view v-if="badge > 0" class="dot">
+        {{ badge > 99 ? '99+' : badge }}
+      </view>
+    </view>
   </view>
 </template>
 
@@ -17,20 +25,14 @@ function goMessageList () {
 }
 
 /**
- * 防重复连接/重复订阅：
- * - 组件可能在多个页面使用，为避免多次加载导致重复请求 unread 或重复订阅 WS 事件，
- *   这里用全局标记保证只在首个挂载时做一次“兜底连接 + 订阅占位”。
- * - 你的 im.js 应该已经对 connectIM 做了幂等处理；这里是双保险。
+ * 防重复连接/重复订阅
  */
 const FLAG = '__IM_FAB_BOUND__'
 
 onMounted(() => {
-  // 兜底：确保已连接（connectIM 内部应做幂等）
   connectIM()
 
-  // 只绑定一次（轻量 no-op 订阅，保证 unreadTotal 能被 WS 触发更新的场景下正常联动）
   if (!globalThis[FLAG]) {
-    // 如果 onIMEvent 有返回取消订阅方法，可按需保存；此处为 no-op 监听，不必解绑
     onIMEvent(() => {})
     globalThis[FLAG] = true
   }
@@ -45,15 +47,64 @@ onMounted(() => {
   bottom: calc(86px + env(safe-area-inset-bottom));
   width: 56px;
   height: 56px;
-  border-radius: 28px;
-  background: #ffb400;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.18);
   z-index: 9999;
+  overflow: visible;              /* 允许光晕溢出 */
+}
+
+/* 按钮主体：真正的圆角白色按钮 */
+.im-fab-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 28px;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;                     /* 永远在光晕之上 */
 }
-.im-fab--hover { opacity: 0.9; }
+
+/* 悬浮态轻微缩放 */
+.im-fab--hover .im-fab-inner {
+  transform: scale(0.96);
+  opacity: 0.95;
+}
+
+/* 彩虹投影：单独一个子 view，位于按钮底部 */
+.im-fab-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 0px;                  /* 控制光晕离按钮的距离 */
+  transform: translateX(-50%);
+  width: 100%;
+  height: 50px;
+  pointer-events: none;
+  z-index: 0;
+
+  /* 用径向渐变模拟一团光 */
+  background: radial-gradient(
+    ellipse at center,
+    #ff6b8b 0%,
+    #ffd36b 25%,
+    #6bffb4 50%,
+    #6b8bff 75%,
+    transparent 100%
+  );
+  filter: blur(14px);
+  opacity: 0.95;
+
+  /* 通过 hue-rotate 做彩虹循环，0° 和 360° 完全一致 => 无缝循环 */
+  animation: rainbow-hue 6s linear infinite;
+}
+
+@keyframes rainbow-hue {
+  0% {
+    filter: hue-rotate(0deg) blur(14px);
+  }
+  100% {
+    filter: hue-rotate(360deg) blur(14px);
+  }
+}
 
 /* 角标 */
 .dot {
@@ -63,12 +114,12 @@ onMounted(() => {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background: #ff4d4f;
+  background: #ff7072;
   color: #fff;
   border-radius: 10px;
   font-size: 12px;
   line-height: 20px;
   text-align: center;
-  box-shadow: 0 0 0 2px #fff; /* 贴深色底更清晰，可移除 */
+  box-shadow: 0 0 0 2px #fff;
 }
 </style>

@@ -313,6 +313,11 @@
             <text class="cm-desc-title">{{ currentFinishingSlide.name }}</text>
             <text class="cm-desc-text">{{ currentFinishingSlide.desc }}</text>
           </view>
+		  
+		  <view>
+			  <text class="cm-desc-title">为什么需要喷涂这些？</text>
+			  <text class="cm-desc-text">打底可以保护娃头不受颜料染色，同时提供一些粗糙度，以供颜料和色粉附着。定妆是为了避免颜料和色粉被磨掉。</text>
+		  </view>
 
         </view>
       </view>

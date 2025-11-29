@@ -260,6 +260,12 @@
 			"style": {
 				"navigationBarTitleText": ""
 			}
+		},
+		{
+			"path": "creator_order/received-list/received-list",
+			"style": {
+				"navigationBarTitleText": ""
+			}
 		}
       ]
     },
