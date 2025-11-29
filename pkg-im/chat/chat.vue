@@ -1,18 +1,31 @@
 <template>
   <view class="chat-page">
-    <!-- 顶部固定 -->
-    <view class="chat-header">
-      <view class="left" @click="goBack">
-        <uni-icons type="back" size="22" color="#333" />
-      </view>
-      <view class="center">
-        <text class="peer-name">{{ peerInfo.user_name || '私信' }}</text>
-        <text class="sub">{{ onlineText }}</text>
-      </view>
-      <view class="right"></view>
-    </view>
+    <!-- 顶部：固定半透明导航条（不随滚动渐变） -->
+    <zhouWei-navBar
+      type="fixed"
+      :backState="1000"
+      :homeState="2000"
+      bgColor="rgba(255,255,255,0.8)"
+      fontColor="#000000"
+      :shadow="false"
+    >
+      <!-- 左侧返回胶囊 -->
+      <template #left>
+        <view class="nav-back-pill nav-back-pill--offset" @click="goBack" aria-label="返回">
+          <uni-icons type="left" size="22" color="#000" />
+        </view>
+      </template>
 
-    <!-- 中间滚动区 -->
+      <!-- 中间：会话名 + 在线状态 -->
+      <template #default>
+        <view class="nav-center">
+          <text class="nav-title-ellipsis">{{ peerInfo.user_name || '私信' }}</text>
+          <text class="nav-sub">{{ onlineText }}</text>
+        </view>
+      </template>
+    </zhouWei-navBar>
+
+    <!-- 中间滚动区：top 使用 config.js 计算的安全距离 -->
     <scroll-view
       class="chat-body"
       :scroll-y="true"
@@ -20,9 +33,12 @@
       :scroll-into-view="scrollIntoId"
       :upper-threshold="100"
       @scrolltoupper="loadMore"
+      :style="{ top: headerOffsetPx, bottom: bodyBottomOffset }"
     >
-      <view class="load-more" v-if="hasMore && !loadingMore" @click="loadMore">点击加载更多</view>
-      <view class="load-more" v-if="loadingMore">加载中...</view>
+      <view class="load-more" v-if="hasMore && !loadingMore" @click="loadMore">下拉加载更多</view>
+      <view class="load-more" v-if="loadingMore">
+		  <loading-jump-text></loading-jump-text>
+	  </view>
 
       <view class="msg-list">
         <view
@@ -60,7 +76,7 @@
                     <text class="msg-card-title">{{ cardTitle(m) }}</text>
                   </view>
 
-                  <!-- 新增：卡片封面图 -->
+                  <!-- 卡片封面图 -->
                   <view v-if="cardImage(m)" class="msg-card-image-wrap">
                     <image
                       class="msg-card-image"
@@ -125,7 +141,6 @@
         @confirm="sendText"
         @focus="scrollToBottomSoon"
       />
-      <!-- <button class="send-btn font-alimamashuhei" :disabled="!draft || isBlocked" @click="sendText">发送</button> -->
 
       <view class="emoji-panel" v-if="showEmoji">
         <view class="emoji-row">
@@ -133,14 +148,33 @@
         </view>
       </view>
     </view>
+
+    <!-- 额外的底部安全区域 -->
+    <view class="chat-safe-bottom" :style="{ height: footerSafePx }"></view>
   </view>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { onLoad, onUnload, onShow, onHide } from '@dcloudio/uni-app'
-import { websiteUrl } from '@/common/config.js'
-import { connectIM, onIMEvent, getWS, setActiveSession, clearActiveSession } from '@/common/im.js'
+import { ref, nextTick, computed } from 'vue'
+import {
+  onLoad,
+  onUnload,
+  onShow,
+  onHide
+} from '@dcloudio/uni-app'
+import {
+  websiteUrl,
+  getWindowTop,
+  getFooterPlaceholderHeight,
+  toPx
+} from '@/common/config.js'
+import {
+  connectIM,
+  onIMEvent,
+  getWS,
+  setActiveSession,
+  clearActiveSession
+} from '@/common/im.js'
 
 /** 路由与会话 */
 const peerId = ref(0)
@@ -169,11 +203,28 @@ const emojis = ['😀','😁','😂','🤣','😊','😍','😘','😎','😡','
 
 /** 屏蔽/已读 */
 const isBlocked = ref(false)
-const myReadPts = ref(0)     // 我读到的最大 pts（用于发 read_ack）
-const peerReadPts = ref(0)   // 对方读到的最大 pts（用于展示“已读”）
+const myReadPts = ref(0)
+const peerReadPts = ref(0)
 
 /** 订阅取消 */
 let offIM = null
+
+/** 是否已经做过首屏初始化 */
+const hasInitOnce = ref(false)
+
+/** 顶部 / 底部安全区域计算 */
+const windowTopPxRaw = ref(0)
+const footerSafeRaw = ref(0)
+const headerOffsetPx = computed(() => toPx(windowTopPxRaw.value))
+
+// 底部安全区在原基础上 +20
+const footerSafePx = computed(() => toPx(footerSafeRaw.value + 20))
+
+/**
+ * 聊天内容区域底部偏移：
+ * - 104rpx 为输入条高度
+ */
+const bodyBottomOffset = computed(() => '104rpx')
 
 /* ---------- 工具：初始化本端 uid ---------- */
 function initSelfUidFromStorage() {
@@ -211,62 +262,76 @@ function applyPeerReadPts(newPts) {
 onLoad((query) => {
   peerId.value = Number(query.peer_id || 0)
   initSelfUidFromStorage()
+
+  // 初始化安全区信息
+  windowTopPxRaw.value = getWindowTop()
+  footerSafeRaw.value = getFooterPlaceholderHeight()
+  console.log('footerSafe:', footerSafeRaw.value)
 })
 
 onShow(async () => {
-  await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
+  if (!hasInitOnce.value) {
+    await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
 
-  connectIM()
-  if (offIM) { offIM(); offIM = null }
-  offIM = onIMEvent(handleIMEvent)
+    connectIM()
+    if (offIM) { offIM = null }
+    offIM = onIMEvent(handleIMEvent)
 
-  // 1) 获取/建立会话（首屏拿到 numeric_id + 对方已读游标）
-  const token = uni.getStorageSync('token')
-  try {
-    const res = await uni.request({
-      url: `${websiteUrl.value}/with-state/im/start-session?peer_id=${encodeURIComponent(peerId.value)}`,
-      method: 'POST',
-      header: token ? { Authorization: token } : {}
-    })
-    if (res?.data?.status === 'success' && res.data?.data?.session_id) {
-      const data = res.data.data
-      sessionKey.value = String(data.session_id) // "dm-xxx-yyy"
-      const nId = Number(data?.numeric_id || 0)
-      if (nId > 0) numericSid.value = nId
+    const token = uni.getStorageSync('token')
+    try {
+      const res = await uni.request({
+        url: `${websiteUrl.value}/with-state/im/start-session?peer_id=${encodeURIComponent(peerId.value)}`,
+        method: 'POST',
+        header: token ? { Authorization: token } : {}
+      })
+      if (res?.data?.status === 'success' && res.data?.data?.session_id) {
+        const data = res.data.data
+        sessionKey.value = String(data.session_id)
+        const nId = Number(data?.numeric_id || 0)
+        if (nId > 0) numericSid.value = nId
 
-      const peerPtsFromStart = Number(
-        data?.peer_read_pts ?? data?.peerReadPts ?? data?.read_pts_peer ?? 0
-      )
-      if (peerPtsFromStart > 0) applyPeerReadPts(peerPtsFromStart)
-    } else {
-      console.warn('[CHAT] start-session failed', res?.data)
+        const peerPtsFromStart = Number(
+          data?.peer_read_pts ?? data?.peerReadPts ?? data?.read_pts_peer ?? 0
+        )
+        if (peerPtsFromStart > 0) applyPeerReadPts(peerPtsFromStart)
+      } else {
+        console.warn('[CHAT] start-session failed', res?.data)
+        return
+      }
+    } catch (e) {
+      console.error('[CHAT] start-session error', e)
       return
     }
-  } catch (e) {
-    console.error('[CHAT] start-session error', e)
+
+    page.value = 1
+    messages.value = []
+    hasMore.value = true
+    await loadHistory()
+
+    markReadToBottom()
+
+    setActiveSession(numericSid.value > 0 ? numericSid.value : sessionKey.value)
+
+    hasInitOnce.value = true
     return
   }
 
-  // 2) 首屏加载 20 条
-  page.value = 1
-  messages.value = []
-  hasMore.value = true
-  await loadHistory()
-
-  // 历史加载完成后，立刻通过 WS 发送 read_ack
-  markReadToBottom()
-
-  // 告知 IM：当前会话激活（未读角标排除）
-  setActiveSession(numericSid.value > 0 ? numericSid.value : sessionKey.value)
+  connectIM()
+  if (offIM) { offIM = null }
+  offIM = onIMEvent(handleIMEvent)
+  const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
+  if (key) setActiveSession(key)
 })
 
-onHide(() => { if (offIM) { offIM(); offIM = null } })
+onHide(() => {
+  if (offIM) { offIM = null }
+})
+
 onUnload(() => {
-  if (offIM) { offIM(); offIM = null }
+  if (offIM) { offIM = null }
   leaveActiveSession()
 })
 
-/** 本地封装：离开页面时取消激活 */
 function leaveActiveSession() {
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) clearActiveSession(key)
@@ -349,7 +414,6 @@ async function loadHistory() {
       }
     }
 
-    // fallback：HTTP
     if (!sessionKey.value) return
     const token = uni.getStorageSync('token') || ''
     const res = await uni.request({
@@ -427,7 +491,7 @@ async function pickAndSendImage() {
   } catch (e) {}
 }
 
-/** 示例的 other 消息（老结构），保留 */
+/** 示例的 other 消息 */
 function sendSampleOther() {
   sendPayload({
     kind: 'other',
@@ -436,7 +500,7 @@ function sendSampleOther() {
   })
 }
 
-/** 发送统一实现（ACK 用 splice 替换） */
+/** 发送统一实现 */
 function sendPayload(msgPart) {
   const socket = getWS()
   if (!socket || socket.readyState !== 1) {
@@ -489,7 +553,7 @@ function sendPayload(msgPart) {
     })
 }
 
-/** 工具：用 splice 替换某条消息 */
+/** 用 local_key 替换某条消息 */
 function updateMessageByLocalKey(localKey, updater) {
   const idx = messages.value.findIndex((x) => x.local_key === localKey)
   if (idx >= 0) {
@@ -528,7 +592,6 @@ function markReadToBottom() {
 function handleIMEvent(payload) {
   if (!payload || typeof payload !== 'object') return
 
-  // 收到 message 事件
   if (payload.type === 'im.event' && payload.event === 'message') {
     const d = payload.data || {}
     if (Number(d.session_id || 0) > 0 && numericSid.value === 0) {
@@ -582,7 +645,6 @@ function handleIMEvent(payload) {
     return
   }
 
-  // read 事件：更新对方已读游标
   if (payload.type === 'im.event' && payload.event === 'read') {
     const d = payload.data || {}
     if (numericSid.value > 0 && Number(d.session_id || 0) !== Number(numericSid.value)) {
@@ -622,7 +684,7 @@ function waitWsResponseOnce(socket, action, reqId, timeout = 8000, sender) {
   })
 }
 
-/** 转换与工具：发送内容 -> WS content */
+/** 发送内容 -> WS content */
 function toWsContent(part) {
   if (part.kind === 'text') {
     return { type: 'text', text: part.text }
@@ -634,7 +696,6 @@ function toWsContent(part) {
     return { type: 'image', images: [{ url: part.url }] }
   }
   if (part.kind === 'other') {
-    // 这里对应后端 OtherPayload：biz + 其它字段
     return {
       type: 'other',
       other: {
@@ -646,7 +707,7 @@ function toWsContent(part) {
   return { type: 'text', text: '[未知类型]' }
 }
 
-/** 构建消息唯一签名，用于本地“发送中 -> 已发送”的合并 */
+/** 构建消息唯一签名 */
 function buildSig(m) {
   const kind = m.kind || (m.content?.type) || ''
   if (kind === 'text') return `t|${(m.text || '').slice(0, 200)}`
@@ -659,7 +720,7 @@ function buildSig(m) {
   return `u|`
 }
 
-/** 本地临时消息（发送中） */
+/** 本地临时消息 */
 function buildLocalMsg(part) {
   const now = Date.now()
   const base = {
@@ -695,7 +756,7 @@ function buildLocalMsg(part) {
   return ui
 }
 
-/** HTTP -> UI 消息结构（含 card） */
+/** HTTP -> UI 消息结构 */
 function httpToUiMessage(n) {
   const payload = n.payload || {}
   const ui = {
@@ -719,7 +780,7 @@ function httpToUiMessage(n) {
   return ui
 }
 
-/** WS 消息 -> UI 消息结构（含 card） */
+/** WS 消息 -> UI 消息结构 */
 function wsToUiMessage(m) {
   const base = {
     id: Number(m.id || 0),
@@ -792,7 +853,7 @@ function fmtTime(ts) {
   return `${hh}:${m}`
 }
 
-/** 旧版 other 消息的简要描述 + 卡片兜底描述 */
+/** 旧版 other 消息的简要描述 */
 function briefOther(m) {
   try {
     const card = m.card || m.payload?.card
@@ -853,7 +914,6 @@ function genClientMID() {
 
 /* ===================== 消息卡片相关工具 ===================== */
 
-/** card_type -> 显示标签 */
 function mapCardTypeLabel(cardType) {
   switch (cardType) {
     case 'artist_order_step_request':
@@ -888,7 +948,7 @@ function cardDescription(m) {
   const card = pickCard(m) || {}
   return card.description || ''
 }
-/** 新增：取卡片图片 URL（兼容多种命名） */
+/** 取卡片图片 URL */
 function cardImage(m) {
   const card = pickCard(m) || {}
   const url = card.image_url || card.imageUrl || card.img_url || ''
@@ -899,12 +959,11 @@ function cardActionText(m) {
   return card.action_text || '查看详情'
 }
 
-/** 点击消息卡片：优先走 app_page，其次 h5_url，最后 Toast 提示 */
+/** 点击消息卡片 */
 function handleCardClick(m) {
   const card = pickCard(m)
   if (!card) return
 
-  // 1. 优先 app_page：由后端给出完整前端路径时直接跳转
   if (card.app_page) {
     try {
       uni.navigateTo({ url: card.app_page })
@@ -914,7 +973,6 @@ function handleCardClick(m) {
     }
   }
 
-  // 2. H5 链接：先复制到剪贴板，让用户自己在浏览器打开
   if (card.h5_url) {
     try {
       uni.setClipboardData({
@@ -930,7 +988,6 @@ function handleCardClick(m) {
     } catch (_) {}
   }
 
-  // 3. 兜底提示
   uni.showToast({
     title: card.action_text || '暂不支持的卡片操作',
     icon: 'none'
@@ -941,56 +998,54 @@ function handleCardClick(m) {
 <style lang="less" scoped>
 .chat-page {
   height: 100vh;
-  background: #f5f7fa;
+  background: #ffffff;
 }
 
-/* 顶部固定 */
-.chat-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 9;
-  height: 88rpx;
-  padding: 0 20rpx;
+/* 顶部返回的小胶囊 */
+.nav-back-pill {
+  height: 56rpx;
+  padding: 0 18rpx;
+  border-radius: 33rpx;
+  background: rgba(255, 255, 255, 0.85);
+  border: 2rpx solid rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
-  background: #fff;
-  .left,
-  .right {
-    width: 80rpx;
-    display: flex;
-    align-items: center;
-  }
-  .center {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    .peer-name {
-      font-size: 30rpx;
-      color: #222;
-      font-weight: 600;
-    }
-    .sub {
-      font-size: 22rpx;
-      color: #9aa0a6;
-      margin-top: 6rpx;
-    }
-  }
+  justify-content: center;
+}
+.nav-back-pill--offset {
+  margin-left: 24rpx;
 }
 
-/* 中间滚动区固定在 header 与输入条之间 */
+.nav-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.nav-title-ellipsis {
+  max-width: 60vw;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #000;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.nav-sub {
+  font-size: 22rpx;
+  color: #9aa0a6;
+  margin-top: 4rpx;
+}
+
+/* 中间滚动区固定在 自定义导航条 与输入条之间 */
 .chat-body {
   position: fixed;
   left: 0;
   right: 0;
-  top: 88rpx; /* header 高度 */
-  bottom: 104rpx; /* 输入条高度 */
   padding: 20rpx;
-  padding-bottom: 0;
+  padding-bottom: 20rpx;
+  padding-top: 100rpx;
   box-sizing: border-box;
-  background: #fff;
+  background: #f5f5f5;
 }
 .load-more {
   width: 100%;
@@ -1015,8 +1070,8 @@ function handleCardClick(m) {
   }
 }
 .msg-item .avatar {
-  width: 68rpx;
-  height: 68rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background: #eee;
 }
@@ -1043,7 +1098,7 @@ function handleCardClick(m) {
   word-break: break-word;
 }
 .msg-item.self .bubble {
-  background: #E0F0FB;
+  background: #e0f0fb;
   border-top-right-radius: 8rpx;
   border-top-left-radius: 18rpx;
 }
@@ -1061,7 +1116,7 @@ function handleCardClick(m) {
   top: 22rpx;
 }
 .msg-item.self .bubble::after {
-  background: #E0F0FB;
+  background: #e0f0fb;
   left: auto;
   right: -8rpx;
 }
@@ -1123,7 +1178,7 @@ function handleCardClick(m) {
   color: #111827;
 }
 
-/* 新增：卡片图片区域 */
+/* 卡片图片区域 */
 .msg-card-image-wrap {
   margin-bottom: 12rpx;
   border-radius: 12rpx;
@@ -1163,11 +1218,7 @@ function handleCardClick(m) {
   font-size: 20rpx;
   line-height: 1;
 }
-.meta .time {
-  opacity: 0.95;
-  color: #9aa0a6 !important;
-  font-size: 20rpx;
-}
+.meta .time,
 .meta .status {
   opacity: 0.95;
   color: #9aa0a6 !important;
@@ -1187,9 +1238,9 @@ function handleCardClick(m) {
   bottom: 0;
   z-index: 10;
   background: #e0f0fb;
-  padding: 18rpx 16rpx 16rpx;
+  padding: 18rpx 16rpx 30rpx;
   display: grid;
-  grid-template-columns: 120rpx 1fr 20rpx;
+  grid-template-columns: 140rpx 1fr 20rpx;
   gap: 22rpx;
   .tools {
     display: flex;
@@ -1213,7 +1264,7 @@ function handleCardClick(m) {
     font-size: 26rpx;
   }
   .send-btn::after {
-	  border: none;
+    border: none;
   }
 }
 .emoji-panel {
@@ -1232,5 +1283,23 @@ function handleCardClick(m) {
   .emoji-item {
     font-size: 40rpx;
   }
+}
+
+/* 底部安全区域 */
+.chat-safe-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: 5;
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  display: none !important;
 }
 </style>
