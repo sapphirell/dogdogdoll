@@ -5,7 +5,7 @@
       "style": {
         "navigationBarTitleText": "首页",
         "navigationStyle": "custom",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": false
       }
     },
     {
@@ -263,6 +263,12 @@
 		},
 		{
 			"path": "creator_order/received-list/received-list",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/received-detail/received-detail",
 			"style": {
 				"navigationBarTitleText": ""
 			}

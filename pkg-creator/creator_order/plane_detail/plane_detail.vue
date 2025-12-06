@@ -1211,7 +1211,9 @@ const descText = computed(() => '')
   font-size: 24rpx;
   color:#888;
 }
-
+uni-button:after {
+	border: none;
+}
 /* 隐藏滚动条 */
 ::-webkit-scrollbar{ width:0!important; height:0!important; background:transparent!important; display:none!important; }
 </style>

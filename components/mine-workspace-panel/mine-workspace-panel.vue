@@ -497,7 +497,7 @@ function goBrandHome () {
 // 跳转到“我收到的投递”列表（作者视角页面）
 function goReceivedSubmissions () {
   uni.navigateTo({
-    url: '/pkg-creator/creator_base/artist_received/artist_received'
+    url: '/pkg-creator/creator_order/received-list/received-list'
   })
 }
 
