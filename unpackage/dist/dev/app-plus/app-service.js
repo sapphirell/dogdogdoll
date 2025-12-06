@@ -110,7 +110,7 @@ if (uni.restoreGlobal) {
     2
     /* HookFlags.PAGE */
   );
-  const websiteUrl = vue.ref("http://localhost:8080");
+  const websiteUrl = vue.ref("https://api.fantuanpu.com");
   const devUrl = "http://localhost:8080";
   const cnURL = "https://api.fantuanpu.com";
   const usURL = "https://us-api.dogdogdoll.com";
@@ -9409,71 +9409,21 @@ if (uni.restoreGlobal) {
   const _sfc_main$1L = {
     __name: "shmily-drag-image",
     props: {
-      value: {
-        type: Array,
-        default: () => []
-      },
-      customClick: {
-        type: Boolean,
-        default: false
-      },
-      modelValue: {
-        type: Array,
-        default: () => []
-      },
-      keyName: {
-        type: String,
-        default: "image_url"
-        // 默认使用image_url作为图片字段
-      },
-      number: {
-        type: Number,
-        default: 6
-      },
-      imageWidth: {
-        type: Number,
-        default: 0
-      },
-      cols: {
-        type: Number,
-        default: 3
-      },
-      borderRadius: {
-        type: String,
-        default: 0
-      },
-      padding: {
-        type: Number,
-        default: 10
-      },
-      scale: {
-        type: Number,
-        default: 1.1
-      },
-      opacity: {
-        type: Number,
-        default: 0.7
-      },
-      // 新增：每个项目之间的边距
-      itemMargin: {
-        type: Number,
-        default: 10
-      },
-      // 新增：图片与文字的比例
-      imageRatio: {
-        type: Number,
-        default: 0.7
-        // 图片区域占总高度的70%
-      },
-      // 显示item的信息
-      showItemInfo: {
-        type: Boolean,
-        default: true
-      },
-      showDelete: {
-        type: Boolean,
-        default: false
-      },
+      value: { type: Array, default: () => [] },
+      customClick: { type: Boolean, default: false },
+      modelValue: { type: Array, default: () => [] },
+      keyName: { type: String, default: "image_url" },
+      number: { type: Number, default: 6 },
+      imageWidth: { type: Number, default: 0 },
+      cols: { type: Number, default: 3 },
+      borderRadius: { type: String, default: "0" },
+      padding: { type: Number, default: 10 },
+      scale: { type: Number, default: 1.1 },
+      opacity: { type: Number, default: 0.7 },
+      itemMargin: { type: Number, default: 10 },
+      imageRatio: { type: Number, default: 0.7 },
+      showItemInfo: { type: Boolean, default: true },
+      showDelete: { type: Boolean, default: false },
       /* 付款状态标签（新增能力） */
       showPaymentTag: { type: Boolean, default: false },
       paymentField: { type: String, default: "payment_status" },
@@ -9487,6 +9437,37 @@ if (uni.restoreGlobal) {
       __expose();
       const props = __props;
       const emit = __emit;
+      const NO_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+      <rect width="100%" height="100%" fill="#e9ebef"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+        fill="#9aa0a6" font-size="40" font-family="Arial">No Image</text>
+    </svg>`
+      );
+      const getSrc = (item) => props.keyName !== null ? item[props.keyName] : item;
+      function normalizeFirstImage(s2) {
+        if (!s2)
+          return "";
+        const first2 = String(s2).split(",")[0].trim();
+        const low = first2.toLowerCase();
+        if (!first2 || low.includes("/default") || low.endsWith("default.png") || low.includes("noimage"))
+          return "";
+        return first2;
+      }
+      function getDisplayImg(item) {
+        if (item.__imgBroken)
+          return NO_IMG;
+        const src = normalizeFirstImage(item.src);
+        return src || NO_IMG;
+      }
+      function onImgError(item) {
+        item.__imgBroken = true;
+      }
+      function getDisplayPrice(price) {
+        if (price === null || price === void 0)
+          return "";
+        return String(price).replace(/【.*?】/g, "").trim();
+      }
       const imageList = vue.ref([]);
       const width = vue.ref(0);
       const add = vue.ref({ x: 0, y: 0 });
@@ -9502,47 +9483,31 @@ if (uni.restoreGlobal) {
       const longPressTimer = vue.ref(null);
       const isDragging = vue.ref(false);
       const isMounted = vue.ref(false);
-      const instanceRef = vue.ref(null);
-      const imgObservers = /* @__PURE__ */ new Map();
       const areaHeight = vue.computed(() => {
         if (imageList.value.length < props.number) {
           return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + "px";
         }
         return Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value + "px";
       });
-      const childWidth = vue.computed(() => {
-        return viewWidth.value - rpx2px2(props.padding) * 2 + "px";
-      });
-      const childHeight = vue.computed(() => {
-        return viewHeight.value - rpx2px2(props.padding) * 2 + "px";
-      });
+      const childWidth = vue.computed(() => viewWidth.value - rpx2px2(props.padding) * 2 + "px");
+      const childHeight = vue.computed(() => viewHeight.value - rpx2px2(props.padding) * 2 + "px");
       const deleteImage = (item) => {
         emit("delete", item.id);
         const index = imageList.value.findIndex((img) => img.id === item.id);
         if (index !== -1) {
-          destroyImgObserver(item.id);
           imageList.value.splice(index, 1);
           updateItemsPosition();
           sortList();
         }
       };
-      const getSrc = (item) => {
-        return props.keyName !== null ? item[props.keyName] : item;
-      };
-      const getItemData = (item) => {
-        var _a, _b;
-        const ps2 = item[props.paymentField] ?? item.payStatus ?? 1;
-        return {
-          id: item.id,
-          src: getSrc(item),
-          name: item.name,
-          price: item.price,
-          type: item.type,
-          // 预计算，拖拽时不会变
-          payStatus: ps2,
-          _payText: ((_a = props.paymentMap) == null ? void 0 : _a[Number(ps2)]) || ((_b = props.paymentMap) == null ? void 0 : _b[1]) || "已全款"
-        };
-      };
+      const getItemData = (item) => ({
+        id: item.id,
+        src: getSrc(item),
+        name: item.name,
+        price: item.price,
+        type: item.type,
+        payStatus: item[props.paymentField] ?? 1
+      });
       const onChange = (e2, item) => {
         if (!item)
           return;
@@ -9554,19 +9519,19 @@ if (uni.restoreGlobal) {
               Math.pow(item.oldX - item.absX * viewWidth.value, 2) + Math.pow(item.oldY - item.absY * viewHeight.value, 2)
             );
           }
-          let x = Math.floor((e2.detail.x + viewWidth.value / 2) / viewWidth.value);
+          const x = Math.floor((e2.detail.x + viewWidth.value / 2) / viewWidth.value);
           if (x >= colsValue.value)
             return;
-          let y2 = Math.floor((e2.detail.y + viewHeight.value / 2) / viewHeight.value);
-          let index = colsValue.value * y2 + x;
+          const y2 = Math.floor((e2.detail.y + viewHeight.value / 2) / viewHeight.value);
+          const index = colsValue.value * y2 + x;
           if (item.index !== index && index < imageList.value.length) {
             changeStatus.value = false;
             imageList.value.forEach((obj) => {
-              if (item.index > index && obj.index >= index && obj.index < item.index) {
+              if (item.index > index && obj.index >= index && obj.index < item.index)
                 changeObj(obj, 1);
-              } else if (item.index < index && obj.index <= index && obj.index > item.index) {
+              else if (item.index < index && obj.index <= index && obj.index > item.index)
                 changeObj(obj, -1);
-              } else if (obj.id !== item.id) {
+              else if (obj.id !== item.id) {
                 obj.offset = 0;
                 obj.x = obj.oldX;
                 obj.y = obj.oldY;
@@ -9599,8 +9564,8 @@ if (uni.restoreGlobal) {
         if (oldIndex === -1 || oldIndex === newIndex)
           return;
         imageList.value.splice(newIndex, 0, imageList.value.splice(oldIndex, 1)[0]);
-        imageList.value.forEach((item2, idx) => {
-          item2.index = idx;
+        imageList.value.forEach((it2, idx) => {
+          it2.index = idx;
         });
         sortList();
       };
@@ -9624,26 +9589,20 @@ if (uni.restoreGlobal) {
           clearTimeout(longPressTimer.value);
           longPressTimer.value = null;
         }
-        imageList.value.forEach((item2) => {
-          item2.ready = false;
-          item2.disable = true;
+        imageList.value.forEach((it2) => {
+          it2.ready = false;
+          it2.disable = true;
         });
-        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:347", "长按开始");
         longPressTimer.value = setTimeout(() => {
-          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:351", "长按成功！");
-          uni.vibrateShort({
-            success: () => {
-              formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:354", "触感反馈");
-            }
-          });
+          var _a;
+          (_a = uni.vibrateShort) == null ? void 0 : _a.call(uni);
           item.ready = true;
           item.disable = false;
           isDragging.value = true;
           touchstart(item);
         }, 240);
       };
-      const touchstart = (item, e2) => {
-        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:365", "进入touchstart");
+      const touchstart = (item) => {
         imageList.value.forEach((v2) => {
           v2.zIndex = v2.index + 9;
         });
@@ -9664,16 +9623,12 @@ if (uni.restoreGlobal) {
         item.y = item.oldY;
         item.offset = 0;
         item.moveEnd = false;
-        formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:390", "结束点击，清理ready");
-        imageList.value.forEach((item2) => {
-          item2.ready = false;
-          item2.disable = true;
+        imageList.value.forEach((it2) => {
+          it2.ready = false;
+          it2.disable = true;
         });
-        if (isDragging.value == true) {
-          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:396", "来自于拖拽的结束,上报排序事件");
-          const sortedIds = imageList.value.map((item2) => item2.id);
-          emit("sort-change", sortedIds);
-          formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:402", "排序后的ID", sortedIds);
+        if (isDragging.value) {
+          emit("sort-change", imageList.value.map((it2) => it2.id));
         }
         isDragging.value = false;
         if (longPressTimer.value) {
@@ -9697,134 +9652,58 @@ if (uni.restoreGlobal) {
           });
         }, 50);
       };
-      const getFirstImage = (imageUrls) => {
-        var _a;
-        if (!imageUrls)
-          return "";
-        const urls = imageUrls.split(",");
-        const firstUrl = ((_a = urls[0]) == null ? void 0 : _a.trim()) || "";
-        if (firstUrl.startsWith("http")) {
-          return firstUrl;
-        }
-        return "";
-      };
       const previewImage = (item) => {
-        if (timer.value && preStatus.value && changeStatus.value && item.offset < 28.28) {
-          clearTimeout(timer.value);
-          timer.value = null;
-          const list = props.modelValue.length ? props.modelValue : props.value;
-          let srcList = list.map((v2) => getSrc(v2));
-          uni.previewImage({
-            urls: srcList,
-            current: item.src,
-            success: () => {
-              preStatus.value = false;
-              setTimeout(() => {
-                preStatus.value = true;
-              }, 600);
-            },
-            fail: (e2) => {
-              formatAppLog("log", "at components/shmily-drag-image/shmily-drag-image.vue:465", e2);
-            }
-          });
-        } else if (timer.value) {
-          clearTimeout(timer.value);
-          timer.value = null;
-        }
       };
       const mouseenter = () => {
       };
       const mouseleave = () => {
       };
-      const onTouchMove = (e2, item) => {
+      const onTouchMove = (e2) => {
         if (isDragging.value)
           return;
-        const touchY = e2.touches[0].clientY;
-        const deltaY = Math.abs(touchY - touchStartY.value);
+        const deltaY = Math.abs(e2.touches[0].clientY - touchStartY.value);
         if (deltaY > 10 && longPressTimer.value) {
           clearTimeout(longPressTimer.value);
           longPressTimer.value = null;
         }
       };
-      const delImageHandle = (item, index) => {
-        destroyImgObserver(item.id);
-        imageList.value.splice(index, 1);
-        imageList.value.forEach((obj) => {
-          if (obj.index > item.index) {
-            obj.index -= 1;
-            obj.x = obj.oldX;
-            obj.y = obj.oldY;
-            obj.absX = obj.index % colsValue.value;
-            obj.absY = Math.floor(obj.index / colsValue.value);
-            vue.nextTick(() => {
-              obj.x = obj.absX * viewWidth.value;
-              obj.y = obj.absY * viewHeight.value;
-            });
-          }
-        });
-        add.value.x = imageList.value.length % colsValue.value * viewWidth.value;
-        add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value;
-        sortList();
-      };
       const delImageMp = (item, index) => {
-      };
-      function go2editor(id) {
-        uni.navigateTo({
-          url: "/pkg-stock/account_book_form/account_book_form?account_book_id=" + id
-        });
-      }
-      const handleItemClick = (item) => {
-        emit("item-click", item);
-        if (!props.customClick) {
-          go2preview(item.id);
-        }
       };
       function go2preview(id) {
         uni.navigateTo({
           url: "/pkg-stock/account_book_preview/account_book_preview?account_book_id=" + id
         });
       }
-      const onLongPressCancel = () => {
-        if (longPressTimer.value) {
-          clearTimeout(longPressTimer.value);
-          longPressTimer.value = null;
-        }
+      const handleItemClick = (item) => {
+        emit("item-click", item);
+        if (!props.customClick)
+          go2preview(item.id);
       };
-      const updateAllItemsPosition = () => {
-        listItems.value.forEach((item) => {
-          const newAbsX = item.index % colsValue.value;
-          const newAbsY = Math.floor(item.index / colsValue.value);
-          const targetX = newAbsX * viewWidth.value;
-          const targetY = newAbsY * viewWidth.value;
-          item.x = targetX;
-          item.y = targetY;
-          item.originX = targetX;
-          item.originY = targetY;
-          item.absX = newAbsX;
-          item.absY = newAbsY;
-        });
-      };
-      const sortList = () => {
-        const result = [];
-        const source = props.modelValue.length ? props.modelValue : props.value;
-        const list = [...imageList.value].sort((a2, b2) => a2.index - b2.index);
-        for (let s2 of list) {
-          const item = source.find((d2) => getSrc(d2) === s2.src);
-          if (item) {
-            result.push(item);
-          } else {
-            if (props.keyName !== null) {
-              result.push({
-                [props.keyName]: s2.src
-              });
-            } else {
-              result.push(s2.src);
+      const rpx2px2 = (v2) => width.value * v2 / 750;
+      const instanceRef = vue.ref(null);
+      vue.onMounted(() => {
+        width.value = uni.getSystemInfoSync().windowWidth;
+        instanceRef.value = vue.getCurrentInstance();
+        vue.nextTick(() => {
+          const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
+          query.select(".con").boundingClientRect((data) => {
+            if (!data)
+              return;
+            colsValue.value = props.cols;
+            viewWidth.value = data.width / props.cols;
+            viewHeight.value = viewWidth.value * 1.3;
+            if (props.imageWidth > 0) {
+              viewWidth.value = rpx2px2(props.imageWidth);
+              viewHeight.value = viewWidth.value * 1.3;
+              colsValue.value = Math.floor(data.width / viewWidth.value);
             }
-          }
-        }
-        emit("input", result);
-        emit("update:modelValue", result);
-      };
+            const list = props.modelValue.length ? props.modelValue : props.value;
+            list.forEach((item) => addProperties(item));
+            first.value = false;
+            isMounted.value = true;
+          }).exec();
+        });
+      });
       const addProperties = (item) => {
         const data = getItemData(item);
         const absX = imageList.value.length % colsValue.value;
@@ -9848,62 +9727,11 @@ if (uni.restoreGlobal) {
           offset: 0,
           moveEnd: false,
           ready: false,
-          _imgLoaded: false,
-          // ✅ 懒加载：默认未加载真实图片
           __imgBroken: false
         });
         add.value.x = imageList.value.length % colsValue.value * viewWidth.value;
         add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value;
       };
-      const rpx2px2 = (v2) => {
-        return width.value * v2 / 750;
-      };
-      const guid = (len = 32) => {
-        const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");
-        const uuid = [];
-        const radix = chars.length;
-        for (let i2 = 0; i2 < len; i2++)
-          uuid[i2] = chars[0 | Math.random() * radix];
-        uuid.shift();
-        return `u${uuid.join("")}`;
-      };
-      vue.onMounted(() => {
-        width.value = uni.getSystemInfoSync().windowWidth;
-        instanceRef.value = vue.getCurrentInstance();
-        vue.nextTick(() => {
-          const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
-          query.select(".con").boundingClientRect((data) => {
-            if (!data) {
-              formatAppLog("error", "at components/shmily-drag-image/shmily-drag-image.vue:688", "未找到 .con 元素");
-              return;
-            }
-            colsValue.value = props.cols;
-            viewWidth.value = data.width / props.cols;
-            viewHeight.value = viewWidth.value * 1.3;
-            if (props.imageWidth > 0) {
-              viewWidth.value = rpx2px2(props.imageWidth);
-              viewHeight.value = viewWidth.value * 1.3;
-              colsValue.value = Math.floor(data.width / viewWidth.value);
-            }
-            const list = props.modelValue.length ? props.modelValue : props.value;
-            list.forEach((item) => {
-              addProperties(item);
-            });
-            first.value = false;
-            setupLazyLoadForAll();
-          }).exec();
-        });
-        isMounted.value = true;
-      });
-      vue.onBeforeUnmount(() => {
-        imgObservers.forEach((ob) => {
-          try {
-            ob.disconnect();
-          } catch (e2) {
-          }
-        });
-        imgObservers.clear();
-      });
       const updateItemsPosition = () => {
         imageList.value.forEach((item, index) => {
           item.index = index;
@@ -9917,61 +9745,57 @@ if (uni.restoreGlobal) {
           item.absY = newAbsY;
         });
       };
-      const initViewSize = () => {
-        return new Promise((resolve) => {
-          if (!instanceRef.value || !instanceRef.value.proxy) {
-            formatAppLog("warn", "at components/shmily-drag-image/shmily-drag-image.vue:751", "Component instance not available for selector query");
+      const initViewSize = () => new Promise((resolve) => {
+        if (!instanceRef.value || !instanceRef.value.proxy)
+          return resolve();
+        const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
+        query.select(".con").boundingClientRect((data) => {
+          if (!data)
             return resolve();
-          }
-          const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
-          query.select(".con").boundingClientRect((data) => {
-            if (!data)
-              return resolve();
-            colsValue.value = props.cols;
-            viewWidth.value = data.width / props.cols;
+          colsValue.value = props.cols;
+          viewWidth.value = data.width / props.cols;
+          viewHeight.value = viewWidth.value * 1.3;
+          if (props.imageWidth > 0) {
+            viewWidth.value = rpx2px2(props.imageWidth);
             viewHeight.value = viewWidth.value * 1.3;
-            if (props.imageWidth > 0) {
-              viewWidth.value = rpx2px2(props.imageWidth);
-              viewHeight.value = viewWidth.value * 1.3;
-              colsValue.value = Math.floor(data.width / viewWidth.value);
-            }
-            resolve();
-          }).exec();
-        });
-      };
-      vue.watch(
-        () => props.modelValue,
-        (newVal) => {
-          if (isDragging.value)
-            return;
-          if (isMounted.value) {
-            vue.nextTick(() => {
-              initViewSize().then(() => {
-                updateImageList(newVal);
-                setupLazyLoadForAll();
-              });
-            });
+            colsValue.value = Math.floor(data.width / viewWidth.value);
           }
-        },
-        {
-          deep: true,
-          immediate: true
+          resolve();
+        }).exec();
+      });
+      const sortList = () => {
+        const result = [];
+        const source = props.modelValue.length ? props.modelValue : props.value;
+        const list = [...imageList.value].sort((a2, b2) => a2.index - b2.index);
+        for (const s2 of list) {
+          const item = source.find((d2) => getSrc(d2) === s2.src);
+          if (item)
+            result.push(item);
+          else {
+            if (props.keyName !== null)
+              result.push({ [props.keyName]: s2.src });
+            else
+              result.push(s2.src);
+          }
         }
-      );
-      const updateImageList = (newList) => {
-        const oldItems = imageList.value.reduce((map, item) => {
-          map[item.id] = item;
-          return map;
-        }, {});
+        emit("input", result);
+        emit("update:modelValue", result);
+      };
+      vue.watch(() => props.modelValue, (newVal) => {
+        if (isDragging.value)
+          return;
+        if (isMounted.value) {
+          vue.nextTick(() => {
+            initViewSize().then(() => updateImageList(newVal));
+          });
+        }
+      }, { deep: true, immediate: true });
+      const updateImageList = (newList = []) => {
+        const oldItems = imageList.value.reduce((map, item) => (map[item.id] = item, map), {});
         imageList.value = newList.map((item) => {
           const existing = oldItems[item.id];
-          if (existing) {
-            return {
-              ...existing,
-              ...getItemData(item)
-              // 更新可能变化的数据
-            };
-          }
+          if (existing)
+            return { ...existing, ...getItemData(item) };
           return createNewItem(item);
         });
         updateItemsPosition();
@@ -9996,101 +9820,15 @@ if (uni.restoreGlobal) {
           offset: 0,
           moveEnd: false,
           ready: false,
-          _imgLoaded: false,
-          // ✅ 默认未加载真实图片
           __imgBroken: false
         };
       };
-      const NO_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
-	      <rect width="100%" height="100%" fill="#e9ebef"/>
-	      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-	        fill="#9aa0a6" font-size="40" font-family="Arial">No Image</text>
-	    </svg>`
-      );
-      function normalizeFirstImage(s2) {
-        if (!s2)
-          return "";
-        const first2 = String(s2).split(",")[0].trim();
-        const low = first2.toLowerCase();
-        if (!first2 || low.includes("/default") || low.endsWith("default.png") || low.includes("noimage"))
-          return "";
-        return first2;
-      }
-      function getDisplayImg(item) {
-        if (item.__imgBroken)
-          return NO_IMG;
-        const src = normalizeFirstImage(item.src);
-        return src || NO_IMG;
-      }
-      function onImgError(item) {
-        item.__imgBroken = true;
-      }
-      function getDisplayPrice(price) {
-        if (price === null || price === void 0)
-          return "";
-        return String(price).replace(/【.*?】/g, "").trim();
-      }
       function getPaymentText(item) {
         var _a, _b;
         const st2 = Number((item == null ? void 0 : item.payStatus) ?? 1);
         return ((_a = props.paymentMap) == null ? void 0 : _a[st2]) || ((_b = props.paymentMap) == null ? void 0 : _b[1]) || "已全款";
       }
-      const createImgObserver = (id) => {
-        if (!instanceRef.value || imgObservers.has(id))
-          return;
-        const observer = uni.createIntersectionObserver(instanceRef.value, {
-          thresholds: [0.01]
-        });
-        observer.relativeToViewport({ bottom: 50 }).observe(`#drag-img-${id}`, (res) => {
-          if (!res)
-            return;
-          if (res.intersectionRatio > 0) {
-            const target = imageList.value.find((i2) => i2.id === id);
-            if (target) {
-              target._imgLoaded = true;
-            }
-            try {
-              observer.disconnect();
-            } catch (e2) {
-            }
-            imgObservers.delete(id);
-          }
-        });
-        imgObservers.set(id, observer);
-      };
-      const setupLazyLoadForAll = () => {
-        if (!instanceRef.value)
-          return;
-        vue.nextTick(() => {
-          imageList.value.forEach((item) => {
-            if (!item._imgLoaded) {
-              createImgObserver(item.id);
-            }
-          });
-        });
-      };
-      const destroyImgObserver = (id) => {
-        const ob = imgObservers.get(id);
-        if (ob) {
-          try {
-            ob.disconnect();
-          } catch (e2) {
-          }
-          imgObservers.delete(id);
-        }
-      };
-      const __returned__ = { props, emit, imageList, width, add, colsValue, viewWidth, viewHeight, tempItem, timer, changeStatus, preStatus, first, touchStartY, longPressTimer, isDragging, isMounted, instanceRef, imgObservers, areaHeight, childWidth, childHeight, deleteImage, getSrc, getItemData, onChange, moveItem, changeObj, onLongPressStart, touchstart, touchend, getFirstImage, previewImage, mouseenter, mouseleave, onTouchMove, delImageHandle, delImageMp, go2editor, handleItemClick, go2preview, onLongPressCancel, updateAllItemsPosition, sortList, addProperties, rpx2px: rpx2px2, guid, updateItemsPosition, initViewSize, updateImageList, createNewItem, NO_IMG, normalizeFirstImage, getDisplayImg, onImgError, getDisplayPrice, getPaymentText, createImgObserver, setupLazyLoadForAll, destroyImgObserver, ref: vue.ref, computed: vue.computed, watch: vue.watch, onMounted: vue.onMounted, onBeforeUnmount: vue.onBeforeUnmount, nextTick: vue.nextTick, getCurrentInstance: vue.getCurrentInstance, get websiteUrl() {
-        return websiteUrl;
-      }, get wechatSignLogin() {
-        return wechatSignLogin;
-      }, get getUserInfo() {
-        return getUserInfo;
-      }, get global() {
-        return global$1;
-      }, get asyncGetUserInfo() {
-        return asyncGetUserInfo;
-      } };
+      const __returned__ = { props, emit, NO_IMG, getSrc, normalizeFirstImage, getDisplayImg, onImgError, getDisplayPrice, imageList, width, add, colsValue, viewWidth, viewHeight, tempItem, timer, changeStatus, preStatus, first, touchStartY, longPressTimer, isDragging, isMounted, areaHeight, childWidth, childHeight, deleteImage, getItemData, onChange, moveItem, changeObj, onLongPressStart, touchstart, touchend, previewImage, mouseenter, mouseleave, onTouchMove, delImageMp, go2preview, handleItemClick, rpx2px: rpx2px2, instanceRef, addProperties, updateItemsPosition, initViewSize, sortList, updateImageList, createNewItem, getPaymentText, ref: vue.ref, computed: vue.computed, watch: vue.watch, onMounted: vue.onMounted, nextTick: vue.nextTick, getCurrentInstance: vue.getCurrentInstance };
       Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
       return __returned__;
     }
@@ -10139,9 +9877,9 @@ if (uni.restoreGlobal) {
                     style: vue.normalizeStyle({
                       width: $setup.childWidth,
                       height: $setup.childHeight,
-                      borderRadius: $props.borderRadius + "rpx",
+                      borderRadius: $setup.props.borderRadius + "rpx",
                       transform: "scale(" + item.scale + ")",
-                      margin: $props.itemMargin + "px"
+                      margin: $setup.props.itemMargin + "px"
                     })
                   },
                   [
@@ -10158,12 +9896,10 @@ if (uni.restoreGlobal) {
                     ], 8, ["onClick"])) : vue.createCommentVNode("v-if", true),
                     vue.createElementVNode("image", {
                       class: "pre-image",
-                      id: "drag-img-" + item.id,
-                      src: item._imgLoaded ? $setup.getDisplayImg(item) : $setup.NO_IMG,
+                      src: $setup.getDisplayImg(item),
                       mode: "aspectFill",
-                      "lazy-load": true,
                       onError: ($event) => $setup.onImgError(item)
-                    }, null, 40, ["id", "src", "onError"]),
+                    }, null, 40, ["src", "onError"]),
                     $setup.props.showItemInfo ? (vue.openBlock(), vue.createElementBlock("view", {
                       key: 1,
                       class: "info-container"
@@ -10190,17 +9926,16 @@ if (uni.restoreGlobal) {
                         /* TEXT */
                       )
                     ])) : vue.createCommentVNode("v-if", true),
-                    vue.withDirectives(vue.createElementVNode(
+                    $setup.props.showPaymentTag && $setup.getPaymentText(item) ? (vue.openBlock(), vue.createElementBlock(
                       "view",
                       {
+                        key: 2,
                         class: vue.normalizeClass(["pay-badge candy", ["s-" + (item.payStatus || 1)]])
                       },
-                      vue.toDisplayString(item._payText),
+                      vue.toDisplayString($setup.getPaymentText(item)),
                       3
                       /* TEXT, CLASS */
-                    ), [
-                      [vue.vShow, $setup.props.showPaymentTag && item.payStatus]
-                    ])
+                    )) : vue.createCommentVNode("v-if", true)
                   ],
                   6
                   /* CLASS, STYLE */

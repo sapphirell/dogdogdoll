@@ -1,68 +1,51 @@
-<!-- shmily-drag-image -->
+<!-- shmily-drag-image --> 
 <template>
 	<view class="con">
 		<template v-if="viewWidth">
 			<movable-area class="area" :style="{ height: areaHeight }" @mouseenter="mouseenter"
 				@mouseleave="mouseleave">
-				<movable-view
-					v-for="(item, index) in imageList"
-					:key="item.id"
-					class="view"
-					direction="all"
-					:y="item.y"
-					:x="item.x"
-					:damping="40"
-					:disabled="item.disable || !item.ready"
-					@change="onChange($event, item)"
-					@touchstart="onLongPressStart(item, $event)"
-					@touchend="touchend(item)"
-					@tap="handleItemClick(item)"
-					@touchmove="onTouchMove($event, item)"
-					:style="{
-						width: viewWidth + 'px',
-						height: viewHeight + 'px',
-						'z-index': item.zIndex,
-						opacity: item.opacity
-					}"
-				>
-					<view
-						class="area-con"
-						:style="{
-							width: childWidth,
-							height: childHeight,
-							borderRadius: borderRadius + 'rpx',
-							transform: 'scale(' + item.scale + ')',
-							margin: itemMargin + 'px'
-						}"
-						:class="{ 'ready': !item.disable && item.ready }"
-					>
+				<movable-view v-for="(item, index) in imageList" :key="item.id" class="view" direction="all" :y="item.y"
+					:x="item.x" :damping="40" :disabled="item.disable || !item.ready" @change="onChange($event, item)"
+					@touchstart="onLongPressStart(item, $event)" @touchend="touchend(item)" @tap="handleItemClick(item)"
+					@touchmove="onTouchMove($event, item)" :style="{
+						width: viewWidth + 'px', 
+						height: viewHeight + 'px', 
+						'z-index': item.zIndex, 
+						opacity: item.opacity 
+					  }">
+					<view class="area-con" :style="{
+							  width: childWidth, 
+							  height: childHeight, 
+							  borderRadius: borderRadius + 'rpx',
+							  transform: 'scale(' + item.scale + ')',
+							  margin: itemMargin + 'px'
+							}" :class="{ 'ready' : !item.disable && item.ready  }">
 						<view v-if="props.showDelete" class="delete-btn" @click.stop="deleteImage(item)">
 							<uni-icons type="clear" color="#9b9b9b" size="30"></uni-icons>
 						</view>
-
-						<!-- ✅ 懒加载图片：进入视口前只渲染占位图，进入视口后再加载真正图片 -->
-						<image
-							class="pre-image"
-							:id="'drag-img-' + item.id"
-							:src="item._imgLoaded ? getDisplayImg(item) : NO_IMG"
-							mode="aspectFill"
-							:lazy-load="true"
-							@error="onImgError(item)"
-						/>
+						<image class="pre-image" :src="getDisplayImg(item)" mode="aspectFill"
+							@error="onImgError(item)" />
+						<!-- <image class="pre-image" :src="getFirstImage(item.src)" mode="aspectFill"></image> -->
 
 						<view class="info-container" v-if="props.showItemInfo">
 							<text class="name">{{ item.name }}</text>
 							<text class="price">{{ getDisplayPrice(item.price) }}</text>
 							<text class="type">{{ item.type }}</text>
 						</view>
-
-						<view
-							v-show="props.showPaymentTag && item.payStatus"
-							class="pay-badge candy"
-							:class="['s-' + (item.payStatus || 1)]"
+						<!-- 付款状态糖果色标签 -->
+						<!-- <view
+						  v-if="props.showPaymentTag && getPaymentText(item)"
+						  class="pay-badge candy"
+						  :class="['s-' + (item.payStatus || 1)]"
 						>
-							{{ item._payText }}
+						  {{ getPaymentText(item) }}
+						</view> -->
+						<view v-show="props.showPaymentTag && item.payStatus"
+							  class="pay-badge candy"
+							  :class="['s-' + (item.payStatus || 1)]">
+						  {{ item._payText }}
 						</view>
+						
 					</view>
 				</movable-view>
 			</movable-area>
@@ -76,7 +59,6 @@
 		computed,
 		watch,
 		onMounted,
-		onBeforeUnmount,
 		nextTick,
 		getCurrentInstance
 	} from 'vue'
@@ -88,7 +70,6 @@
 		global,
 		asyncGetUserInfo,
 	} from "../../common/config.js";
-
 	// 定义 props
 	const props = defineProps({
 		value: {
@@ -169,7 +150,10 @@
 	// 响应式变量
 	const imageList = ref([])
 	const width = ref(0)
-	const add = ref({ x: 0, y: 0 })
+	const add = ref({
+		x: 0,
+		y: 0
+	})
 	const colsValue = ref(0)
 	const viewWidth = ref(0)
 	const viewHeight = ref(0) // 新增高度变量
@@ -183,11 +167,6 @@
 	const isDragging = ref(false); // 全局拖拽状态
 
 	const isMounted = ref(false); // 是否已挂载
-
-	const instanceRef = ref(null); // 保存组件实例引用
-
-	// ✅ 懒加载：存放每个图片对应的 IntersectionObserver
-	const imgObservers = new Map()
 
 	// 计算属性
 	const areaHeight = computed(() => {
@@ -205,7 +184,6 @@
 	const childHeight = computed(() => {
 		return (viewHeight.value - rpx2px(props.padding) * 2) + 'px'
 	})
-
 	// 删除图片方法
 	const deleteImage = (item) => {
 		// 触发 delete 事件，传递被删除图片的 ID
@@ -214,32 +192,27 @@
 		// 组件内部也需要删除该图片
 		const index = imageList.value.findIndex(img => img.id === item.id);
 		if (index !== -1) {
-			// 清理懒加载监听
-			destroyImgObserver(item.id)
-
 			imageList.value.splice(index, 1);
 			updateItemsPosition(); // 更新位置
 			sortList(); // 更新数据
 		}
 	};
-
 	// 方法
 	const getSrc = (item) => {
 		return props.keyName !== null ? item[props.keyName] : item
 	}
-
 	const getItemData = (item) => {
-		const ps = item[props.paymentField] ?? item.payStatus ?? 1
-		return {
-			id: item.id,
-			src: getSrc(item),
-			name: item.name,
-			price: item.price,
-			type: item.type,
-			// 预计算，拖拽时不会变
-			payStatus: ps,
-			_payText: props.paymentMap?.[Number(ps)] || props.paymentMap?.[1] || '已全款'
-		}
+	  const ps = item[props.paymentField] ?? item.payStatus ?? 1
+	  return {
+	    id: item.id,
+	    src: getSrc(item),
+	    name: item.name,
+	    price: item.price,
+	    type: item.type,
+	    // 预计算，拖拽时不会变
+	    payStatus: ps,
+	    _payText: props.paymentMap?.[Number(ps)] || props.paymentMap?.[1] || '已全款'
+	  }
 	}
 
 	const onChange = (e, item) => {
@@ -250,12 +223,12 @@
 			if (item.moveEnd) {
 				item.offset = Math.sqrt(
 					Math.pow(item.oldX - item.absX * viewWidth.value, 2) +
-					Math.pow(item.oldY - item.absY * viewHeight.value, 2)
+					Math.pow(item.oldY - item.absY * viewHeight.value, 2) // 使用viewHeight
 				)
 			}
 			let x = Math.floor((e.detail.x + viewWidth.value / 2) / viewWidth.value)
 			if (x >= colsValue.value) return
-			let y = Math.floor((e.detail.y + viewHeight.value / 2) / viewHeight.value)
+			let y = Math.floor((e.detail.y + viewHeight.value / 2) / viewHeight.value) // 使用viewHeight
 			let index = colsValue.value * y + x
 
 			if (item.index !== index && index < imageList.value.length) {
@@ -327,7 +300,6 @@
 			})
 		}, 0)
 	}
-
 	// 长按开始拖拽
 	const onLongPressStart = (item, e) => {
 		// 记录触摸起始位置
@@ -400,6 +372,7 @@
 
 			emit('sort-change', sortedIds);
 			console.log("排序后的ID", sortedIds)
+
 		}
 
 		isDragging.value = false
@@ -428,7 +401,6 @@
 			});
 		}, 50); // 稍作延迟确保渲染完成
 	}
-
 	// 获取第一张图片 - 修复路径问题
 	const getFirstImage = (imageUrls) => {
 		if (!imageUrls) return '';
@@ -445,6 +417,7 @@
 		// 默认返回空字符串
 		return '';
 	};
+
 
 	const previewImage = (item) => {
 		if (timer.value && preStatus.value && changeStatus.value && item.offset < 28.28) {
@@ -524,9 +497,6 @@
 	};
 
 	const delImageHandle = (item, index) => {
-		// 清理懒加载监听
-		destroyImgObserver(item.id)
-
 		imageList.value.splice(index, 1)
 		imageList.value.forEach(obj => {
 			if (obj.index > item.index) {
@@ -546,11 +516,14 @@
 		sortList()
 	}
 
+
+
 	const delImageMp = (item, index) => {
 		//#ifdef MP
 		delImageHandle(item, index)
 		//#endif
 	}
+
 
 	//跳转到编辑
 	function go2editor(id) {
@@ -558,7 +531,6 @@
 			url: '/pkg-stock/account_book_form/account_book_form?account_book_id=' + id
 		})
 	}
-
 	const handleItemClick = (item) => {
 		// 触发自定义点击事件
 		emit('item-click', item);
@@ -582,8 +554,7 @@
 			longPressTimer.value = null;
 		}
 	};
-
-	// 更新所有项目的位置（根据当前索引）——（旧函数，未实际调用，保留原样）
+	// 更新所有项目的位置（根据当前索引）
 	const updateAllItemsPosition = () => {
 		listItems.value.forEach(item => {
 			// 根据新的索引计算网格位置
@@ -603,6 +574,7 @@
 			item.absY = newAbsY;
 		});
 	};
+
 
 	const sortList = () => {
 		const result = []
@@ -650,10 +622,7 @@
 			id: item.id,
 			disable: false,
 			offset: 0,
-			moveEnd: false,
-			ready: false,
-			_imgLoaded: false,   // ✅ 懒加载：默认未加载真实图片
-			__imgBroken: false
+			moveEnd: false
 		})
 
 		add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
@@ -672,7 +641,7 @@
 		uuid.shift()
 		return `u${uuid.join('')}`
 	}
-
+	const instanceRef = ref(null); // 保存组件实例引用
 	// 初始化
 	onMounted(() => {
 		width.value = uni.getSystemInfoSync().windowWidth
@@ -695,6 +664,7 @@
 				viewWidth.value = data.width / props.cols
 
 				// 计算高度（宽度 + 文字区域高度）
+				// 假设文字区域高度为图片区域的30%，整体高度为宽度的1.3倍
 				viewHeight.value = viewWidth.value * 1.3
 
 				if (props.imageWidth > 0) {
@@ -708,22 +678,9 @@
 					addProperties(item)
 				})
 				first.value = false
-
-				// ✅ 初始化时为所有图片建立懒加载监听
-				setupLazyLoadForAll()
 			}).exec()
 		})
 		isMounted.value = true;
-	})
-
-	// 组件卸载时清理所有 IntersectionObserver
-	onBeforeUnmount(() => {
-		imgObservers.forEach(ob => {
-			try {
-				ob.disconnect()
-			} catch (e) {}
-		})
-		imgObservers.clear()
 	})
 
 	// 更新所有项目的位置（根据当前索引）
@@ -752,6 +709,8 @@
 				return resolve();
 			}
 
+
+
 			const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
 			query.select('.con').boundingClientRect(data => {
 				if (!data) return resolve();
@@ -769,27 +728,20 @@
 			}).exec();
 		});
 	};
-
 	// 监听 value 和 modelValue 的变化
-	watch(
-		() => props.modelValue,
-		(newVal) => {
-			if (isDragging.value) return; // 拖动时忽略父组件回写，避免受控回拉
-			if (isMounted.value) {
-				nextTick(() => {
-					initViewSize().then(() => {
-						updateImageList(newVal);
-						// ✅ 数据变化后重建懒加载监听
-						setupLazyLoadForAll()
-					});
+	watch(() => props.modelValue, (newVal) => {
+		if (isDragging.value) return; // 拖动时忽略父组件回写，避免受控回拉
+		if (isMounted.value) {
+			nextTick(() => {
+				initViewSize().then(() => {
+					updateImageList(newVal);
 				});
-			}
-		},
-		{
-			deep: true,
-			immediate: true
+			});
 		}
-	);
+	}, {
+		deep: true,
+		immediate: true
+	});
 
 	// 更新图片列表的公共方法
 	const updateImageList = (newList) => {
@@ -834,100 +786,41 @@
 			disable: false,
 			offset: 0,
 			moveEnd: false,
-			ready: false,
-			_imgLoaded: false, // ✅ 默认未加载真实图片
-			__imgBroken: false
+			ready: false
 		};
 	};
-
+	
 	/* ========= 图片兜底 / 文本清洗 ========= */
 	const NO_IMG =
-		'data:image/svg+xml;utf8,' +
-		encodeURIComponent(
-			`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+	  'data:image/svg+xml;utf8,' +
+	  encodeURIComponent(
+	    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
 	      <rect width="100%" height="100%" fill="#e9ebef"/>
 	      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
 	        fill="#9aa0a6" font-size="40" font-family="Arial">No Image</text>
 	    </svg>`
-		)
-
+	  )
 	function normalizeFirstImage(s) {
-		if (!s) return ''
-		const first = String(s).split(',')[0].trim()
-		const low = first.toLowerCase()
-		if (!first || low.includes('/default') || low.endsWith('default.png') || low.includes('noimage')) return ''
-		return first
+	  if (!s) return ''
+	  const first = String(s).split(',')[0].trim()
+	  const low = first.toLowerCase()
+	  if (!first || low.includes('/default') || low.endsWith('default.png') || low.includes('noimage')) return ''
+	  return first
 	}
-
 	function getDisplayImg(item) {
-		if (item.__imgBroken) return NO_IMG
-		const src = normalizeFirstImage(item.src)
-		return src || NO_IMG
+	  if (item.__imgBroken) return NO_IMG
+	  const src = normalizeFirstImage(item.src)
+	  return src || NO_IMG
 	}
-
 	function onImgError(item) { item.__imgBroken = true }
-
-	function getDisplayPrice(price) {
-		if (price === null || price === undefined) return ''
-		return String(price).replace(/【.*?】/g, '').trim()
+	function getDisplayPrice(price){
+	  if (price === null || price === undefined) return ''
+	  return String(price).replace(/【.*?】/g, '').trim()
 	}
-
 	/* 付款状态文本 */
-	function getPaymentText(item) {
-		const st = Number(item?.payStatus ?? 1)
-		return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
-	}
-
-	/* ========= 懒加载核心逻辑（App / H5 / 小程序通用） ========= */
-
-	// 为单个图片创建 IntersectionObserver
-	const createImgObserver = (id) => {
-		if (!instanceRef.value || imgObservers.has(id)) return
-
-		const observer = uni.createIntersectionObserver(instanceRef.value, {
-			thresholds: [0.01]
-		})
-
-		observer
-			.relativeToViewport({ bottom: 50 }) // 提前 50px 预加载
-			.observe(`#drag-img-${id}`, (res) => {
-				if (!res) return
-				if (res.intersectionRatio > 0) {
-					const target = imageList.value.find(i => i.id === id)
-					if (target) {
-						target._imgLoaded = true
-					}
-					try {
-						observer.disconnect()
-					} catch (e) {}
-					imgObservers.delete(id)
-				}
-			})
-
-		imgObservers.set(id, observer)
-	}
-
-	// 为当前所有图片建立懒加载监听（只给未加载过的建）
-	const setupLazyLoadForAll = () => {
-		if (!instanceRef.value) return
-		nextTick(() => {
-			imageList.value.forEach(item => {
-				if (!item._imgLoaded) {
-					createImgObserver(item.id)
-				}
-			})
-		})
-	}
-
-	// 删除某个 item 时，清理对应的 Observer
-	const destroyImgObserver = (id) => {
-		const ob = imgObservers.get(id)
-		if (ob) {
-			try {
-				ob.disconnect()
-			} catch (e) {}
-			imgObservers.delete(id)
-		}
+	function getPaymentText(item){
+	  const st = Number(item?.payStatus ?? 1)
+	  return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
 	}
 </script>
 
@@ -937,66 +830,30 @@
 .view { display: flex; justify-content: center; align-items: center; }
 .ready { border: 3px solid #65c6d9; box-shadow: 0 0 5px #65c6d9; }
 
-.area-con {
-	min-width: 80px;
-	min-height: 100px;
-	position: relative;
-	overflow: hidden;
-	background-color: #fff;
-	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
-	display: flex;
-	flex-direction: column;
-}
-
+.area-con { min-width: 80px;min-height: 100px;position: relative; overflow: hidden; background-color: #fff; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08); display: flex; flex-direction: column; }
 .pre-image { width: 100%; height: 85%; display: block; }
-
 .info-container {
-  padding: 8rpx;
-  display: flex;
-  flex-direction: column;
-  height: 30%;
-  .name {
-    font-size: 24rpx;
-    font-weight: bold;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: center;
-  }
-  .price {
-    font-size: 26rpx;
-    color: #ff9c9a;
-    margin-top: 4rpx;
-    text-align: center;
-    font-weight: 1000;
-  }
+  padding: 8rpx; display: flex; flex-direction: column; height: 30%;
+  .name { font-size: 24rpx; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  .price { font-size: 26rpx; color: #ff9c9a; margin-top: 4rpx; text-align: center; font-weight: 1000; }
   .type {
-    position: absolute;
-    top: 8rpx;
-    left: 8rpx;
+    position: absolute; top: 8rpx; left: 8rpx;
     background: linear-gradient(135deg, #91c9ffa3, #7aa6ffa1);
-    color: #fff;
-    padding: 8rpx 18rpx;
-    border-radius: 12rpx;
-    font-size: 22rpx;
-    font-weight: 700;
+    color: #fff; padding: 8rpx 18rpx; border-radius: 12rpx;
+    font-size: 22rpx; font-weight: 700;
     box-shadow: 0 2rpx 8rpx rgba(122,166,255,.18);
   }
 }
 
 /* 糖果配色标签（新增） */
 .pay-badge.candy{
-  position: absolute;
-  left: 8rpx;
-  top: 56rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  font-weight: 800;
-  line-height: 1;
+  position: absolute; left: 8rpx; top: 56rpx;
+  padding: 8rpx 16rpx; border-radius: 20rpx;
+  font-size: 22rpx; font-weight: 800; line-height: 1;
   letter-spacing: 1rpx;
   transform: translateZ(0);
   opacity: 0.6;
+
 }
 .s-1{ background: linear-gradient(135deg, #e3e3e3, #d6ecdf); color: #686868; box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18); }
 .s-2{ background: linear-gradient(135deg,#ffe9d6,#ffd2ad); color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18); }
@@ -1004,15 +861,7 @@
 
 /* 删除按钮 */
 .delete-btn{
-  position: absolute;
-  top: 0rpx;
-  right: 0rpx;
-  border-radius: 50%;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:100;
-  font-size:30rpx;
-  cursor: pointer;
+  position: absolute; top: 0rpx; right: 0rpx; border-radius: 50%;
+  display:flex; justify-content:center; align-items:center; z-index:100; font-size:30rpx; cursor: pointer;
 }
 </style>
