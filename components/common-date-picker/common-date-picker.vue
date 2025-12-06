@@ -1,3 +1,4 @@
+<!-- common-date-picker -->
 <template>
   <uni-popup
     ref="popup"

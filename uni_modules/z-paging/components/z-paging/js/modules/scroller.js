@@ -48,6 +48,11 @@ export default {
 			type: String,
 			default: u.gc('scrollIntoView', '')
 		},
+		// z-paging是否使用swiper-item或其他父组件包裹，默认为否，此属性为了解决vue3+(微信小程序或QQ小程序)中，scrollIntoViewById和scrollIntoViewByIndex因无法获取节点信息导致滚动到指定view无效的问题
+		inSwiperSlot: {
+			type: Boolean,
+			default: false
+		},
 	},
 	data() {
 		return {
@@ -63,6 +68,9 @@ export default {
 			privateScrollWithAnimation: -1,
 			cacheScrollNodeHeight: -1,
 			superContentHeight: 0,
+			lastScrollHeight: 0,
+			lastScrollDirection: '',
+			setContentHeightPending: false
 		}
 	},
 	watch: {
@@ -251,7 +259,7 @@ export default {
 		_onScrollToLower(e) {
 			(!e.detail || !e.detail.direction || e.detail.direction === 'bottom') 
 			&& this.toBottomLoadingMoreEnabled
-			&& this._onLoadingMore(this.useChatRecordMode ? 'click' : 'toBottom')
+			&& this._onLoadingMore(this.useChatRecordMode ? 'click' : 'toBottom');
 		},
 		// 滚动到顶部
 		_scrollToTop(animate = true, isPrivate = true) {
@@ -299,6 +307,13 @@ export default {
 				this.scrollTop = 0;
 				this.oldScrollTop = this.scrollTop;
 			});
+			u.delay(() => {
+				this.scrollTop = this.oldScrollTop;
+				this.$nextTick(() => {
+					this.scrollTop = 0;
+					this.oldScrollTop = this.scrollTop;
+				});
+			}, 500)
 		},
 		// 滚动到底部
 		async _scrollToBottom(animate = true) {
@@ -367,11 +382,29 @@ export default {
 					}
 					return;
 					// #endif
-					this._getNodeClientRect('#' + sel.replace('#', ''), this.$parent).then((node) => {
+					// 获取指定view的节点信息
+					let inDom = false;
+					// 在vue3+(微信小程序或QQ小程序)中，无法获取节点信息导致滚动到指定view无效的问题
+					// 通过uni.createSelectorQuery().in(this.$parent)来解决此问题
+					// #ifdef VUE3
+					// #ifdef MP-WEIXIN || MP-QQ
+					if (this.inSwiperSlot) {
+						inDom = this.$parent;
+					}
+					// #endif
+					// #endif
+					this._getNodeClientRect('#' + sel.replace('#', ''), inDom).then((node) => {
 						if (node) {
-							let nodeTop = node[0].top;
-							this._scrollIntoViewByNodeTop(nodeTop, offset, animate);
-							finishCallback && finishCallback();
+							// 获取zp-scroll-view-container的节点信息
+							this._getNodeClientRect('.zp-scroll-view-container').then((svContainerNode) => {
+								if (svContainerNode) {
+									// 滚动的top为指定view的top减zp-scroll-view-container的top，因为指定view的top是相对于整个窗口的，需要考虑相对的位置关系
+									this._scrollIntoViewByNodeTop(node[0].top - svContainerNode[0].top, offset, animate);
+									finishCallback && finishCallback();
+								}
+							});
+						} else {
+							u.consoleErr(`无法获取${sel}的节点信息，请检查！`);
 						}
 					});
 				});
@@ -425,25 +458,56 @@ export default {
 		// scroll-view滚动中
 		_scroll(e) {
 			this.$emit('scroll', e);
-			const { scrollTop, scrollLeft } = e.detail;
+			const { scrollTop, scrollLeft, scrollHeight } = e.detail;
+			
+			if (this.watchScrollDirectionChange) {
+				// 计算scroll-view滚动方向，正常情况下上次滚动的oldScrollTop大于当前scrollTop即为向上滚动，反之为向下滚动
+				let direction = this.oldScrollTop > scrollTop ? 'top' : 'bottom';
+				// 此处为解决在iOS中，滚动到顶部因bounce的影响回弹导致滚动方向为bottom的问题：如果滚动到顶部了并且scrollTop小于顶部滚动区域，则强制设置direction为top
+				// 此外发现在h5中下拉刷新时direction有概率被判断为bottom(oldScrollTop > scrollTop)，因为下拉刷新时会禁止scroll-view滚动，则以此为依据强制设置direction为top
+				if (scrollTop <= 0 || !this.scrollEnable) {
+					direction = 'top';
+				}
+				// 此处为解决在iOS中，滚动到底部因bounce的影响回弹导致滚动方向为top的问题：如果滚动到底部了并且scrollTop超过底部滚动区域，则强制设置direction为bottom
+				if (scrollTop > this.lastScrollHeight - this.scrollViewHeight - 1 && this.scrollEnable) {
+					direction = 'bottom';
+				}
+				// emit 列表滚动方向改变事件
+				if (direction !== this.lastScrollDirection) {
+					this.$emit('scrollDirectionChange', direction);
+					this.lastScrollDirection = direction;
+				}
+				// 当scrollHeight变化时，需要延迟100毫秒设置lastScrollHeight，如果直接根据scrollHeight的话，因为此时数据还未改变，会导致滚动方向从bottom变为top
+				if (this.lastScrollHeight !== scrollHeight && !this.setContentHeightPending) {
+					// 因此处会多次触发，因此加个标识确保在延时期间仅触发一次
+					this.setContentHeightPending = true;
+					u.delay(() => {
+						this.lastScrollHeight = scrollHeight;
+						this.setContentHeightPending = false;
+					})
+				}
+			}
+			
 			// #ifndef APP-NVUE
 			this.finalUseVirtualList && this._updateVirtualScroll(scrollTop, this.oldScrollTop - scrollTop);
 			// #endif
 			this.oldScrollTop = scrollTop;
 			this.oldScrollLeft = scrollLeft;
-			// 滚动区域内容的总高度 - 当前滚动的scrollTop = 当前滚动区域的顶部与内容底部的距离
-			const scrollDiff = e.detail.scrollHeight - this.oldScrollTop;
 			// 在非ios平台滚动中，再次验证一下是否滚动到了底部。因为在一些安卓设备中，有概率滚动到底部不触发@scrolltolower事件，因此添加双重检测逻辑
-			!this.isIos && this._checkScrolledToBottom(scrollDiff);
+			// 排除快手的情况，因为在快手安卓中双重检测会导致滚动到底部事件多次触发
+			// #ifndef MP-KUAISHOU
+			if (!this.isIos) {
+				// 滚动区域内容的总高度 - 当前滚动的scrollTop = 当前滚动区域的顶部与内容底部的距离
+				const scrollDiff = e.detail.scrollHeight - this.oldScrollTop;
+				this._checkScrolledToBottom(scrollDiff);
+			}
+			// #endif
 		},
 		// emit scrolltolower/scrolltoupper事件
 		_emitScrollEvent(type) {
-		    const reversedType = type === 'scrolltolower' ? 'scrolltoupper' : 'scrolltolower';
-		    const eventType = this.useChatRecordMode && !this.isChatRecordModeAndNotInversion
-		        ? reversedType
-		        : type;
-		    
-		    this.$emit(eventType);
+			const reversedType = type === 'scrolltolower' ? 'scrolltoupper' : 'scrolltolower';
+			const eventType = this.useChatRecordMode && !this.isChatRecordModeAndNotInversion ? reversedType : type;
+			this.$emit(eventType);
 		},
 		// 更新内置的scroll-view是否启用滚动动画
 		_updatePrivateScrollWithAnimation(animate) {
@@ -521,7 +585,9 @@ export default {
 			this._doCheckScrollViewShouldFullHeight(this.realTotalData);
 			const node = `.zp-page-${type}`;
 			const marginText = `margin${type.slice(0,1).toUpperCase() + type.slice(1)}`;
-			let safeAreaInsetBottomAdd = this.safeAreaInsetBottom;
+			// 是否设置底部安全区域间距，仅当开启底部安全区域并且slot=bottom不存在的时候才处理，如果slot=bottom存在则直接在bottom底部插入占位view
+			// 如果useSafeAreaPlaceholder为true，这里也不需要额外通过marginBottom设置底部安全区域了
+			const safeAreaInsetBottomAdd = this.safeAreaInsetBottom && !this.zSlots.bottom && !this.useSafeAreaPlaceholder;
 			this.$nextTick(() => {
 				let delayTime = 0;
 				// #ifdef MP-BAIDU || APP-NVUE

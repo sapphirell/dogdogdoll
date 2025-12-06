@@ -33,6 +33,11 @@ declare global {
      * 列表触摸的方向，top代表用户将列表向上移动(scrollTop不断减小)，bottom代表用户将列表向下移动(scrollTop不断增大)
      */
     type TouchDirection = 'top' | 'bottom';
+
+    /**
+     * 列表滚动的方向，top代表用户将列表向上移动(scrollTop不断减小)，bottom代表用户将列表向下移动(scrollTop不断增大)
+     */
+    type ScrollDirection = 'top' | 'bottom';
   }
 
   namespace ZPagingParams {
@@ -266,7 +271,13 @@ declare interface ZPagingProps {
   /**
    * 设置z-paging的style，部分平台(如微信小程序)无法直接修改组件的style，可使用此属性代替。
    */
-  pagingStyle?: Record<string, any>
+  pagingStyle?: Partial<CSSStyleDeclaration>
+
+  /**
+   * 设置z-paging的class，优先级低于pagingStyle和height、width、maxWidth、bgColor
+   * @since 2.8.7
+   */
+  pagingClass?: string | string[] | Record<string, boolean>
 
   /**
    * z-paging的高度，优先级低于paging-style中设置的height
@@ -298,6 +309,21 @@ declare interface ZPagingProps {
    * @since 2.3.0
    */
   watchTouchDirectionChange?: boolean
+
+  /**
+   * 是否监听列表滚动方向改变
+   * @default false
+   * @since 2.8.7
+   */
+  watchScrollDirectionChange?: boolean
+  
+  /**
+   * 是否只使用基础布局
+   * - 设置为true后将关闭mounted自动请求数据、关闭下拉刷新和滚动到底部加载更多，强制隐藏空数据图
+   * @default false
+   * @since 2.8.7
+   */
+  layoutOnly?: boolean
 
   /**
    * 调用complete后延迟处理的时间，单位为毫秒，优先级高于min-delay
@@ -460,18 +486,18 @@ declare interface ZPagingProps {
   /**
    * 自定义下拉刷新中左侧图标的样式
    */
-  refresherImgStyle?: Record<string, any>
+  refresherImgStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 自定义下拉刷新中右侧状态描述文字的样式
    */
-  refresherTitleStyle?: Record<string, any>
+  refresherTitleStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 自定义下拉刷新中右侧最后更新时间文字的样式
    * - show-refresher-update-time为true时有效
    */
-  refresherUpdateTimeStyle?: Record<string, any>
+  refresherUpdateTimeStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 是否实时监听下拉刷新中进度，并通过@refresherTouchmove传递给父组件
@@ -712,18 +738,18 @@ declare interface ZPagingProps {
    * 自定义底部加载更多样式；如：{'background':'red'} 
    * - 此属性无法修改文字样式，修改文字样式请使用loading-more-title-custom-style
    */
-  loadingMoreCustomStyle?: Record<string, any>
+  loadingMoreCustomStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 自定义底部加载更多文字样式；如：{'color':'red'}
    * @since 2.1.7
    */
-  loadingMoreTitleCustomStyle?: Record<string, any>
+  loadingMoreTitleCustomStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 自定义底部加载更多加载中动画样式
    */
-  loadingMoreLoadingIconCustomStyle?: Record<string, any>
+  loadingMoreLoadingIconCustomStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 自定义底部加载更多加载中动画图标类型
@@ -826,7 +852,7 @@ declare interface ZPagingProps {
   /**
    * 自定义底部没有更多数据的分割线样式
    */
-  loadingMoreNoMoreLineCustomStyle?: Record<string, any>
+  loadingMoreNoMoreLineCustomStyle?: Partial<CSSStyleDeclaration>
 
   // ******************** 空数据与加载失败配置 ********************
   /**
@@ -889,28 +915,28 @@ declare interface ZPagingProps {
   /**
    * 空数据图父view样式
    */
-  emptyViewSuperStyle?: Record<string, any>
+  emptyViewSuperStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 空数据图样式，可设置空数据view的top等，如：:empty-view-style="{'top':'100rpx'}"
    */
-  emptyViewStyle?: Record<string, any>
+  emptyViewStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 空数据图img样式
    */
-  emptyViewImgStyle?: Record<string, any>
+  emptyViewImgStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 空数据图描述文字样式
    */
-  emptyViewTitleStyle?: Record<string, any>
+  emptyViewTitleStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 空数据图重新加载按钮样式
    * @since 1.6.7
    */
-  emptyViewReloadStyle?: Record<string, any>
+  emptyViewReloadStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * 是否显示空数据图重新加载按钮(无数据时)
@@ -1014,7 +1040,7 @@ declare interface ZPagingProps {
   /**
    * 点击返回顶部按钮的自定义样式
    */
-  backToTopStyle?: Record<string, any>
+  backToTopStyle?: Partial<CSSStyleDeclaration>
 
   // ******************** 虚拟列表&内置列表配置 ********************
   /**
@@ -1090,12 +1116,20 @@ declare interface ZPagingProps {
   forceCloseInnerList?: boolean
 
   /**
-   * 虚拟列表是否使用swiper-item包裹，默认为否，此属性为了解决vue3+(微信小程序或QQ小程序)中，使用非内置列表写法时，若z-paging在swiper-item内存在无法获取slot插入的cell高度进而导致虚拟列表失败的问题
+   * 虚拟列表是否使用swiper-item或其他父组件包裹，默认为否，此属性为了解决vue3+(微信小程序或QQ小程序)中，使用非内置列表写法时，若z-paging在swiper-item内存在无法获取slot插入的cell高度进而导致虚拟列表失败的问题
    * - 仅vue3+(微信小程序或QQ小程序)+非内置列表写法虚拟列表有效，其他情况此属性设置任何值都无效，所以如果您在swiper-item内使用z-paging的非内置虚拟列表写法，将此属性设置为true即可
    * @default false
    * @since 2.8.6
    */
   virtualInSwiperSlot?: boolean
+
+  /**
+   * z-paging是否使用swiper-item或其他父组件包裹，默认为否，此属性为了解决vue3+(微信小程序或QQ小程序)中，scrollIntoViewById和scrollIntoViewByIndex因无法获取节点信息导致滚动到指定view无效的问题
+   * - 仅vue3+(微信小程序或QQ小程序)且需要调用scrollIntoViewById或scrollIntoViewByIndex方法时有效，其他情况此属性设置任何值都无效
+   * @default false
+   * @since 2.8.8
+   */
+  inSwiperSlot?: boolean
 
   /**
    * 内置列表cell的key名称(仅nvue有效，在nvue中开启use-inner-list时必须填此项)
@@ -1106,13 +1140,13 @@ declare interface ZPagingProps {
   /**
    * innerList样式
    */
-  innerListStyle?: Record<string, any>
+  innerListStyle?: Partial<CSSStyleDeclaration>
 
   /**
    * innerCell样式
    * @since 2.2.8
    */
-  innerCellStyle?: Record<string, any>
+  innerCellStyle?: Partial<CSSStyleDeclaration>
 
   // ******************** 本地分页配置 ********************
   /**
@@ -1541,6 +1575,15 @@ declare interface ZPagingProps {
    * @since 2.3.0
    */
   onTouchDirectionChange?: (direction: ZPagingEnums.TouchDirection) => void
+
+  /**
+   * 监听列表滚动方向改变
+   * - 页面滚动无效
+   * - 必须同时设置:watch-scroll-direction-change="true"
+   * @param direction 列表滚动的方向，top代表用户将列表向上移动(scrollTop不断减小)，bottom代表用户将列表向下移动(scrollTop不断增大)
+   * @since 2.8.7
+   */
+  onScrollDirectionChange?: (direction: ZPagingEnums.ScrollDirection) => void
 }
 
 
@@ -1840,6 +1883,13 @@ declare interface _ZPagingRef<T = any> {
    * @since 2.6.1
    */
   updateCustomRefresherHeight: () => void;
+  
+  /**
+   * 手动进入二楼
+   *
+   * @since 2.8.7
+   */
+  goF2: () => void;
 
   /**
    * 手动关闭二楼
@@ -1954,6 +2004,13 @@ declare interface _ZPagingRef<T = any> {
    */
   addChatRecordData: (data: _Arrayable<T>, scrollToBottom?: boolean, animate?: boolean) => void;
 
+  /**
+   * 手动添加键盘高度变化监听
+   * 
+   * @since 2.8.7
+   */
+  addKeyboardHeightChangeListener: () => void;
+
   // ******************** 滚动到指定位置方法 ********************
   /**
    * 滚动到顶部
@@ -1971,7 +2028,6 @@ declare interface _ZPagingRef<T = any> {
 
   /**
    * 滚动到指定view
-   * - vue中有效，若此方法无效，请使用scrollIntoViewByNodeTop
    *
    * @param id 需要滚动到的view的id值，不包含"#"
    * @param [offset=0] 偏移量，单位为px

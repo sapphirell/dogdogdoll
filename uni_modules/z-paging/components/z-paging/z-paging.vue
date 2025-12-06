@@ -4,7 +4,7 @@
   / /_____| |_) | (_| | (_| | | | | | (_| |
  /___|    | .__/ \__,_|\__, |_|_| |_|\__, |
           |_|          |___/         |___/ 
-v2.8.6 (2025-03-17)
+v2.8.8 (2025-08-29)
 @author ZXLee <admin@zxlee.cn>
 -->
 <!-- 文档地址：https://z-paging.zxlee.cn -->
@@ -14,19 +14,21 @@ v2.8.6 (2025-03-17)
 
 <template name="z-paging">
 	<!-- #ifndef APP-NVUE -->
-	<view :class="{'z-paging-content':true,'z-paging-content-full':!usePageScroll,'z-paging-content-fixed':!usePageScroll&&fixed,'z-paging-content-page':usePageScroll,'z-paging-reached-top':renderPropScrollTop<1,'z-paging-use-chat-record-mode':useChatRecordMode}" :style="[finalPagingStyle]">
+	<view :class="[{'z-paging-content':true,'z-paging-content-full':!usePageScroll,'z-paging-content-fixed':!usePageScroll&&fixed,'z-paging-content-page':usePageScroll,'z-paging-reached-top':renderPropScrollTop<1,'z-paging-use-chat-record-mode':useChatRecordMode}, pagingClass]" :style="[finalPagingStyle]">
 		<!-- #ifndef APP-PLUS -->
-		<view v-if="cssSafeAreaInsetBottom===-1" class="zp-safe-area-inset-bottom"></view>
+		<view v-if="cssSafeAreaInsetBottom===-1" class="zp-safe-area-inset-bottom" style="position: absolute"/>
 		<!-- #endif -->
 		<!-- 二楼view -->
 		<view v-if="showF2 && showRefresherF2" @touchmove.stop.prevent class="zp-f2-content" :style="[{'transform': f2Transform, 'transition': `transform .2s linear`, 'height': superContentHeight + 'px', 'z-index': f2ZIndex}]">
 			<slot name="f2"/>
 		</view>
 		<!-- 顶部固定的slot -->
-		<slot v-if="!usePageScroll&&zSlots.top" name="top" />
-		<view class="zp-page-top" @touchmove.stop.prevent v-else-if="usePageScroll&&zSlots.top" :style="[{'top':`${windowTop}px`,'z-index':topZIndex}]">
-			<slot name="top" />
-		</view>
+		<template v-if="zSlots.top">
+			<slot v-if="!usePageScroll" name="top" />
+			<view v-else class="zp-page-top" @touchmove.stop.prevent :style="[{'top':`${windowTop}px`,'z-index':topZIndex}]">
+				<slot name="top" />
+			</view>
+		</template>
 		<view :class="{'zp-view-super':true,'zp-scroll-view-super':!usePageScroll}" :style="[finalScrollViewStyle]">
 			<view v-if="zSlots.left" :class="{'zp-page-left':true,'zp-absoulte':finalIsOldWebView}">
 				<slot name="left" />
@@ -58,7 +60,7 @@ v2.8.6 (2025-03-17)
 						:change:prop="pagingWxs.propObserver" :prop="wxsPropType"
 						:data-refresherThreshold="finalRefresherThreshold" :data-refresherF2Enabled="refresherF2Enabled" :data-refresherF2Threshold="finalRefresherF2Threshold" :data-isIos="isIos"
 						:data-loading="loading||isRefresherInComplete" :data-useChatRecordMode="useChatRecordMode" 
-						:data-refresherEnabled="refresherEnabled" :data-useCustomRefresher="useCustomRefresher" :data-pageScrollTop="wxsPageScrollTop"
+						:data-refresherEnabled="finalRefresherEnabled" :data-useCustomRefresher="useCustomRefresher" :data-pageScrollTop="wxsPageScrollTop"
 						:data-scrollTop="wxsScrollTop" :data-refresherMaxAngle="refresherMaxAngle" :data-refresherNoTransform="refresherNoTransform"
 						:data-refresherAecc="refresherAngleEnableChangeContinued" :data-usePageScroll="usePageScroll" :data-watchTouchDirectionChange="watchTouchDirectionChange"
 						:data-oldIsTouchmoving="isTouchmoving" :data-refresherOutRate="finalRefresherOutRate" :data-refresherPullRate="finalRefresherPullRate" :data-hasTouchmove="hasTouchmove"
@@ -100,7 +102,7 @@ v2.8.6 (2025-03-17)
 										<view class="zp-list-container" :style="[innerListStyle]">
 											<template v-if="finalUseVirtualList">
 												<view class="zp-list-cell" :style="[innerCellStyle]" :id="`${fianlVirtualCellIdPrefix}-${item[virtualCellIndexKey]}`" v-for="(item,index) in virtualList" :key="item['zp_unique_index']" @click="_innerCellClick(item,virtualTopRangeIndex+index)">
-													<view v-if="useCompatibilityMode">使用兼容模式请在组件源码z-paging.vue第103行中注释这一行，并打开下面一行注释</view>
+													<view v-if="useCompatibilityMode">使用兼容模式请在组件源码z-paging.vue第105行中注释这一行，并打开下面一行注释</view>
 													<!-- <zp-public-virtual-cell v-if="useCompatibilityMode" :extraData="extraData" :item="item" :index="virtualTopRangeIndex+index" /> -->
 													<slot v-else name="cell" :item="item" :index="virtualTopRangeIndex+index"/>
 												</view>
@@ -140,7 +142,11 @@ v2.8.6 (2025-03-17)
 									<slot v-else-if="loadingStatus===M.Fail&&zSlots.loadingMoreFail&&showLoadingMore&&loadingMoreEnabled&&!useChatRecordMode" name="loadingMoreFail" />
 									<z-paging-load-more @doClick="_onLoadingMore('click')" v-else-if="showLoadingMore&&showDefaultLoadingMoreText&&!(loadingStatus===M.NoMore&&!showLoadingMoreNoMoreView)&&loadingMoreEnabled&&!useChatRecordMode" :zConfig="zLoadMoreConfig" />
 									<!-- #endif -->
-									<view v-if="safeAreaInsetBottom&&useSafeAreaPlaceholder&&!useChatRecordMode" class="zp-safe-area-placeholder" :style="[{height:safeAreaBottom+'px'}]" />
+									<!-- 底部安全区域useSafeAreaPlaceholder模式占位，此时占位不再固定在底部而是跟随页面一起滚动 -->
+									<!-- 如果底部slot=bottom存在，占位区域会插入在slot=bottom下方，不再跟随页面滚动，因此这里就没必要显示了 -->
+									<!-- 聊天记录模式因为列表倒置，此处不需要显示底部安全区域，另行处理 -->
+									
+									<view v-if="safeAreaInsetBottom&&finalUseSafeAreaPlaceholder&&!useChatRecordMode" class="zp-safe-area-placeholder" :style="[{height:safeAreaBottom+'px'}]" />
 								</view>
 								<!-- 空数据图 -->
 								<view v-if="showEmpty" :class="{'zp-empty-view':true,'zp-empty-view-center':emptyViewCenter}" :style="[emptyViewSuperStyle,chatRecordRotateStyle]">
@@ -161,10 +167,37 @@ v2.8.6 (2025-03-17)
 		</view>
 		<!-- 底部固定的slot -->
 		<view class="zp-page-bottom-container" :style="{'background': bottomBgColor}">
-			<slot v-if="!usePageScroll&&zSlots.bottom" name="bottom" />
-			<view class="zp-page-bottom" @touchmove.stop.prevent v-else-if="usePageScroll&&zSlots.bottom" :style="[{'bottom': `${windowBottom}px`}]">
-				<slot name="bottom" />
-			</view>
+			<template v-if="zSlots.bottom">
+				<!-- 非页面滚动底部插槽(父容器开启flex，中间列表设置了flex:1，通过中间列表撑开固定在底部) -->
+				<slot v-if="!usePageScroll" name="bottom" />
+				<!-- 页面滚动底部插槽(通过position: fixed固定在底部) -->
+				<view v-else class="zp-page-bottom" @touchmove.stop.prevent :style="[{'bottom': `${windowBottom}px`, 'background': bottomBgColor}]">
+					<slot name="bottom" />
+					<!-- 页面滚动底部安全区域占位(仅slot=bottom存在时展示在slot=bottom插入的view下方，当slot=bottom不存在时，通过控制容器的marginBottom设置底部安全区域间距) -->
+					<template v-if="safeAreaInsetBottom">
+						<!-- 如果是App，则使用style中的safeAreaBottom设置高度，非APP使用class，因为class中的env(safe-area-inset-bottom)在部分app中无效 -->
+						<!-- #ifdef APP-PLUS -->
+						<view :style="[{height:safeAreaBottom+'px'}]" />
+						<!-- #endif -->
+						<!-- #ifndef APP-PLUS -->
+						<view class="zp-safe-area-inset-bottom" />
+						<!-- #endif -->
+					</template>
+				</view>
+			</template>
+			<!-- 非页面滚动底部安全区域占位(无论slot=bottom是否存在)-->
+			<!-- 如果useSafeAreaPlaceholder开启了并且slot=bottom不存在就不显示这个占位view了，因为此时useSafeAreaPlaceholder会是跟随滚动的状态 -->
+			<!-- 聊天记录模式因为列表倒置，此处不需要显示底部安全区域，另行处理 -->
+			<template v-if="safeAreaInsetBottom&&!usePageScroll&&!(finalUseSafeAreaPlaceholder)&&!useChatRecordMode">
+				<!-- 如果是App，则使用style中的safeAreaBottom设置高度，非APP使用class，因为class中的env(safe-area-inset-bottom)在部分app中无效 -->
+				<!-- #ifdef APP-PLUS -->
+				<view :style="[{height:safeAreaBottom+'px'}]" />
+				<!-- #endif -->
+				<!-- #ifndef APP-PLUS -->
+				<view class="zp-safe-area-inset-bottom" />
+				<!-- #endif -->
+			</template>
+			
 			<!-- 聊天记录模式底部占位 -->
 			<template v-if="useChatRecordMode&&autoAdjustPositionWhenChat">
 				<view :style="[{height:chatRecordModeSafeAreaBottom+'px'}]" />
@@ -183,7 +216,7 @@ v2.8.6 (2025-03-17)
 	</view>
 	<!-- #endif -->
 	<!-- #ifdef APP-NVUE -->
-	<component ref="z-paging-content" :is="finalNvueSuperListIs" :style="[finalPagingStyle]" :class="{'z-paging-content-fixed':fixed&&!usePageScroll}" :scrollable="false">
+	<component ref="z-paging-content" :is="finalNvueSuperListIs" :style="[finalPagingStyle]" :class="[{'z-paging-content-fixed':fixed&&!usePageScroll}, pagingClass]" :scrollable="false">
 		<!-- 二楼view -->
 		<view v-if="showF2 && showRefresherF2" ref="zp-n-f2" class="zp-f2-content" @touchmove.stop.prevent :style="[{'height': superContentHeight + 'px', 'width': nRefresherWidth + 'px', 'opacity': nF2Opacity}]">
 			<slot name="f2"/>
@@ -201,7 +234,9 @@ v2.8.6 (2025-03-17)
 			<view v-if="zSlots.left" class="zp-page-left">
 				<slot name="left" />
 			</view>
-			<component :is="finalNvueListIs" ref="zp-n-list" :id="nvueListId" :style="[{'flex': 1,'top':isIos?'0px':'-1px'},usePageScroll?scrollViewStyle:{},chatRecordRotateStyle]" :alwaysScrollableVertical="true"
+			<!-- 因在nvue+vue3+waterfall中，使用<component is="waterfall" />设置的瀑布流无效，因此此处只能单独判断finalNvueListIs等于waterfall时，直接写<waterfall />标签暂时解决 -->
+			<!-- 下方的v-if和v-else中的代码完全一致，仅标签不同，等待官方解决后再统一，已提issue：https://ask.dcloud.net.cn/question/168505 -->
+			<component v-if="finalNvueListIs !== 'waterfall'" :is="finalNvueListIs" ref="zp-n-list" :id="nvueListId" :style="[{'flex': 1,'top':isIos?'0px':'-1px'},usePageScroll?scrollViewStyle:{},chatRecordRotateStyle]" :alwaysScrollableVertical="true"
 				:fixFreezing="nFixFreezing" :show-scrollbar="showScrollbar" :loadmoreoffset="finalLowerThreshold" :enable-back-to-top="enableBackToTop"
 				:scrollable="finalScrollable" :bounce="nvueBounce" :column-count="nWaterfallColumnCount" :column-width="nWaterfallColumnWidth"
 				:column-gap="nWaterfallColumnGap" :left-gap="nWaterfallLeftGap" :right-gap="nWaterfallRightGap" :pagingEnabled="nvuePagingEnabled" :offset-accuracy="offsetAccuracy"
@@ -253,7 +288,7 @@ v2.8.6 (2025-03-17)
 					<slot name="loading" />
 				</component>
 				<!-- 上拉加载更多view -->
-				<component :is="nViewIs" v-if="!refresherOnly&&loadingMoreEnabled&&!showEmpty">
+				<component :is="nViewIs" v-if="!isOnly&&loadingMoreEnabled&&!showEmpty">
 					<!-- 聊天记录模式加载更多loading（滚动到顶部加载更多或无更多数据时显示） -->
 					<template v-if="useChatRecordMode&&realTotalData.length>=defaultPageSize&&(loadingStatus!==M.NoMore||zSlots.chatNoMore)&&realTotalData.length&&isChatRecordModeAndInversion">
 						<view :style="[chatRecordRotateStyle]">
@@ -271,7 +306,10 @@ v2.8.6 (2025-03-17)
 						<slot v-else-if="showLoadingMoreNoMore" name="loadingMoreNoMore" />
 						<slot v-else-if="showLoadingMoreFail" name="loadingMoreFail" />
 						<z-paging-load-more @doClick="_onLoadingMore('click')" v-else-if="showLoadingMoreCustom" :zConfig="zLoadMoreConfig" />
-						<view v-if="safeAreaInsetBottom&&useSafeAreaPlaceholder&&!useChatRecordMode" class="zp-safe-area-placeholder" :style="[{height:safeAreaBottom+'px'}]" />
+						<!-- 底部安全区域useSafeAreaPlaceholder模式占位，此时占位不再固定在底部而是跟随页面一起滚动 -->
+						<!-- 如果底部slot=bottom存在，占位区域会插入在slot=bottom下方，不再跟随页面滚动，因此这里就没必要显示了 -->
+						<!-- 聊天记录模式因为列表倒置，此处不需要显示底部安全区域，另行处理 -->
+						<view v-if="safeAreaInsetBottom&&finalUseSafeAreaPlaceholder&&!useChatRecordMode" class="zp-safe-area-placeholder" :style="[{height:safeAreaBottom+'px'}]" />
 					</view>
 				</component>
 				<!-- 空数据图 -->
@@ -286,6 +324,94 @@ v2.8.6 (2025-03-17)
 				</component>
 				<component :is="nViewIs" v-if="!hideNvueBottomTag" ref="zp-n-list-bottom-tag" class="zp-n-list-bottom-tag"></component>
 			</component>
+			<waterfall v-else :is="finalNvueListIs" ref="zp-n-list" :id="nvueListId" :style="[{'flex': 1,'top':isIos?'0px':'-1px'},usePageScroll?scrollViewStyle:{},chatRecordRotateStyle]" :alwaysScrollableVertical="true"
+				:fixFreezing="nFixFreezing" :show-scrollbar="showScrollbar" :loadmoreoffset="finalLowerThreshold" :enable-back-to-top="enableBackToTop"
+				:scrollable="finalScrollable" :bounce="nvueBounce" :column-count="nWaterfallColumnCount" :column-width="nWaterfallColumnWidth"
+				:column-gap="nWaterfallColumnGap" :left-gap="nWaterfallLeftGap" :right-gap="nWaterfallRightGap" :pagingEnabled="nvuePagingEnabled" :offset-accuracy="offsetAccuracy"
+				@loadmore="_nOnLoadmore" @scroll="_nOnScroll" @scrollend="_nOnScrollend">
+				<refresh v-if="(zSlots.top?cacheTopHeight!==-1:true)&&finalNvueRefresherEnabled" class="zp-n-refresh" :style="[nvueRefresherStyle]" :display="nRefresherLoading?'show':'hide'" @refresh="_nOnRrefresh" @pullingdown="_nOnPullingdown">
+					<view ref="zp-n-refresh-container" class="zp-n-refresh-container" :style="[{background:refresherBackground,width:nRefresherWidth}]" id="zp-n-refresh-container">
+						<view v-if="useRefresherStatusBarPlaceholder" class="zp-custom-refresher-status-bar-placeholder" :style="[{'height': `${statusBarHeight}px`}]" />
+						<!-- 下拉刷新view -->
+						<slot v-if="zSlots.refresherComplete&&refresherStatus===R.Complete" name="refresherComplete" />
+						<slot v-else-if="zSlots.refresherF2&&refresherStatus===R.GoF2" name="refresherF2" />
+						<slot v-else-if="(nScopedSlots?nScopedSlots:zSlots).refresher" :refresherStatus="refresherStatus" name="refresher" />
+						<z-paging-refresh ref="refresh" v-else :status="refresherStatus" :defaultThemeStyle="finalRefresherThemeStyle" :isIos="isIos"
+							:defaultText="finalRefresherDefaultText" :pullingText="finalRefresherPullingText" :refreshingText="finalRefresherRefreshingText" :completeText="finalRefresherCompleteText" :goF2Text="finalRefresherGoF2Text"
+							:defaultImg="refresherDefaultImg" :pullingImg="refresherPullingImg" :refreshingImg="refresherRefreshingImg" :completeImg="refresherCompleteImg" :refreshingAnimated="refresherRefreshingAnimated"
+							:showUpdateTime="showRefresherUpdateTime" :updateTimeKey="refresherUpdateTimeKey" :updateTimeTextMap="finalRefresherUpdateTimeTextMap"
+							:imgStyle="refresherImgStyle" :titleStyle="refresherTitleStyle" :updateTimeStyle="refresherUpdateTimeStyle" :unit="unit" />
+					</view>
+				</refresh>
+				<component :is="nViewIs" v-if="isIos&&!useChatRecordMode?oldScrollTop>10:true" ref="zp-n-list-top-tag" class="zp-n-list-top-tag" style="margin-top: -1rpx;" :style="[{height:finalNvueRefresherEnabled?'0px':'1px'}]"></component>
+				<component :is="nViewIs" v-if="nShowRefresherReveal" ref="zp-n-list-refresher-reveal" :style="[{transform:`translateY(-${nShowRefresherRevealHeight}px)`},{background:refresherBackground}]">
+					<view v-if="useRefresherStatusBarPlaceholder" class="zp-custom-refresher-status-bar-placeholder" :style="[{'height': `${statusBarHeight}px`}]" />
+					<!-- 下拉刷新view -->
+					<slot v-if="zSlots.refresherComplete&&refresherStatus===R.Complete" name="refresherComplete" />
+					<slot v-else-if="zSlots.refresherF2&&refresherStatus===R.GoF2" name="refresherF2" />
+					<slot v-else-if="(nScopedSlots?nScopedSlots:$slots).refresher" :refresherStatus="R.Loading" name="refresher" />
+					<z-paging-refresh ref="refresh" v-else :status="R.Loading" :defaultThemeStyle="finalRefresherThemeStyle" :isIos="isIos"
+						:defaultText="finalRefresherDefaultText" :pullingText="finalRefresherPullingText" :refreshingText="finalRefresherRefreshingText" :completeText="finalRefresherCompleteText" :goF2Text="finalRefresherGoF2Text"
+						:defaultImg="refresherDefaultImg" :pullingImg="refresherPullingImg" :refreshingImg="refresherRefreshingImg" :completeImg="refresherCompleteImg" :refreshingAnimated="refresherRefreshingAnimated"
+						:showUpdateTime="showRefresherUpdateTime" :updateTimeKey="refresherUpdateTimeKey" :updateTimeTextMap="finalRefresherUpdateTimeTextMap"
+						:imgStyle="refresherImgStyle" :titleStyle="refresherTitleStyle" :updateTimeStyle="refresherUpdateTimeStyle" :unit="unit" />
+				</component>
+				<!-- 内置列表 -->
+				<template v-if="finalUseInnerList">
+					<component :is="nViewIs">
+						<slot name="header"/>
+					</component>	
+					<component :is="nViewIs" class="zp-list-cell" v-for="(item,index) in realTotalData" :key="finalCellKeyName.length?item[finalCellKeyName]:index">
+						<slot name="cell" :item="item" :index="index"/>
+					</component>
+					<component :is="nViewIs">
+						<slot name="footer"/>
+					</component>	
+				</template>
+				<template v-else>
+					<slot />
+				</template>
+				<!-- 全屏Loading -->
+				<component :is="nViewIs" v-if="showLoading&&zSlots.loading&&!loadingFullFixed" :class="{'z-paging-content-fixed':usePageScroll}" style="flex:1" :style="[chatRecordRotateStyle]">
+					<slot name="loading" />
+				</component>
+				<!-- 上拉加载更多view -->
+				<component :is="nViewIs" v-if="!isOnly&&loadingMoreEnabled&&!showEmpty">
+					<!-- 聊天记录模式加载更多loading（滚动到顶部加载更多或无更多数据时显示） -->
+					<template v-if="useChatRecordMode&&realTotalData.length>=defaultPageSize&&(loadingStatus!==M.NoMore||zSlots.chatNoMore)&&realTotalData.length&&isChatRecordModeAndInversion">
+						<view :style="[chatRecordRotateStyle]">
+							<slot v-if="loadingStatus===M.NoMore&&zSlots.chatNoMore" name="chatNoMore" />
+							<template v-else>
+								<slot v-if="zSlots.chatLoading" :loadingMoreStatus="loadingStatus" name="chatLoading" />
+								<z-paging-load-more v-else @doClick="_onLoadingMore('click')" :zConfig="zLoadMoreConfig" />
+							</template>
+						</view>
+					</template>
+					
+					<view :style="nLoadingMoreFixedHeight?{height:loadingMoreCustomStyle&&loadingMoreCustomStyle.height?loadingMoreCustomStyle.height:loadingMoreFixedHeight}:{}">
+						<slot v-if="showLoadingMoreDefault" name="loadingMoreDefault" />
+						<slot v-else-if="showLoadingMoreLoading" name="loadingMoreLoading" />
+						<slot v-else-if="showLoadingMoreNoMore" name="loadingMoreNoMore" />
+						<slot v-else-if="showLoadingMoreFail" name="loadingMoreFail" />
+						<z-paging-load-more @doClick="_onLoadingMore('click')" v-else-if="showLoadingMoreCustom" :zConfig="zLoadMoreConfig" />
+						<!-- 底部安全区域useSafeAreaPlaceholder模式占位，此时占位不再固定在底部而是跟随页面一起滚动 -->
+						<!-- 如果底部slot=bottom存在，占位区域会插入在slot=bottom下方，不再跟随页面滚动，因此这里就没必要显示了 -->
+						<!-- 聊天记录模式因为列表倒置，此处不需要显示底部安全区域，另行处理 -->
+						<view v-if="safeAreaInsetBottom&&finalUseSafeAreaPlaceholder&&!useChatRecordMode" class="zp-safe-area-placeholder" :style="[{height:safeAreaBottom+'px'}]" />
+					</view>
+				</component>
+				<!-- 空数据图 -->
+				<component :is="nViewIs" v-if="showEmpty" :class="{'z-paging-content-fixed':usePageScroll}" :style="[{flex:emptyViewCenter?1:0},emptyViewSuperStyle,chatRecordRotateStyle]">
+					<view :class="{'zp-empty-view':true,'zp-empty-view-center':emptyViewCenter}">
+						<slot v-if="zSlots.empty" name="empty" :isLoadFailed="isLoadFailed" />
+						<z-paging-empty-view v-else :emptyViewImg="finalEmptyViewImg" :emptyViewText="finalEmptyViewText" :showEmptyViewReload="finalShowEmptyViewReload" 
+						:emptyViewReloadText="finalEmptyViewReloadText" :isLoadFailed="isLoadFailed" :emptyViewStyle="emptyViewStyle" :emptyViewTitleStyle="emptyViewTitleStyle" 
+						:emptyViewImgStyle="emptyViewImgStyle" :emptyViewReloadStyle="emptyViewReloadStyle" :emptyViewZIndex="emptyViewZIndex" :emptyViewFixed="emptyViewFixed" :unit="unit"
+						@reload="_emptyViewReload" @viewClick="_emptyViewClick" />
+					</view>
+				</component>
+				<component :is="nViewIs" v-if="!hideNvueBottomTag" ref="zp-n-list-bottom-tag" class="zp-n-list-bottom-tag"></component>
+			</waterfall>
 			<view v-if="zSlots.right" class="zp-page-right">
 				<slot name="right" />
 			</view>
@@ -293,6 +419,11 @@ v2.8.6 (2025-03-17)
 		<!-- 底部固定的slot -->
 		<view class="zp-page-bottom-container" :style="{'background': bottomBgColor}">
 			<slot name="bottom" />
+			<!-- 非页面滚动底部安全区域占位(无论slot=bottom是否存在)-->
+			<!-- 如果useSafeAreaPlaceholder开启了并且slot=bottom不存在就不显示这个占位view了，因为此时useSafeAreaPlaceholder会是跟随滚动的状态 -->
+			<!-- 聊天记录模式因为列表倒置，此处不需要显示底部安全区域，另行处理 -->
+			<view v-if="safeAreaInsetBottom&&!usePageScroll&&!(finalUseSafeAreaPlaceholder)&&!useChatRecordMode" :style="[{height:safeAreaBottom+'px'}]" />
+			
 			<!-- 聊天记录模式底部占位 -->
 			<template v-if="useChatRecordMode&&autoAdjustPositionWhenChat">
 				<view :style="[{height:chatRecordModeSafeAreaBottom+'px'}]" />
@@ -327,11 +458,14 @@ v2.8.6 (2025-03-17)
 	 * @property {Boolean} autoFullHeight 使用页面滚动时，是否在不满屏时自动填充满屏幕，默认为true
 	 * @property {String} defaultThemeStyle loading(下拉刷新、上拉加载更多)的主题样式，支持black，white，默认为black
 	 * @property {Object} pagingStyle 设置z-paging的style，部分平台(如微信小程序)无法直接修改组件的style，可使用此属性代替
+	 * @property {String|Array|Object} pagingClass 设置z-paging的class，优先级低于pagingStyle和height、width、maxWidth、bgColor
 	 * @property {String} height z-paging的高度，优先级低于pagingStyle中设置的height，传字符串，如100px、100rpx、100%
 	 * @property {String} width z-paging的宽度，优先级低于pagingStyle中设置的width，传字符串，如100px、100rpx、100%
 	 * @property {String} maxWidth z-paging的最大宽度，优先级低于pagingStyle中设置的max-width，默认为空
 	 * @property {String} bgColor z-paging的背景色(为css中的background，因此也可以设置渐变，背景图片等)，优先级低于pagingStyle中设置的background-color
 	 * @property {Boolean} watchTouchDirectionChange 是否监听列表触摸方向改变，默认为false
+	 * @property {Boolean} watchScrollDirectionChange 是否监听列表滚动方向改变，默认为false
+	 * @property {Boolean} layoutOnly 是否只使用基础布局，设置为true后将关闭mounted自动请求数据、关闭下拉刷新和滚动到底部加载更多，强制隐藏空数据图。默认为否
 	 * @property {Number|String} delay 调用complete后延迟处理的时间，单位为毫秒，优先级高于min-delay，默认为0
 	 * @property {Number|String} minDelay 触发@query后最小延迟处理的时间，单位为毫秒，优先级低于delay，默认为0
 	 * @property {Boolean} callNetworkReject 请求失败是否触发reject，默认为true
@@ -451,7 +585,8 @@ v2.8.6 (2025-03-17)
 	 * @property {String} virtualCellIdPrefix 虚拟列表cell id的前缀
 	 * @property {Boolean} useInnerList 是否在z-paging内部循环渲染列表(使用内置列表)，默认为false
 	 * @property {Boolean} forceCloseInnerList 强制关闭inner-list，默认为false
-	 * @property {Boolean} virtualInSwiperSlot 虚拟列表是否使用swiper-item包裹，默认为false
+	 * @property {Boolean} virtualInSwiperSlot 虚拟列表是否使用swiper-item或其他父组件包裹，默认为false
+	 * @property {Boolean} inSwiperSlot z-paging是否使用swiper-item或其他父组件包裹，默认为否
 	 * @property {String} cellKeyName 内置列表cell的key名称(仅nvue有效)
 	 * @property {Object} innerListStyle innerList样式
 	 * @property {Object} innerCellStyle innerCell样式
@@ -515,7 +650,8 @@ v2.8.6 (2025-03-17)
 	 * @event {Function} scrolltoupper z-paging内置的scroll-view/list-view/waterfall滚动顶部时触发
 	 * @event {Function} scrollend z-paging内置的list滚动结束时触发
 	 * @event {Function} contentHeightChanged z-paging中内容高度改变时触发
-	 * @event {Function} touchDirectionChange 监听列表触摸方向改变
+	 * @event {Function} touchDirectionChange 监听列表触摸方向改变(nvue无效)
+	 * @event {Function} scrollDirectionChange 监听列表滚动方向改变(页面滚动无效)
 	 * @example <z-paging ref="paging" v-model="dataList" @query="queryList"></z-paging>
 	 */
 	export default {

@@ -1,9 +1,13 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
+import { initLoginState } from '@/common/config.js'
+
+
 onLaunch(() => {
   console.log('App Launch')
-
+  // 应用启动时恢复登录状态
+  initLoginState()
   
 })
 
@@ -84,6 +88,10 @@ function loadFonts() {
 
 	.font-alimamashuhei {
 		font-family: "alimamamshuhei" !important;
+	}
+	
+	.font-title {
+		font-family: "title-font";
 	}
 
 	.font-cute {

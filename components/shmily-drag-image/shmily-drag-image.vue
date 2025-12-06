@@ -1,502 +1,934 @@
-<!-- shmily-drag-image.vue (基于你的无问题版本 + 功能合入) -->
+<!-- shmily-drag-image -->
 <template>
-  <view class="con">
-    <template v-if="viewWidth">
-      <movable-area
-        class="area"
-        :style="{ height: areaHeight }"
-        @mouseenter="mouseenter"
-        @mouseleave="mouseleave"
-      >
-        <movable-view
-          v-for="(item, index) in imageList"
-          :key="item.id"
-          class="view"
-          direction="all"
-          :y="item.y"
-          :x="item.x"
-          :damping="40"
-          :disabled="item.disable || !item.ready"
-          @change="onChange($event, item)"
-          @touchstart="onLongPressStart(item, $event)"
-          @touchend="touchend(item)"
-          @tap="handleItemClick(item)"
-          @touchmove="onTouchMove($event, item)"
-          :style="{
-            width: viewWidth + 'px',
-            height: viewHeight + 'px',
-            'z-index': item.zIndex,
-            opacity: item.opacity
-          }"
-        >
-          <view
-            class="area-con"
-            :style="{
-              width: childWidth,
-              height: childHeight,
-              borderRadius: props.borderRadius + 'rpx',
-              transform: 'scale(' + item.scale + ')',
-              margin: props.itemMargin + 'px'
-            }"
-            :class="{ 'ready': !item.disable && item.ready }"
-          >
-            <!-- 可选删除 -->
-            <view v-if="props.showDelete" class="delete-btn" @click.stop="deleteImage(item)">
-              <uni-icons type="clear" color="#9b9b9b" size="30" />
-            </view>
+	<view class="con">
+		<template v-if="viewWidth">
+			<movable-area class="area" :style="{ height: areaHeight }" @mouseenter="mouseenter"
+				@mouseleave="mouseleave">
+				<movable-view
+					v-for="(item, index) in imageList"
+					:key="item.id"
+					class="view"
+					direction="all"
+					:y="item.y"
+					:x="item.x"
+					:damping="40"
+					:disabled="item.disable || !item.ready"
+					@change="onChange($event, item)"
+					@touchstart="onLongPressStart(item, $event)"
+					@touchend="touchend(item)"
+					@tap="handleItemClick(item)"
+					@touchmove="onTouchMove($event, item)"
+					:style="{
+						width: viewWidth + 'px',
+						height: viewHeight + 'px',
+						'z-index': item.zIndex,
+						opacity: item.opacity
+					}"
+				>
+					<view
+						class="area-con"
+						:style="{
+							width: childWidth,
+							height: childHeight,
+							borderRadius: borderRadius + 'rpx',
+							transform: 'scale(' + item.scale + ')',
+							margin: itemMargin + 'px'
+						}"
+						:class="{ 'ready': !item.disable && item.ready }"
+					>
+						<view v-if="props.showDelete" class="delete-btn" @click.stop="deleteImage(item)">
+							<uni-icons type="clear" color="#9b9b9b" size="30"></uni-icons>
+						</view>
 
-            <!-- 图片（带兜底） -->
-            <image
-              class="pre-image"
-              :src="getDisplayImg(item)"
-              mode="aspectFill"
-              @error="onImgError(item)"
-            />
+						<!-- ✅ 懒加载图片：进入视口前只渲染占位图，进入视口后再加载真正图片 -->
+						<image
+							class="pre-image"
+							:id="'drag-img-' + item.id"
+							:src="item._imgLoaded ? getDisplayImg(item) : NO_IMG"
+							mode="aspectFill"
+							:lazy-load="true"
+							@error="onImgError(item)"
+						/>
 
-            <!-- 底部信息 + 左上角分类 -->
-            <view class="info-container" v-if="props.showItemInfo">
-              <text class="name">{{ item.name }}</text>
-              <text class="price">{{ getDisplayPrice(item.price) }}</text>
-              <text class="type">{{ item.type }}</text>
-            </view>
+						<view class="info-container" v-if="props.showItemInfo">
+							<text class="name">{{ item.name }}</text>
+							<text class="price">{{ getDisplayPrice(item.price) }}</text>
+							<text class="type">{{ item.type }}</text>
+						</view>
 
-            <!-- 付款状态糖果色标签 -->
-            <view
-              v-if="props.showPaymentTag && getPaymentText(item)"
-              class="pay-badge candy"
-              :class="['s-' + (item.payStatus || 1)]"
-            >
-              {{ getPaymentText(item) }}
-            </view>
-          </view>
-        </movable-view>
-      </movable-area>
-    </template>
-  </view>
+						<view
+							v-show="props.showPaymentTag && item.payStatus"
+							class="pay-badge candy"
+							:class="['s-' + (item.payStatus || 1)]"
+						>
+							{{ item._payText }}
+						</view>
+					</view>
+				</movable-view>
+			</movable-area>
+		</template>
+	</view>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, getCurrentInstance } from 'vue'
+	import {
+		ref,
+		computed,
+		watch,
+		onMounted,
+		onBeforeUnmount,
+		nextTick,
+		getCurrentInstance
+	} from 'vue'
 
-/* ========= Props / Emits ========= */
-const props = defineProps({
-  value: { type: Array, default: () => [] },
-  customClick: { type: Boolean, default: false },
-  modelValue: { type: Array, default: () => [] },
-  keyName: { type: String, default: 'image_url' },
-  number: { type: Number, default: 6 },
-  imageWidth: { type: Number, default: 0 },
-  cols: { type: Number, default: 3 },
-  borderRadius: { type: String, default: '0' },
-  padding: { type: Number, default: 10 },
-  scale: { type: Number, default: 1.1 },
-  opacity: { type: Number, default: 0.7 },
-  itemMargin: { type: Number, default: 10 },
-  imageRatio: { type: Number, default: 0.7 },
-  showItemInfo: { type: Boolean, default: true },
-  showDelete: { type: Boolean, default: false },
+	import {
+		websiteUrl,
+		wechatSignLogin,
+		getUserInfo,
+		global,
+		asyncGetUserInfo,
+	} from "../../common/config.js";
 
-  /* 付款状态标签（新增能力） */
-  showPaymentTag: { type: Boolean, default: false },
-  paymentField: { type: String, default: 'payment_status' },
-  paymentMap: {
-    type: Object,
-    default: () => ({ 1: '全款', 2: '定金', 3: '未买' })
-  }
-})
-const emit = defineEmits(['input', 'update:modelValue', 'sort-change', 'delete', 'item-click'])
+	// 定义 props
+	const props = defineProps({
+		value: {
+			type: Array,
+			default: () => []
+		},
+		customClick: {
+			type: Boolean,
+			default: false
+		},
+		modelValue: {
+			type: Array,
+			default: () => []
+		},
+		keyName: {
+			type: String,
+			default: 'image_url' // 默认使用image_url作为图片字段
+		},
+		number: {
+			type: Number,
+			default: 6
+		},
+		imageWidth: {
+			type: Number,
+			default: 0
+		},
+		cols: {
+			type: Number,
+			default: 3
+		},
+		borderRadius: {
+			type: String,
+			default: 0
+		},
+		padding: {
+			type: Number,
+			default: 10
+		},
+		scale: {
+			type: Number,
+			default: 1.1
+		},
+		opacity: {
+			type: Number,
+			default: 0.7
+		},
+		// 新增：每个项目之间的边距
+		itemMargin: {
+			type: Number,
+			default: 10
+		},
+		// 新增：图片与文字的比例
+		imageRatio: {
+			type: Number,
+			default: 0.7 // 图片区域占总高度的70%
+		},
+		// 显示item的信息
+		showItemInfo: {
+			type: Boolean,
+			default: true
+		},
+		showDelete: {
+			type: Boolean,
+			default: false
+		},
+		/* 付款状态标签（新增能力） */
+		showPaymentTag: { type: Boolean, default: false },
+		paymentField: { type: String, default: 'payment_status' },
+		paymentMap: {
+			type: Object,
+			default: () => ({ 1: '全款', 2: '定金', 3: '未买' })
+		}
+	})
 
-/* ========= 图片兜底 / 文本清洗 ========= */
-const NO_IMG =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
-      <rect width="100%" height="100%" fill="#e9ebef"/>
-      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-        fill="#9aa0a6" font-size="40" font-family="Arial">No Image</text>
-    </svg>`
-  )
-const getSrc = (item) => (props.keyName !== null ? item[props.keyName] : item)
-function normalizeFirstImage(s) {
-  if (!s) return ''
-  const first = String(s).split(',')[0].trim()
-  const low = first.toLowerCase()
-  if (!first || low.includes('/default') || low.endsWith('default.png') || low.includes('noimage')) return ''
-  return first
-}
-function getDisplayImg(item) {
-  if (item.__imgBroken) return NO_IMG
-  const src = normalizeFirstImage(item.src)
-  return src || NO_IMG
-}
-function onImgError(item) { item.__imgBroken = true }
+	// 定义 emits
+	const emit = defineEmits(['input', 'update:modelValue', 'sort-change', 'delete', 'item-click']);
 
-function getDisplayPrice(price){
-  if (price === null || price === undefined) return ''
-  return String(price).replace(/【.*?】/g, '').trim()
-}
+	// 响应式变量
+	const imageList = ref([])
+	const width = ref(0)
+	const add = ref({ x: 0, y: 0 })
+	const colsValue = ref(0)
+	const viewWidth = ref(0)
+	const viewHeight = ref(0) // 新增高度变量
+	const tempItem = ref(null)
+	const timer = ref(null)
+	const changeStatus = ref(true)
+	const preStatus = ref(true)
+	const first = ref(true)
+	const touchStartY = ref(0); // 触摸起始Y坐标
+	const longPressTimer = ref(null);
+	const isDragging = ref(false); // 全局拖拽状态
 
-/* ========= 拖拽与布局（沿用你的稳定实现） ========= */
-const imageList = ref([])
-const width = ref(0)
-const add = ref({ x: 0, y: 0 })
-const colsValue = ref(0)
-const viewWidth = ref(0)
-const viewHeight = ref(0)
-const tempItem = ref(null)
-const timer = ref(null)
-const changeStatus = ref(true)
-const preStatus = ref(true)
-const first = ref(true)
-const touchStartY = ref(0)
-const longPressTimer = ref(null)
-const isDragging = ref(false)
-const isMounted = ref(false)
+	const isMounted = ref(false); // 是否已挂载
 
-const areaHeight = computed(() => {
-  if (imageList.value.length < props.number) {
-    return Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value + 'px'
-  }
-  return Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value + 'px'
-})
-const childWidth = computed(() => (viewWidth.value - rpx2px(props.padding) * 2) + 'px')
-const childHeight = computed(() => (viewHeight.value - rpx2px(props.padding) * 2) + 'px')
+	const instanceRef = ref(null); // 保存组件实例引用
 
-/* 删除（保持原位更新 + 同步外部） */
-const deleteImage = (item) => {
-  emit('delete', item.id)
-  const index = imageList.value.findIndex(img => img.id === item.id)
-  if (index !== -1) {
-    imageList.value.splice(index, 1)
-    updateItemsPosition()
-    sortList()
-  }
-}
+	// ✅ 懒加载：存放每个图片对应的 IntersectionObserver
+	const imgObservers = new Map()
 
-/* 统一装配：加入 payStatus 字段（新增能力） */
-const getItemData = (item) => ({
-  id: item.id,
-  src: getSrc(item),
-  name: item.name,
-  price: item.price,
-  type: item.type,
-  payStatus: item[props.paymentField] ?? 1
-})
+	// 计算属性
+	const areaHeight = computed(() => {
+		if (imageList.value.length < props.number) {
+			return (Math.ceil((imageList.value.length + 1) / colsValue.value) * viewHeight.value) + 'px'
+		}
+		return (Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value) + 'px'
+	})
 
-const onChange = (e, item) => {
-  if (!item) return
-  item.oldX = e.detail.x
-  item.oldY = e.detail.y
-  if (e.detail.source === 'touch') {
-    if (item.moveEnd) {
-      item.offset = Math.sqrt(
-        Math.pow(item.oldX - item.absX * viewWidth.value, 2) +
-        Math.pow(item.oldY - item.absY * viewHeight.value, 2)
-      )
-    }
-    const x = Math.floor((e.detail.x + viewWidth.value / 2) / viewWidth.value)
-    if (x >= colsValue.value) return
-    const y = Math.floor((e.detail.y + viewHeight.value / 2) / viewHeight.value)
-    const index = colsValue.value * y + x
+	// 调整内部容器宽度计算
+	const childWidth = computed(() => {
+		return (viewWidth.value - rpx2px(props.padding) * 2) + 'px'
+	})
+	// 新增：内部容器高度计算
+	const childHeight = computed(() => {
+		return (viewHeight.value - rpx2px(props.padding) * 2) + 'px'
+	})
 
-    if (item.index !== index && index < imageList.value.length) {
-      changeStatus.value = false
-      imageList.value.forEach(obj => {
-        if (item.index > index && obj.index >= index && obj.index < item.index) changeObj(obj, 1)
-        else if (item.index < index && obj.index <= index && obj.index > item.index) changeObj(obj, -1)
-        else if (obj.id !== item.id) {
-          obj.offset = 0
-          obj.x = obj.oldX
-          obj.y = obj.oldY
-          setTimeout(() => {
-            nextTick(() => {
-              obj.x = obj.absX * viewWidth.value
-              obj.y = obj.absY * viewHeight.value
-            })
-          }, 0)
-        }
-      })
+	// 删除图片方法
+	const deleteImage = (item) => {
+		// 触发 delete 事件，传递被删除图片的 ID
+		emit('delete', item.id);
 
-      moveItem(item, index)
-      item.index = index
-      item.absX = x
-      item.absY = y
-      if (!item.moveEnd) {
-        setTimeout(() => {
-          nextTick(() => {
-            item.x = item.absX * viewWidth.value
-            item.y = item.absY * viewHeight.value
-          })
-        }, 0)
-      }
-      sortList()
-    }
-  }
-}
+		// 组件内部也需要删除该图片
+		const index = imageList.value.findIndex(img => img.id === item.id);
+		if (index !== -1) {
+			// 清理懒加载监听
+			destroyImgObserver(item.id)
 
-const moveItem = (item, newIndex) => {
-  const oldIndex = imageList.value.findIndex(i => i.id === item.id)
-  if (oldIndex === -1 || oldIndex === newIndex) return
-  imageList.value.splice(newIndex, 0, imageList.value.splice(oldIndex, 1)[0])
-  imageList.value.forEach((it, idx) => { it.index = idx })
-  sortList()
-}
-const changeObj = (obj, i) => {
-  obj.index += i
-  obj.offset = 0
-  obj.x = obj.oldX
-  obj.y = obj.oldY
-  obj.absX = obj.index % colsValue.value
-  obj.absY = Math.floor(obj.index / colsValue.value)
-  setTimeout(() => {
-    nextTick(() => {
-      obj.x = obj.absX * viewWidth.value
-      obj.y = obj.absY * viewHeight.value
-    })
-  }, 0)
-}
+			imageList.value.splice(index, 1);
+			updateItemsPosition(); // 更新位置
+			sortList(); // 更新数据
+		}
+	};
 
-/* 长按进入拖拽（保持原逻辑） */
-const onLongPressStart = (item, e) => {
-  touchStartY.value = e.touches[0].clientY
-  if (longPressTimer.value) { clearTimeout(longPressTimer.value); longPressTimer.value = null }
-  imageList.value.forEach(it => { it.ready = false; it.disable = true })
-  longPressTimer.value = setTimeout(() => {
-    uni.vibrateShort?.()
-    item.ready = true
-    item.disable = false
-    isDragging.value = true
-    touchstart(item)
-  }, 240)
-}
-const touchstart = (item) => {
-  imageList.value.forEach(v => { v.zIndex = v.index + 9 })
-  item.zIndex = 99
-  item.moveEnd = true
-  tempItem.value = item
-  timer.value = setTimeout(() => {
-    item.scale = props.scale
-    item.opacity = props.opacity
-    clearTimeout(timer.value)
-    timer.value = null
-  }, 200)
-}
-const touchend = (item) => {
-  item.scale = 1
-  item.opacity = 1
-  item.x = item.oldX
-  item.y = item.oldY
-  item.offset = 0
-  item.moveEnd = false
+	// 方法
+	const getSrc = (item) => {
+		return props.keyName !== null ? item[props.keyName] : item
+	}
 
-  imageList.value.forEach(it => { it.ready = false; it.disable = true })
+	const getItemData = (item) => {
+		const ps = item[props.paymentField] ?? item.payStatus ?? 1
+		return {
+			id: item.id,
+			src: getSrc(item),
+			name: item.name,
+			price: item.price,
+			type: item.type,
+			// 预计算，拖拽时不会变
+			payStatus: ps,
+			_payText: props.paymentMap?.[Number(ps)] || props.paymentMap?.[1] || '已全款'
+		}
+	}
 
-  if (isDragging.value) {
-    // 结束时向父级上报当前顺序（你的稳定实现做法）
-    emit('sort-change', imageList.value.map(it => it.id))
-  }
-  isDragging.value = false
+	const onChange = (e, item) => {
+		if (!item) return
+		item.oldX = e.detail.x
+		item.oldY = e.detail.y
+		if (e.detail.source === 'touch') {
+			if (item.moveEnd) {
+				item.offset = Math.sqrt(
+					Math.pow(item.oldX - item.absX * viewWidth.value, 2) +
+					Math.pow(item.oldY - item.absY * viewHeight.value, 2)
+				)
+			}
+			let x = Math.floor((e.detail.x + viewWidth.value / 2) / viewWidth.value)
+			if (x >= colsValue.value) return
+			let y = Math.floor((e.detail.y + viewHeight.value / 2) / viewHeight.value)
+			let index = colsValue.value * y + x
 
-  if (longPressTimer.value) { clearTimeout(longPressTimer.value); longPressTimer.value = null }
+			if (item.index !== index && index < imageList.value.length) {
+				changeStatus.value = false
+				imageList.value.forEach(obj => {
+					if (item.index > index && obj.index >= index && obj.index < item.index) {
+						changeObj(obj, 1)
+					} else if (item.index < index && obj.index <= index && obj.index > item.index) {
+						changeObj(obj, -1)
+					} else if (obj.id !== item.id) {
+						obj.offset = 0
+						obj.x = obj.oldX
+						obj.y = obj.oldY
+						setTimeout(() => {
+							nextTick(() => {
+								obj.x = obj.absX * viewWidth.value
+								obj.y = obj.absY * viewHeight.value
+							})
+						}, 0)
+					}
+				})
 
-  setTimeout(() => {
-    imageList.value.forEach(obj => {
-      if (obj.ready) return
-      obj.x = obj.absX * viewWidth.value
-      obj.y = obj.absY * viewHeight.value
-      obj.offset = 0
-      obj.moveEnd = false
-    })
-    nextTick(() => {
-      item.x = item.absX * viewWidth.value
-      item.y = item.absY * viewHeight.value
-      tempItem.value = null
-      changeStatus.value = true
-    })
-  }, 50)
-}
+				// 移动数组元素到新位置
+				moveItem(item, index);
 
-const previewImage = (item) => {}
-const mouseenter = () => { /* #ifdef H5 */ imageList.value.forEach(v => { v.disable = false }) /* #endif */ }
-const mouseleave = () => {
-  /* #ifdef H5 */
-  if (tempItem.value) {
-    imageList.value.forEach(v => {
-      v.disable = true
-      v.zIndex = v.index + 9
-      v.offset = 0
-      v.moveEnd = false
-      if (v.id === tempItem.value.id) {
-        if (timer.value) { clearTimeout(timer.value); timer.value = null }
-        v.scale = 1
-        v.opacity = 1
-        v.x = v.oldX
-        v.y = v.oldY
-        nextTick(() => {
-          v.x = v.absX * viewWidth.value
-          v.y = v.absY * viewHeight.value
-          tempItem.value = null
-        })
-      }
-    })
-    changeStatus.value = true
-  }
-  /* #endif */
-}
-const onTouchMove = (e) => {
-  if (isDragging.value) return
-  const deltaY = Math.abs(e.touches[0].clientY - touchStartY.value)
-  if (deltaY > 10 && longPressTimer.value) { clearTimeout(longPressTimer.value); longPressTimer.value = null }
-}
+				item.index = index
+				item.absX = x
+				item.absY = y
+				if (!item.moveEnd) {
+					setTimeout(() => {
+						nextTick(() => {
+							item.x = item.absX * viewWidth.value
+							item.y = item.absY * viewHeight.value
+						})
+					}, 0)
+				}
+				sortList()
+			}
+		}
+	}
 
-/* 删除（小程序端） */
-const delImageMp = (item, index) => { /* 预留 */ }
+	// 移动数组元素到新位置
+	const moveItem = (item, newIndex) => {
+		const oldIndex = imageList.value.findIndex(i => i.id === item.id);
+		if (oldIndex === -1 || oldIndex === newIndex) return;
 
-/* 点击：对外透出 & 默认跳预览（可被 customClick 关闭） */
-function go2preview(id) {
-  uni.navigateTo({
-    url: '/pkg-stock/account_book_preview/account_book_preview?account_book_id=' + id
-  })
-}
-const handleItemClick = (item) => {
-  emit('item-click', item)
-  if (!props.customClick) go2preview(item.id)
-}
+		// 移动元素到新位置
+		imageList.value.splice(newIndex, 0, imageList.value.splice(oldIndex, 1)[0]);
 
-/* ========= 工具 & 初始化 ========= */
-const rpx2px = (v) => width.value * v / 750
-const instanceRef = ref(null)
+		// 更新所有元素的 index
+		imageList.value.forEach((item, idx) => {
+			item.index = idx;
+		});
 
-onMounted(() => {
-  width.value = uni.getSystemInfoSync().windowWidth
-  instanceRef.value = getCurrentInstance()
-  nextTick(() => {
-    const query = uni.createSelectorQuery().in(instanceRef.value.proxy)
-    query.select('.con').boundingClientRect(data => {
-      if (!data) return
-      colsValue.value = props.cols
-      viewWidth.value = data.width / props.cols
-      viewHeight.value = viewWidth.value * 1.3
-      if (props.imageWidth > 0) {
-        viewWidth.value = rpx2px(props.imageWidth)
-        viewHeight.value = viewWidth.value * 1.3
-        colsValue.value = Math.floor(data.width / viewWidth.value)
-      }
-      const list = props.modelValue.length ? props.modelValue : props.value
-      list.forEach(item => addProperties(item))
-      first.value = false
-      isMounted.value = true
-    }).exec()
-  })
-})
+		sortList();
+	}
 
-const addProperties = (item) => {
-  const data = getItemData(item)
-  const absX = imageList.value.length % colsValue.value
-  const absY = Math.floor(imageList.value.length / colsValue.value)
-  const x = absX * viewWidth.value
-  const y = absY * viewHeight.value
-  imageList.value.push({
-    ...data,
-    x, y, oldX: x, oldY: y,
-    absX, absY, scale: 1, zIndex: 9, opacity: 1,
-    index: imageList.value.length, id: item.id,
-    disable: false, offset: 0, moveEnd: false,
-    ready: false, __imgBroken: false
-  })
-  add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
-  add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
-}
+	const changeObj = (obj, i) => {
+		obj.index += i
+		obj.offset = 0
+		obj.x = obj.oldX
+		obj.y = obj.oldY
+		obj.absX = obj.index % colsValue.value
+		obj.absY = Math.floor(obj.index / colsValue.value)
+		setTimeout(() => {
+			nextTick(() => {
+				obj.x = obj.absX * viewWidth.value
+				obj.y = obj.absY * viewHeight.value
+			})
+		}, 0)
+	}
 
-const updateItemsPosition = () => {
-  imageList.value.forEach((item, index) => {
-    item.index = index
-    const newAbsX = index % colsValue.value
-    const newAbsY = Math.floor(index / colsValue.value)
-    item.x = newAbsX * viewWidth.value
-    item.y = newAbsY * viewHeight.value
-    item.oldX = item.x
-    item.oldY = item.y
-    item.absX = newAbsX
-    item.absY = newAbsY
-  })
-}
+	// 长按开始拖拽
+	const onLongPressStart = (item, e) => {
+		// 记录触摸起始位置
+		touchStartY.value = e.touches[0].clientY;
 
-const initViewSize = () => new Promise(resolve => {
-  if (!instanceRef.value || !instanceRef.value.proxy) return resolve()
-  const query = uni.createSelectorQuery().in(instanceRef.value.proxy)
-  query.select('.con').boundingClientRect(data => {
-    if (!data) return resolve()
-    colsValue.value = props.cols
-    viewWidth.value = data.width / props.cols
-    viewHeight.value = viewWidth.value * 1.3
-    if (props.imageWidth > 0) {
-      viewWidth.value = rpx2px(props.imageWidth)
-      viewHeight.value = viewWidth.value * 1.3
-      colsValue.value = Math.floor(data.width / viewWidth.value)
-    }
-    resolve()
-  }).exec()
-})
+		// 清除之前的计时器
+		if (longPressTimer.value) {
+			clearTimeout(longPressTimer.value);
+			longPressTimer.value = null;
+		}
 
-/* 同步父级（保持你的无问题版本做法） */
-const sortList = () => {
-  const result = []
-  const source = props.modelValue.length ? props.modelValue : props.value
-  const list = [...imageList.value].sort((a, b) => a.index - b.index)
-  for (const s of list) {
-    const item = source.find(d => getSrc(d) === s.src)
-    if (item) result.push(item)
-    else {
-      if (props.keyName !== null) result.push({ [props.keyName]: s.src })
-      else result.push(s.src)
-    }
-  }
-  emit('input', result)
-  emit('update:modelValue', result)
-}
+		// 遍历清除所有item的ready
+		imageList.value.forEach(item => {
+			item.ready = false
+			item.disable = true
+		})
+		console.log("长按开始")
 
-/* 父 -> 子 列表变化时（避免拖拽中抖动） */
-watch(() => props.modelValue, (newVal) => {
-  if (isDragging.value) return
-  if (isMounted.value) {
-    nextTick(() => {
-      initViewSize().then(() => updateImageList(newVal))
-    })
-  }
-}, { deep: true, immediate: true })
+		// 设置长按计时器（500ms）
+		longPressTimer.value = setTimeout(() => {
+			console.log("长按成功！")
+			uni.vibrateShort({
+				success: () => {
+					console.log('触感反馈');
+				}
+			});
+			item.ready = true
+			item.disable = false
+			isDragging.value = true
+			touchstart(item);
+		}, 240);
+	};
 
-const updateImageList = (newList = []) => {
-  const oldItems = imageList.value.reduce((map, item) => (map[item.id] = item, map), {})
-  imageList.value = newList.map(item => {
-    const existing = oldItems[item.id]
-    if (existing) return { ...existing, ...getItemData(item) }
-    return createNewItem(item)
-  })
-  updateItemsPosition()
-}
+	const touchstart = (item, e) => {
+		console.log("进入touchstart")
+		imageList.value.forEach(v => {
+			v.zIndex = v.index + 9
+		})
+		item.zIndex = 99
+		item.moveEnd = true
+		tempItem.value = item
+		timer.value = setTimeout(() => {
+			item.scale = props.scale
+			item.opacity = props.opacity
+			clearTimeout(timer.value)
+			timer.value = null
+		}, 200)
+	}
 
-const createNewItem = (item) => {
-  const data = getItemData(item)
-  const absX = imageList.value.length % colsValue.value
-  const absY = Math.floor(imageList.value.length / colsValue.value)
-  return {
-    ...data,
-    x: absX * viewWidth.value,
-    y: absY * viewHeight.value,
-    oldX: absX * viewWidth.value,
-    oldY: absY * viewHeight.value,
-    absX, absY, scale: 1, zIndex: 9, opacity: 1,
-    index: imageList.value.length, disable: false, offset: 0, moveEnd: false,
-    ready: false, __imgBroken: false
-  }
-}
+	const touchend = (item) => {
+		// previewImage(item)
+		item.scale = 1
+		item.opacity = 1
+		item.x = item.oldX
+		item.y = item.oldY
+		item.offset = 0
+		item.moveEnd = false
 
-/* 付款状态文本 */
-function getPaymentText(item){
-  const st = Number(item?.payStatus ?? 1)
-  return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
-}
+		// 遍历清除所有item的ready
+		console.log("结束点击，清理ready")
+		imageList.value.forEach(item => {
+			item.ready = false
+			item.disable = true
+		})
+		if (isDragging.value == true) {
+			console.log("来自于拖拽的结束,上报排序事件")
+
+			// 直接使用当前顺序的ID
+			const sortedIds = imageList.value.map(item => item.id);
+
+			emit('sort-change', sortedIds);
+			console.log("排序后的ID", sortedIds)
+		}
+
+		isDragging.value = false
+		// 清除之前的计时器
+		if (longPressTimer.value) {
+			clearTimeout(longPressTimer.value);
+			longPressTimer.value = null;
+		}
+		// 修复：确保所有项目位置正确恢复
+		setTimeout(() => {
+			imageList.value.forEach(obj => {
+				if (obj.ready) return; // 跳过当前拖拽项
+
+				obj.x = obj.absX * viewWidth.value;
+				obj.y = obj.absY * viewHeight.value;
+				obj.offset = 0;
+				obj.moveEnd = false;
+			});
+
+			// 当前拖拽项单独处理
+			nextTick(() => {
+				item.x = item.absX * viewWidth.value;
+				item.y = item.absY * viewHeight.value;
+				tempItem.value = null;
+				changeStatus.value = true;
+			});
+		}, 50); // 稍作延迟确保渲染完成
+	}
+
+	// 获取第一张图片 - 修复路径问题
+	const getFirstImage = (imageUrls) => {
+		if (!imageUrls) return '';
+
+		// 处理可能包含逗号分隔的多个URL
+		const urls = imageUrls.split(',');
+		const firstUrl = urls[0]?.trim() || '';
+
+		// 如果是完整URL直接返回
+		if (firstUrl.startsWith('http')) {
+			return firstUrl;
+		}
+
+		// 默认返回空字符串
+		return '';
+	};
+
+	const previewImage = (item) => {
+		if (timer.value && preStatus.value && changeStatus.value && item.offset < 28.28) {
+			clearTimeout(timer.value)
+			timer.value = null
+			const list = props.modelValue.length ? props.modelValue : props.value
+			let srcList = list.map(v => getSrc(v))
+			uni.previewImage({
+				urls: srcList,
+				current: item.src,
+				success: () => {
+					preStatus.value = false
+					setTimeout(() => {
+						preStatus.value = true
+					}, 600)
+				},
+				fail: (e) => {
+					console.log(e)
+				}
+			})
+		} else if (timer.value) {
+			clearTimeout(timer.value)
+			timer.value = null
+		}
+	}
+
+	const mouseenter = () => {
+		//#ifdef H5
+		imageList.value.forEach(v => {
+			v.disable = false
+		})
+		//#endif
+	}
+
+	const mouseleave = () => {
+		//#ifdef H5
+		if (tempItem.value) {
+			imageList.value.forEach(v => {
+				v.disable = true
+				v.zIndex = v.index + 9
+				v.offset = 0
+				v.moveEnd = false
+				if (v.id === tempItem.value.id) {
+					if (timer.value) {
+						clearTimeout(timer.value)
+						timer.value = null
+					}
+					v.scale = 1
+					v.opacity = 1
+					v.x = v.oldX
+					v.y = v.oldY
+					nextTick(() => {
+						v.x = v.absX * viewWidth.value
+						v.y = v.absY * viewHeight.value
+						tempItem.value = null
+					})
+				}
+			})
+			changeStatus.value = true
+		}
+		//#endif
+	}
+
+	const onTouchMove = (e, item) => {
+		// 如果正在拖拽，直接返回
+		if (isDragging.value) return;
+
+		// 计算移动距离
+		const touchY = e.touches[0].clientY;
+		const deltaY = Math.abs(touchY - touchStartY.value);
+
+		// 如果垂直移动超过10px，取消长按计时器
+		if (deltaY > 10 && longPressTimer.value) {
+			clearTimeout(longPressTimer.value);
+			longPressTimer.value = null;
+		}
+	};
+
+	const delImageHandle = (item, index) => {
+		// 清理懒加载监听
+		destroyImgObserver(item.id)
+
+		imageList.value.splice(index, 1)
+		imageList.value.forEach(obj => {
+			if (obj.index > item.index) {
+				obj.index -= 1
+				obj.x = obj.oldX
+				obj.y = obj.oldY
+				obj.absX = obj.index % colsValue.value
+				obj.absY = Math.floor(obj.index / colsValue.value)
+				nextTick(() => {
+					obj.x = obj.absX * viewWidth.value
+					obj.y = obj.absY * viewHeight.value
+				})
+			}
+		})
+		add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
+		add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
+		sortList()
+	}
+
+	const delImageMp = (item, index) => {
+		//#ifdef MP
+		delImageHandle(item, index)
+		//#endif
+	}
+
+	//跳转到编辑
+	function go2editor(id) {
+		uni.navigateTo({
+			url: '/pkg-stock/account_book_form/account_book_form?account_book_id=' + id
+		})
+	}
+
+	const handleItemClick = (item) => {
+		// 触发自定义点击事件
+		emit('item-click', item);
+
+		// 如果未设置 customClick 属性，执行默认预览
+		if (!props.customClick) {
+			go2preview(item.id);
+		}
+	};
+
+	function go2preview(id) {
+		uni.navigateTo({
+			url: '/pkg-stock/account_book_preview/account_book_preview?account_book_id=' + id
+		})
+	}
+
+	// 长按取消
+	const onLongPressCancel = () => {
+		if (longPressTimer.value) {
+			clearTimeout(longPressTimer.value);
+			longPressTimer.value = null;
+		}
+	};
+
+	// 更新所有项目的位置（根据当前索引）——（旧函数，未实际调用，保留原样）
+	const updateAllItemsPosition = () => {
+		listItems.value.forEach(item => {
+			// 根据新的索引计算网格位置
+			const newAbsX = item.index % colsValue.value;
+			const newAbsY = Math.floor(item.index / colsValue.value);
+
+			// 确保位置精确对齐网格
+			const targetX = newAbsX * viewWidth.value;
+			const targetY = newAbsY * viewWidth.value;
+
+			// 直接设置位置，不使用过渡
+			item.x = targetX;
+			item.y = targetY;
+			item.originX = targetX;
+			item.originY = targetY;
+			item.absX = newAbsX;
+			item.absY = newAbsY;
+		});
+	};
+
+	const sortList = () => {
+		const result = []
+		const source = props.modelValue.length ? props.modelValue : props.value
+		const list = [...imageList.value].sort((a, b) => a.index - b.index)
+
+		for (let s of list) {
+			const item = source.find(d => getSrc(d) === s.src)
+			if (item) {
+				result.push(item)
+			} else {
+				if (props.keyName !== null) {
+					result.push({
+						[props.keyName]: s.src
+					})
+				} else {
+					result.push(s.src)
+				}
+			}
+		}
+
+		emit('input', result)
+		emit('update:modelValue', result)
+	}
+
+	const addProperties = (item) => {
+		const data = getItemData(item)
+		const absX = imageList.value.length % colsValue.value
+		const absY = Math.floor(imageList.value.length / colsValue.value)
+		const x = absX * viewWidth.value
+		const y = absY * viewHeight.value // 使用viewHeight计算y坐标
+
+		imageList.value.push({
+			...data,
+			x,
+			y,
+			oldX: x,
+			oldY: y,
+			absX,
+			absY,
+			scale: 1,
+			zIndex: 9,
+			opacity: 1,
+			index: imageList.value.length,
+			id: item.id,
+			disable: false,
+			offset: 0,
+			moveEnd: false,
+			ready: false,
+			_imgLoaded: false,   // ✅ 懒加载：默认未加载真实图片
+			__imgBroken: false
+		})
+
+		add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
+		add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
+	}
+
+	const rpx2px = (v) => {
+		return width.value * v / 750
+	}
+
+	const guid = (len = 32) => {
+		const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('')
+		const uuid = []
+		const radix = chars.length
+		for (let i = 0; i < len; i++) uuid[i] = chars[0 | Math.random() * radix]
+		uuid.shift()
+		return `u${uuid.join('')}`
+	}
+
+	// 初始化
+	onMounted(() => {
+		width.value = uni.getSystemInfoSync().windowWidth
+
+		// 获取当前组件实例
+		instanceRef.value = getCurrentInstance(); // 在挂载时保存实例
+
+		// 使用 nextTick 确保元素已渲染
+		nextTick(() => {
+			const query = uni.createSelectorQuery().in(instanceRef.value.proxy)
+			query.select('.con').boundingClientRect(data => {
+				if (!data) {
+					console.error('未找到 .con 元素')
+					return
+				}
+
+				colsValue.value = props.cols
+
+				// 计算宽度（保持正方形）
+				viewWidth.value = data.width / props.cols
+
+				// 计算高度（宽度 + 文字区域高度）
+				viewHeight.value = viewWidth.value * 1.3
+
+				if (props.imageWidth > 0) {
+					viewWidth.value = rpx2px(props.imageWidth)
+					viewHeight.value = viewWidth.value * 1.3 // 保持比例
+					colsValue.value = Math.floor(data.width / viewWidth.value)
+				}
+
+				const list = props.modelValue.length ? props.modelValue : props.value
+				list.forEach(item => {
+					addProperties(item)
+				})
+				first.value = false
+
+				// ✅ 初始化时为所有图片建立懒加载监听
+				setupLazyLoadForAll()
+			}).exec()
+		})
+		isMounted.value = true;
+	})
+
+	// 组件卸载时清理所有 IntersectionObserver
+	onBeforeUnmount(() => {
+		imgObservers.forEach(ob => {
+			try {
+				ob.disconnect()
+			} catch (e) {}
+		})
+		imgObservers.clear()
+	})
+
+	// 更新所有项目的位置（根据当前索引）
+	const updateItemsPosition = () => {
+		imageList.value.forEach((item, index) => {
+			// 根据新的索引计算网格位置
+			item.index = index;
+			const newAbsX = index % colsValue.value;
+			const newAbsY = Math.floor(index / colsValue.value);
+
+			// 确保位置精确对齐网格
+			item.x = newAbsX * viewWidth.value;
+			item.y = newAbsY * viewHeight.value;
+			item.oldX = item.x;
+			item.oldY = item.y;
+			item.absX = newAbsX;
+			item.absY = newAbsY;
+		});
+	};
+
+	const initViewSize = () => {
+		return new Promise(resolve => {
+			// 检查实例是否可用
+			if (!instanceRef.value || !instanceRef.value.proxy) {
+				console.warn('Component instance not available for selector query');
+				return resolve();
+			}
+
+			const query = uni.createSelectorQuery().in(instanceRef.value.proxy);
+			query.select('.con').boundingClientRect(data => {
+				if (!data) return resolve();
+
+				colsValue.value = props.cols;
+				viewWidth.value = data.width / props.cols;
+				viewHeight.value = viewWidth.value * 1.3;
+
+				if (props.imageWidth > 0) {
+					viewWidth.value = rpx2px(props.imageWidth);
+					viewHeight.value = viewWidth.value * 1.3;
+					colsValue.value = Math.floor(data.width / viewWidth.value);
+				}
+				resolve();
+			}).exec();
+		});
+	};
+
+	// 监听 value 和 modelValue 的变化
+	watch(
+		() => props.modelValue,
+		(newVal) => {
+			if (isDragging.value) return; // 拖动时忽略父组件回写，避免受控回拉
+			if (isMounted.value) {
+				nextTick(() => {
+					initViewSize().then(() => {
+						updateImageList(newVal);
+						// ✅ 数据变化后重建懒加载监听
+						setupLazyLoadForAll()
+					});
+				});
+			}
+		},
+		{
+			deep: true,
+			immediate: true
+		}
+	);
+
+	// 更新图片列表的公共方法
+	const updateImageList = (newList) => {
+		// 保留原有位置信息
+		const oldItems = imageList.value.reduce((map, item) => {
+			map[item.id] = item;
+			return map;
+		}, {});
+
+		// 重建列表，保留原有位置状态
+		imageList.value = newList.map(item => {
+			const existing = oldItems[item.id];
+			if (existing) {
+				return {
+					...existing,
+					...getItemData(item) // 更新可能变化的数据
+				};
+			}
+			return createNewItem(item);
+		});
+		updateItemsPosition();
+	};
+
+	// 创建新项目的方法
+	const createNewItem = (item) => {
+		const data = getItemData(item);
+		const absX = imageList.value.length % colsValue.value;
+		const absY = Math.floor(imageList.value.length / colsValue.value);
+
+		return {
+			...data,
+			x: absX * viewWidth.value,
+			y: absY * viewHeight.value,
+			oldX: absX * viewWidth.value,
+			oldY: absY * viewHeight.value,
+			absX,
+			absY,
+			scale: 1,
+			zIndex: 9,
+			opacity: 1,
+			index: imageList.value.length,
+			disable: false,
+			offset: 0,
+			moveEnd: false,
+			ready: false,
+			_imgLoaded: false, // ✅ 默认未加载真实图片
+			__imgBroken: false
+		};
+	};
+
+	/* ========= 图片兜底 / 文本清洗 ========= */
+	const NO_IMG =
+		'data:image/svg+xml;utf8,' +
+		encodeURIComponent(
+			`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+	      <rect width="100%" height="100%" fill="#e9ebef"/>
+	      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+	        fill="#9aa0a6" font-size="40" font-family="Arial">No Image</text>
+	    </svg>`
+		)
+
+	function normalizeFirstImage(s) {
+		if (!s) return ''
+		const first = String(s).split(',')[0].trim()
+		const low = first.toLowerCase()
+		if (!first || low.includes('/default') || low.endsWith('default.png') || low.includes('noimage')) return ''
+		return first
+	}
+
+	function getDisplayImg(item) {
+		if (item.__imgBroken) return NO_IMG
+		const src = normalizeFirstImage(item.src)
+		return src || NO_IMG
+	}
+
+	function onImgError(item) { item.__imgBroken = true }
+
+	function getDisplayPrice(price) {
+		if (price === null || price === undefined) return ''
+		return String(price).replace(/【.*?】/g, '').trim()
+	}
+
+	/* 付款状态文本 */
+	function getPaymentText(item) {
+		const st = Number(item?.payStatus ?? 1)
+		return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
+	}
+
+	/* ========= 懒加载核心逻辑（App / H5 / 小程序通用） ========= */
+
+	// 为单个图片创建 IntersectionObserver
+	const createImgObserver = (id) => {
+		if (!instanceRef.value || imgObservers.has(id)) return
+
+		const observer = uni.createIntersectionObserver(instanceRef.value, {
+			thresholds: [0.01]
+		})
+
+		observer
+			.relativeToViewport({ bottom: 50 }) // 提前 50px 预加载
+			.observe(`#drag-img-${id}`, (res) => {
+				if (!res) return
+				if (res.intersectionRatio > 0) {
+					const target = imageList.value.find(i => i.id === id)
+					if (target) {
+						target._imgLoaded = true
+					}
+					try {
+						observer.disconnect()
+					} catch (e) {}
+					imgObservers.delete(id)
+				}
+			})
+
+		imgObservers.set(id, observer)
+	}
+
+	// 为当前所有图片建立懒加载监听（只给未加载过的建）
+	const setupLazyLoadForAll = () => {
+		if (!instanceRef.value) return
+		nextTick(() => {
+			imageList.value.forEach(item => {
+				if (!item._imgLoaded) {
+					createImgObserver(item.id)
+				}
+			})
+		})
+	}
+
+	// 删除某个 item 时，清理对应的 Observer
+	const destroyImgObserver = (id) => {
+		const ob = imgObservers.get(id)
+		if (ob) {
+			try {
+				ob.disconnect()
+			} catch (e) {}
+			imgObservers.delete(id)
+		}
+	}
 </script>
 
 <style lang="scss" scoped>
@@ -505,30 +937,66 @@ function getPaymentText(item){
 .view { display: flex; justify-content: center; align-items: center; }
 .ready { border: 3px solid #65c6d9; box-shadow: 0 0 5px #65c6d9; }
 
-.area-con { position: relative; overflow: hidden; background-color: #fff; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08); display: flex; flex-direction: column; }
+.area-con {
+	min-width: 80px;
+	min-height: 100px;
+	position: relative;
+	overflow: hidden;
+	background-color: #fff;
+	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+	display: flex;
+	flex-direction: column;
+}
+
 .pre-image { width: 100%; height: 85%; display: block; }
+
 .info-container {
-  padding: 8rpx; display: flex; flex-direction: column; height: 30%;
-  .name { font-size: 24rpx; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
-  .price { font-size: 26rpx; color: #ff9c9a; margin-top: 4rpx; text-align: center; font-weight: 1000; }
+  padding: 8rpx;
+  display: flex;
+  flex-direction: column;
+  height: 30%;
+  .name {
+    font-size: 24rpx;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .price {
+    font-size: 26rpx;
+    color: #ff9c9a;
+    margin-top: 4rpx;
+    text-align: center;
+    font-weight: 1000;
+  }
   .type {
-    position: absolute; top: 8rpx; left: 8rpx;
+    position: absolute;
+    top: 8rpx;
+    left: 8rpx;
     background: linear-gradient(135deg, #91c9ffa3, #7aa6ffa1);
-    color: #fff; padding: 8rpx 18rpx; border-radius: 12rpx;
-    font-size: 22rpx; font-weight: 700;
+    color: #fff;
+    padding: 8rpx 18rpx;
+    border-radius: 12rpx;
+    font-size: 22rpx;
+    font-weight: 700;
     box-shadow: 0 2rpx 8rpx rgba(122,166,255,.18);
   }
 }
 
 /* 糖果配色标签（新增） */
 .pay-badge.candy{
-  position: absolute; left: 8rpx; top: 56rpx;
-  padding: 8rpx 16rpx; border-radius: 20rpx;
-  font-size: 22rpx; font-weight: 800; line-height: 1;
+  position: absolute;
+  left: 8rpx;
+  top: 56rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+  line-height: 1;
   letter-spacing: 1rpx;
   transform: translateZ(0);
   opacity: 0.6;
-  backdrop-filter: blur(6px);
 }
 .s-1{ background: linear-gradient(135deg, #e3e3e3, #d6ecdf); color: #686868; box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18); }
 .s-2{ background: linear-gradient(135deg,#ffe9d6,#ffd2ad); color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18); }
@@ -536,7 +1004,15 @@ function getPaymentText(item){
 
 /* 删除按钮 */
 .delete-btn{
-  position: absolute; top: 0rpx; right: 0rpx; border-radius: 50%;
-  display:flex; justify-content:center; align-items:center; z-index:100; font-size:30rpx; cursor: pointer;
+  position: absolute;
+  top: 0rpx;
+  right: 0rpx;
+  border-radius: 50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:100;
+  font-size:30rpx;
+  cursor: pointer;
 }
 </style>

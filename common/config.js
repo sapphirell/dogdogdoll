@@ -3,8 +3,8 @@ import {
 } from 'vue';
 
 // 网站域名
-export const websiteUrl = ref('https://api.fantuanpu.com');
-// export const websiteUrl = ref('http://localhost:8080');
+// export const websiteUrl = ref('https://api.fantuanpu.com');
+export const websiteUrl = ref('http://localhost:8080');
 // 测试环境
 export const devUrl = 'http://localhost:8080';
 // 中国服务器API
@@ -14,14 +14,30 @@ export const usURL = 'https://us-api.dogdogdoll.com'
 
 // 图片域名
 export const image1Url = 'https://images1.fantuanpu.com/';
+
+
+// H5 访问域名
+export const SHARE_H5_BASE = 'https://m.dogdogdoll.com'
+
+// 大多数 uni-app H5 默认是 hash 路由（/#/pages/...）
+export const USE_HASH_ROUTER = true
+
+
 // 客户端版本号
-export const dogdogdollVersion = "1.1.4"
+export const dogdogdollVersion = "1.2.1"
 
 // 全局状态
 export let global = reactive({
 	isLogin: false,
 	userInfo: {},
 });
+
+
+export function getAppShellVersion() {
+  const info = uni.getAppBaseInfo?.() || {}
+  return info.appVersion || dogdogdollVersion // 外壳版本
+}
+
 
 // 微信登录
 export function wechatSignLogin() {
@@ -340,6 +356,30 @@ export function getGoodsInfo (id) {
 			})
 		})
 	}
+	
+// config.js 中追加：
+export async function initLoginState() {
+  // 1. 尝试从本地读取 token 和 userInfo
+  const token = uni.getStorageSync('token');
+  const userInfo = uni.getStorageSync('userInfo');
+
+  if (token && userInfo) {
+    // 有 token 且有缓存的 userInfo，直接还原状态
+    global.isLogin = true;
+    global.userInfo = userInfo;
+    return userInfo;
+  }
+
+  if (token && !userInfo) {
+    // 有 token 但没有 userInfo，去后端拉一次
+    const data = await asyncGetUserInfo(); // asyncGetUserInfo 已经会内部调用 saveUserInfo
+    return data;
+  }
+
+  // 没有 token，清空状态
+  clearUserInfo();
+  return null;
+}
 
 
 // export const showModal = (options) => {
@@ -485,3 +525,4 @@ export function getHeaderPlaceholderHeight() {
 export function getFooterPlaceholderHeight() {
   return getSafeBottom()
 }
+

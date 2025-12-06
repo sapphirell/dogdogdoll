@@ -1,3 +1,4 @@
+<!-- components/index-artist/index-artist.vue -->
 <template>
   <view class="artist-list-container">
     <!-- 顶部操作栏 -->
@@ -5,12 +6,12 @@
       <!-- 角色切换：妆师 / 毛娘 -->
       <view class="role-toggle">
         <view
-          class="role-item"
+          class="role-item font-title"
           :class="{ active: roleType === 'artist' }"
           @click="switchRole('artist')"
         >妆师</view>
         <view
-          class="role-item"
+          class="role-item font-title"
           :class="{ active: roleType === 'hairstylist' }"
           @click="switchRole('hairstylist')"
         >毛娘</view>
@@ -19,7 +20,7 @@
       <view class="actions-right">
         <view class="filter-btn" @click="showFilterPopup">
           <uni-icons type="tune" size="18" color="#fff"></uni-icons>
-          <text style="color: #fff;font-size: 24rpx;">筛选</text>
+          <text style="color: #fff;font-size: 22rpx; " class="font-alimamashuhei">筛选</text>
         </view>
         <view class="help-btn" @click="showHelpModal">
           <uni-icons type="help" size="24" color="#808080"></uni-icons>
@@ -74,12 +75,6 @@
           暂无作品展示
         </view>
       </view>
-    </view>
-
-    <!-- 加载更多 -->
-    <view class="load-more" v-if="showLoadMore">
-      <text v-if="loading">加载中...</text>
-      <text v-else>上拉加载更多</text>
     </view>
 
     <!-- 空状态 -->
@@ -179,12 +174,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { websiteUrl } from '@/common/config.js';
-import { onReachBottom, onPullDownRefresh } from "@dcloudio/uni-app";
+import { ref, computed, onMounted } from 'vue'
+import { websiteUrl } from '@/common/config.js'
+
+// 外层传入的列表和 loading
+const props = defineProps({
+  list: {
+    type: Array,
+    default: () => [],
+  },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+// 向父组件发事件
+const emit = defineEmits(['filter-change'])
 
 // 角色切换：'artist' | 'hairstylist'
-const roleType = ref('artist'); // 默认“妆师”
+const roleType = ref('artist') // 默认“妆师”
 
 // 状态筛选选项（两种角色通用）
 const statusFilters = ref([
@@ -193,145 +202,101 @@ const statusFilters = ref([
   { label: '限时手速', value: 2 },
   { label: '限时抽选', value: 3 },
   { label: '黑箱卡', value: 4 },
-  { label: '关闭接单', value: 9 }
-]);
+  { label: '关闭接单', value: 9 },
+])
 
-// 列表数据
-const artists = ref([]);
-const filteredArtists = ref([]);
-const activeStatus = ref(0);    // 状态
-const minPrice = ref('');       // 最低价
-const maxPrice = ref('');       // 最高价
-const page = ref(1);
-const size = ref(20);
-const total = ref(0);
-const loading = ref(false);
-const showLoadMore = ref(true);
-
-// 弹窗
-const helpModalVisible = ref(false);
-const filterPopupVisible = ref(false);
+// 筛选条件本地状态
+const activeStatus = ref(0) // 状态
+const minPrice = ref('') // 最低价
+const maxPrice = ref('') // 最高价
 
 // 仅妆师可见的“可接类型”过滤（开=仅显示可接；关=不限制）
-const accept2D = ref(false);
-const accept3D = ref(false);
+const accept2D = ref(false)
+const accept3D = ref(false)
 
+// 弹窗
+const helpModalVisible = ref(false)
+const filterPopupVisible = ref(false)
+
+// 列表展示：直接用父组件传入的 list
+const filteredArtists = computed(() => props.list || [])
+
+// 通知父组件：筛选条件变化
+const emitFilterChange = () => {
+  emit('filter-change', {
+    roleType: roleType.value,
+    status: activeStatus.value,
+    minPrice: minPrice.value,
+    maxPrice: maxPrice.value,
+    accept2D: accept2D.value,
+    accept3D: accept3D.value,
+  })
+}
+
+// 初次挂载时让父组件拉一遍数据
 onMounted(() => {
-  fetchArtistList();
-});
+  emitFilterChange()
+})
 
 // 切换角色
 const switchRole = (role) => {
-  if (roleType.value === role) return;
-  roleType.value = role;
-  // 切换角色时重置分页并刷新
-  page.value = 1;
-  artists.value = [];
-  fetchArtistList();
-};
-
-// 拉取列表
-const fetchArtistList = async () => {
-  try {
-    loading.value = true;
-
-    const params = {
-      page: page.value,
-      size: size.value,
-      // 为后端传递角色类型（假定：1=妆师，2=毛娘）
-      artist_type: roleType.value === 'artist' ? 1 : 2
-    };
-
-    if (activeStatus.value !== 0) params.status = activeStatus.value;
-    if (minPrice.value) params.min_price = minPrice.value;
-    if (maxPrice.value) params.max_price = maxPrice.value;
-
-    // 仅当“妆师”角色且开关为 true 时传递过滤条件（true=>1）
-    if (roleType.value === 'artist') {
-      if (accept2D.value) params.accept_2d = 1;
-      if (accept3D.value) params.accept_3d = 1;
-    }
-
-    const { data } = await uni.request({
-      url: `${websiteUrl.value}/brand-artist-list`,
-      method: 'GET',
-      data: params
-    });
-
-    if (data.status === 'success') {
-      if (page.value === 1) artists.value = [];
-      artists.value = [...artists.value, ...data.data.list];
-      total.value = data.data.total;
-
-      // 简单透传为“已过滤列表”（后端已按条件返回）
-      filteredArtists.value = artists.value;
-
-      showLoadMore.value = artists.value.length < total.value;
-    } else {
-      uni.showToast({ title: data.msg || '获取数据失败', icon: 'none' });
-    }
-  } catch (e) {
-    console.error('获取列表失败:', e);
-    uni.showToast({ title: '网络请求失败', icon: 'none' });
-  } finally {
-    loading.value = false;
-  }
-};
+  if (roleType.value === role) return
+  roleType.value = role
+  emitFilterChange()
+}
 
 // 顶部筛选
-const showFilterPopup = () => { filterPopupVisible.value = true; };
-const showHelpModal = () => { helpModalVisible.value = true; };
+const showFilterPopup = () => {
+  filterPopupVisible.value = true
+}
+const showHelpModal = () => {
+  helpModalVisible.value = true
+}
 
 const applyFilter = () => {
-  filterPopupVisible.value = false;
-  page.value = 1;
-  fetchArtistList();
-};
+  filterPopupVisible.value = false
+  emitFilterChange()
+}
 
 const resetFilters = () => {
-  activeStatus.value = 0;
-  minPrice.value = '';
-  maxPrice.value = '';
-  accept2D.value = false;
-  accept3D.value = false;
-  page.value = 1;
-  artists.value = [];
-  fetchArtistList();
-};
+  activeStatus.value = 0
+  minPrice.value = ''
+  maxPrice.value = ''
+  accept2D.value = false
+  accept3D.value = false
+  emitFilterChange()
+}
 
 // 跳转详情
 const navigateToArtistDetail = (artist) => {
-  uni.navigateTo({
-    url: "/pages/artist_info/artist_info?brand_id=" + artist.brand_id
-  });
-};
+  if (roleType.value === 'artist') {
+    uni.navigateTo({
+      url: '/pages/artist_info/bjd_faceup_artist?brand_id=' + artist.brand_id,
+    })
+  } else {
+    uni.navigateTo({
+      url: '/pages/artist_info/artist_info?brand_id=' + artist.brand_id,
+    })
+  }
+}
 
 // 状态标签样式
 const statusClass = (status) => {
   switch (status) {
-    case 1: return 'status-long-term';
-    case 2: return 'status-speed';
-    case 3: return 'status-lottery';
-    case 4: return 'status-black-card';
-    case 9: return 'status-closed';
-    default: return '';
+    case 1:
+      return 'status-long-term'
+    case 2:
+      return 'status-speed'
+    case 3:
+      return 'status-lottery'
+    case 4:
+      return 'status-black-card'
+    case 9:
+      return 'status-closed'
+    default:
+      return ''
   }
-};
-
-// 上拉加载更多
-onReachBottom(() => {
-  if (!loading.value && showLoadMore.value) {
-    page.value += 1;
-    fetchArtistList();
-  }
-});
-
-// 下拉刷新
-onPullDownRefresh(() => {
-  artists.value = [];
-  page.value = 1;
-  fetchArtistList().then(() => uni.stopPullDownRefresh());
-});
+}
 </script>
 
 <style lang="less">
@@ -362,7 +327,7 @@ onPullDownRefresh(() => {
       font-size: 26rpx;
       color: #666;
       border-radius: 38rpx;
-      transition: all .2s ease;
+      transition: all 0.2s ease;
 
       &.active {
         color: #fff;
@@ -388,7 +353,9 @@ onPullDownRefresh(() => {
       font-size: 28rpx;
       box-shadow: 0 4rpx 10rpx rgba(151, 231, 247, 0.4);
 
-      text { margin-left: 10rpx; }
+      text {
+        margin-left: 10rpx;
+      }
     }
 
     .help-btn {
@@ -517,7 +484,9 @@ onPullDownRefresh(() => {
         color: #fff;
       }
 
-      &::after { border: none; }
+      &::after {
+        border: none;
+      }
     }
   }
 }
@@ -590,8 +559,13 @@ onPullDownRefresh(() => {
         color: #666;
         margin-bottom: 8rpx;
 
-        .price-label { margin-right: 8rpx; }
-        .price-value { color: #ff9c9a; font-weight: bold; }
+        .price-label {
+          margin-right: 8rpx;
+        }
+        .price-value {
+          color: #ff9c9a;
+          font-weight: bold;
+        }
       }
 
       .artist-desc {
@@ -619,7 +593,9 @@ onPullDownRefresh(() => {
         border-radius: 8rpx;
         overflow: hidden;
 
-        &:last-child { margin-right: 0; }
+        &:last-child {
+          margin-right: 0;
+        }
 
         .work-image {
           width: 100%;
@@ -637,13 +613,6 @@ onPullDownRefresh(() => {
     background-color: #f9f9f9;
     border-radius: 8rpx;
   }
-}
-
-.load-more {
-  text-align: center;
-  padding: 30rpx 0;
-  color: #999;
-  font-size: 26rpx;
 }
 
 .empty-state {

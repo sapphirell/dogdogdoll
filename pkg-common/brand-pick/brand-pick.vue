@@ -246,8 +246,7 @@ function goNext() {
   width: 80%;
   height: 88rpx;
   line-height: 88rpx;
-  background: #ffd84d;
-  color: #111;
+  background: #a0e8ff; color: #fff;     box-shadow: 0 0 30px #00c1ff40;
   border-radius: 999rpx;
   font-weight: 600;
 }

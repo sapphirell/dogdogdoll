@@ -43,7 +43,12 @@
 
     <!-- 品牌信息 -->
     <view class="brand-info">
-      <image class="brand-logo" :src="brand.logo_image" mode="aspectFill" @tap="jump2brand(brand.id)" />
+      <image
+        class="brand-logo"
+        :src="brand.logo_image"
+        mode="aspectFill"
+        @tap="jump2brand(brand.id)"
+      />
       <view class="brand-details" @tap="jump2brand(brand.id)">
         <text class="brand-name">{{ brand.brand_name }}</text>
         <text class="publish-time">{{ formatTimestamp(detailData.created_at) }}</text>
@@ -62,6 +67,68 @@
       <view><text class="title">{{ detailData.title }}</text></view>
       <view style="margin: 20rpx 0rpx;">
         <text class="content">{{ detailData.content }}</text>
+      </view>
+    </view>
+
+    <!-- 品牌贩售信息卡片：预售商品 & 上一次贩售（正文下方） -->
+    <view
+      v-if="brandSaleInfo.presale || brandSaleInfo.lastSale"
+      class="brand-sale-section "
+    >
+      <!-- 预售商品（waiting_goods[0]） -->
+      <view
+        v-if="brandSaleInfo.presale"
+        class="sale-card"
+        @tap="goGoodsDetail(getGoodsId(brandSaleInfo.presale))"
+      >
+        <view class="sale-card-body">
+          <image
+            v-if="getGoodsCover(brandSaleInfo.presale)"
+            class="sale-cover"
+            :src="getGoodsCover(brandSaleInfo.presale)"
+            mode="aspectFill"
+          />
+          <view class="sale-text">
+            <text class="sale-title">
+              {{ getGoodsName(brandSaleInfo.presale) }}
+            </text>
+            <!-- 蓝底 tag 作为副标题 -->
+            <text class="sale-sub sale-sub-tag font-alimamashuhei">预售商品</text>
+            <text v-if="getGoodsTime(brandSaleInfo.presale)" class="sale-sub">
+              预计开始：{{ getGoodsTime(brandSaleInfo.presale) }}
+            </text>
+          </view>
+          <!-- 右侧箭头 -->
+          <uni-icons type="arrow-right" size="18" color="#C0C4CC" />
+        </view>
+      </view>
+
+      <!-- 上一次贩售（latest_sale） -->
+      <view
+        v-if="brandSaleInfo.lastSale"
+        class="sale-card"
+        @tap="goGoodsDetail(getGoodsId(brandSaleInfo.lastSale))"
+      >
+        <view class="sale-card-body">
+          <image
+            v-if="getGoodsCover(brandSaleInfo.lastSale)"
+            class="sale-cover"
+            :src="getGoodsCover(brandSaleInfo.lastSale)"
+            mode="aspectFill"
+          />
+          <view class="sale-text">
+            <text class="sale-title">
+              {{ getGoodsName(brandSaleInfo.lastSale) }}
+            </text>
+            <!-- 蓝底 tag 作为副标题 -->
+            <text class="sale-sub sale-sub-tag font-alimamashuhei">上次贩售</text>
+            <text v-if="getGoodsTime(brandSaleInfo.lastSale)" class="sale-sub">
+              贩售时间：{{ getGoodsTime(brandSaleInfo.lastSale) }}
+            </text>
+          </view>
+          <!-- 右侧箭头 -->
+          <uni-icons type="arrow-right" size="18" color="#C0C4CC" />
+        </view>
       </view>
     </view>
 
@@ -92,18 +159,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { onLoad, onShow, onPageScroll } from '@dcloudio/uni-app'
-import { websiteUrl, global, asyncGetUserInfo /* 如需占位条再解注以下两个 */,
-// getStatusBarHeight, getNavBarHeight, toPx
+import { ref } from 'vue'
+import { onLoad, onPageScroll } from '@dcloudio/uni-app'
+import {
+  websiteUrl,
+  global,
+  asyncGetUserInfo /* 如需占位条再解注以下两个 */,
+  // getStatusBarHeight, getNavBarHeight, toPx
 } from '@/common/config.js'
 
 /* ===== 导航滚动联动 ===== */
 const scrollTop = ref(0)
 onPageScroll(e => { scrollTop.value = e?.scrollTop || 0 })
-
-// 如需使用“占位条”，请取消下面三行注释，并在上方 template 打开 <view class="nav-spacer".../>
-// const headerPadPx = computed(() => toPx(getStatusBarHeight() + getNavBarHeight()))
 
 function goBack () {
   const pages = getCurrentPages?.() || []
@@ -125,6 +192,12 @@ const commentInputRef = ref(null)
 let commentsPage = ref(1)
 let replyForItem = ref({})
 const systemInfo = uni.getSystemInfoSync()
+
+// 品牌贩售信息：预售(waiting_goods[0]) + 上次贩售(latest_sale)
+const brandSaleInfo = ref({
+  presale: null,   // waiting_goods[0]
+  lastSale: null   // latest_sale
+})
 
 const handleReplyComment = ({ parent, target }) => {
   let item = target ?? parent
@@ -169,12 +242,46 @@ const fetchNewsDetail = async (id) => {
       detailData.value = { ...res.data.data, image_list: res.data.data.image_list || [] }
       brandId.value = res.data.data.brand_id
       getBrandsInfo()
+      // 这里在拿到 brandId 后，同时请求品牌贩售相关信息
+      fetchBrandSaleInfo()
     } else {
       handleError(res.data.msg || '数据加载失败')
     }
   } catch (err) {
     handleError('网络请求失败')
   } finally { loading.value = false }
+}
+
+/**
+ * 请求“该品牌预售商品 & 上一次贩售”的接口
+ * 当前真实返回结构：
+ * data.latest_sale: 对象
+ * data.waiting_goods: 数组
+ */
+const fetchBrandSaleInfo = () => {
+  if (!brandId.value) return
+  uni.request({
+    url: `${websiteUrl.value}/brand-goods-summary?brand_id=${brandId.value}`,
+    method: 'GET',
+    timeout: 5000,
+    success: (res) => {
+      if (res.data && res.data.status === 'success' && res.data.data) {
+        const data = res.data.data || {}
+        // 上一次贩售
+        brandSaleInfo.value.lastSale = data.latest_sale || null
+        // 预售商品：取 waiting_goods[0] 即可
+        if (Array.isArray(data.waiting_goods) && data.waiting_goods.length > 0) {
+          brandSaleInfo.value.presale = data.waiting_goods[0]
+        } else {
+          brandSaleInfo.value.presale = null
+        }
+      }
+      // 如果不是 success 或者没有数据，就保持为 null，不做“无数据”提示
+    },
+    fail: () => {
+      // 静默失败，不影响页面其它部分
+    }
+  })
 }
 
 const handleCommentSubmit = (submitData) => {
@@ -260,6 +367,7 @@ const handleCommentSubmit = (submitData) => {
 }
 
 function formatTimestamp(ts) {
+  if (!ts) return ''
   const d = new Date(ts * 1000)
   const y = d.getFullYear()
   const m = String(d.getMonth()+1).padStart(2,'0')
@@ -267,6 +375,54 @@ function formatTimestamp(ts) {
   const h = String(d.getHours()).padStart(2,'0')
   const mi = String(d.getMinutes()).padStart(2,'0')
   return `${y}-${m}-${da} ${h}:${mi}`
+}
+
+// 商品卡片：统一处理商品名
+function getGoodsName(item) {
+  if (!item) return ''
+  // latest_sale: goods_name
+  // waiting_goods: name
+  return item.goods_name || item.name || item.title || ''
+}
+
+// 商品卡片：统一处理时间字段
+// latest_sale: sub_time / sub_time_end 为主
+// waiting_goods: 当前接口没有时间，且 waiting_sale=1，直接不显示
+function getGoodsTime(item) {
+  if (!item) return ''
+  // waiting_goods 带 waiting_sale=1，不显示时间
+  if (item.waiting_sale) return ''
+  // latest_sale 的预定时间段
+  if (item.sub_time && item.sub_time_end) {
+    return `${formatTimestamp(item.sub_time)} ~ ${formatTimestamp(item.sub_time_end)}`
+  }
+  const ts = item.sub_time || item.fin_time || item.create_time || item.created_at
+  return ts ? formatTimestamp(ts) : ''
+}
+
+// 商品卡片：统一处理封面图字段
+// latest_sale: goods_image
+// waiting_goods: goods_images[0]
+function getGoodsCover(item) {
+  if (!item) return ''
+  if (Array.isArray(item.goods_images) && item.goods_images.length > 0) {
+    return item.goods_images[0]
+  }
+  return item.goods_image || item.cover_image || item.image || item.thumb || item.pic || ''
+}
+
+// 商品卡片：统一处理 goodsId（latest_sale 用 goods_id，waiting_goods 用 id）
+function getGoodsId(item) {
+  if (!item) return 0
+  return item.goods_id || item.id || 0
+}
+
+// 跳转到商品详情页
+function goGoodsDetail (goodsId) {
+  if (!goodsId) return
+  uni.navigateTo({
+    url: `/pages/goods/goods?goods_id=${goodsId}`
+  })
 }
 
 const getBrandsInfo = () => {
@@ -353,10 +509,67 @@ onLoad((options) => {
   padding:12rpx 30rpx; border-radius:20rpx; color:#fff; font-size:22rpx; margin-left:80rpx; display:inline-block;
 }
 
-/* 内容 */
+/* 图文内容 */
 .content-box{ padding:30rpx;
   .title{ font-size:28rpx; font-weight:bold; margin-bottom:20rpx; }
   .content{ font-size:24rpx; color:#666; line-height:1.6; }
+}
+
+/* 品牌贩售信息卡片区域（正文下方） */
+.brand-sale-section {
+  padding: 0 28rpx 20rpx;
+  background: #F8F8F8;
+}
+
+.sale-card {
+  margin-top: 20rpx;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.03);
+}
+
+.sale-card-body {
+  display: flex;
+  align-items: center;
+}
+
+.sale-cover {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 18rpx;
+  margin-right: 20rpx;
+  background: #f5f5f5;
+}
+
+.sale-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sale-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6rpx;
+}
+
+.sale-sub {
+  font-size: 22rpx;
+  color: #888;
+  line-height: 1.4;
+}
+
+/* tag 抽成副标题 + 蓝色底色 */
+.sale-sub-tag {
+  align-self: flex-start;
+  margin-bottom: 4rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: #65C3D6;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 /* 状态 */

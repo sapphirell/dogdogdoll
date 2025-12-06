@@ -540,7 +540,16 @@ function jumpGoods(id, goodsId){
 const navigateToArtistDetail = (artist)=> {
   const brandId = artist?.brand_id || artist?.BrandId || 0
   if (!brandId) return
-  uni.navigateTo({ url: '/pages/artist_info/artist_info?brand_id=' + brandId })
+  
+  if (activeTab.value==='makeup') {
+	  uni.navigateTo({
+	    url: "/pages/artist_info/bjd_faceup_artist?brand_id=" + artist.brand_id
+	  });
+  } else {
+	    uni.navigateTo({ url: '/pages/artist_info/artist_info?brand_id=' + brandId })
+  }
+  
+
 }
 
 /* ========== 吸顶标题（动态：贩售/约妆/约毛） ========== */

@@ -5,7 +5,7 @@
       "style": {
         "navigationBarTitleText": "首页",
         "navigationStyle": "custom",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": false
       }
     },
     {
@@ -173,7 +173,7 @@
     },
     {
       "path": "pages/artwork/artwork",
-      "style": { "navigationBarTitleText": "" }
+      "style": { "navigationBarTitleText": "","navigationStyle": "custom" }
     },
     {
       "path": "pages/recent-feed/recent-feed",
@@ -185,7 +185,29 @@
         "navigationBarTitleText": "",
         "navigationStyle": "custom"
       }
-    }
+    },
+	{
+	  "path": "pages/artist_info/bjd_faceup_artist",
+	  "style": {
+	    "navigationBarTitleText": "",
+	    "navigationStyle": "custom"
+	  }
+	},
+	{
+		"path" : "pkg-im/message_list/message_list",
+		"style" : 
+		{
+			"navigationBarTitleText" : ""
+		}
+	},
+	{
+		"path" : "pkg-im/chat/chat",
+		"style" : 
+		{
+			"navigationBarTitleText" : "",
+			 "navigationStyle": "custom"
+		}
+	}
   ],
 
   "subPackages": [
@@ -213,7 +235,44 @@
         { "path": "creator_base/faceup_editor/faceup_editor" },
         { "path": "creator_base/order_plane/order_plane" },
         { "path": "creator_base/news/news" },
-        { "path": "creator_base/set_hair_showcase/set_hair_showcase" }
+        { "path": "creator_base/set_hair_showcase/set_hair_showcase" },
+        { "path": "creator_base/order_plane/form-artist"},
+        { "path": "creator_base/order_plane/form-wig"},
+		{
+			"path" : "creator_order/plane_detail/plane_detail",
+			"style" : 
+			{ "navigationStyle": "custom" } 
+		},
+		{
+			"path": "creator_order/my_submissions/my_submissions",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/submission_detail/submission_detail",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/submission_item_form/submission_item_form",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/received-list/received-list",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/received-detail/received-detail",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		}
       ]
     },
 	{
