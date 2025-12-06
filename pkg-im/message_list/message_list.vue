@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部占位（安全区/导航）可选 -->
-    <view :style="{ height: headerPlaceholder }"></view>
+<!--    <view :style="{ height: headerPlaceholder }"></view> -->
 
     <!-- 空态 -->
     <view v-if="!loading && sessions.length === 0" class="empty">

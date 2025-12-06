@@ -107,7 +107,7 @@ function createWS(url) {
     // 关键点：一定要传 success 回调，否则返回的是 Promise
     const socketTask = uni.connectSocket({
       url,
-      success () {},      // 👈 这一行非常重要
+      success () {},
       fail (err) {
         console.error('[IM] connectSocket fail', err)
       }

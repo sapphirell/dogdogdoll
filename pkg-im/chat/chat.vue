@@ -29,7 +29,6 @@
     <scroll-view
       class="chat-body"
       :scroll-y="true"
-      :scroll-with-animation="true"
       :scroll-into-view="scrollIntoId"
       :upper-threshold="100"
       @scrolltoupper="loadMore"
@@ -226,6 +225,26 @@ const footerSafePx = computed(() => toPx(footerSafeRaw.value + 20))
  */
 const bodyBottomOffset = computed(() => '104rpx')
 
+/** 等待 WS 连接就绪 */
+function waitWsReady(timeout = 5000) {
+  return new Promise((resolve) => {
+    const start = Date.now()
+    function check() {
+      const socket = getWS()
+      if (socket && socket.readyState === 1) {
+        resolve(socket)
+        return
+      }
+      if (Date.now() - start >= timeout) {
+        resolve(null)
+        return
+      }
+      setTimeout(check, 150)
+    }
+    check()
+  })
+}
+
 /* ---------- 工具：初始化本端 uid ---------- */
 function initSelfUidFromStorage() {
   try {
@@ -324,11 +343,18 @@ onShow(async () => {
 })
 
 onHide(() => {
-  if (offIM) { offIM = null }
+  if (offIM) {
+    offIM()
+    offIM = null
+  }
 })
 
+
 onUnload(() => {
-  if (offIM) { offIM = null }
+  if (offIM) {
+    offIM()
+    offIM = null
+  }
   leaveActiveSession()
 })
 
@@ -360,95 +386,129 @@ async function fetchSelfInfo() {
     }
   } catch (_) {}
 }
-
-/** 历史优先 WS sync；否则 HTTP */
+/** 历史完全走 WS sync（方案一：首屏不再走 HTTP） */
 async function loadHistory() {
   if (!hasMore.value || loadingMore.value) return
   loadingMore.value = true
 
+  // page=1 且当前没有消息 => 首屏
+  const isFirstPage = page.value === 1 && messages.value.length === 0
+
   let keepAnchor = ''
-  if (messages.value.length > 0) {
+  if (!isFirstPage && messages.value.length > 0) {
     const top = messages.value[0]
     keepAnchor = 'msg-' + (top.local_key || top.id || 0)
   }
 
   try {
-    if (numericSid.value > 0) {
-      const socket = getWS()
-      if (socket && socket.readyState === 1) {
-        let afterPTS = 0
-        if (messages.value.length > 0) {
-          afterPTS = Math.min(...messages.value.map(m => Number(m.pts || 0))) - 1
-          if (afterPTS < 0) afterPTS = 0
-        }
-        const reqId = 'sync_' + Date.now()
-        const pkt = {
-          type: 'im.req',
-          action: 'sync',
-          req_id: reqId,
-          data: { session_id: Number(numericSid.value), after_pts: Number(afterPTS), limit: pageSize }
-        }
-        const resp = await waitWsResponseOnce(socket, 'sync', reqId, 8000, () => {
-          socket.send(JSON.stringify(pkt))
-        })
-        if (resp?.status === 'success') {
-          const arr = (resp.data?.messages || []).map(wsToUiMessage)
-          messages.value = [...arr, ...messages.value]
-          hasMore.value = !!resp.data?.has_more
-          page.value += 1
+    if (numericSid.value <= 0) {
+      console.warn('[CHAT] numericSid missing, cannot sync history via WS')
+      if (isFirstPage) {
+        uni.showToast({ title: '会话初始化中，请稍后重试', icon: 'none' })
+      }
+      return
+    }
 
-          const peerPtsFromSync = Number(
-            resp?.data?.peer_read_pts ?? resp?.data?.peerReadPts ?? resp?.data?.read_pts_peer ?? 0
-          )
-          if (peerPtsFromSync > 0) applyPeerReadPts(peerPtsFromSync)
-
-          await nextTick()
-          if (page.value === 2) {
-            scrollToBottomSoon()
-          } else if (keepAnchor) {
-            scrollIntoId.value = keepAnchor
-            setTimeout(() => { scrollIntoId.value = '' }, 50)
-          }
+    // ===== 方案一关键：首屏等 WS，就绪才发 sync，不再 fallback HTTP =====
+    let socket = getWS()
+    if (!socket || socket.readyState !== 1) {
+      if (isFirstPage) {
+        socket = await waitWsReady(5000)
+        if (!socket || socket.readyState !== 1) {
+          console.warn('[CHAT] waitWsReady timeout, give up first-screen HTTP fallback (scheme1)')
+          uni.showToast({ title: '连接超时，请稍后重试', icon: 'none' })
           return
         }
+      } else {
+        console.warn('[CHAT] WS not ready when loading more history')
+        return
       }
     }
 
-    if (!sessionKey.value) return
-    const token = uni.getStorageSync('token') || ''
-    const res = await uni.request({
-      url: `${websiteUrl.value}/with-state/im/history`,
-      method: 'GET',
-      data: { session_id: sessionKey.value, page: page.value, page_size: pageSize },
-      header: token ? { Authorization: token } : {}
+    // ===== 计算 before_pts / after_pts =====
+    let beforePTS = 0
+    let afterPTS = 0
+    if (messages.value.length === 0) {
+      // 首屏：after_pts=0 拉最近一页
+      afterPTS = 0
+    } else {
+      // 上翻历史：以当前最早一条的 pts 为边界
+      beforePTS = Math.min(...messages.value.map((m) => Number(m.pts || 0)))
+    }
+
+    const reqId = 'sync_' + Date.now()
+    const data = {
+      session_id: Number(numericSid.value),
+      limit: pageSize
+    }
+    if (beforePTS > 0) {
+      data.before_pts = Number(beforePTS)
+    } else {
+      data.after_pts = Number(afterPTS)
+    }
+
+    const pkt = {
+      type: 'im.req',
+      action: 'sync',
+      req_id: reqId,
+      data
+    }
+
+    const resp = await waitWsResponseOnce(socket, 'sync', reqId, 8000, () => {
+      socket.send(JSON.stringify(pkt))
     })
-    if (res?.data?.status === 'success') {
-      const d = res.data.data || {}
-      const list = (d.list || []).map(httpToUiMessage)
-      messages.value = [...list, ...messages.value]
-      const total = Number(d.total || 0)
-      hasMore.value = total > 0 ? (messages.value.length < total) : list.length === pageSize
-      page.value += 1
-
-      const peerPtsFromHttp = Number(
-        d?.peer_read_pts ?? d?.peerReadPts ?? d?.peer_read ?? d?.read_pts_peer ?? 0
-      )
-      if (peerPtsFromHttp > 0) applyPeerReadPts(peerPtsFromHttp)
-
-      await nextTick()
-      if (page.value === 2) {
-        scrollToBottomSoon()
-      } else if (keepAnchor) {
-        scrollIntoId.value = keepAnchor
-        setTimeout(() => { scrollIntoId.value = '' }, 50)
+    if (!resp || resp.status !== 'success') {
+      console.warn('[CHAT] sync history failed', resp)
+      if (isFirstPage) {
+        uni.showToast({ title: '加载聊天记录失败', icon: 'none' })
       }
+      return
+    }
+
+    const arr = (resp.data?.messages || []).map(wsToUiMessage)
+
+    // 保险：做一次去重，防止边界重复
+    const existIds = new Set(messages.value.map((m) => m.id))
+    const needInsert = arr.filter((m) => !existIds.has(m.id))
+
+    // 历史是往前翻：新拉到的在前面，旧列表在后面
+    messages.value = [...needInsert, ...messages.value]
+
+    // has_more 由后端控制
+    hasMore.value = !!resp.data?.has_more
+    page.value += 1
+
+    // 同步对方已读进度
+    const peerPtsFromSync = Number(
+      resp?.data?.peer_read_pts ??
+        resp?.data?.peerReadPts ??
+        resp?.data?.read_pts_peer ??
+        0
+    )
+    if (peerPtsFromSync > 0) applyPeerReadPts(peerPtsFromSync)
+
+    await nextTick()
+    if (page.value === 2) {
+      // 首次 loadHistory 完成，滚到底部
+      scrollToBottomSoon()
+    } else if (keepAnchor) {
+      // 上翻历史时保持原来的顶部消息位置
+      scrollIntoId.value = keepAnchor
+      setTimeout(() => {
+        scrollIntoId.value = ''
+      }, 50)
     }
   } catch (e) {
     console.error('[CHAT] loadHistory error', e)
+    if (isFirstPage) {
+      uni.showToast({ title: '加载聊天记录异常', icon: 'none' })
+    }
   } finally {
     loadingMore.value = false
   }
 }
+
+
 function loadMore() {
   if (hasMore.value && !loadingMore.value) loadHistory()
 }
