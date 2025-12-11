@@ -1,11 +1,26 @@
 <template>
   <view class="im-fab" @click="goMessageList" hover-class="im-fab--hover">
-    <!-- 彩虹光晕：永远在按钮下方 -->
-    <view class="im-fab-glow"></view>
+    <!-- 彩虹光晕：仅在 WS 已就绪时显示 -->
+    <view v-if="isWsReady" class="im-fab-glow"></view>
 
     <!-- 按钮主体 -->
     <view class="im-fab-inner">
-      <uni-icons type="chat-filled" :size="28" color="#141a23" />
+      <!-- 链接未就绪：显示 loading.gif -->
+      <image
+        v-if="!isWsReady"
+        class="im-fab-icon"
+        src="/static/new-icon/loading.gif"
+        mode="widthFix"
+      />
+
+      <!-- 链接就绪：显示聊天图标 -->
+      <uni-icons
+        v-else
+        type="chat-filled"
+        :size="28"
+        color="#141a23"
+      />
+
       <view v-if="badge > 0" class="dot">
         {{ badge > 99 ? '99+' : badge }}
       </view>
@@ -14,28 +29,68 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import { unreadTotal, connectIM, onIMEvent } from '@/common/im.js'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { unreadTotal, connectIM, wsReady } from '@/common/im.js'
 
 // 仅做展示，通过全局 unreadTotal 响应角标
 const badge = computed(() => Number(unreadTotal.value || 0))
+
+// WebSocket 是否就绪（共享状态）
+const isWsReady = computed(() => {
+  const token = uni.getStorageSync('token') || ''
+  const ready = !!wsReady.value
+  const result = !!token && ready
+  console.log('[IM-FAB] computed isWsReady, hasToken =', !!token, 'wsReady =', wsReady.value, '=>', result)
+  if (!token) return false
+  return ready
+})
 
 function goMessageList () {
   uni.navigateTo({ url: '/pkg-im/message_list/message_list' })
 }
 
-/**
- * 防重复连接/重复订阅
- */
-const FLAG = '__IM_FAB_BOUND__'
+// 登录成功事件监听函数引用，方便销毁
+let loginListener = null
 
 onMounted(() => {
-  connectIM()
+  const token = uni.getStorageSync('token') || ''
+  console.log('[IM-FAB] onMounted, hasToken =', !!token)
 
-  if (!globalThis[FLAG]) {
-    onIMEvent(() => {})
-    globalThis[FLAG] = true
+  if (token) {
+    console.log('[IM-FAB] onMounted -> connectIM()')
+    connectIM()
+  } else {
+    console.log('[IM-FAB] onMounted -> skip connectIM (no token)')
   }
+
+  if (typeof uni !== 'undefined' && typeof uni.$on === 'function') {
+    loginListener = (userInfo) => {
+      const t = uni.getStorageSync('token') || ''
+      console.log('[IM-FAB] login-success received, hasToken =', !!t, ' uid =', userInfo?.id)
+      if (!t) {
+        console.log('[IM-FAB] login-success but token empty, skip connectIM')
+        return
+      }
+      console.log('[IM-FAB] login-success -> connectIM(true)')
+      connectIM(true)
+    }
+    uni.$on('login-success', loginListener)
+  } else {
+    console.log('[IM-FAB] uni.$on not available')
+  }
+})
+
+onUnmounted(() => {
+  if (loginListener && typeof uni !== 'undefined' && typeof uni.$off === 'function') {
+    console.log('[IM-FAB] onUnmounted -> off login-success')
+    uni.$off('login-success', loginListener)
+    loginListener = null
+  }
+})
+
+// 监听 wsReady，方便直接看到状态变化
+watch(wsReady, (v) => {
+  console.log('[IM-FAB] wsReady changed =>', v)
 })
 </script>
 
@@ -104,6 +159,12 @@ onMounted(() => {
   100% {
     filter: hue-rotate(360deg) blur(14px);
   }
+}
+
+/* loading 图标尺寸：改为 56rpx */
+.im-fab-icon {
+  width: 96rpx!important;
+  height: 96rpx!important;
 }
 
 /* 角标 */

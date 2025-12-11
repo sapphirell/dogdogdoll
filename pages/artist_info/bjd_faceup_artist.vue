@@ -163,11 +163,11 @@
 					<view class="order-body">
 						<view class="order-title font-title">{{ p.brand_name }} · 开单</view>
 						<view class="order-meta">
-							<text class="chip" :class="statusClass(p)">{{ statusText(p) }}</text>
+							<text class="chip font-alimamashuhei" :class="statusClass(p)">{{ statusText(p) }}</text>
 							<text class="time">开：{{ formatTime(p.open_time) }}</text>
 							<text class="time">截：{{ formatTime(p.close_time) }}</text>
 						</view>
-						<view class="tier-line">{{ tierRange(p) }}</view>
+						<view class="tier-line font-alimamashuhei">{{ tierRange(p) }}</view>
 					</view>
 				</view>
 
@@ -884,7 +884,6 @@
 
 	/* 开单记录样式 */
 	.order-list {
-		padding: 24rpx;
 		display: flex;
 		flex-direction: column;
 		gap: 16rpx;
@@ -934,13 +933,13 @@
 	}
 
 	.chip.ongoing {
-		background: #e8f7ee;
-		color: #17a05d;
+		background: #ccffcf;
+		color: #577454;
 	}
 
 	.chip.upcoming {
-		background: #e8f3ff;
-		color: #2376ff;
+		background: #cce4ff;
+		color: #86b4ff;
 	}
 
 	.chip.ended {

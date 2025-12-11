@@ -374,7 +374,7 @@ function getBrandGoods (isLoadMore = false, brandId = currentBrandId.value) {
 }
 
 const jumpToArtistPage = () => {
-  uni.navigateTo({ url: `/pages/artist_info/artist_info?brand_id=${currentBrandId.value}` })
+  uni.navigateTo({ url: `/pages/artist_info/bjd_faceup_artist?brand_id=${currentBrandId.value}` })
 }
 
 const likeBrand = async () => {

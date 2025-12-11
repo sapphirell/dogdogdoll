@@ -84,10 +84,10 @@
                         }
                     }
                 },
-                "oauth" : {
-                    "weixin" : {
-                        "appid" : "",
-                        "UniversalLinks" : "https://m.dogdogdoll.com/uni-universallinks/__UNI__5D7AAEE/"
+                "oauth" : {},
+                "payment" : {
+                    "alipay" : {
+                        "__platform__" : [ "ios", "android" ]
                     }
                 }
             },

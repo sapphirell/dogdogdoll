@@ -25,131 +25,145 @@
       </template>
     </zhouWei-navBar>
 
-    <!-- 中间滚动区：top 使用 config.js 计算的安全距离 -->
-    <scroll-view
+    <!-- 中间区域：使用 z-paging 聊天模式替代 scroll-view -->
+    <z-paging
+      ref="pagingRef"
+      v-model="messages"
       class="chat-body"
-      :scroll-y="true"
-      :scroll-into-view="scrollIntoId"
-      :upper-threshold="100"
-      @scrolltoupper="loadMore"
-      :style="{ top: headerOffsetPx, bottom: bodyBottomOffset }"
+      :style="{ top: headerOffsetPx }"
+      :auto="false"
+      use-chat-record-mode
+      use-virtual-list
+      cell-height-mode="dynamic"
+      safe-area-inset-bottom
+      bottom-bg-color="#e0f0fb"
+      :default-page-size="pageSize"
+      :auto-show-system-loading="false"
+      @query="onPagingQuery"
     >
-      <view class="load-more" v-if="hasMore && !loadingMore" @click="loadMore">下拉加载更多</view>
-      <view class="load-more" v-if="loadingMore">
-		  <loading-jump-text></loading-jump-text>
-	  </view>
+      <!-- 单条消息渲染（必须加 scaleY(-1) 包一层，否则内容会倒置） -->
+      <template #cell="{ item, index }">
+        <view style="transform: scaleY(-1)">
+          <view
+            class="msg-item"
+            :class="{ self: item.from_uid === selfUid }"
+          >
+            <image
+              class="avatar"
+              :src="item.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar"
+            />
 
-      <view class="msg-list">
-        <view
-          v-for="(m, idx) in messages"
-          :key="m.local_key || m.id || idx"
-          class="msg-item"
-          :class="{ self: m.from_uid === selfUid }"
-          :id="'msg-' + (m.local_key || m.id || idx)"
-        >
-          <image class="avatar" :src="m.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar" />
+            <!-- 包裹：气泡 + meta 垂直排列 -->
+            <view class="content">
+              <view class="bubble">
+                <!-- 文本 -->
+                <template v-if="item.kind === 'text'">
+                  <rich-text :nodes="safeText(item.text)"></rich-text>
+                </template>
 
-          <!-- 包裹：气泡 + meta 垂直排列 -->
-          <view class="content">
-            <view class="bubble">
-              <!-- 文本 -->
-              <template v-if="m.kind === 'text'">
-                <rich-text :nodes="safeText(m.text)"></rich-text>
-              </template>
+                <!-- 表情 -->
+                <template v-else-if="item.kind === 'emoji'">
+                  <text class="emoji">{{ item.emoji }}</text>
+                </template>
 
-              <!-- 表情 -->
-              <template v-else-if="m.kind === 'emoji'">
-                <text class="emoji">{{ m.emoji }}</text>
-              </template>
+                <!-- 图片 -->
+                <template v-else-if="item.kind === 'image'">
+                  <image
+                    class="img-msg"
+                    :src="item.url"
+                    mode="widthFix"
+                    @click="previewImage(item.url)"
+                  />
+                </template>
 
-              <!-- 图片 -->
-              <template v-else-if="m.kind === 'image'">
-                <image class="img-msg" :src="m.url" mode="widthFix" @click="previewImage(m.url)" />
-              </template>
+                <!-- ===== 带 MessageCard 的 other 消息 ===== -->
+                <template v-else-if="item.kind === 'other' && (item.card || (item.payload && item.payload.card))">
+                  <view class="msg-card" @click="handleCardClick(item)">
+                    <view class="msg-card-header">
+                      <text class="msg-card-tag">{{ cardTag(item) }}</text>
+                      <text class="msg-card-title">{{ cardTitle(item) }}</text>
+                    </view>
 
-              <!-- ===== 带 MessageCard 的 other 消息 ===== -->
-              <template v-else-if="m.kind === 'other' && (m.card || (m.payload && m.payload.card))">
-                <view class="msg-card" @click="handleCardClick(m)">
-                  <view class="msg-card-header">
-                    <text class="msg-card-tag">{{ cardTag(m) }}</text>
-                    <text class="msg-card-title">{{ cardTitle(m) }}</text>
+                    <!-- 卡片封面图 -->
+                    <view v-if="cardImage(item)" class="msg-card-image-wrap">
+                      <image
+                        class="msg-card-image"
+                        :src="cardImage(item)"
+                        mode="aspectFill"
+                        @click.stop="previewImage(cardImage(item))"
+                      />
+                    </view>
+
+                    <view class="msg-card-body" v-if="cardDescription(item)">
+                      <text class="msg-card-desc">{{ cardDescription(item) }}</text>
+                    </view>
+
+                    <view class="msg-card-footer">
+                      <text class="msg-card-action font-alimamashuhei">{{ cardActionText(item) }}</text>
+                    </view>
                   </view>
+                </template>
 
-                  <!-- 卡片封面图 -->
-                  <view v-if="cardImage(m)" class="msg-card-image-wrap">
-                    <image
-                      class="msg-card-image"
-                      :src="cardImage(m)"
-                      mode="aspectFill"
-                      @click.stop="previewImage(cardImage(m))"
-                    />
+                <!-- 兼容旧版 other：没有 card 的结构 -->
+                <template v-else-if="item.kind === 'other'">
+                  <view class="other-card">
+                    <text class="title">[{{ item.sub_type || '其它' }}]</text>
+                    <text class="desc">{{ briefOther(item) }}</text>
                   </view>
+                </template>
 
-                  <view class="msg-card-body" v-if="cardDescription(m)">
-                    <text class="msg-card-desc">{{ cardDescription(m) }}</text>
+                <!-- 兜底：未知类型 -->
+                <template v-else>
+                  <view class="other-card">
+                    <text class="title">[未知]</text>
+                    <text class="desc">[暂不支持的消息类型]</text>
                   </view>
+                </template>
+              </view>
 
-                  <view class="msg-card-footer">
-                    <text class="msg-card-action font-alimamashuhei">{{ cardActionText(m) }}</text>
-                  </view>
-                </view>
-              </template>
-
-              <!-- 兼容旧版 other：没有 card 的结构 -->
-              <template v-else-if="m.kind === 'other'">
-                <view class="other-card">
-                  <text class="title">[{{ m.sub_type || '其它' }}]</text>
-                  <text class="desc">{{ briefOther(m) }}</text>
-                </view>
-              </template>
-
-              <!-- 兜底：未知类型 -->
-              <template v-else>
-                <view class="other-card">
-                  <text class="title">[未知]</text>
-                  <text class="desc">[暂不支持的消息类型]</text>
-                </view>
-              </template>
-            </view>
-
-            <!-- meta 挪到气泡下方 -->
-            <view class="meta font-alimamashuhei">
-              <text class="time">{{ fmtTime(m.ts) }}</text>
-              <text class="status" v-if="m.from_uid === selfUid">{{ statusText(m) }}</text>
+              <!-- meta 挪到气泡下方 -->
+              <view class="meta font-alimamashuhei">
+                <text class="time">{{ fmtTime(item.ts) }}</text>
+                <text class="status" v-if="item.from_uid === selfUid">{{ statusText(item) }}</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
+      </template>
 
-      <view :id="bottomAnchorId" class="bottom-anchor" />
-    </scroll-view>
+      <!-- 底部聊天输入条：放在 z-paging 的 bottom 插槽里 -->
+      <template #bottom>
+        <view class="chat-inputbar" :class="{ 'with-emoji': showEmoji }">
+          <view class="tools">
+            <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
+            <uni-icons type="smile" size="24" color="#666" @click="toggleEmoji" />
+            <uni-icons type="paperplane" size="24" color="#666" @click="sendSampleOther" />
+          </view>
+          <input
+            class="text-input"
+            type="text"
+            v-model.trim="draft"
+            confirm-type="send"
+            :disabled="isBlocked"
+            @confirm="sendText"
+            @focus="scrollToBottomSoon"
+          />
 
-    <!-- 底部固定输入条 -->
-    <view class="chat-inputbar" :class="{ 'with-emoji': showEmoji }">
-      <view class="tools">
-        <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
-        <uni-icons type="smile" size="24" color="#666" @click="toggleEmoji" />
-        <uni-icons type="paperplane" size="24" color="#666" @click="sendSampleOther" />
-      </view>
-      <input
-        class="text-input"
-        type="text"
-        v-model.trim="draft"
-        confirm-type="send"
-        :disabled="isBlocked"
-        @confirm="sendText"
-        @focus="scrollToBottomSoon"
-      />
-
-      <view class="emoji-panel" v-if="showEmoji">
-        <view class="emoji-row">
-          <text v-for="e in emojis" :key="e" class="emoji-item" @click="sendEmoji(e)">{{ e }}</text>
+          <view class="emoji-panel" v-if="showEmoji">
+            <view class="emoji-row">
+              <text
+                v-for="e in emojis"
+                :key="e"
+                class="emoji-item"
+                @click="sendEmoji(e)"
+              >
+                {{ e }}
+              </text>
+            </view>
+          </view>
         </view>
-      </view>
-    </view>
-
-    <!-- 额外的底部安全区域 -->
-    <view class="chat-safe-bottom" :style="{ height: footerSafePx }"></view>
+      </template>
+    </z-paging>
   </view>
 </template>
 
@@ -175,6 +189,9 @@ import {
   clearActiveSession
 } from '@/common/im.js'
 
+/** z-paging 引用 */
+const pagingRef = ref(null)
+
 /** 路由与会话 */
 const peerId = ref(0)
 const sessionKey = ref('')
@@ -186,19 +203,14 @@ const selfInfo = ref({ id: 0, avatar: '' })
 const peerInfo = ref({ user_name: '', avatar: '' })
 const onlineText = ref('')
 
-/** 列表与分页 */
-const messages = ref([]) // 升序
-const page = ref(1)
+/** 列表与分页（z-paging v-model 绑定的就是 messages） */
+const messages = ref([]) // 由 z-paging 管理顺序
 const pageSize = 20
-const hasMore = ref(true)
-const loadingMore = ref(false)
-const bottomAnchorId = 'bottom-anchor'
-const scrollIntoId = ref('')
 
 /** 输入与工具 */
 const draft = ref('')
 const showEmoji = ref(false)
-const emojis = ['😀','😁','😂','🤣','😊','😍','😘','😎','😡','👍','👏','🎉']
+const emojis = ['😀', '😁', '😂', '🤣', '😊', '😍', '😘', '😎', '😡', '👍', '👏', '🎉']
 
 /** 屏蔽/已读 */
 const isBlocked = ref(false)
@@ -215,21 +227,13 @@ const hasInitOnce = ref(false)
 const windowTopPxRaw = ref(0)
 const footerSafeRaw = ref(0)
 const headerOffsetPx = computed(() => toPx(windowTopPxRaw.value))
-
-// 底部安全区在原基础上 +20
 const footerSafePx = computed(() => toPx(footerSafeRaw.value + 20))
 
-/**
- * 聊天内容区域底部偏移：
- * - 104rpx 为输入条高度
- */
-const bodyBottomOffset = computed(() => '104rpx')
-
 /** 等待 WS 连接就绪 */
-function waitWsReady(timeout = 5000) {
+function waitWsReady (timeout = 5000) {
   return new Promise((resolve) => {
     const start = Date.now()
-    function check() {
+    function check () {
       const socket = getWS()
       if (socket && socket.readyState === 1) {
         resolve(socket)
@@ -246,7 +250,7 @@ function waitWsReady(timeout = 5000) {
 }
 
 /* ---------- 工具：初始化本端 uid ---------- */
-function initSelfUidFromStorage() {
+function initSelfUidFromStorage () {
   try {
     const u = uni.getStorageSync('userInfo') || {}
     const id = Number(u?.id || u?.Id || 0)
@@ -259,7 +263,7 @@ function initSelfUidFromStorage() {
 }
 
 /* ---------- 工具：从 read 事件里识别“读者是谁” ---------- */
-function pickReaderId(d) {
+function pickReaderId (d) {
   return Number(
     d?.reader_id ??
     d?.reader ??
@@ -271,7 +275,7 @@ function pickReaderId(d) {
 }
 
 /* ---------- 工具：应用对方已读进度（幂等） ---------- */
-function applyPeerReadPts(newPts) {
+function applyPeerReadPts (newPts) {
   const n = Number(newPts || 0)
   if (n <= 0 || n <= peerReadPts.value) return
   peerReadPts.value = n
@@ -285,17 +289,22 @@ onLoad((query) => {
   // 初始化安全区信息
   windowTopPxRaw.value = getWindowTop()
   footerSafeRaw.value = getFooterPlaceholderHeight()
-  console.log('footerSafe:', footerSafeRaw.value)
+  console.log('[CHAT-DBG]', 'footerSafe:', footerSafeRaw.value)
 })
 
 onShow(async () => {
+  console.log('[CHAT-DBG]', 'onShow: enter, hasInitOnce =', hasInitOnce.value)
+
   if (!hasInitOnce.value) {
+    // 先拉基本信息
     await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
 
+    // 建立 WS 连接
     connectIM()
     if (offIM) { offIM = null }
     offIM = onIMEvent(handleIMEvent)
 
+    // 创建/获取会话
     const token = uni.getStorageSync('token')
     try {
       const res = await uni.request({
@@ -315,31 +324,39 @@ onShow(async () => {
         if (peerPtsFromStart > 0) applyPeerReadPts(peerPtsFromStart)
       } else {
         console.warn('[CHAT] start-session failed', res?.data)
+        uni.showToast({ title: '会话初始化失败，请稍后重试', icon: 'none' })
         return
       }
     } catch (e) {
       console.error('[CHAT] start-session error', e)
+      uni.showToast({ title: '会话初始化异常', icon: 'none' })
       return
     }
 
-    page.value = 1
     messages.value = []
-    hasMore.value = true
-    await loadHistory()
-
-    markReadToBottom()
-
-    setActiveSession(numericSid.value > 0 ? numericSid.value : sessionKey.value)
-
     hasInitOnce.value = true
+
+    const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
+    if (key) setActiveSession(key)
+
+    // numericSid 已经就绪后，再触发 z-paging 首屏加载
+    nextTick(() => {
+      console.log('[CHAT-DBG]', 'call paging.reload()')
+      if (pagingRef.value && typeof pagingRef.value.reload === 'function') {
+        pagingRef.value.reload()
+      }
+    })
     return
   }
 
+  // 再次进入页面：只恢复 WS 和 active session，列表不重载
   connectIM()
   if (offIM) { offIM = null }
   offIM = onIMEvent(handleIMEvent)
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) setActiveSession(key)
+
+  markReadToBottom()
 })
 
 onHide(() => {
@@ -349,7 +366,6 @@ onHide(() => {
   }
 })
 
-
 onUnload(() => {
   if (offIM) {
     offIM()
@@ -358,19 +374,24 @@ onUnload(() => {
   leaveActiveSession()
 })
 
-function leaveActiveSession() {
+function leaveActiveSession () {
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) clearActiveSession(key)
 }
 
 /** HTTP 基础信息 */
-async function fetchPeerInfo() {
+async function fetchPeerInfo () {
+  const t0 = Date.now()
   try {
     const res = await uni.request({ url: `${websiteUrl.value}/user-info?uid=${peerId.value}` })
     if (res?.data?.status === 'success') peerInfo.value = res.data.data || {}
-  } catch (_) {}
+    console.log('[CHAT-DBG]', 'fetchPeerInfo: cost=', Date.now() - t0, 'ms, status=success')
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'fetchPeerInfo error=', e)
+  }
 }
-async function fetchSelfInfo() {
+async function fetchSelfInfo () {
+  const t0 = Date.now()
   try {
     const token = uni.getStorageSync('token')
     if (!token) return
@@ -384,43 +405,46 @@ async function fetchSelfInfo() {
       const id = Number(selfInfo.value?.id || 0)
       if (id) selfUid.value = id
     }
-  } catch (_) {}
-}
-/** 历史完全走 WS sync（方案一：首屏不再走 HTTP） */
-async function loadHistory() {
-  if (!hasMore.value || loadingMore.value) return
-  loadingMore.value = true
-
-  // page=1 且当前没有消息 => 首屏
-  const isFirstPage = page.value === 1 && messages.value.length === 0
-
-  let keepAnchor = ''
-  if (!isFirstPage && messages.value.length > 0) {
-    const top = messages.value[0]
-    keepAnchor = 'msg-' + (top.local_key || top.id || 0)
+    console.log('[CHAT-DBG]', 'fetchSelfInfo: cost=', Date.now() - t0, 'ms, status=success')
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'fetchSelfInfo error=', e)
   }
+}
+
+/** z-paging 的查询回调：首屏 + 上拉加载历史统一走这里 */
+async function onPagingQuery (pageNo, sizeFromPaging) {
+  console.log('[CHAT-DBG]', 'onPagingQuery pageNo=', pageNo, ' pageSize=', sizeFromPaging)
+
+  const isFirstPage = pageNo === 1 && messages.value.length === 0
 
   try {
     if (numericSid.value <= 0) {
       console.warn('[CHAT] numericSid missing, cannot sync history via WS')
-      if (isFirstPage) {
-        uni.showToast({ title: '会话初始化中，请稍后重试', icon: 'none' })
+      // 理论上不会再发生，如果发生就让这次加载失败
+      if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+        pagingRef.value.complete(false)
       }
       return
     }
 
-    // ===== 方案一关键：首屏等 WS，就绪才发 sync，不再 fallback HTTP =====
+    // 等待 WS ready
     let socket = getWS()
     if (!socket || socket.readyState !== 1) {
       if (isFirstPage) {
         socket = await waitWsReady(5000)
         if (!socket || socket.readyState !== 1) {
-          console.warn('[CHAT] waitWsReady timeout, give up first-screen HTTP fallback (scheme1)')
+          console.warn('[CHAT] waitWsReady timeout (z-paging first page)')
           uni.showToast({ title: '连接超时，请稍后重试', icon: 'none' })
+          if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+            pagingRef.value.complete(false)
+          }
           return
         }
       } else {
         console.warn('[CHAT] WS not ready when loading more history')
+        if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+          pagingRef.value.complete(false)
+        }
         return
       }
     }
@@ -439,7 +463,7 @@ async function loadHistory() {
     const reqId = 'sync_' + Date.now()
     const data = {
       session_id: Number(numericSid.value),
-      limit: pageSize
+      limit: sizeFromPaging || pageSize
     }
     if (beforePTS > 0) {
       data.before_pts = Number(beforePTS)
@@ -462,21 +486,37 @@ async function loadHistory() {
       if (isFirstPage) {
         uni.showToast({ title: '加载聊天记录失败', icon: 'none' })
       }
+      if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+        pagingRef.value.complete(false)
+      }
       return
     }
 
-    const arr = (resp.data?.messages || []).map(wsToUiMessage)
+    // 1) WS 消息 -> UI 结构
+    const rawArr = (resp.data?.messages || []).map(wsToUiMessage)
 
-    // 保险：做一次去重，防止边界重复
+    // 2) 去重（按 id）
     const existIds = new Set(messages.value.map((m) => m.id))
-    const needInsert = arr.filter((m) => !existIds.has(m.id))
+    const dedupArr = rawArr.filter((m) => !existIds.has(m.id))
 
-    // 历史是往前翻：新拉到的在前面，旧列表在后面
-    messages.value = [...needInsert, ...messages.value]
+    // 3) 当前实现：按 pts/id 降序（新消息在前），交给 z-paging chat 模式 & scaleY 组合处理
+    const segmentDesc = dedupArr.sort((a, b) => {
+      const pa = Number(a.pts || 0)
+      const pb = Number(b.pts || 0)
+      if (pb !== pa) return pb - pa
+      return Number(b.id || 0) - Number(a.id || 0)
+    })
 
-    // has_more 由后端控制
-    hasMore.value = !!resp.data?.has_more
-    page.value += 1
+    if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+      pagingRef.value.complete(segmentDesc)
+    } else {
+      // 极端兜底
+      if (messages.value.length === 0 || beforePTS === 0) {
+        messages.value = [...messages.value, ...segmentDesc]
+      } else {
+        messages.value = [...segmentDesc, ...messages.value]
+      }
+    }
 
     // 同步对方已读进度
     const peerPtsFromSync = Number(
@@ -488,45 +528,36 @@ async function loadHistory() {
     if (peerPtsFromSync > 0) applyPeerReadPts(peerPtsFromSync)
 
     await nextTick()
-    if (page.value === 2) {
-      // 首次 loadHistory 完成，滚到底部
+    if (isFirstPage) {
+      // 首屏加载完成：滚到底部 + 标记已读
       scrollToBottomSoon()
-    } else if (keepAnchor) {
-      // 上翻历史时保持原来的顶部消息位置
-      scrollIntoId.value = keepAnchor
-      setTimeout(() => {
-        scrollIntoId.value = ''
-      }, 50)
+      markReadToBottom()
     }
   } catch (e) {
     console.error('[CHAT] loadHistory error', e)
     if (isFirstPage) {
       uni.showToast({ title: '加载聊天记录异常', icon: 'none' })
     }
-  } finally {
-    loadingMore.value = false
+    if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+      pagingRef.value.complete(false)
+    }
   }
 }
 
-
-function loadMore() {
-  if (hasMore.value && !loadingMore.value) loadHistory()
-}
-
 /** 发送：文本/表情/图片/其它 */
-function sendText() {
+function sendText () {
   if (!draft.value) return
   const text = draft.value
   draft.value = ''
   sendPayload({ kind: 'text', text })
 }
-function sendEmoji(e) {
+function sendEmoji (e) {
   showEmoji.value = false
   sendPayload({ kind: 'emoji', emoji: e })
 }
-function toggleEmoji() { showEmoji.value = !showEmoji.value }
+function toggleEmoji () { showEmoji.value = !showEmoji.value }
 
-async function pickAndSendImage() {
+async function pickAndSendImage () {
   try {
     const chooseRes = await uni.chooseImage({ count: 1, sizeType: ['compressed'] })
     const filePath = chooseRes.tempFilePaths[0]
@@ -552,7 +583,7 @@ async function pickAndSendImage() {
 }
 
 /** 示例的 other 消息 */
-function sendSampleOther() {
+function sendSampleOther () {
   sendPayload({
     kind: 'other',
     sub_type: 'order',
@@ -560,8 +591,17 @@ function sendSampleOther() {
   })
 }
 
-/** 发送统一实现 */
-function sendPayload(msgPart) {
+/** 将一条“新消息”（本地 or 实时推送）追加到底部 */
+function appendNewMessage (uiMsg) {
+  if (pagingRef.value && typeof pagingRef.value.addChatRecordData === 'function') {
+    pagingRef.value.addChatRecordData([uiMsg])
+  } else {
+    messages.value.push(uiMsg)
+  }
+}
+
+/** 发送统一实现 —— 关键修复点：ACK 直接改本地 local 对象，再兜底用 local_key 更新数组 */
+function sendPayload (msgPart) {
   const socket = getWS()
   if (!socket || socket.readyState !== 1) {
     uni.showToast({ title: '连接未就绪', icon: 'none' })
@@ -570,7 +610,9 @@ function sendPayload(msgPart) {
 
   const client_mid = genClientMID()
   const local = buildLocalMsg({ ...msgPart, client_mid })
-  messages.value.push(local)
+
+  // 本地先插入一条“sending”消息
+  appendNewMessage(local)
   scrollToBottomSoon()
 
   const pkt = {
@@ -589,17 +631,29 @@ function sendPayload(msgPart) {
   })
     .then((resp) => {
       if (!resp || resp.status !== 'success') {
+        // 发送失败：本地对象 + 列表对象都标记为 failed
+        local.status = 'failed'
         setMessageStatusByLocalKey(local.local_key, 'failed')
         return
       }
+
       const d = resp.data || {}
-      updateMessageByLocalKey(local.local_key, (old) => ({
+
+      // patch 函数：用 ACK 中的信息更新一条消息
+      const patcher = (old) => ({
         ...old,
         id: Number(d.message_id || old.id || 0),
         pts: Number(d.pts || old.pts || 0),
         ts: d.msg_time ? Math.floor(Number(d.msg_time) / 1000) : old.ts,
         status: 'sent'
-      }))
+      })
+
+      // 1）先直接改本地 local 对象（z-paging 内部引用的是同一个对象）
+      Object.assign(local, patcher(local))
+
+      // 2）再用 local_key 做一次兜底更新 messages 数组
+      updateMessageByLocalKey(local.local_key, patcher)
+
       if (Number(d.session_id || 0) > 0 && numericSid.value === 0) {
         numericSid.value = Number(d.session_id)
       }
@@ -609,24 +663,26 @@ function sendPayload(msgPart) {
       if (peerPtsFromAck > 0) applyPeerReadPts(peerPtsFromAck)
     })
     .catch(() => {
+      // 超时 / 异常：同样要把状态改为 failed
+      local.status = 'failed'
       setMessageStatusByLocalKey(local.local_key, 'failed')
     })
 }
 
 /** 用 local_key 替换某条消息 */
-function updateMessageByLocalKey(localKey, updater) {
+function updateMessageByLocalKey (localKey, updater) {
   const idx = messages.value.findIndex((x) => x.local_key === localKey)
   if (idx >= 0) {
     const next = typeof updater === 'function' ? updater(messages.value[idx]) : updater
     messages.value.splice(idx, 1, next)
   }
 }
-function setMessageStatusByLocalKey(localKey, status) {
+function setMessageStatusByLocalKey (localKey, status) {
   updateMessageByLocalKey(localKey, (old) => ({ ...old, status }))
 }
 
 /** 已读（拿到 numericSid 后再发） */
-function markReadToBottom() {
+function markReadToBottom () {
   if (numericSid.value <= 0) return
   const maxPts = messages.value.reduce(
     (mx, m) => Math.max(mx, Number(m.pts || 0)),
@@ -649,7 +705,7 @@ function markReadToBottom() {
 }
 
 /** 事件处理 */
-function handleIMEvent(payload) {
+function handleIMEvent (payload) {
   if (!payload || typeof payload !== 'object') return
 
   if (payload.type === 'im.event' && payload.event === 'message') {
@@ -699,7 +755,8 @@ function handleIMEvent(payload) {
       }
     }
 
-    messages.value.push(ui)
+    // 对方发来的新消息，直接追加到底部
+    appendNewMessage(ui)
     scrollToBottomSoon()
     markReadToBottom()
     return
@@ -725,7 +782,7 @@ function handleIMEvent(payload) {
 }
 
 /** 等待一次 WS ACK */
-function waitWsResponseOnce(socket, action, reqId, timeout = 8000, sender) {
+function waitWsResponseOnce (socket, action, reqId, timeout = 8000, sender) {
   return new Promise((resolve) => {
     let timer = null
     const off = onIMEvent((payload) => {
@@ -745,7 +802,7 @@ function waitWsResponseOnce(socket, action, reqId, timeout = 8000, sender) {
 }
 
 /** 发送内容 -> WS content */
-function toWsContent(part) {
+function toWsContent (part) {
   if (part.kind === 'text') {
     return { type: 'text', text: part.text }
   }
@@ -768,7 +825,7 @@ function toWsContent(part) {
 }
 
 /** 构建消息唯一签名 */
-function buildSig(m) {
+function buildSig (m) {
   const kind = m.kind || (m.content?.type) || ''
   if (kind === 'text') return `t|${(m.text || '').slice(0, 200)}`
   if (kind === 'emoji') return `e|${m.emoji || ''}`
@@ -777,11 +834,11 @@ function buildSig(m) {
     const payload = m.payload || m.content?.other || {}
     return `o|${m.sub_type || payload.biz || 'other'}|${JSON.stringify(payload)}`
   }
-  return `u|`
+  return 'u|'
 }
 
 /** 本地临时消息 */
-function buildLocalMsg(part) {
+function buildLocalMsg (part) {
   const now = Date.now()
   const base = {
     local_key:
@@ -816,8 +873,8 @@ function buildLocalMsg(part) {
   return ui
 }
 
-/** HTTP -> UI 消息结构 */
-function httpToUiMessage(n) {
+/** HTTP -> UI 消息结构（目前历史全走 WS，留下备用） */
+function httpToUiMessage (n) {
   const payload = n.payload || {}
   const ui = {
     id: Number(n.id || 0),
@@ -841,7 +898,7 @@ function httpToUiMessage(n) {
 }
 
 /** WS 消息 -> UI 消息结构 */
-function wsToUiMessage(m) {
+function wsToUiMessage (m) {
   const base = {
     id: Number(m.id || 0),
     pts: Number(m.pts || 0),
@@ -892,7 +949,7 @@ function wsToUiMessage(m) {
 }
 
 /** 发送状态文案 */
-function statusText(m) {
+function statusText (m) {
   if (!m || m.from_uid !== selfUid.value) return ''
   if (m.status === 'failed') return '发送失败'
   if (
@@ -906,7 +963,7 @@ function statusText(m) {
 }
 
 /** 时间格式：HH:mm */
-function fmtTime(ts) {
+function fmtTime (ts) {
   const d = new Date(Number(ts) * 1000)
   const hh = String(d.getHours()).padStart(2, '0')
   const m = String(d.getMinutes()).padStart(2, '0')
@@ -914,7 +971,7 @@ function fmtTime(ts) {
 }
 
 /** 旧版 other 消息的简要描述 */
-function briefOther(m) {
+function briefOther (m) {
   try {
     const card = m.card || m.payload?.card
     if (card) {
@@ -940,30 +997,29 @@ function briefOther(m) {
 }
 
 /** 文本安全显示 */
-function safeText(t) {
+function safeText (t) {
   return (t || '').replace(/\n/g, '<br/>')
 }
-function previewImage(url) {
+function previewImage (url) {
   uni.previewImage({ urls: [url] })
 }
-function scrollToBottomSoon() {
+function scrollToBottomSoon () {
   nextTick(() => {
-    scrollIntoId.value = bottomAnchorId
-    setTimeout(() => {
-      scrollIntoId.value = ''
-    }, 50)
+    if (pagingRef.value && typeof pagingRef.value.scrollToBottom === 'function') {
+      pagingRef.value.scrollToBottom()
+    }
   })
 }
-function goBack() {
+function goBack () {
   uni.navigateBack()
 }
 
 /** 鉴权头 + client_msg_id 工具 */
-function authHeader() {
+function authHeader () {
   const token = uni.getStorageSync('token') || ''
   return token ? { Authorization: token } : {}
 }
-function genClientMID() {
+function genClientMID () {
   return (
     'm_' +
     Date.now().toString(36) +
@@ -974,7 +1030,7 @@ function genClientMID() {
 
 /* ===================== 消息卡片相关工具 ===================== */
 
-function mapCardTypeLabel(cardType) {
+function mapCardTypeLabel (cardType) {
   switch (cardType) {
     case 'artist_order_step_request':
       return '节点确认请求'
@@ -992,35 +1048,35 @@ function mapCardTypeLabel(cardType) {
 }
 
 /** 取卡片对象 */
-function pickCard(m) {
+function pickCard (m) {
   return m?.card || m?.payload?.card || null
 }
 
-function cardTag(m) {
+function cardTag (m) {
   const card = pickCard(m) || {}
   return mapCardTypeLabel(card.card_type || '')
 }
-function cardTitle(m) {
+function cardTitle (m) {
   const card = pickCard(m) || {}
   return card.title || '消息通知'
 }
-function cardDescription(m) {
+function cardDescription (m) {
   const card = pickCard(m) || {}
   return card.description || ''
 }
 /** 取卡片图片 URL */
-function cardImage(m) {
+function cardImage (m) {
   const card = pickCard(m) || {}
   const url = card.image_url || card.imageUrl || card.img_url || ''
   return typeof url === 'string' ? url : ''
 }
-function cardActionText(m) {
+function cardActionText (m) {
   const card = pickCard(m) || {}
   return card.action_text || '查看详情'
 }
 
 /** 点击消息卡片 */
-function handleCardClick(m) {
+function handleCardClick (m) {
   const card = pickCard(m)
   if (!card) return
 
@@ -1096,35 +1152,24 @@ function handleCardClick(m) {
   margin-top: 4rpx;
 }
 
-/* 中间滚动区固定在 自定义导航条 与输入条之间 */
+/* 中间 z-paging 区域：固定在 自定义导航条 以下 */
 .chat-body {
   position: fixed;
   left: 0;
   right: 0;
+  bottom: 0;
   padding: 20rpx;
-  padding-bottom: 20rpx;
-  padding-top: 100rpx;
+  padding-bottom: 0;
   box-sizing: border-box;
   background: #f5f5f5;
 }
-.load-more {
-  width: 100%;
-  text-align: center;
-  color: #6b7280;
-  font-size: 24rpx;
-  padding: 16rpx 0;
-}
 
 /* 列表与气泡布局 */
-.msg-list {
-  display: flex;
-  flex-direction: column;
-  gap: 26rpx;
-}
 .msg-item {
   display: flex;
   align-items: flex-start;
   gap: 24rpx;
+  margin-bottom: 26rpx;
   &.self {
     flex-direction: row-reverse;
   }
@@ -1285,18 +1330,8 @@ function handleCardClick(m) {
   font-size: 20rpx;
 }
 
-/* 锚点 */
-.bottom-anchor {
-  height: 1rpx;
-}
-
-/* 底部输入条固定 */
+/* 底部输入条（放在 z-paging bottom 插槽内） */
 .chat-inputbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
   background: #e0f0fb;
   padding: 18rpx 16rpx 30rpx;
   display: grid;
@@ -1343,16 +1378,6 @@ function handleCardClick(m) {
   .emoji-item {
     font-size: 40rpx;
   }
-}
-
-/* 底部安全区域 */
-.chat-safe-bottom {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #ffffff;
-  z-index: 5;
 }
 
 /* 隐藏滚动条 */

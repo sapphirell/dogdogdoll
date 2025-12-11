@@ -205,7 +205,10 @@
 		"style" : 
 		{
 			"navigationBarTitleText" : "",
-			 "navigationStyle": "custom"
+			 "navigationStyle": "custom",
+			 "app-plus": {
+			 	"bounce": "none"
+			 }
 		}
 	}
   ],
@@ -264,13 +267,24 @@
 		{
 			"path": "creator_order/received-list/received-list",
 			"style": {
-				"navigationBarTitleText": ""
 			}
 		},
 		{
 			"path": "creator_order/received-detail/received-detail",
 			"style": {
 				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_base/custom_wig/custom_wig",
+			"style": {
+				"navigationStyle": "custom" 
+			}
+		},
+		{
+			"path": "creator_base/hair_artist/hair_artist",
+			"style": {
+				"navigationStyle": "custom" 
 			}
 		}
       ]

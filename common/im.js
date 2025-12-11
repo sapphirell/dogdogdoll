@@ -1,14 +1,30 @@
 // /common/im.js
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { websiteUrl } from '@/common/config.js'
 
 let ws = null
 let hbTimer = 0
 let reconnectTimer = 0
-let reconnectDelay = 2500
+let reconnectDelay = 2500 // 初始重连间隔
+let manualClose = false   // 区分“手动关闭”和“异常断线”
 const listeners = new Set()
 
+// 全局未读数
 export const unreadTotal = ref(0)
+
+// 全局 WS 状态（所有页面共享）
+/**
+ * wsStatus 取值：
+ * - 'idle'         初始/未连接
+ * - 'connecting'   首次连接中
+ * - 'open'         已连接
+ * - 'closing'      正在手动关闭
+ * - 'closed'       已关闭（等待重连）
+ * - 'reconnecting' 自动重连中
+ * - 'error'        出错
+ */
+export const wsStatus = ref('idle')
+export const wsReady = computed(() => wsStatus.value === 'open')
 
 const activeSessions = new Set()
 const SEEN_MAX = 500
@@ -47,7 +63,7 @@ function log(...args) { console.log('[IM]', ...args) }
  * 安全解析 websiteUrl，生成 host:port + 协议
  * 只依赖 websiteUrl.value，兼容 App / 小程序 无 location / URL 的环境
  */
-function parseBaseForWS() {
+function parseBaseForWS () {
   let base = (websiteUrl && websiteUrl.value) ? String(websiteUrl.value).trim() : ''
   // 如果没配置就直接给一个兜底域名（你现在就是 api.fantuanpu.com）
   if (!base) {
@@ -81,7 +97,7 @@ function parseBaseForWS() {
  * 例如： websiteUrl = https://api.fantuanpu.com
  *       => wss://api.fantuanpu.com/v1/websocket?token=...
  */
-function buildWSUrl() {
+function buildWSUrl () {
   const token = uni.getStorageSync('token') || ''
   const { scheme, hostPort } = parseBaseForWS()
   return `${scheme}://${hostPort}/v1/websocket?token=${encodeURIComponent(token)}`
@@ -92,7 +108,7 @@ function buildWSUrl() {
  * - H5：使用原生 new WebSocket
  * - App / 小程序：使用 uni.connectSocket 包一层，模拟 WebSocket 接口
  */
-function createWS(url) {
+function createWS (url) {
   // 1️⃣ H5：有原生 WebSocket 就直接用
   if (typeof WebSocket === 'function') {
     try {
@@ -175,8 +191,7 @@ function createWS(url) {
   return null
 }
 
-
-function startHeartbeat() {
+function startHeartbeat () {
   stopHeartbeat()
   hbTimer = setInterval(() => {
     try {
@@ -184,18 +199,35 @@ function startHeartbeat() {
     } catch (_) {}
   }, 30000)
 }
-function stopHeartbeat() { if (hbTimer) { clearInterval(hbTimer); hbTimer = 0 } }
-function scheduleReconnect() {
+function stopHeartbeat () {
+  if (hbTimer) {
+    clearInterval(hbTimer)
+    hbTimer = 0
+  }
+}
+
+/**
+ * 自动重连（带简单退避）
+ */
+function scheduleReconnect () {
   if (reconnectTimer) return
+
+  // 如果是手动关闭，不再自动重连
+  if (manualClose) return
+
+  wsStatus.value = 'reconnecting'
+  const delay = reconnectDelay
+  reconnectDelay = Math.min(reconnectDelay * 1.5, 15000) // 逐步放大，最大 15 秒
+
   reconnectTimer = setTimeout(() => {
     reconnectTimer = 0
     connectIM(true)
-  }, reconnectDelay)
+  }, delay)
 }
 
 /** 修正：未读角标改用 IM 的专用接口 */
 let _ruInflight = null
-export async function refreshUnread() {
+export async function refreshUnread () {
   const token = uni.getStorageSync('token') || ''
   if (!token) { unreadTotal.value = 0; return 0 }
   if (_ruInflight) return _ruInflight
@@ -219,113 +251,204 @@ export async function refreshUnread() {
   return _ruInflight
 }
 
-export function connectIM(force = false) {
-  if (!force && ws && (ws.readyState === 0 || ws.readyState === 1)) return ws
+export function connectIM (force = false) {
+  log('connectIM called, force =', force, ' wsStatus =', wsStatus.value, ' ws =', ws)
+
+  // 已经在连/已连且不是强制重连，则直接复用
+  if (!force && ws && (ws.readyState === 0 || ws.readyState === 1)) {
+    log('connectIM: reuse existing ws, readyState =', ws.readyState)
+    return ws
+  }
+
   const token = uni.getStorageSync('token') || ''
-  if (!token) { log('no token, skip ws connect'); return null }
+  log('connectIM: current token =', token ? '[NON-EMPTY]' : '[EMPTY]')
+  if (!token) {
+    log('connectIM: no token, skip connect')
+    wsStatus.value = 'idle'
+    return null
+  }
 
   const url = buildWSUrl()
-  log('connecting...', url)
+  log('connectIM: connecting to', url)
+  manualClose = false
+  wsStatus.value = force ? 'reconnecting' : 'connecting'
+  log('connectIM: wsStatus =>', wsStatus.value)
 
   const socket = createWS(url)
   if (!socket) {
-    log('createWS failed')
+    log('connectIM: createWS failed')
+    wsStatus.value = 'error'
+    scheduleReconnect()
     return null
   }
   ws = socket
 
-  try { if (typeof window !== 'undefined') window.__IM_WS__ = ws } catch(_) {}
+  try { if (typeof window !== 'undefined') window.__IM_WS__ = ws } catch (_) {}
 
   ws.onopen = async () => {
-    log('open')
+    log('ws.onopen')
+    wsStatus.value = 'open'
+    log('wsStatus => open')
+    reconnectDelay = 2500
     startHeartbeat()
     await refreshUnread()
   }
 
   ws.onmessage = (evt) => {
     let payload = null
-    try { payload = JSON.parse(evt.data) } catch { payload = evt.data }
+    try {
+      payload = JSON.parse(evt.data)
+    } catch (_) {
+      payload = evt.data
+    }
     log('onmessage', payload)
 
-    listeners.forEach(fn => { try { fn(payload) } catch (e) { console.error('[IM] listener error', e) } })
+    // 小工具：把消息广播给所有监听者（chat.vue 的 waitWsResponseOnce / handleIMEvent 就靠这个）
+    const broadcast = (data) => {
+      if (!listeners.size) return
+      listeners.forEach((cb) => {
+        try {
+          cb(data)
+        } catch (e) {
+          console.error('[IM] listener error', e)
+        }
+      })
+    }
 
-    try {
-      if (!payload || typeof payload !== 'object') return
-      if ((payload.type || '').toLowerCase() !== 'im.event') return
+    // 非对象（比如字符串 pong），直接原样丢给监听者
+    if (!payload || typeof payload !== 'object') {
+      broadcast(payload)
+      return
+    }
 
-      const evtName = (payload.event || '').toLowerCase()
-      if (evtName !== 'message' && evtName !== 'notify') return
+    // ===== 这里处理 im.event 的一些全局副作用（去重 + 未读），不动具体页面逻辑 =====
+    if (payload.type === 'im.event') {
+      const ev = payload.event
+      const d  = payload.data || {}
 
-      const data = payload.data || {}
-      const sess = (data.session_id !== undefined && data.session_id !== null) ? String(data.session_id) : ''
-      const msg  = data.message || {}
-      const mid  = Number(msg.id || 0)
-      const from = Number(msg.sender_id || 0)
-      const self = getSelfId()
+      if (ev === 'message') {
+        const msg    = d.message || {}
+        const mid    = Number(msg.id ?? d.message_id ?? d.id ?? 0)
+        const sessId = d.session_id ?? msg.session_id ?? d.sid
+        const selfId = getSelfId()
+        const toUid  = Number(
+          msg.to_uid ??
+          d.to_uid ??
+          d.receiver_id ??
+          d.recver_id ??
+          0
+        )
 
-      if (mid) {
-        if (seenSet.has(mid)) return
-        rememberSeen(mid)
-      }
+        // ===== 去重：同一条 message_id 只处理一次 =====
+        if (mid) {
+          if (seenSet.has(mid)) {
+            log('onmessage: skip duplicate message id =', mid)
+            // 这里直接 return，是为了避免重复触发全局副作用和页面事件
+            return
+          }
+          rememberSeen(mid)
+        }
 
-      if (from && self && from !== self) {
-        if (!isActiveSession(sess)) {
-          unreadTotal.value = Math.max(0, Number(unreadTotal.value || 0) + 1)
+        // ===== 未读数：别人给我发消息，且该会话当前不在激活集合里 => 刷新一次未读 =====
+        if (selfId && toUid && selfId === toUid && !isActiveSession(sessId)) {
+          // 用后端接口刷一遍，防止计数跑偏
+          refreshUnread()
+        }
+      } else if (ev === 'unread' || ev === 'session_unread') {
+        // 如果服务端推未读汇总事件，就直接覆盖即可
+        const n = Number(payload?.data?.count ?? 0)
+        if (Number.isFinite(n)) {
+          unreadTotal.value = n
         }
       }
-    } catch (_) {}
+      // 其它 ev（如 read）不在这里做处理，只透传给监听者
+    }
+
+    // ===== 最关键：把 payload（包括 im.res 和 im.event）统一分发给所有监听者 =====
+    broadcast(payload)
   }
 
-  ws.onclose = (evt) => { 
+
+  ws.onclose = (evt) => {
     console.log(evt)
     log('close', evt.code, evt.reason)
     stopHeartbeat()
+
+    // 手动关闭：标记 closed，但不重连
+    if (manualClose) {
+      wsStatus.value = 'closed'
+      manualClose = false
+      return
+    }
+
+    wsStatus.value = 'closed'
     scheduleReconnect()
   }
-  ws.onerror = (err) => { log('error', err) }
+
+  ws.onerror = (err) => {
+    log('ws.onerror', err)
+    wsStatus.value = 'error'
+  }
 
   return ws
 }
 
-export function disconnectIM() {
-  try { stopHeartbeat() } catch(_) {}
-  try { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = 0 } } catch(_) {}
+
+export function disconnectIM () {
+  try { stopHeartbeat() } catch (_) {}
+  try {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = 0
+    }
+  } catch (_) {}
+
+  manualClose = true
+  wsStatus.value = 'closing'
   try {
     if (ws) {
       const s = ws.readyState
       if (s === 0 || s === 1) ws.close(1000, 'client close')
     }
-  } catch(_) {}
+  } catch (_) {}
   ws = null
+  wsStatus.value = 'closed'
 }
-export function closeIM() { return disconnectIM() }
+export function closeIM () { return disconnectIM() }
 
-export function onceConnected(timeout = 8000) {
+export function onceConnected (timeout = 8000) {
   if (ws && ws.readyState === 1) return Promise.resolve(true)
   connectIM()
   return new Promise((resolve) => {
     let timer = setTimeout(() => resolve(false), Math.max(1000, timeout))
     const check = () => {
-      if (ws && ws.readyState === 1) { clearTimeout(timer); resolve(true) }
-      else { setTimeout(check, 100) }
+      if (ws && ws.readyState === 1) {
+        clearTimeout(timer)
+        resolve(true)
+      } else {
+        setTimeout(check, 100)
+      }
     }
     check()
   })
 }
 
-export function onIMEvent(cb) {
+export function onIMEvent (cb) {
   if (typeof cb === 'function') listeners.add(cb)
   return () => { listeners.delete(cb) }
 }
-export function offIMEvent(cbOrUnsubscribe) {
+export function offIMEvent (cbOrUnsubscribe) {
   if (typeof cbOrUnsubscribe === 'function') {
     try { cbOrUnsubscribe() } catch (_) { listeners.delete(cbOrUnsubscribe) }
   }
 }
 
-export function sendIM(data) {
+export function sendIM (data) {
   try {
-    if (!ws || ws.readyState !== 1) { log('sendIM skipped: ws not ready'); return false }
+    if (!ws || ws.readyState !== 1) {
+      log('sendIM skipped: ws not ready')
+      return false
+    }
     const payload = (typeof data === 'string') ? data : JSON.stringify(data)
     ws.send(payload)
     return true
@@ -334,20 +457,19 @@ export function sendIM(data) {
     return false
   }
 }
-export function getWS() { return ws }
+export function getWS () { return ws }
 
-export function setActiveSession(sessionId) {
+export function setActiveSession (sessionId) {
   if (sessionId === undefined || sessionId === null) return
   activeSessions.add(String(sessionId))
 }
-export function clearActiveSession(sessionId) {
+export function clearActiveSession (sessionId) {
   if (sessionId === undefined || sessionId === null) return
   activeSessions.delete(String(sessionId))
 }
 
-/** 下面保持你原来的实现不变：listSessions 等等 **/
-
-export async function listSessions({ page = 1, page_size = 20 } = {}) {
+/** 会话列表 HTTP 封装保持不变 **/
+export async function listSessions ({ page = 1, page_size = 20 } = {}) {
   const token = uni.getStorageSync('token') || ''
   if (!token) return { list: [], has_more: false }
 

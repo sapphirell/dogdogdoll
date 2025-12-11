@@ -1,19 +1,30 @@
 <!-- components/orders-panel.vue -->
 <template>
   <view class="orders-panel">
-    <!-- 顶部统计卡片（BJD约妆 / 手改毛投递数量） -->
+    <!-- 顶部统计卡片（BJD约妆 / 手改毛投递数量，可切换列表） -->
     <view class="summary-card">
-      <view class="summary-item">
-        <text class="summary-number font-alimama">
+      <view
+        class="summary-item"
+        :class="{ 'summary-item-active': activeOrderTypeTab === 'bjd' }"
+        @click="changeOrderTypeTab('bjd')"
+      >
+        <text class="summary-number font-title">
           {{ totalBjd }}
         </text>
-        <text class="summary-label font-alimama">BJD约妆</text>
+        <text class="summary-label font-alimamashuhei">BJD约妆</text>
       </view>
-      <view class="summary-item">
-        <text class="summary-number font-alimama">
+
+      <view class="summary-divider"></view>
+
+      <view
+        class="summary-item"
+        :class="{ 'summary-item-active': activeOrderTypeTab === 'hair' }"
+        @click="changeOrderTypeTab('hair')"
+      >
+        <text class="summary-number font-title">
           {{ totalHair }}
         </text>
-        <text class="summary-label font-alimama">手改毛投递</text>
+        <text class="summary-label font-alimamashuhei">手改毛投递</text>
       </view>
     </view>
 
@@ -61,9 +72,10 @@
       <!-- 列表卡片（按设计图样式） -->
       <view v-else>
         <view
-          v-for="row in filteredList"
+          v-for="(row, index) in filteredList"
           :key="row.submission?.id || row.submission?.ID"
           class="sub-card"
+          :style="subCardStyle(index)"
           @click="goSubmissionDetail(row)"
         >
           <!-- 左侧缩略图 -->
@@ -75,7 +87,7 @@
             />
           </view>
 
-          <!-- 中间文本 -->
+          <!-- 中间文本：与图片等高 -->
           <view class="sub-card-middle">
             <view class="sub-title-row">
               <text class="status-pill font-alimama">
@@ -96,9 +108,8 @@
             </view>
           </view>
 
-          <!-- 右侧 ··· + 箭头 -->
+          <!-- 右侧：只有箭头 -->
           <view class="sub-card-right">
-            <text class="more-dots">···</text>
             <uni-icons type="right" size="26" color="#444444" />
           </view>
         </view>
@@ -106,7 +117,9 @@
 
       <!-- 底部加载 / 提示 -->
       <view class="list-footer">
-        <text v-if="loading" class="footer-text">加载中...</text>
+        <view v-if="loading" class="footer-loading">
+          <loading-jump-text></loading-jump-text>
+        </view>
         <text
           v-else-if="finished && submissionList.length > 0"
           class="footer-text"
@@ -132,17 +145,18 @@ import {
 } from '@dcloudio/uni-app'
 import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
 
-/**
- * 组件 props：
- * - active: 当前页面是否处在“订单集”这个 tab 下。
- *   用来避免在其它 tab 时误响应下拉刷新 / 上拉加载。
- */
 const props = defineProps({
   active: {
     type: Boolean,
     default: true
   }
 })
+
+/** 顶部统计的类型切换：BJD / 手改毛 */
+const activeOrderTypeTab = ref('bjd') // 'bjd' | 'hair'
+function changeOrderTypeTab(type) {
+  activeOrderTypeTab.value = type
+}
 
 /** 二级 Tab（状态筛选） */
 const statusTabs = [
@@ -163,17 +177,29 @@ const finished = computed(
   () => total.value > 0 && submissionList.value.length >= total.value
 )
 
-/** 统计：按 order_type 粗略统计 BJD / 手改毛数量 */
+/** 统计：按 order_type / mode 粗略统计 BJD / 手改毛数量
+ * 注意：当前接口是“约妆列表”，样例数据 mode = 2 表示约妆
+ * 这里约定：2 = BJD约妆，1 = 手改毛
+ */
 function getOrderType(sub) {
   if (!sub) return 0
-  return Number(sub.order_type ?? sub.OrderType ?? 0)
+  let t =
+    sub.order_type ??
+    sub.OrderType ??
+    sub.orderType ??
+    null
+  if (t == null) {
+    t = sub.mode ?? sub.Mode ?? 0
+  }
+  return Number(t) || 0
 }
+
 const totalBjd = computed(() =>
-  submissionList.value.filter(row => getOrderType(row.submission) === 1)
+  submissionList.value.filter(row => getOrderType(row.submission) === 2)
     .length
 )
 const totalHair = computed(() =>
-  submissionList.value.filter(row => getOrderType(row.submission) === 2)
+  submissionList.value.filter(row => getOrderType(row.submission) === 1)
     .length
 )
 
@@ -208,9 +234,18 @@ function isFinishedStatus(sub) {
   return st === 3 || st === 4 || st === 5
 }
 
-/** 过滤列表：根据二级 Tab */
+/** 过滤列表：根据 顶部类型(BJD/毛) + 二级 Tab(状态) */
 const filteredList = computed(() => {
   let list = submissionList.value
+
+  // 顶部 BJD / 手改毛 过滤
+  if (activeOrderTypeTab.value === 'bjd') {
+    list = list.filter(row => getOrderType(row.submission) === 2)
+  } else if (activeOrderTypeTab.value === 'hair') {
+    list = list.filter(row => getOrderType(row.submission) === 1)
+  }
+
+  // 状态二级tab过滤
   if (activeStatusTab.value === 'ongoing') {
     list = list.filter(row => isOngoing(row.submission))
   } else if (activeStatusTab.value === 'finished') {
@@ -224,7 +259,15 @@ function changeStatusTab(key) {
   activeStatusTab.value = key
 }
 
-/** 拉取列表（所有网络请求都在组件内部） */
+/** 列表 item 的动画样式：按 index 递增 delay */
+function subCardStyle(index) {
+  const delay = index * 80 // ms，与 info-follow-tab 保持一致节奏
+  return {
+    animationDelay: delay + 'ms'
+  }
+}
+
+/** 拉取列表 */
 async function fetchList(reset = false) {
   if (loading.value) return
 
@@ -335,7 +378,7 @@ function statusText(row) {
   }
 }
 
-/** 卡片左侧封面：优先作品图，没有则用品牌 Logo；再没有就用灰色占位 */
+/** 卡片左侧封面 */
 function cardCover(row) {
   const items = row.items || []
   if (items.length > 0) {
@@ -344,10 +387,10 @@ function cardCover(row) {
   }
   const logo = brandLogo(row)
   if (logo) return logo
-  return '' // 样式里会有灰底
+  return ''
 }
 
-/** 卡片主标题：优先计划/标题，其次品牌名 */
+/** 卡片主标题 */
 function mainTitle(row) {
   const sub = row?.submission || {}
   return (
@@ -365,8 +408,42 @@ function itemsCount(row) {
   return items.length || 0
 }
 
-/** 卡片金额：从 submission 上取总价字段 */
-function cardAmount(row) {
+/** 计算一个 submission 下所有子项的总价：sum(price_total + adjust_price) */
+function calcRowTotalAmount(row) {
+  const items = row.items || []
+  let sum = 0
+  let hasItemPrice = false
+
+  items.forEach(it => {
+    if (!it) return
+    const priceTotalRaw =
+      it.price_total ??
+      it.PriceTotal ??
+      it.priceTotal ??
+      null
+    const adjustPriceRaw =
+      it.adjust_price ??
+      it.AdjustPrice ??
+      it.adjustPrice ??
+      null
+
+    const priceTotal = Number(priceTotalRaw || 0)
+    const adjustPrice = Number(adjustPriceRaw || 0)
+
+    if (
+      (!isNaN(priceTotal) && priceTotalRaw != null) ||
+      (!isNaN(adjustPrice) && adjustPriceRaw != null)
+    ) {
+      hasItemPrice = true
+      sum += (isNaN(priceTotal) ? 0 : priceTotal) +
+        (isNaN(adjustPrice) ? 0 : adjustPrice)
+    }
+  })
+
+  if (hasItemPrice) {
+    return sum
+  }
+
   const sub = row?.submission || {}
   const totalVal =
     sub.price_total ??
@@ -375,10 +452,18 @@ function cardAmount(row) {
     sub.TotalPrice ??
     0
   const n = Number(totalVal) || 0
-  return n.toFixed(2).replace(/\.00$/, '')
+  return n
 }
 
-/** 状态 pill 的文案：把“已抢到名额”映射为设计稿里的“已中选” */
+/** 卡片金额 */
+function cardAmount(row) {
+  const total = calcRowTotalAmount(row)
+  const n = Number(total) || 0
+  const fixed = n.toFixed(2)
+  return fixed.replace(/\.00$/, '')
+}
+
+/** 状态 pill 文案 */
 function statusPillText(row) {
   const txt = statusText(row)
   if (txt === '已抢到名额') return '已中选'
@@ -406,23 +491,19 @@ function jumpToAnnouncement() {
   })
 }
 
-/** ===== 生命周期 & 自动加载逻辑 ===== */
-
-/** 首次挂载：如果当前 tab 处于激活状态，则自动拉一次列表 */
+/** 生命周期 */
 onMounted(() => {
   if (props.active) {
     fetchList(true)
   }
 })
 
-/** 页面 onShow：如果回到页面且当前 tab 激活，自动刷新一遍 */
 onShow(() => {
   if (props.active) {
     fetchList(true)
   }
 })
 
-/** 监听 active：从其它 tab 切回“订单集”时自动刷新 */
 watch(
   () => props.active,
   val => {
@@ -432,7 +513,6 @@ watch(
   }
 )
 
-/** 下拉刷新：只有在当前 tab 激活时才响应 */
 onPullDownRefresh(() => {
   if (!props.active) {
     uni.stopPullDownRefresh()
@@ -441,7 +521,6 @@ onPullDownRefresh(() => {
   fetchList(true)
 })
 
-/** 上拉加载更多：只有在当前 tab 激活且未结束时才响应 */
 onReachBottom(() => {
   if (!props.active || finished.value) return
   fetchList(false)
@@ -451,39 +530,57 @@ onReachBottom(() => {
 <style lang="scss" scoped>
 /* 订单集整体容器 */
 .orders-panel {
-  padding: 0 32rpx 40rpx;
+  padding: 0 40rpx 40rpx;
 }
 
 /* 顶部统计卡片 */
 .summary-card {
-  margin-top: 6rpx;
-  margin-bottom: 20rpx;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   background: #ffffff;
-  border-radius: 28rpx;
-  box-shadow: 0 10rpx 30rpx rgba(15, 35, 95, 0.06);
+  border-radius: 32rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.04);
   padding: 24rpx 40rpx;
   display: flex;
+  align-items: stretch;
   justify-content: space-between;
-  align-items: center;
+  margin-top: 6rpx;
+  margin-bottom: 32rpx;
 }
 
 .summary-item {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
 }
 
+/* 默认灰色 */
 .summary-number {
   font-size: 40rpx;
-  font-weight: 800;
-  color: #222222;
+  font-weight: 700;
+  color: #d0d0d0;
 }
 
 .summary-label {
-  margin-top: 8rpx;
+  margin-top: 10rpx;
   font-size: 24rpx;
-  color: #888888;
+  color: #d0d0d0;
+}
+
+/* 选中态 */
+.summary-item-active .summary-number,
+.summary-item-active .summary-label {
+  color: #222222;
+}
+
+/* 中间分割线 */
+.summary-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: #f2f2f2;
 }
 
 /* 二级 Tab：全部 / 交易中 / 交易结束 */
@@ -533,12 +630,15 @@ onReachBottom(() => {
   padding: 32rpx 28rpx;
   background: #ffffff;
   box-shadow: 0 12rpx 30rpx rgba(15, 35, 95, 0.06);
+  align-items: center;
 }
 
 .empty-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #333333;
+  color: #505050;
+  display: block;
+  text-align: center;
 }
 
 .empty-desc {
@@ -546,14 +646,36 @@ onReachBottom(() => {
   font-size: 26rpx;
   color: #999999;
   line-height: 1.7;
+  display: block;
+  text-align: center;
 }
 
-/* 每一条投递卡片：按设计图样式 */
+/* 淡入动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 每一条投递卡片 */
 .sub-card {
   margin-bottom: 24rpx;
-  padding: 24rpx 0;
+  padding: 0; /* 去掉上下内边距，图片和文字严格等高 */
   display: flex;
   align-items: center;
+
+  /* 动画初始状态 + 通用配置 */
+  opacity: 0;
+  transform: translateY(16rpx);
+  animation-name: fadeInUp;
+  animation-duration: 0.32s;
+  animation-timing-function: ease;
+  animation-fill-mode: forwards;
 }
 
 /* 左侧缩略图 */
@@ -572,23 +694,26 @@ onReachBottom(() => {
   height: 100%;
 }
 
-/* 中间文案区域 */
+/* 中间文案区域：与图片等高，无额外上下间距 */
 .sub-card-middle {
   flex: 1;
+  height: 140rpx;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-around;
   min-width: 0;
+  margin: 0;
+  padding: 0;
 }
 
 /* 第一行：状态+标题 */
 .sub-title-row {
   display: flex;
   align-items: center;
-  margin-bottom: 16rpx;
+  margin: 0 0 8rpx 0;
 }
 
-/* “已中选” 状态 pill */
+/* 状态 pill */
 .status-pill {
   padding: 4rpx 16rpx;
   border-radius: 999rpx;
@@ -598,7 +723,7 @@ onReachBottom(() => {
   margin-right: 16rpx;
 }
 
-/* 主标题：然鹅 - 10月开收 */
+/* 主标题 */
 .sub-main-title {
   font-size: 30rpx;
   font-weight: 700;
@@ -609,11 +734,11 @@ onReachBottom(() => {
   text-overflow: ellipsis;
 }
 
-/* 第二行：2个投递项 220¥ */
+/* 第二行：1个投递项  120¥ */
 .sub-subtitle-row {
   display: flex;
   align-items: baseline;
-  margin-top: 4rpx;
+  margin: 0;
 }
 .sub-meta-text {
   font-size: 28rpx;
@@ -626,20 +751,15 @@ onReachBottom(() => {
   font-weight: 700;
 }
 
-/* 右侧：··· + 箭头 */
+/* 右侧：只有箭头 */
 .sub-card-right {
   flex-shrink: 0;
-  width: 80rpx;
+  width: 60rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   margin-left: 8rpx;
-}
-.more-dots {
-  font-size: 30rpx;
-  color: #999999;
-  margin-bottom: 16rpx;
 }
 
 /* 列表底部提示 */
@@ -647,6 +767,13 @@ onReachBottom(() => {
   padding: 12rpx 0 10rpx;
   text-align: center;
 }
+
+.footer-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .footer-text {
   font-size: 22rpx;
   color: #a1a9b3;
@@ -661,7 +788,6 @@ onReachBottom(() => {
   background-size: contain;
   background-position: center;
   border-radius: 20rpx;
-  box-shadow: 0 8rpx 30rpx rgba(145, 145, 145, 0.3);
   display: flex;
   justify-content: center;
   align-items: flex-end;

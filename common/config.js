@@ -3,8 +3,8 @@ import {
 } from 'vue';
 
 // 网站域名
-// export const websiteUrl = ref('https://api.fantuanpu.com');
-export const websiteUrl = ref('http://localhost:8080');
+export const websiteUrl = ref('https://api.fantuanpu.com');
+// export const websiteUrl = ref('http://localhost:8080');
 // 测试环境
 export const devUrl = 'http://localhost:8080';
 // 中国服务器API
@@ -186,73 +186,81 @@ export function bindWechat() {
 
 // 获取用户信息
 export function getUserInfo() {
-	const token = uni.getStorageSync('token');
-	console.log("token:", token)
-	if (!token) {
-		console.log("没有token，无法获取用户信息");
-		clearUserInfo();
-		return;
-	}
-	console.log("请求接口")
-	uni.request({
-		url: `${websiteUrl.value}/with-state/mine`,
-		method: 'GET',
-		header: {
-			Authorization: token
-		},
-		success: (res) => {
-			const data = res.data.data;
-			if (data) {
-				console.log("获取用户信息成功,进行存储", data);
-				saveUserInfo(data);
-			} else {
-				console.log("无法获取，清理用户状态")
-				clearUserInfo();
-			}
-		},
-		fail: (err) => {
-			handleRequestError(err, '获取用户信息失败');
-		},
-	});
+  const token = uni.getStorageSync('token');
+  console.log('[AUTH] getUserInfo() start, current token =', token)
+
+  if (!token) {
+    console.log('[AUTH] getUserInfo() no token, clearUserInfo()')
+    clearUserInfo();
+    return;
+  }
+
+  console.log('[AUTH] getUserInfo() request /with-state/mine')
+  uni.request({
+    url: `${websiteUrl.value}/with-state/mine`,
+    method: 'GET',
+    header: {
+      Authorization: token
+    },
+    success: (res) => {
+      console.log('[AUTH] getUserInfo() response raw =', res.data)
+      const data = res.data.data;
+      if (data) {
+        console.log('[AUTH] getUserInfo() success, call saveUserInfo, uid =', data.id)
+        saveUserInfo(data);
+      } else {
+        console.log('[AUTH] getUserInfo() no data, clearUserInfo()')
+        clearUserInfo();
+      }
+    },
+    fail: (err) => {
+      console.log('[AUTH] getUserInfo() fail', err)
+      handleRequestError(err, '获取用户信息失败');
+    },
+  });
 }
 
 
 
 // 获取用户信息，返回 Promise
 export function asyncGetUserInfo() {
-	return new Promise((resolve, reject) => {
-		const token = uni.getStorageSync('token');
-		if (!token) {
-			clearUserInfo();
-			resolve(null); // 返回 null 表示没有 token，无法获取用户信息
-			return;
-		}
+  return new Promise((resolve) => {
+    const token = uni.getStorageSync('token');
+    console.log('[AUTH] asyncGetUserInfo() start, current token =', token)
 
-		uni.request({
-			url: `${websiteUrl.value}/with-state/mine`,
-			method: 'GET',
-			header: {
-				Authorization: token
-			},
-			success: (res) => {
-				const data = res.data.data;
-				if (data) {
-					console.log("返回：", data);
-				
-					saveUserInfo(data);
-					resolve(data); // 返回用户信息
-				} else {
-					clearUserInfo();
-					resolve(null); // 如果没有数据，清空用户信息并返回 null
-				}
-				return data;
-			},
-			fail: (err) => {
-				handleRequestError(err, '获取用户信息失败');
-				resolve(null); // 请求失败，返回 null
-			}
-		});
-	});
+    if (!token) {
+      console.log('[AUTH] asyncGetUserInfo() no token, clearUserInfo()')
+      clearUserInfo();
+      resolve(null);
+      return;
+    }
+
+    uni.request({
+      url: `${websiteUrl.value}/with-state/mine`,
+      method: 'GET',
+      header: {
+        Authorization: token
+      },
+      success: (res) => {
+        console.log('[AUTH] asyncGetUserInfo() response raw =', res.data)
+        const data = res.data.data;
+        if (data) {
+          console.log('[AUTH] asyncGetUserInfo() success, call saveUserInfo, uid =', data.id)
+          saveUserInfo(data);
+          resolve(data);
+        } else {
+          console.log('[AUTH] asyncGetUserInfo() empty data, clearUserInfo()')
+          clearUserInfo();
+          resolve(null);
+        }
+      },
+      fail: (err) => {
+        console.log('[AUTH] asyncGetUserInfo() fail', err)
+        handleRequestError(err, '获取用户信息失败');
+        resolve(null);
+      }
+    });
+  });
 }
 
 
@@ -418,10 +426,29 @@ export async function initLoginState() {
 
 // 工具函数
 function saveUserInfo(data) {
-	uni.setStorageSync('userInfo', data);
-	uni.setStorageSync('token', data.last_token)
-	global.userInfo = data;
-	global.isLogin = true;
+  const beforeToken = uni.getStorageSync('token')
+  console.log('[AUTH] saveUserInfo() in, beforeToken =', beforeToken, ' payload.last_token =', data?.last_token)
+
+  // 写 userInfo
+  uni.setStorageSync('userInfo', data);
+
+  // ✅ 只在 last_token 存在时覆盖
+  if (data && data.last_token) {
+    uni.setStorageSync('token', data.last_token)
+    console.log('[AUTH] saveUserInfo() use data.last_token, new token =', data.last_token)
+  } else {
+    console.log('[AUTH] saveUserInfo() no last_token, keep old token =', beforeToken)
+  }
+
+  global.userInfo = data;
+  global.isLogin = true;
+  console.log('[AUTH] saveUserInfo() done, global.isLogin =', global.isLogin, ' uid =', data?.id)
+
+  // 广播“登录成功 / 登录恢复成功”事件
+  if (typeof uni !== 'undefined' && typeof uni.$emit === 'function') {
+    console.log('[AUTH] saveUserInfo() emit login-success')
+    uni.$emit('login-success', data)
+  }
 }
 
 function clearUserInfo() {

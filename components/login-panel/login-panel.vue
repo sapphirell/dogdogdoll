@@ -199,7 +199,10 @@ function login() {
 .unlogin-container {
   padding: 40rpx 60rpx 60rpx;
   background: linear-gradient(135deg, #e0f3ff 0%, #fff9fb 100%);
-  min-height: 100%;
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
   align-items: center;

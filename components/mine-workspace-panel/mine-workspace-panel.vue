@@ -460,7 +460,7 @@ function updateBrandIdentity (field, value, onSuccess, onRollback) {
 // 去成为入驻作者
 function goBecomeCreator () {
   uni.navigateTo({
-    url: '/pkg-creator/creator_base/brand_manager/brand_manager'
+    url: '/pkg-creator/creator_base/creator_base'
   })
 }
 
@@ -475,7 +475,7 @@ function goOrderHome () {
     return
   }
   uni.navigateTo({
-    url: `/pages/artist_info/artist_info?brand_id=${bid}`
+    url: `/pages/artist_info/bjd_faceup_artist?brand_id=${bid}`
   })
 }
 

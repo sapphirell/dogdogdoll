@@ -8,11 +8,16 @@
         <input class="input" v-model="form.artist_name" placeholder="请输入计划名称" />
       </view>
 
-
       <!-- 接单方式 -->
       <view class="form-item">
         <text class="label">接单方式</text>
-        <picker :range="orderTypes" range-key="text" :value="orderTypeIndex" @change="onOrderTypeChange">
+        <picker
+          :range="orderTypes"
+          range-key="text"
+          :value="orderTypeIndex"
+          @change="onOrderTypeChange"
+          :disabled="!canEditOrderType"
+        >
           <view class="picker">{{ orderTypes[orderTypeIndex].text }}</view>
         </picker>
         <!-- 多行提示 -->
@@ -25,7 +30,11 @@
         <view class="tip" v-else>
           如需「手速×5、抽选×5」，请创建两条计划；先创建一条，再在列表中“复制”并编辑。
         </view>
+        <view class="tip" v-if="isEditMode && !canEditOrderType">
+          接单已开始，不能修改接单方式。
+        </view>
       </view>
+
 
       <!-- 接单场所：switch -->
       <view class="form-item">
@@ -34,51 +43,127 @@
           <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
           <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
         </view>
+        <view class="tip" v-if="isEditMode && !canEditServiceScene">
+          已开始的本平台计划不能切换为其它平台。
+        </view>
       </view>
 
       <!-- 本平台：是否要求填写社交账号 -->
       <view class="form-item" v-if="form.service_scene === 2">
         <text class="label">是否要求填写社交账号</text>
         <view class="inline-control">
-			<switch
-			  :checked="!!form.require_platform_account"
-			  @change="e => form.require_platform_account = !!e.detail.value"
-			/>
-			<text class="inline-tip">{{ form.require_platform_account ? '需要' : '不需要' }}</text>
+          <switch
+            :checked="!!form.require_platform_account"
+            @change="e => form.require_platform_account = !!e.detail.value"
+          />
+          <text class="inline-tip">{{ form.require_platform_account ? '需要' : '不需要' }}</text>
         </view>
       </view>
 
-		<!-- 手速专属：仅在 本平台 且 接单方式=手速 时显示 -->
-		<view class="form-item" v-if="form.service_scene === 2 && form.order_type === 2">
-		  <text class="label">手速有效作答窗口(秒)</text>
-		  <uni-number-box v-model="form.queue_window_sec" :min="10" :max="600" />
-		</view>
+      <!-- 手速专属：仅在 本平台 且 接单方式=手速 时显示 -->
+      <view class="form-item" v-if="form.service_scene === 2 && form.order_type === 2">
+        <text class="label">手速有效作答窗口(秒)</text>
+        <uni-number-box v-model="form.queue_window_sec" :min="10" :max="600" />
+      </view>
 
-		<view class="form-item" v-if="form.service_scene === 2 && form.order_type === 2">
-		  <text class="label">题目类型</text>
-		  <picker :range="challengeTypes" range-key="text" :value="challengeTypeIndex" @change="onChallengeTypeChange">
-			<view class="picker">{{ challengeTypes[challengeTypeIndex].text }}</view>
-		  </picker>
-		</view>
+      <view class="form-item" v-if="form.service_scene === 2 && form.order_type === 2">
+        <text class="label">题目类型</text>
+        <picker :range="challengeTypes" range-key="text" :value="challengeTypeIndex" @change="onChallengeTypeChange">
+          <view class="picker">{{ challengeTypes[challengeTypeIndex].text }}</view>
+        </picker>
+      </view>
 
-		<!-- 抽选专属：仅在 本平台 且 接单方式=抽选 时显示 -->
-		<view class="form-item" v-if="form.service_scene === 2 && form.order_type === 3">
-		  <text class="label">展示柜/私养做门槛</text>
-		  <view class="inline-control">
-			<switch :checked="form.check_showcase === 1" @change="e => form.check_showcase = e.detail.value ? 1 : 0" />
-			<text class="inline-tip">{{ form.check_showcase ? '是' : '否' }}</text>
-		  </view>
-		</view>
+      <!-- 抽选专属：仅在 本平台 且 接单方式=抽选 时显示 -->
+      <view class="form-item" v-if="form.service_scene === 2 && form.order_type === 3">
+        <text class="label">展示柜/私养做门槛</text>
+        <view class="inline-control">
+          <switch
+            :checked="form.check_showcase === 1"
+            @change="e => form.check_showcase = e.detail.value ? 1 : 0"
+          />
+          <text class="inline-tip">{{ form.check_showcase ? '是' : '否' }}</text>
+        </view>
+      </view>
 
-      <!-- 长期接单隐藏人数与每人限投 -->
-      <view class="form-item" v-if="form.order_type !== 1">
+      <!-- 最大参与人数（创建可编辑 / 编辑只读） -->
+      <view class="form-item" v-if="form.order_type !== 1 && !isEditMode">
         <text class="label">最大参与人数</text>
         <uni-number-box v-model="form.max_participants" :min="0" :max="100000" />
-        <view class="tip">0 表示不限量</view>
+        <view class="tip">0 表示不限量。</view>
       </view>
+      <view class="form-item" v-else-if="form.order_type !== 1 && isEditMode">
+        <text class="label">最大参与人数</text>
+        <text class="static-value">{{ form.max_participants }}</text>
+        <view class="tip">编辑时不能修改最大排单人数。</view>
+      </view>
+
+      <!-- 每人最大投递数 -->
       <view class="form-item" v-if="form.order_type !== 1">
         <text class="label">每人最大投递数</text>
         <uni-number-box v-model="form.max_submissions_per_user" :min="1" :max="10" />
+      </view>
+
+      <!-- 创建：本平台加价排队配置 -->
+      <view class="form-item" v-if="form.service_scene === 2 && !isEditMode && form.order_type !== 1">
+        <text class="label">可钞吗？</text>
+        <view class="inline-control">
+          <switch :checked="premiumQueueEnabled" @change="onPremiumQueueSwitch" />
+          <text class="inline-tip">
+            {{
+              premiumQueueEnabled
+                ? `接受加价排队的用户在普通库存满之后仍可排队`
+                : '不接受加价排队'
+            }}
+          </text>
+        </view>
+
+        <view class="mt-8" v-if="premiumQueueEnabled">
+          <text class="label-small">加价排队最大人数</text>
+          <uni-number-box v-model="form.premium_queue_limit" :min="1" :max="100000" />
+        </view>
+
+        <!-- ⭐ 钞倍率输入（支持一位小数） -->
+        <view class="mt-8" v-if="premiumQueueEnabled">
+          <text class="label-small">钞倍率</text>
+          <input
+            class="input"
+            type="digit"
+            :value="displayPremiumMultiplier(form.premium_queue_multiplier)"
+            @blur="e => onPremiumMultiplierBlur(e.detail.value)"
+            placeholder="例如 2.5 表示价格 x2.5"
+          />
+        </view>
+
+        <view class="tip">
+          当普通库存用完后，仍允许最多 N 名接受钞的用户继续排队。
+        </view>
+      </view>
+
+      <!-- 编辑：库存 / 加价库存 增量（只在本平台显示） -->
+      <view class="form-item" v-if="isEditMode && form.service_scene === 2">
+        <text class="label">库存管理</text>
+        <view class="inventory-row">
+          <view class="inventory-col">
+            <text class="inv-label">当前普通库存</text>
+            <text class="inv-value">{{ originalInventory }}</text>
+          </view>
+          <view class="inventory-col" v-if="!isLongTermOrder">
+            <text class="inv-label">当前加价库存</text>
+            <!-- 这里展示 premium_queue_limit（可钞人数上限） -->
+            <text class="inv-value">{{ originalPremiumInventory }}</text>
+          </view>
+        </view>
+        <view class="tip">
+          编辑时只允许增加库存，不能减少；提交时填写的数值视为「需要增加的名额」偏移量。
+        </view>
+        <view class="mt-12">
+          <text class="label-small">增加普通库存</text>
+          <uni-number-box v-model="form.inventory" :min="0" :max="100000" />
+        </view>
+         <view class="mt-12" v-if="!isLongTermOrder">
+          <text class="label-small">增加加价库存</text>
+          <uni-number-box v-model="form.premium_inventory" :min="0" :max="100000" />
+        </view>
       </view>
 
       <!-- 开始时间：日期 + 时间 并排 -->
@@ -90,6 +175,9 @@
         </view>
         <common-date-picker v-model:show="showOpenDate" v-model="form.open_date" title="选择开始日期" />
         <common-time-picker v-model:show="showOpenTime" v-model="form.open_time" title="选择开始时间" />
+        <view class="tip" v-if="isEditMode && hasStarted && form.service_scene === 2">
+          已开始的本平台计划不能将开始时间改得更晚，只能维持或提前。
+        </view>
       </view>
 
       <!-- 结束时间：日期 + 时间 并排 -->
@@ -101,6 +189,9 @@
         </view>
         <common-date-picker v-model:show="showCloseDate" v-model="form.close_date" title="选择结束日期" />
         <common-time-picker v-model:show="showCloseTime" v-model="form.close_time" title="选择结束时间" />
+        <view class="tip" v-if="isEditMode && hasStarted && form.service_scene === 2">
+          已开始的本平台计划不能将结束时间提前，只能维持或延后。
+        </view>
       </view>
 
       <!-- 平台扩展（妆期/定妆/寄送/尺寸） -->
@@ -123,19 +214,28 @@
         </view>
         <view class="form-item">
           <text class="label">定妆方式描述</text>
-          <input class="input" v-model="form.order_config.extra.finishing_desc" placeholder="选填：定妆的补充说明" />
+          <input
+            class="input"
+            v-model="form.order_config.extra.finishing_desc"
+            placeholder="选填：定妆的补充说明"
+          />
         </view>
 
-        <!-- 寄送约定（长期接单固定分别寄送 + 禁用） -->
+        <!-- 寄送约定 -->
         <view class="form-item">
           <text class="label">寄送约定</text>
-          <picker :range="shippingOptions"
-                  range-key="text"
-                  :value="shippingIndex"
-                  :disabled="form.order_type === 1"
-                  @change="onShippingChange">
+          <picker
+            :range="shippingOptions"
+            range-key="text"
+            :value="shippingIndex"
+            :disabled="form.order_type === 1"
+            @change="onShippingChange"
+          >
             <view class="picker">
-              {{ shippingOptions[shippingIndex].text + (form.order_type === 1 ? '（长期接单固定为分别寄送）' : '') }}
+              {{
+                shippingOptions[shippingIndex].text +
+                  (form.order_type === 1 ? '（长期接单固定为分别寄送）' : '')
+              }}
             </view>
           </picker>
           <view class="tip" v-if="form.order_config.extra.shipping.mode === 'unified'">
@@ -166,10 +266,14 @@
         <!-- 分别寄送：开始前 N 天 -->
         <view class="form-item" v-if="form.order_config.extra.shipping.mode === 'separate'">
           <text class="label">开始前 N 天发出</text>
-          <uni-number-box v-model="form.order_config.extra.shipping.separate_days_before_start" :min="0" :max="60" />
+          <uni-number-box
+            v-model="form.order_config.extra.shipping.separate_days_before_start"
+            :min="0"
+            :max="60"
+          />
         </view>
 
-        <!-- ✅ 接妆尺寸（恢复并保留旧逻辑） -->
+        <!-- 接妆尺寸 -->
         <view class="form-item">
           <text class="label">接妆尺寸</text>
           <view class="size-row">
@@ -188,7 +292,11 @@
 
         <!-- 尺寸加价列表 -->
         <view class="size-price-list" v-if="form.order_config.extra.size_surcharges.length">
-          <view class="size-price-item" v-for="(it, idx) in form.order_config.extra.size_surcharges" :key="it.size">
+          <view
+            class="size-price-item"
+            v-for="(it, idx) in form.order_config.extra.size_surcharges"
+            :key="it.size"
+          >
             <text class="sp-label">{{ it.size }} 加价 +</text>
             <input
               class="sp-input"
@@ -197,18 +305,20 @@
               @blur="e => onSizePriceBlur(idx, e.detail.value)"
               placeholder="0.00"
             />
-            <uni-icons type="trash" color="#f56c6c" size="20" @click="removeSize(idx)" />
+            <uni-icons type="trash" size="20" class="sp-del" @click="removeSize(idx)" />
           </view>
         </view>
       </block>
 
-      <!-- 图片（复原旧上传逻辑+进度） -->
+      <!-- 图片 -->
       <view class="form-item">
         <text class="label">{{ form.artist_type === 2 ? '毛则图片' : '妆则图片' }}</text>
         <view class="images">
           <view v-if="uploading" class="uploading-container">
             <uni-load-more status="loading"></uni-load-more>
-            <text class="uploading-text">{{ uploadStatusText || `上传中 (${uploadedCount}/${totalToUpload})` }}</text>
+            <text class="uploading-text">
+              {{ uploadStatusText || `上传中 (${uploadedCount}/${totalToUpload})` }}
+            </text>
           </view>
           <view v-for="(img, i) in form.images" :key="i" class="img-wrap">
             <image :src="img" mode="aspectFill" class="img" @click="preview(form.images, i)" />
@@ -222,7 +332,7 @@
       </view>
     </view>
 
-    <!-- 档位配置（保持 card 样式） -->
+    <!-- 档位配置 -->
     <view class="form-item">
       <view class="label-row">
         <text class="label">档位配置</text>
@@ -231,19 +341,35 @@
         </picker>
       </view>
       <view class="card" v-for="(tier, i) in form.order_config.tiers" :key="i">
-        <view class="row"><input class="input" v-model="tier.title" placeholder="档位名称" /></view>
         <view class="row">
-          <input class="input" type="digit" :value="displayPrice(tier.price)"
-                 @blur="e => tier.price = toFixed2(e.detail.value)" placeholder="价格(0.00)" />
+          <input class="input" v-model="tier.title" placeholder="档位名称" />
         </view>
-        <view class="row"><input class="input" v-model="tier.description" placeholder="描述" /></view>
-        <view class="row row-right" v-if="form.order_config.tiers.length > 1">
-          <button class="btn-danger" @click="removeTier(i)">删除</button>
+        <view class="row">
+          <input
+            class="input"
+            type="digit"
+            :value="displayPrice(tier.price)"
+            @blur="e => tier.price = toFixed2(e.detail.value)"
+            placeholder="价格(0.00)"
+          />
+        </view>
+        <view class="row">
+          <input class="input" v-model="tier.description" placeholder="描述" />
+        </view>
+        <view class="row row-right">
+          <button
+            class="btn-danger"
+            :class="{ 'btn-disabled': !canDeleteConfigItem }"
+            :disabled="!canDeleteConfigItem"
+            @click="handleRemoveTier(i)"
+          >
+            删除
+          </button>
         </view>
       </view>
     </view>
 
-    <!-- 加购配置（保持 card 样式） -->
+    <!-- 加购配置 -->
     <view class="form-item">
       <view class="label-row">
         <text class="label">加购配置</text>
@@ -252,15 +378,89 @@
         </picker>
       </view>
       <view class="card" v-for="(addon, i) in form.order_config.addons" :key="i">
-        <view class="row"><input class="input" v-model="addon.title" placeholder="加购名称" /></view>
         <view class="row">
-          <input class="input" type="digit" :value="displayPrice(addon.price)"
-                 @blur="e => addon.price = toFixed2(e.detail.value)" placeholder="价格(0.00)" />
+          <input class="input" v-model="addon.title" placeholder="加购名称" />
         </view>
-        <view class="row"><input class="input" v-model="addon.description" placeholder="描述" /></view>
-        <view class="row row-right" v-if="form.order_config.addons.length > 1">
-          <button class="btn-danger" @click="removeAddon(i)">删除</button>
+        <view class="row">
+          <input
+            class="input"
+            type="digit"
+            :value="displayPrice(addon.price)"
+            @blur="e => addon.price = toFixed2(e.detail.value)"
+            placeholder="价格(0.00)"
+          />
         </view>
+        <view class="row">
+          <input class="input" v-model="addon.description" placeholder="描述" />
+        </view>
+        <view class="row row-right">
+          <button
+            class="btn-danger"
+            :class="{ 'btn-disabled': !canDeleteConfigItem }"
+            :disabled="!canDeleteConfigItem"
+            @click="handleRemoveAddon(i)"
+          >
+            删除
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- ✅ 节点配置（放在加购配置下面，仅本平台） -->
+    <view class="form-item" v-if="form.service_scene === 2">
+      <view class="label-row">
+        <text class="label">节点配置</text>
+        <picker
+          :range="stepOptions"
+          range-key="label"
+          @change="onStepPickerChange"
+          :disabled="!canEditStepConfig"
+        >
+          <button class="btn-mini">+ 添加节点</button>
+        </picker>
+      </view>
+
+      <view v-if="!form.step_config_json.length" class="tip">
+        可以通过「+ 添加节点」为订单添加节点；添加节点后，你可以在节点完成时与买家沟通，如果买家在通过该节点之后取消订单，您可以获得设定的节点违约金。
+      </view>
+
+      <view class="card" v-for="(step, idx) in form.step_config_json" :key="idx">
+        <view class="row">
+          <input
+            class="input"
+            v-model="form.step_config_json[idx].name"
+            :disabled="!canEditStepConfig"
+            placeholder="节点名称，例如：待寄送 / 开妆中 / 已回寄"
+          />
+        </view>
+
+        <!-- 违约金比例输入（百分比形式） -->
+        <view class="row">
+          <text class="label-small">违约金比例(%)</text>
+          <input
+            class="input"
+            type="digit"
+            :value="displayStepPercent(step.breach_compensation_rate)"
+            :disabled="!canEditStepConfig"
+            @blur="e => onStepPercentBlur(idx, e.detail.value)"
+            placeholder="例如 5 表示 5%"
+          />
+        </view>
+
+        <view class="row row-right">
+          <button
+            class="btn-danger"
+            :class="{ 'btn-disabled': !canDeleteConfigItem }"
+            :disabled="!canDeleteConfigItem"
+            @click="handleRemoveStep(idx)"
+          >
+            删除
+          </button>
+        </view>
+      </view>
+
+      <view class="tip" v-if="!canEditStepConfig">
+        已开始的本平台计划节点配置已锁定，不能再修改。
       </view>
     </view>
 
@@ -272,7 +472,7 @@
     </view>
 
     <!-- 弹层组件 -->
-    <common-date-picker v-model:show="dummyShow" /> <!-- 防 HMR 首次装载空白，可忽略 -->
+    <common-date-picker v-model:show="dummyShow" />
   </view>
 </template>
 
@@ -284,26 +484,67 @@ import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/ima
 
 /* ====== 数据源 ====== */
 const artistTypes = [
-  { value: 1, text: '妆师' },
-  { value: 2, text: '毛娘' }
+  {
+    value: 1,
+    text: '妆师'
+  },
+  {
+    value: 2,
+    text: '毛娘'
+  }
 ]
 const orderTypes = [
-  { value: 1, text: '长期接单' },
-  { value: 2, text: '限时手速' },
-  { value: 3, text: '限时抽选' },
-  { value: 4, text: '限时黑箱卡' },
-  { value: 9, text: '关闭投递' }
+  {
+    value: 1,
+    text: '长期接单'
+  },
+  {
+    value: 2,
+    text: '限时手速'
+  },
+  {
+    value: 3,
+    text: '限时抽选'
+  },
+  {
+    value: 4,
+    text: '限时黑箱卡'
+  },
+  {
+    value: 9,
+    text: '关闭投递'
+  }
 ]
-const challengeTypes = [{ value: 1, text: '四则运算' }]
+const challengeTypes = [
+  {
+    value: 1,
+    text: '四则运算'
+  }
+]
 
 const finishingMethods = [
-  { value: 'oil',     text: '油性消光' },
-  { value: 'varnish', text: '罩光剂' },
-  { value: 'water',   text: '水性消光' }
+  {
+    value: 'oil',
+    text: '油性消光'
+  },
+  {
+    value: 'varnish',
+    text: '罩光剂'
+  },
+  {
+    value: 'water',
+    text: '水性消光'
+  }
 ]
 const shippingOptions = [
-  { value: 'unified',  text: '统一寄送' },
-  { value: 'separate', text: '分别寄送' }
+  {
+    value: 'unified',
+    text: '统一寄送'
+  },
+  {
+    value: 'separate',
+    text: '分别寄送'
+  }
 ]
 const allSizes = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分']
 
@@ -323,11 +564,22 @@ const form = ref({
   open_time: '',
   close_date: '',
   close_time: '',
-  service_scene: 1,                 // 1=其它平台, 2=本平台
-  require_platform_account: false,      // 平台社交必填
-  check_showcase: 0,                // 抽选门槛
-  queue_window_sec: 60,             // 手速窗口
+  service_scene: 1, // 1=其它平台, 2=本平台
+  require_platform_account: false,
+  check_showcase: 0,
+  queue_window_sec: 60,
   challenge_type: 1,
+
+  // 新字段：库存 / 加价队列
+  inventory: 0, // 编辑时作为“增加库存”的偏移量使用
+  premium_queue_limit: 0, // 最大加价排队人数（创建时填写）
+  premium_inventory: 0, // 编辑时作为“增加加价库存”的偏移量使用
+  // 钞排队倍率（前端字段名），请求时映射为 premium_rate
+  premium_queue_multiplier: 2, // 默认 2 倍
+
+  // 节点配置：节点对象数组 [{ name, breach_compensation_rate }]
+  step_config_json: [],
+
   images: [],
   order_config: {
     tiers: [],
@@ -336,26 +588,58 @@ const form = ref({
       per_head_cycle_days: 0,
       finishing_method: 'water',
       finishing_desc: '',
-      shipping: { mode: 'separate', unified_date: '', separate_days_before_start: 0 },
-      size_surcharges: []          // [{ size:'一分', price: 0 }]
+      shipping: {
+        mode: 'separate',
+        unified_date: '',
+        separate_days_before_start: 0
+      },
+      size_surcharges: []
     }
   }
 })
 
+/** 保存原始计划关键字段 */
+const originalPlan = ref({
+  open_time: 0,
+  close_time: 0,
+  service_scene: 1,
+  max_participants: 0,
+  inventory: 0,
+  premium_inventory: 0 // 这里用于展示“当前加价库存”，对应 premium_queue_limit
+})
+
 /* ====== 选择器索引 ====== */
-const artistTypeIndex      = computed(() => Math.max(0, artistTypes.findIndex(x => x.value === form.value.artist_type)))
-const orderTypeIndex       = computed(() => Math.max(0, orderTypes.findIndex(x => x.value === form.value.order_type)))
-const challengeTypeIndex   = computed(() => Math.max(0, challengeTypes.findIndex(x => x.value === form.value.challenge_type)))
-const finishingMethodIndex = computed(() => Math.max(0, finishingMethods.findIndex(x => x.value === form.value.order_config.extra.finishing_method)))
-const shippingIndex        = computed(() => Math.max(0, shippingOptions.findIndex(x => x.value === form.value.order_config.extra.shipping.mode)))
+const artistTypeIndex = computed(() =>
+  Math.max(0, artistTypes.findIndex(x => x.value === form.value.artist_type))
+)
+const orderTypeIndex = computed(() =>
+  Math.max(0, orderTypes.findIndex(x => x.value === form.value.order_type))
+)
+const challengeTypeIndex = computed(() =>
+  Math.max(0, challengeTypes.findIndex(x => x.value === form.value.challenge_type))
+)
+const finishingMethodIndex = computed(() =>
+  Math.max(
+    0,
+    finishingMethods.findIndex(x => x.value === form.value.order_config.extra.finishing_method)
+  )
+)
+const shippingIndex = computed(() =>
+  Math.max(
+    0,
+    shippingOptions.findIndex(x => x.value === form.value.order_config.extra.shipping.mode)
+  )
+)
 
 /* ====== 时间弹层 ====== */
-const showOpenDate  = ref(false)
-const showOpenTime  = ref(false)
+const showOpenDate = ref(false)
+const showOpenTime = ref(false)
 const showCloseDate = ref(false)
 const showCloseTime = ref(false)
 const showUnifiedDate = ref(false)
 const dummyShow = ref(false)
+
+const nowUnix = () => Math.floor(Date.now() / 1000)
 
 const unifiedMinDate = computed(() => {
   const ct = toUnix(form.value.close_date, form.value.close_time)
@@ -363,19 +647,91 @@ const unifiedMinDate = computed(() => {
   const d = new Date((ct + 10 * 86400) * 1000)
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 })
+/* ====== 是否为长期接单 ====== */
+const isLongTermOrder = computed(() => form.value.order_type === 1)
+
+/* ====== 是否已进入开始时间 ====== */
+const hasStarted = computed(() => {
+  if (!isEditMode.value || !originalPlan.value.open_time) return false
+  return nowUnix() >= originalPlan.value.open_time
+})
+
+/** 新增：子配置（档位 / 加购 / 节点）是否允许删除 */
+const canDeleteConfigItem = computed(() => !hasStarted.value || isLongTermOrder.value)
+
+
+/** 接单方式是否可编辑：
+ *  - 只要已开始，就不允许修改接单方式
+ */
+const canEditOrderType = computed(() => !hasStarted.value)
+
+/* ====== service_scene / 节点配置可编辑性 ====== */
+const canEditServiceScene = computed(() => {
+  if (!isEditMode.value) return true
+  if (originalPlan.value.service_scene !== 2) return true
+  if (!originalPlan.value.open_time) return true
+  return nowUnix() < originalPlan.value.open_time
+})
+
+
+const canEditStepConfig = computed(() => {
+  if (!isEditMode.value) return true
+  if (!originalPlan.value.open_time) return true
+  if (isLongTermOrder.value) return true
+  return nowUnix() < originalPlan.value.open_time
+})
+
+const originalInventory = computed(() => originalPlan.value.inventory || 0)
+const originalPremiumInventory = computed(() => originalPlan.value.premium_inventory || 0)
 
 /* ====== 常用配置 ====== */
-const tierOptions  = ref([{ label: '添加空白档位', value: 'blank' }])
-const addonOptions = ref([{ label: '添加空白加购', value: 'blank' }])
+const tierOptions = ref([
+  {
+    label: '添加空白档位',
+    value: 'blank'
+  }
+])
+const addonOptions = ref([
+  {
+    label: '添加空白加购',
+    value: 'blank'
+  }
+])
 
-/* ====== 上传状态（旧逻辑） ====== */
+/* 节点模板列表：第一项是“添加空白节点” */
+const stepOptions = ref([
+  {
+    label: '添加空白节点',
+    value: 'blank'
+  }
+])
+
+/* ====== 上传状态 ====== */
 const uploading = ref(false)
 const uploadedCount = ref(0)
 const totalToUpload = ref(0)
 const uploadStatusText = ref('')
 
+/* ====== premium queue 开关 ====== */
+const premiumQueueEnabled = computed({
+  get() {
+    return !!form.value.premium_queue_limit
+  },
+  set(v) {
+    if (!v) {
+      form.value.premium_queue_limit = 0
+    } else if (!form.value.premium_queue_limit) {
+      form.value.premium_queue_limit = 1
+      // 首次开启时，如果没有填写倍率，则给一个默认值 2
+      if (!form.value.premium_queue_multiplier) {
+        form.value.premium_queue_multiplier = 2
+      }
+    }
+  }
+})
+
 /* ====== 生命周期 ====== */
-onLoad((query) => {
+onLoad(query => {
   if (query && query.id) {
     isEditMode.value = true
     currentId.value = Number(query.id)
@@ -383,34 +739,61 @@ onLoad((query) => {
   } else {
     isEditMode.value = false
     currentId.value = null
+    // 创建模式下拉取档位/加购/节点模板
+    fetchCommonConfigs(form.value.artist_type)
+    fetchStepOptions(form.value.artist_type)
   }
 })
-onMounted(() => { 
-	fetchCommonConfigs(form.value.artist_type) 
-	uni.setNavigationBarTitle({
-		title: "发布BJD接妆计划"
-	})
+onMounted(() => {
+  uni.setNavigationBarTitle({
+    title: '发布BJD接妆计划'
+  })
 })
 
 /* ====== 工具 ====== */
-const pad2 = (n) => (n < 10 ? '0' + n : '' + n)
+const pad2 = n => (n < 10 ? '0' + n : '' + n)
+
 function toUnix(dateStr, timeStr) {
   if (!dateStr || !timeStr) return 0
   const ts = new Date(`${dateStr} ${timeStr}`).getTime()
   if (Number.isNaN(ts)) return 0
   return Math.floor(ts / 1000)
 }
+
 function displayPrice(v) {
   const num = Number(v)
   if (Number.isNaN(num)) return ''
   return (Math.round(num * 100) / 100).toFixed(2)
 }
+
 function toFixed2(v) {
   const num = parseFloat(String(v).replace(/[^\d.]/g, ''))
   if (Number.isNaN(num)) return 0
   return Math.round(num * 100) / 100
 }
-function getAuthorization() { return uni.getStorageSync('token') || '' }
+// 专用于钞倍率：最多保留一位小数
+function toFixed1(v) {
+  const raw = String(v ?? '').trim()
+  if (!raw) return 0
+  let s = raw.replace(/[^\d.]/g, '')
+  const parts = s.split('.')
+  if (parts.length > 1) {
+    parts[1] = parts[1].slice(0, 1) // 最多一位小数
+  }
+  const num = parseFloat(parts.join('.'))
+  if (Number.isNaN(num)) return 0
+  return Math.round(num * 10) / 10
+}
+// 展示用钞倍率：空/<=0 返回空字符串
+function displayPremiumMultiplier(v) {
+  const num = Number(v)
+  if (Number.isNaN(num) || num <= 0) return ''
+  return (Math.round(num * 10) / 10).toString()
+}
+
+function getAuthorization() {
+  return uni.getStorageSync('token') || ''
+}
 
 /* ====== 选择器事件 ====== */
 function onArtistTypeChange(e) {
@@ -419,25 +802,56 @@ function onArtistTypeChange(e) {
   form.value.order_config.tiers = []
   form.value.order_config.addons = []
   fetchCommonConfigs(form.value.artist_type)
+  fetchStepOptions(form.value.artist_type)
 }
+
 function onOrderTypeChange(e) {
+  if (!canEditOrderType.value) {
+    uni.showToast({
+      title: '接单已开始，不能修改接单方式',
+      icon: 'none'
+    })
+    return
+  }
   const idx = Number(e.detail.value || 0)
   form.value.order_type = orderTypes[idx].value
   if (form.value.order_type === 1) {
-    // 长期接单固定分别寄送
     form.value.order_config.extra.shipping.mode = 'separate'
     form.value.order_config.extra.shipping.unified_date = ''
   }
 }
+
+
 function onChallengeTypeChange(e) {
   const idx = Number(e.detail.value || 0)
   form.value.challenge_type = challengeTypes[idx].value
 }
-function onServiceSceneSwitch(e) { form.value.service_scene = e.detail.value ? 2 : 1 }
+
+function onServiceSceneSwitch(e) {
+  const checked = e.detail.value
+  const targetScene = checked ? 2 : 1
+
+  if (
+    isEditMode.value &&
+    originalPlan.value.service_scene === 2 &&
+    !canEditServiceScene.value &&
+    targetScene !== originalPlan.value.service_scene
+  ) {
+    uni.showToast({
+      title: '已开始的本平台计划不能切换为其它平台',
+      icon: 'none'
+    })
+    return
+  }
+
+  form.value.service_scene = targetScene
+}
+
 function onFinishingChange(e) {
   const idx = Number(e.detail.value || 0)
   form.value.order_config.extra.finishing_method = finishingMethods[idx].value
 }
+
 function onShippingChange(e) {
   const idx = Number(e.detail.value || 0)
   form.value.order_config.extra.shipping.mode = shippingOptions[idx].value
@@ -448,33 +862,107 @@ function onShippingChange(e) {
   }
 }
 
-/* ====== 默认配置拉取（妆师/毛娘不同参数） ====== */
+function onPremiumQueueSwitch(e) {
+  const checked = e.detail.value
+  premiumQueueEnabled.value = checked
+  if (checked && !form.value.premium_queue_multiplier) {
+    form.value.premium_queue_multiplier = 2
+  }
+}
+
+/* ====== 默认配置拉取（档位 / 加购） ====== */
 async function fetchCommonConfigs(artistType) {
   try {
     const typeParam = artistType === 2 ? 1 : 0
     const tRes = await uni.request({
-      url: `${websiteUrl.value}/brand-manager/order-plane/common-tiers?type=${typeParam}`,
+      url: `${websiteUrl.value}/brand-manager/order-plan/common-tiers?type=${typeParam}`,
       method: 'GET',
-      header: { Authorization: getAuthorization() }
+      header: {
+        Authorization: getAuthorization()
+      }
     })
     if (String(tRes.data?.status).toLowerCase() === 'success') {
       tierOptions.value = [
-        { label: '添加空白档位', value: 'blank' },
-        ...((tRes.data?.data || []).map(it => ({ label: it.title, value: it })))
+        {
+          label: '添加空白档位',
+          value: 'blank'
+        },
+        ...(tRes.data?.data || []).map(it => ({
+          label: it.title,
+          value: it
+        }))
       ]
     }
     const aRes = await uni.request({
-      url: `${websiteUrl.value}/brand-manager/order-plane/common-addons?type=${typeParam}`,
+      url: `${websiteUrl.value}/brand-manager/order-plan/common-addons?type=${typeParam}`,
       method: 'GET',
-      header: { Authorization: getAuthorization() }
+      header: {
+        Authorization: getAuthorization()
+      }
     })
     if (String(aRes.data?.status).toLowerCase() === 'success') {
       addonOptions.value = [
-        { label: '添加空白加购', value: 'blank' },
-        ...((aRes.data?.data || []).map(it => ({ label: it.title, value: it })))
+        {
+          label: '添加空白加购',
+          value: 'blank'
+        },
+        ...(aRes.data?.data || []).map(it => ({
+          label: it.title,
+          value: it
+        }))
       ]
     }
-  } catch (err) { console.error('获取默认配置失败：', err) }
+  } catch (err) {
+    console.error('获取默认配置失败：', err)
+  }
+}
+
+/* ====== 默认节点模板拉取（stepOptions） ====== */
+async function fetchStepOptions(artistType) {
+  try {
+    // 这里用你新增的「返回默认节点配置」接口
+    const res = await uni.request({
+      url: `${websiteUrl.value}/brand-manager/order-plan/default-steps?artist_type=${artistType}`,
+      method: 'GET',
+      header: {
+        Authorization: getAuthorization()
+      }
+    })
+    if (String(res.data?.status).toLowerCase() === 'success' && Array.isArray(res.data?.data)) {
+      const list = res.data.data || []
+      stepOptions.value = [
+        {
+          label: '添加空白节点',
+          value: 'blank'
+        },
+        ...list.map(item => ({
+          label: item.name,
+          value: {
+            name: String(item.name || ''),
+            breach_compensation_rate:
+              typeof item.breach_compensation_rate === 'number'
+                ? item.breach_compensation_rate
+                : Number(item.breach_compensation_rate || 0)
+          }
+        }))
+      ]
+    } else {
+      stepOptions.value = [
+        {
+          label: '添加空白节点',
+          value: 'blank'
+        }
+      ]
+    }
+  } catch (err) {
+    console.error('获取节点模板失败：', err)
+    stepOptions.value = [
+      {
+        label: '添加空白节点',
+        value: 'blank'
+      }
+    ]
+  }
 }
 
 /* ====== 档位/加购 ====== */
@@ -483,7 +971,11 @@ function onTierPickerChange(e) {
   const opt = tierOptions.value[idx]
   if (!opt) return
   if (opt.value === 'blank') {
-    form.value.order_config.tiers.push({ title: '', price: 0, description: '' })
+    form.value.order_config.tiers.push({
+      title: '',
+      price: 0,
+      description: ''
+    })
   } else {
     form.value.order_config.tiers.push({
       title: opt.value.title || '',
@@ -492,15 +984,26 @@ function onTierPickerChange(e) {
     })
   }
 }
+
 function removeTier(i) {
-  if (form.value.order_config.tiers.length > 1) form.value.order_config.tiers.splice(i, 1)
+  form.value.order_config.tiers.splice(i, 1)
 }
+
+function handleRemoveTier(i) {
+  if (!canDeleteConfigItem.value) return
+  removeTier(i)
+}
+
 function onAddonPickerChange(e) {
   const idx = Number(e.detail.value || 0)
   const opt = addonOptions.value[idx]
   if (!opt) return
   if (opt.value === 'blank') {
-    form.value.order_config.addons.push({ title: '', price: 0, description: '' })
+    form.value.order_config.addons.push({
+      title: '',
+      price: 0,
+      description: ''
+    })
   } else {
     form.value.order_config.addons.push({
       title: opt.value.title || '',
@@ -509,32 +1012,110 @@ function onAddonPickerChange(e) {
     })
   }
 }
+
 function removeAddon(i) {
-  if (form.value.order_config.addons.length > 1) form.value.order_config.addons.splice(i, 1)
+  form.value.order_config.addons.splice(i, 1)
 }
 
-/* ====== 尺寸（保持旧逻辑 + 重复提示） ====== */
+function handleRemoveAddon(i) {
+  if (!canDeleteConfigItem.value) return
+  removeAddon(i)
+}
+
+/* ====== 尺寸 ====== */
 function isSizeSelected(size) {
   return form.value.order_config.extra.size_surcharges.some(x => x.size === size)
 }
+
 function handleSizeTap(size) {
   const arr = form.value.order_config.extra.size_surcharges
   const exists = arr.find(x => x.size === size)
   if (exists) {
-    // 旧逻辑你如果是“点一次选中、再点取消”，把下面两行改成“arr.splice(idx,1)”
-    uni.showToast({ title: '已选择该尺寸', icon: 'none' })
+    uni.showToast({
+      title: '已选择该尺寸',
+      icon: 'none'
+    })
     return
   }
-  arr.push({ size, price: 0 })
+  arr.push({
+    size,
+    price: 0
+  })
 }
+
 function onSizePriceBlur(idx, val) {
   form.value.order_config.extra.size_surcharges[idx].price = toFixed2(val)
 }
+
 function removeSize(idx) {
   form.value.order_config.extra.size_surcharges.splice(idx, 1)
 }
 
-/* ====== 上传（复原旧逻辑） ====== */
+/* ====== 违约金比例（节点）工具 ====== */
+// rate 是小数形式（0.05 -> 展示为 5）
+function displayStepPercent(rate) {
+  const num = Number(rate)
+  if (Number.isNaN(num) || num <= 0) return ''
+  const v = num * 100
+  return (Math.round(v * 100) / 100).toString().replace(/\.00$/, '')
+}
+// val 是输入的百分比字符串（如 "5"），内部转成小数（5 -> 0.05）
+function onStepPercentBlur(idx, val) {
+  const str = String(val || '').trim()
+  if (!str) {
+    form.value.step_config_json[idx].breach_compensation_rate = 0
+    return
+  }
+  const num = parseFloat(str.replace(/[^\d.]/g, ''))
+  if (Number.isNaN(num) || num <= 0) {
+    form.value.step_config_json[idx].breach_compensation_rate = 0
+    return
+  }
+  // 大于 1 认为是“百分比”，例如 5 -> 0.05
+  const rate = num > 1 ? num / 100 : num
+  form.value.step_config_json[idx].breach_compensation_rate = Math.round(rate * 10000) / 10000
+}
+
+/* ====== 钞倍率输入处理（保留一位小数） ====== */
+function onPremiumMultiplierBlur(val) {
+  const num = toFixed1(val)
+  // 没填或 <=0 时回退到默认 2.0
+  form.value.premium_queue_multiplier = num > 0 ? num : 2
+}
+
+/* ====== 节点配置 step_config_json，通过 picker 添加 ====== */
+function onStepPickerChange(e) {
+  if (!canEditStepConfig.value) return
+  const idx = Number(e.detail.value || 0)
+  const opt = stepOptions.value[idx]
+  if (!opt) return
+
+  if (opt.value === 'blank') {
+    // 添加空白节点
+    form.value.step_config_json.push({
+      name: '',
+      breach_compensation_rate: 0
+    })
+  } else {
+    // 选择默认节点对象（复制一份避免引用同一个对象）
+    form.value.step_config_json.push({
+      name: String(opt.value.name || ''),
+      breach_compensation_rate: Number(opt.value.breach_compensation_rate || 0)
+    })
+  }
+}
+
+function removeStep(idx) {
+  if (!canEditStepConfig.value) return
+  form.value.step_config_json.splice(idx, 1)
+}
+
+function handleRemoveStep(idx) {
+  if (!canDeleteConfigItem.value) return
+  removeStep(idx)
+}
+
+/* ====== 上传 ====== */
 async function chooseAndUpload() {
   try {
     const remaining = 9 - form.value.images.length
@@ -557,14 +1138,24 @@ async function chooseAndUpload() {
         if (ret && ret.imageUrl) uploadedUrls.push(ret.imageUrl)
       } catch (err) {
         console.error(`第 ${i + 1} 张上传失败：`, err)
-        uni.showToast({ title: `第 ${i + 1} 张上传失败`, icon: 'none' })
+        uni.showToast({
+          title: `第 ${i + 1} 张上传失败`,
+          icon: 'none'
+        })
       }
     }
     form.value.images = [...form.value.images, ...uploadedUrls]
-    if (uploadedUrls.length > 0) uni.showToast({ title: `成功上传 ${uploadedUrls.length} 张`, icon: 'success' })
+    if (uploadedUrls.length > 0)
+      uni.showToast({
+        title: `成功上传 ${uploadedUrls.length} 张`,
+        icon: 'success'
+      })
   } catch (e) {
     console.error('选择/上传失败：', e)
-    uni.showToast({ title: '图片上传失败', icon: 'none' })
+    uni.showToast({
+      title: '图片上传失败',
+      icon: 'none'
+    })
   } finally {
     uploading.value = false
     uploadedCount.value = 0
@@ -572,8 +1163,17 @@ async function chooseAndUpload() {
     uploadStatusText.value = ''
   }
 }
-function removeImage(i) { form.value.images.splice(i, 1) }
-function preview(list, current) { uni.previewImage({ urls: list, current }) }
+
+function removeImage(i) {
+  form.value.images.splice(i, 1)
+}
+
+function preview(list, current) {
+  uni.previewImage({
+    urls: list,
+    current
+  })
+}
 
 /* ====== 详情加载 ====== */
 async function loadDetail(id) {
@@ -581,12 +1181,19 @@ async function loadDetail(id) {
     const res = await uni.request({
       url: `${websiteUrl.value}/brand-manager/order-plan/info?id=${id}`,
       method: 'GET',
-      header: { Authorization: getAuthorization() }
+      header: {
+        Authorization: getAuthorization()
+      }
     })
     if (String(res.data?.status).toLowerCase() !== 'success') {
-      uni.showToast({ title: res.data?.message || '获取详情失败', icon: 'none' }); return
+      uni.showToast({
+        title: res.data?.message || '获取详情失败',
+        icon: 'none'
+      })
+      return
     }
     const p = res.data.data || res.data
+
     form.value.id = p.id
     form.value.artist_name = p.artist_name || ''
     form.value.artist_type = p.artist_type || 1
@@ -594,58 +1201,222 @@ async function loadDetail(id) {
     form.value.max_participants = p.max_participants ?? 0
     form.value.max_submissions_per_user = p.max_submissions_per_user ?? 1
     form.value.service_scene = p.service_scene || 1
-    form.value.require_platform_account = p.require_platform_account === true || p.require_platform_account === 1 || p.require_platform_account === '1'
+    form.value.require_platform_account =
+      p.require_platform_account === true ||
+      p.require_platform_account === 1 ||
+      p.require_platform_account === '1'
     form.value.check_showcase = p.check_showcase || 0
     form.value.queue_window_sec = p.queue_window_sec || 60
     form.value.challenge_type = p.challenge_type || 1
+
+    form.value.premium_queue_limit = p.premium_queue_limit || 0
+    form.value.inventory = 0
+    form.value.premium_inventory = 0
+    originalPlan.value.inventory = p.inventory || 0
+    originalPlan.value.premium_inventory = p.premium_inventory || 0
+
+    // 钞倍率：优先读取 premium_rate，兼容旧字段 premium_queue_multiplier
+    let rate = 0
+    if (typeof p.premium_rate === 'number') {
+      rate = p.premium_rate
+    } else if (typeof p.premium_rate === 'string') {
+      rate = Number(p.premium_rate)
+    } else if (typeof p.premium_queue_multiplier === 'number') {
+      rate = p.premium_queue_multiplier
+    } else if (typeof p.premium_queue_multiplier === 'string') {
+      rate = Number(p.premium_queue_multiplier)
+    }
+    rate = Number.isNaN(rate) ? 0 : rate
+    form.value.premium_queue_multiplier = rate > 0 ? toFixed1(rate) : 0
+
     if (p.open_time) {
       const dt = new Date(p.open_time * 1000)
       form.value.open_date = `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
       form.value.open_time = `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`
+      originalPlan.value.open_time = p.open_time
+    } else {
+      originalPlan.value.open_time = 0
     }
     if (p.close_time) {
       const dt = new Date(p.close_time * 1000)
       form.value.close_date = `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
       form.value.close_time = `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`
+      originalPlan.value.close_time = p.close_time
+    } else {
+      originalPlan.value.close_time = 0
     }
+
     if (typeof p.images === 'string') {
-      form.value.images = p.images.split(',').map(s => s.trim()).filter(Boolean)
+      form.value.images = p.images
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
     } else if (Array.isArray(p.images)) {
-      form.value.images = p.images.map(x => (typeof x === 'string' ? x : x.url)).filter(Boolean)
-    } else { form.value.images = [] }
+      form.value.images = p.images
+        .map(x => (typeof x === 'string' ? x : x.url))
+        .filter(Boolean)
+    } else {
+      form.value.images = []
+    }
+
     let cfg = {}
-    try { cfg = p.order_config ? JSON.parse(p.order_config) : {} } catch (e) { cfg = {} }
-    form.value.order_config.tiers = Array.isArray(cfg.tiers) ? cfg.tiers.map(t => ({
-      title: t.title || '', price: toFixed2(t.price || 0), description: t.description || ''
-    })) : [{ title: '', price: 0, description: '' }]
-    form.value.order_config.addons = Array.isArray(cfg.addons) ? cfg.addons.map(a => ({
-      title: a.title || '', price: toFixed2(a.price || 0), description: a.description || ''
-    })) : [{ title: '', price: 0, description: '' }]
-    form.value.order_config.extra = Object.assign({
-      per_head_cycle_days: 0,
-      finishing_method: 'water',
-      finishing_desc: '',
-      shipping: { mode: 'separate', unified_date: '', separate_days_before_start: 0 },
-      size_surcharges: []
-    }, cfg.extra || {})
+    try {
+      cfg = p.order_config ? JSON.parse(p.order_config) : {}
+    } catch (e) {
+      cfg = {}
+    }
+    form.value.order_config.tiers = Array.isArray(cfg.tiers)
+      ? cfg.tiers.map(t => ({
+          title: t.title || '',
+          price: toFixed2(t.price || 0),
+          description: t.description || ''
+        }))
+      : [
+          {
+            title: '',
+            price: 0,
+            description: ''
+          }
+        ]
+    form.value.order_config.addons = Array.isArray(cfg.addons)
+      ? cfg.addons.map(a => ({
+          title: a.title || '',
+          price: toFixed2(a.price || 0),
+          description: a.description || ''
+        }))
+      : [
+          {
+            title: '',
+            price: 0,
+            description: ''
+          }
+        ]
+    form.value.order_config.extra = Object.assign(
+      {
+        per_head_cycle_days: 0,
+        finishing_method: 'water',
+        finishing_desc: '',
+        shipping: {
+          mode: 'separate',
+          unified_date: '',
+          separate_days_before_start: 0
+        },
+        size_surcharges: []
+      },
+      cfg.extra || {}
+    )
     if (form.value.order_type === 1) {
       form.value.order_config.extra.shipping.mode = 'separate'
       form.value.order_config.extra.shipping.unified_date = ''
     }
+
+    // 兼容字符串数组 / 对象数组的 step_config_json
+    let steps = []
+    if (Array.isArray(p.step_config_json)) {
+      steps = p.step_config_json
+    } else if (typeof p.step_config_json === 'string' && p.step_config_json.trim()) {
+      try {
+        const parsed = JSON.parse(p.step_config_json)
+        if (Array.isArray(parsed)) steps = parsed
+      } catch (e) {}
+    }
+
+    form.value.step_config_json = (steps || []).map(x => {
+      if (x && typeof x === 'object') {
+        return {
+          name: String(x.name || ''),
+          breach_compensation_rate:
+            typeof x.breach_compensation_rate === 'number'
+              ? x.breach_compensation_rate
+              : Number(x.breach_compensation_rate || 0)
+        }
+      }
+      return {
+        name: String(x || ''),
+        breach_compensation_rate: 0
+      }
+    })
+
+    originalPlan.value.service_scene = form.value.service_scene
+    originalPlan.value.max_participants = form.value.max_participants
+
+    // 编辑模式下，也同步拉一次模板列表（妆师/毛娘的默认节点）
     fetchCommonConfigs(form.value.artist_type)
+    fetchStepOptions(form.value.artist_type)
   } catch (err) {
     console.error('加载失败：', err)
-    uni.showToast({ title: '加载失败', icon: 'none' })
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none'
+    })
   }
 }
 
 /* ====== 提交 ====== */
 async function submitPlan() {
-  if (!form.value.artist_name) return uni.showToast({ title: '请填写计划名称', icon: 'none' })
+  if (!form.value.artist_name)
+    return uni.showToast({
+      title: '请填写计划名称',
+      icon: 'none'
+    })
   const openUnix = toUnix(form.value.open_date, form.value.open_time)
   const closeUnix = toUnix(form.value.close_date, form.value.close_time)
-  if (!openUnix || !closeUnix) return uni.showToast({ title: '请选择开始与结束时间', icon: 'none' })
-  if (closeUnix <= openUnix) return uni.showToast({ title: '结束时间必须晚于开始时间', icon: 'none' })
+  if (!openUnix || !closeUnix)
+    return uni.showToast({
+      title: '请选择开始与结束时间',
+      icon: 'none'
+    })
+  if (closeUnix <= openUnix)
+    return uni.showToast({
+      title: '结束时间必须晚于开始时间',
+      icon: 'none'
+    })
+
+  if (isEditMode.value && originalPlan.value.service_scene === 2 && originalPlan.value.open_time) {
+    const started = nowUnix() >= originalPlan.value.open_time
+    if (started) {
+      if (openUnix > originalPlan.value.open_time) {
+        uni.showToast({
+          title: '已开始的本平台计划不能将开始时间改晚',
+          icon: 'none'
+        })
+        return
+      }
+      if (originalPlan.value.close_time && closeUnix < originalPlan.value.close_time) {
+        uni.showToast({
+          title: '已开始的本平台计划不能缩短结束时间',
+          icon: 'none'
+        })
+        return
+      }
+    }
+  }
+
+  const isPlatform = form.value.service_scene === 2
+
+  const stepConfigToSend = isPlatform
+    ? (form.value.step_config_json || [])
+        .map(x => ({
+          name: String(x.name || ''),
+          // 这里已经是小数形式（例如 0.05 表示 5%）
+          breach_compensation_rate: Number(x.breach_compensation_rate || 0)
+        }))
+        .filter(it => it.name)
+    : []
+
+  // 创建 & 本平台 & 开启了钞排队，则要求倍率 >0
+  if (
+    !isEditMode.value &&
+    isPlatform &&
+    premiumQueueEnabled.value &&
+    !Number(form.value.premium_queue_multiplier || 0)
+  ) {
+    uni.showToast({
+      title: '请填写钞倍率',
+      icon: 'none'
+    })
+    return
+  }
 
   const payload = {
     id: form.value.id,
@@ -653,7 +1424,8 @@ async function submitPlan() {
     artist_type: form.value.artist_type,
     order_type: form.value.order_type,
     max_participants: form.value.order_type === 1 ? 0 : form.value.max_participants,
-    max_submissions_per_user: form.value.order_type === 1 ? 1 : form.value.max_submissions_per_user,
+    max_submissions_per_user:
+      form.value.order_type === 1 ? 1 : form.value.max_submissions_per_user,
     open_time: openUnix,
     close_time: closeUnix,
     service_scene: form.value.service_scene,
@@ -662,12 +1434,36 @@ async function submitPlan() {
     queue_window_sec: form.value.queue_window_sec,
     challenge_type: form.value.challenge_type,
     images: form.value.images,
+
+    // 创建：如果是本平台，初始库存 = max_participants；编辑：inventory / premium_inventory 是增量
+    inventory: isEditMode.value
+      ? Number(form.value.inventory || 0)
+      : isPlatform
+      ? Number(form.value.max_participants || 0)
+      : 0,
+
+    premium_queue_limit: Number(form.value.premium_queue_limit || 0),
+
+    premium_inventory: isEditMode.value ? Number(form.value.premium_inventory || 0) : 0,
+
+    // 钞排队倍率（float，对齐后端 premium_rate，保留一位小数）
+    premium_rate: premiumQueueEnabled.value
+      ? toFixed1(form.value.premium_queue_multiplier || 2)
+      : 0,
+
+    // 对齐后端：使用 step_config，而不是 step_config_json
+    step_config: stepConfigToSend,
+
     order_config: {
       tiers: (form.value.order_config.tiers || []).map(t => ({
-        title: t.title || '', price: toFixed2(t.price || 0), description: t.description || ''
+        title: t.title || '',
+        price: toFixed2(t.price || 0),
+        description: t.description || ''
       })),
       addons: (form.value.order_config.addons || []).map(a => ({
-        title: a.title || '', price: toFixed2(a.price || 0), description: a.description || ''
+        title: a.title || '',
+        price: toFixed2(a.price || 0),
+        description: a.description || ''
       })),
       extra: {
         per_head_cycle_days: Number(form.value.order_config.extra.per_head_cycle_days || 0),
@@ -675,36 +1471,96 @@ async function submitPlan() {
         finishing_desc: form.value.order_config.extra.finishing_desc || '',
         shipping: {
           mode: form.value.order_config.extra.shipping.mode,
-          unified_date: form.value.order_config.extra.shipping.mode === 'unified'
-            ? (form.value.order_config.extra.shipping.unified_date || '')
-            : '',
-          separate_days_before_start: form.value.order_config.extra.shipping.mode === 'separate'
-            ? Number(form.value.order_config.extra.shipping.separate_days_before_start || 0)
-            : 0
+          unified_date:
+            form.value.order_config.extra.shipping.mode === 'unified'
+              ? form.value.order_config.extra.shipping.unified_date || ''
+              : '',
+          separate_days_before_start:
+            form.value.order_config.extra.shipping.mode === 'separate'
+              ? Number(
+                  form.value.order_config.extra.shipping.separate_days_before_start || 0
+                )
+              : 0
         },
         size_surcharges: (form.value.order_config.extra.size_surcharges || []).map(it => ({
-          size: it.size, price: toFixed2(it.price || 0)
+          size: it.size,
+          price: toFixed2(it.price || 0)
         }))
       }
     }
   }
 
+  // 编辑模式下，库存 / 加价库存为 0 时，不传给后端，表示“不要变更”
+  if (isEditMode.value) {
+    if (!payload.inventory) {
+      delete payload.inventory
+    }
+    if (!payload.premium_inventory) {
+      delete payload.premium_inventory
+    }
+  }
+
+  if (payload.inventory < 0 || payload.premium_inventory < 0) {
+    uni.showToast({
+      title: '库存增量不能为负数',
+      icon: 'none'
+    })
+    return
+  }
+
+  // 非本平台接单不需要 step_config
+  if (!isPlatform) {
+    delete payload.step_config
+  }
+  // 编辑 & 节点不可编辑时，不传 step_config，避免后端校验失败
+  if (isEditMode.value && !canEditStepConfig.value) {
+    delete payload.step_config
+  }
+  // 未开启钞排队时，不传 premium_rate，让后端保留默认值
+  if (!premiumQueueEnabled.value) {
+    delete payload.premium_rate
+  }
+
   submitting.value = true
   try {
-    const url = websiteUrl.value + (isEditMode.value ? '/brand-manager/order-plan/update' : '/brand-manager/order-plan/add')
+    const url =
+      websiteUrl.value +
+      (isEditMode.value
+        ? '/brand-manager/order-plan/update'
+        : '/brand-manager/order-plan/add')
     const res = await uni.request({
-      url, method: 'POST', data: payload,
-      header: { Authorization: getAuthorization(), 'Content-Type': 'application/json' }
+      url,
+      method: 'POST',
+      data: payload,
+      header: {
+        Authorization: getAuthorization(),
+        'Content-Type': 'application/json'
+      }
     })
     if (String(res.data?.status).toLowerCase() === 'success') {
-      uni.showToast({ title: isEditMode.value ? '更新成功' : '添加成功', icon: 'success' })
+      uni.showToast({
+        title: isEditMode.value ? '更新成功' : '添加成功',
+        icon: 'success'
+      })
       setTimeout(() => uni.navigateBack(), 800)
     } else {
-      uni.showToast({ title: res.data?.message || '提交失败', icon: 'none' })
+      // ⭐ 兼容后端 msg / message / error 三种字段
+      const msg =
+        res.data?.message ||
+        res.data?.msg ||
+        res.data?.error ||
+        '提交失败'
+      uni.showToast({
+        title: msg,
+        icon: 'none'
+      })
     }
   } catch (err) {
     console.error('提交失败：', err)
-    uni.showToast({ title: '请求失败', icon: 'none' })
+    uni.showToast({
+      title: '请求失败',
+      icon: 'none'
+    })
   } finally {
     submitting.value = false
   }
@@ -712,7 +1568,7 @@ async function submitPlan() {
 </script>
 
 <style scoped>
-.order-plan-form{
+.order-plan-form {
   padding: 24rpx;
   background: #f7f8fa;
   min-height: 100vh;
@@ -720,92 +1576,320 @@ async function submitPlan() {
 }
 
 /* 顶部表单分组 */
-.top-panel{
+.top-panel {
   background: #fff;
   border-radius: 20rpx;
   padding: 8rpx 16rpx;
-  box-shadow: 0 8rpx 28rpx rgba(0,0,0,0.06);
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.06);
   margin-bottom: 24rpx;
 }
-.top-panel .form-item{
+
+.top-panel .form-item {
   margin: 0;
   padding: 20rpx 8rpx;
   border-bottom: 1rpx solid #f1f2f4;
 }
-.top-panel .form-item:last-child{
+
+.top-panel .form-item:last-child {
   border-bottom: none;
 }
-.inline-control{ display:flex; align-items:center; gap:12rpx; }
-.inline-tip{ color:#909399; font-size: 24rpx; }
+
+.inline-control {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.inline-tip {
+  color: #909399;
+  font-size: 24rpx;
+}
 
 /* 通用 */
-.form-item{ margin-bottom: 24rpx; }
-.label{
-  display:block; margin-bottom: 12rpx; color:#333; font-size: 28rpx; font-weight: 600;
+.form-item {
+  margin-bottom: 24rpx;
 }
-.input{
-  background:#fff; border-radius: 12rpx; padding: 20rpx; font-size: 28rpx;
+
+.label {
+  display: block;
+  margin-bottom: 12rpx;
+  color: #333;
+  font-size: 28rpx;
+  font-weight: 600;
 }
-.picker{
-  background:#fff; border-radius: 12rpx; padding: 20rpx; font-size: 28rpx; color:#333;
+
+.label-small {
+  display: block;
+  margin-bottom: 8rpx;
+  color: #666;
+  font-size: 24rpx;
 }
-.tip{ margin-top: 8rpx; color:#999; font-size: 24rpx; line-height: 1.6; }
+
+.static-value {
+  display: block;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: #f5f6f7;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.input {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+}
+
+.picker {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.tip {
+  margin-top: 8rpx;
+  color: #999;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
 
 /* 日期+时间并排 */
-.datetime-row{ display:flex; gap:12rpx; }
-.picker-col{
-  flex:1; background:#fff; border-radius:12rpx; padding:20rpx; font-size:28rpx; color:#333;
+.datetime-row {
+  display: flex;
+  gap: 12rpx;
 }
 
-/* 你喜欢的 card 样式保留 */
-.label-row{ display:flex; align-items:center; justify-content:space-between; }
-.btn-mini{
+.picker-col {
+  flex: 1;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* card 风格 */
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-mini {
   background: linear-gradient(135deg, #8fecff, #c1ddff);
   color: #2c3e50;
-  border-radius: 28rpx; font-size: 24rpx; padding: 6rpx 16rpx; margin: 0;
+  border-radius: 28rpx;
+  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  margin: 0;
 }
-.btn-mini::after{ border:none; }
-.card{
-  background:#fff; border-radius: 12rpx; padding: 20rpx; margin-top: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
-}
-.row{ margin-bottom: 12rpx; }
-.row-right{ text-align: right; }
-.btn-danger{ background:#ffeeee; color:#ff4d6a; border-radius: 24rpx; font-size: 24rpx; padding: 4rpx 16rpx; }
-.btn-danger::after{ border:none; }
 
-/* 图片上传（旧逻辑样式） */
-.images{ display:flex; flex-wrap: wrap; gap: 16rpx; }
-.img-wrap{ width: 160rpx; height: 160rpx; border-radius: 12rpx; overflow: hidden; position: relative; background:#f5f5f5; }
-.img{ width:100%; height:100%; }
-.del{ position:absolute; right:6rpx; top:6rpx; background: rgba(0,0,0,0.45); border-radius: 50%; padding: 4rpx; }
-.img-add{
-  width:160rpx; height:160rpx; border:2rpx dashed #ddd; border-radius:12rpx;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; color:#999; font-size:24rpx;
+.btn-mini::after {
+  border: none;
 }
-.uploading-container{
-  width:100%; padding:20rpx 0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+
+.card {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-top: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
-.uploading-text{ margin-top: 10rpx; color:#999; font-size: 26rpx; }
+
+.row {
+  margin-bottom: 12rpx;
+}
+
+.row-right {
+  text-align: right;
+}
+
+.btn-danger {
+  background: #ffeeee;
+  color: #ff4d6a;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+}
+
+.btn-danger::after {
+  border: none;
+}
+
+/* 已开始阶段：删除按钮灰色禁用态 */
+.btn-danger[disabled],
+.btn-danger.btn-disabled {
+  background: #f5f5f5;
+  color: #c0c4cc;
+}
+
+/* 图片上传 */
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.img-wrap {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  position: relative;
+  background: #f5f5f5;
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+}
+
+.del {
+  position: absolute;
+  right: 6rpx;
+  top: 6rpx;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 50%;
+  padding: 4rpx;
+}
+
+.img-add {
+  width: 160rpx;
+  height: 160rpx;
+  border: 2rpx dashed #ddd;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.uploading-container {
+  width: 100%;
+  padding: 20rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploading-text {
+  margin-top: 10rpx;
+  color: #999;
+  font-size: 26rpx;
+}
 
 /* 尺寸 */
-.size-row{ display:flex; flex-wrap: wrap; gap: 12rpx; }
-.size-tag{
-  padding: 8rpx 16rpx; border-radius: 24rpx; background:#f0f0f0; color:#333; font-size: 24rpx;
+.size-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
-.size-tag.active{ background:#171e22; color:#fff; }
-.size-price-list{ margin-top: 12rpx; }
-.size-price-item{
-  display:flex; align-items:center; gap: 12rpx; background:#fff; padding: 14rpx; border-radius: 10rpx; margin-bottom: 10rpx;
+
+.size-tag {
+  padding: 8rpx 16rpx;
+  border-radius: 24rpx;
+  background: #f0f0f0;
+  color: #333;
+  font-size: 24rpx;
 }
-.sp-label{ color:#333; font-size: 26rpx; }
-.sp-input{ flex:1; background:#f8f8f8; border-radius: 8rpx; padding: 14rpx; font-size: 26rpx; }
+
+.size-tag.active {
+  background: #171e22;
+  color: #fff;
+}
+
+.size-price-list {
+  margin-top: 12rpx;
+}
+
+.size-price-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #fff;
+  padding: 14rpx;
+  border-radius: 10rpx;
+  margin-bottom: 10rpx;
+}
+
+.sp-label {
+  color: #333;
+  font-size: 26rpx;
+}
+
+.sp-input {
+  flex: 1;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  padding: 14rpx;
+  font-size: 26rpx;
+}
+
+.sp-del {
+  color: #f56c6c;
+}
+
+/* 库存展示 */
+.inventory-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.inventory-col {
+  flex: 1;
+  padding: 12rpx 16rpx;
+  border-radius: 12rpx;
+  background: #f5f6f7;
+}
+
+.inv-label {
+  display: block;
+  font-size: 24rpx;
+  color: #888;
+  margin-bottom: 4rpx;
+}
+
+.inv-value {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 间距工具类 */
+.mt-8 {
+  margin-top: 8rpx;
+}
+
+.mt-12 {
+  margin-top: 12rpx;
+}
 
 /* 提交 */
-.submit-box{ padding: 20rpx 0 60rpx; }
-.btn-submit{
-  width:100%; height:88rpx; line-height:88rpx; border-radius:44rpx; font-size:32rpx;
-  background: linear-gradient(135deg, #8fecff, #c1ddff); color:#2c3e50;
+.submit-box {
+  padding: 20rpx 0 60rpx;
 }
-.btn-submit::after{ border:none; }
+
+.btn-submit {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  background: linear-gradient(135deg, #8fecff, #c1ddff);
+  color: #2c3e50;
+}
+
+.btn-submit::after {
+  border: none;
+}
 </style>

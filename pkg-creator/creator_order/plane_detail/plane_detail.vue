@@ -831,19 +831,19 @@ const finishingSlides = [
   {
     key: 'oil',
     name: '油性消光',
-    img: 'https://images1.fantuanpu.com/admin/sys/youxingxiaoguang.png',
+    img: 'https://images1.fantuanpu.com/admin/sys/youxingxiaoguang.jpg',
     desc: '经典定妆溶剂，耐磨度较高。缺点是定妆需要在空气湿度较低的情况下操作，且未干透前有毒性。'
   },
   {
     key: 'water',
     name: '水性消光',
-    img: 'https://images1.fantuanpu.com/admin/sys/shuixingxiaoguang.png',
+    img: 'https://images1.fantuanpu.com/admin/sys/shuixingxiaoguang.jpg',
     desc: '基本无毒，定妆时不需要受限于空气湿度，基本不泛白。缺点是定妆的强度相对较低，可以被酒精轻易擦掉。'
   },
   {
     key: 'gloss',
     name: '罩光剂',
-    img: 'https://images1.fantuanpu.com/admin/sys/zhaoguangji.png',
+    img: 'https://images1.fantuanpu.com/admin/sys/zhaoguangji.jpg',
     desc: '近几年被广泛使用的定妆方式，无毒且不受限空气湿度。缺点是定妆强度过于高，很难卸掉，并且比较沾灰。另外如果采用蘸取拍打方式打底，手感将与喷涂方式不同。'
   }
 ]
