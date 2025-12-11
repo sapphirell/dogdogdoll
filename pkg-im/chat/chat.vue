@@ -42,7 +42,7 @@
       @query="onPagingQuery"
     >
       <!-- 单条消息渲染（必须加 scaleY(-1) 包一层，否则内容会倒置） -->
-      <template #cell="{ item, index }">
+      <template #cell="{ item }">
         <view style="transform: scaleY(-1)">
           <view
             class="msg-item"
@@ -61,12 +61,12 @@
                   <rich-text :nodes="safeText(item.text)"></rich-text>
                 </template>
 
-                <!-- 表情 -->
+                <!-- 兼容旧数据：emoji 文本表情（不再发送新的，只展示历史） -->
                 <template v-else-if="item.kind === 'emoji'">
                   <text class="emoji">{{ item.emoji }}</text>
                 </template>
 
-                <!-- 图片 -->
+                <!-- 图片（包括普通图片 + 贴纸） -->
                 <template v-else-if="item.kind === 'image'">
                   <image
                     class="img-msg"
@@ -133,12 +133,14 @@
 
       <!-- 底部聊天输入条：放在 z-paging 的 bottom 插槽里 -->
       <template #bottom>
-        <view class="chat-inputbar" :class="{ 'with-emoji': showEmoji }">
+        <view class="chat-inputbar" :class="{ 'with-sticker': showStickerPanel }">
           <view class="tools">
+            <!-- 发送图片：只允许单张 -->
             <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
-            <uni-icons type="smile" size="24" color="#666" @click="toggleEmoji" />
-            <uni-icons type="paperplane" size="24" color="#666" @click="sendSampleOther" />
+            <!-- 现在的纸飞机按钮：打开贴纸面板 -->
+            <uni-icons type="paperplane" size="24" color="#666" @click="toggleStickerPanel" />
           </view>
+
           <input
             class="text-input"
             type="text"
@@ -146,20 +148,27 @@
             confirm-type="send"
             :disabled="isBlocked"
             @confirm="sendText"
-            @focus="scrollToBottomSoon"
+            @focus="handleInputFocus"
           />
 
-          <view class="emoji-panel" v-if="showEmoji">
-            <view class="emoji-row">
-              <text
-                v-for="e in emojis"
-                :key="e"
-                class="emoji-item"
-                @click="sendEmoji(e)"
-              >
-                {{ e }}
-              </text>
-            </view>
+          <!-- 贴纸面板：展示缩略图，发送时使用完整图片 -->
+          <view class="sticker-panel" v-if="showStickerPanel">
+            <scroll-view scroll-y class="sticker-scroll">
+              <view class="sticker-grid">
+                <view
+                  v-for="s in stickers"
+                  :key="s.id"
+                  class="sticker-item"
+                  @click="sendSticker(s)"
+                >
+                  <image
+                    class="sticker-thumb"
+                    :src="s.thumb_url || s.image_url"
+                    mode="aspectFit"
+                  />
+                </view>
+              </view>
+            </scroll-view>
           </view>
         </view>
       </template>
@@ -179,7 +188,8 @@ import {
   websiteUrl,
   getWindowTop,
   getFooterPlaceholderHeight,
-  toPx
+  toPx,
+  image1Url,
 } from '@/common/config.js'
 import {
   connectIM,
@@ -209,8 +219,11 @@ const pageSize = 20
 
 /** 输入与工具 */
 const draft = ref('')
-const showEmoji = ref(false)
-const emojis = ['😀', '😁', '😂', '🤣', '😊', '😍', '😘', '😎', '😡', '👍', '👏', '🎉']
+
+/** 新：贴纸面板 & 贴纸数据 */
+const showStickerPanel = ref(false)
+const stickers = ref([])
+const stickerLoading = ref(false)
 
 /** 屏蔽/已读 */
 const isBlocked = ref(false)
@@ -420,7 +433,6 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
   try {
     if (numericSid.value <= 0) {
       console.warn('[CHAT] numericSid missing, cannot sync history via WS')
-      // 理论上不会再发生，如果发生就让这次加载失败
       if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
         pagingRef.value.complete(false)
       }
@@ -510,7 +522,6 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
     if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
       pagingRef.value.complete(segmentDesc)
     } else {
-      // 极端兜底
       if (messages.value.length === 0 || beforePTS === 0) {
         messages.value = [...messages.value, ...segmentDesc]
       } else {
@@ -521,9 +532,9 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
     // 同步对方已读进度
     const peerPtsFromSync = Number(
       resp?.data?.peer_read_pts ??
-        resp?.data?.peerReadPts ??
-        resp?.data?.read_pts_peer ??
-        0
+      resp?.data?.peerReadPts ??
+      resp?.data?.read_pts_peer ??
+      0
     )
     if (peerPtsFromSync > 0) applyPeerReadPts(peerPtsFromSync)
 
@@ -544,45 +555,138 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
   }
 }
 
-/** 发送：文本/表情/图片/其它 */
+/** 发送：文本/图片/其它（贴纸也是 image） */
 function sendText () {
   if (!draft.value) return
   const text = draft.value
   draft.value = ''
+  showStickerPanel.value = false
   sendPayload({ kind: 'text', text })
 }
-function sendEmoji (e) {
-  showEmoji.value = false
-  sendPayload({ kind: 'emoji', emoji: e })
-}
-function toggleEmoji () { showEmoji.value = !showEmoji.value }
 
+/** 输入框聚焦：收起贴纸面板 + 滚到底部 */
+function handleInputFocus () {
+  showStickerPanel.value = false
+  scrollToBottomSoon()
+}
+
+/** 贴纸面板相关 */
+async function loadStickers () {
+  if (stickerLoading.value || stickers.value.length > 0) return
+  stickerLoading.value = true
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/stickers`,
+      method: 'GET',
+      data: {
+        category: '',
+        page: 1,
+        pageSize: 200
+      }
+    })
+    const data = res?.data || {}
+    if (data.status === 'success' || data.code === 0) {
+      const list = data.data || data.list || []
+      stickers.value = Array.isArray(list) ? list : []
+    } else {
+      uni.showToast({ title: '加载表情失败', icon: 'none' })
+    }
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'loadStickers error=', e)
+    uni.showToast({ title: '加载表情失败', icon: 'none' })
+  } finally {
+    stickerLoading.value = false
+  }
+}
+
+function toggleStickerPanel () {
+  showStickerPanel.value = !showStickerPanel.value
+  if (showStickerPanel.value) {
+    loadStickers()
+  }
+}
+
+/** 点击贴纸：用完整图片 URL 发送 image 消息 */
+function sendSticker (s) {
+  if (!s || !s.image_url) return
+  showStickerPanel.value = false
+  sendPayload({
+    kind: 'image',
+    url: s.image_url
+  })
+}
+
+/** 选择并发送图片：只允许 1 张 */
 async function pickAndSendImage () {
   try {
+    // 1. 选择本地图片
     const chooseRes = await uni.chooseImage({ count: 1, sizeType: ['compressed'] })
+    if (!chooseRes || !chooseRes.tempFilePaths || !chooseRes.tempFilePaths.length) return
     const filePath = chooseRes.tempFilePaths[0]
+
+    // 2. 向后端请求七牛上传凭证
     const tkRes = await uni.request({
       url: `${websiteUrl.value}/with-state/qiniu-token`,
       method: 'POST',
       header: authHeader()
     })
     if (tkRes?.data?.status !== 'success') {
-      return uni.showToast({ title: '上传凭证失败', icon: 'none' })
+      uni.showToast({ title: '上传凭证失败', icon: 'none' })
+      return
     }
-    const { upload_url, token, key, domain } = tkRes.data.data
+
+    const data = tkRes.data.data || {}
+    // 后端现在返回的是 { path, token }
+    const token = data.token
+    const key = data.key || data.path      // 七牛对象 key：优先 key，没有就用 path
+    // 七牛上传地址：和你工具方法保持一致
+    const uploadUrl = data.upload_url || 'https://up-cn-east-2.qiniup.com'
+    // 图片访问域名：接口没给的话，就用 image1Url
+    const domain = data.domain || image1Url
+
+    if (!token || !key) {
+      uni.showToast({ title: '上传参数错误', icon: 'none' })
+      return
+    }
+
+    // 3. 上传到七牛
     const upRes = await uni.uploadFile({
-      url: upload_url,
+      url: uploadUrl,
       filePath,
       name: 'file',
-      formData: { token, key }
+      formData: {
+        token,
+        key
+      }
     })
-    const body = JSON.parse(upRes.data || '{}')
-    const url = (domain ? domain.replace(/\/$/, '') + '/' : '') + (body.key || key)
+
+    let body = {}
+    try {
+      body = JSON.parse(upRes.data || '{}')
+    } catch (_) {}
+
+    // 七牛返回通常也会带一个 key，优先用返回值
+    const finalKey = body.key || key
+
+    // 拼接最终访问 URL
+    const prefix = domain ? String(domain).replace(/\/$/, '') + '/' : ''
+    const url = prefix + finalKey
+
+    if (!url) {
+      uni.showToast({ title: '上传失败', icon: 'none' })
+      return
+    }
+
+    // 4. 作为图片消息发送
     sendPayload({ kind: 'image', url })
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'pickAndSendImage error=', e)
+    uni.showToast({ title: '发送图片失败', icon: 'none' })
+  }
 }
 
-/** 示例的 other 消息 */
+
+/** 示例的 other 消息（保留调试用，不再挂在按钮上） */
 function sendSampleOther () {
   sendPayload({
     kind: 'other',
@@ -596,11 +700,12 @@ function appendNewMessage (uiMsg) {
   if (pagingRef.value && typeof pagingRef.value.addChatRecordData === 'function') {
     pagingRef.value.addChatRecordData([uiMsg])
   } else {
-    messages.value.push(uiMsg)
+    // 兜底：不通过 z-paging 方法时，手动替换数组引用，保证刷新
+    messages.value = [...messages.value, uiMsg]
   }
 }
 
-/** 发送统一实现 —— 关键修复点：ACK 直接改本地 local 对象，再兜底用 local_key 更新数组 */
+/** 发送统一实现 —— ACK 通过 local_key 更新数组，并强制替换 messages 引用 */
 function sendPayload (msgPart) {
   const socket = getWS()
   if (!socket || socket.readyState !== 1) {
@@ -631,28 +736,21 @@ function sendPayload (msgPart) {
   })
     .then((resp) => {
       if (!resp || resp.status !== 'success') {
-        // 发送失败：本地对象 + 列表对象都标记为 failed
-        local.status = 'failed'
+        // 发送失败：本地对象标记为 failed
         setMessageStatusByLocalKey(local.local_key, 'failed')
         return
       }
 
       const d = resp.data || {}
 
-      // patch 函数：用 ACK 中的信息更新一条消息
-      const patcher = (old) => ({
+      // 使用 local_key + 替换数组引用的方式更新
+      updateMessageByLocalKey(local.local_key, (old) => ({
         ...old,
         id: Number(d.message_id || old.id || 0),
         pts: Number(d.pts || old.pts || 0),
         ts: d.msg_time ? Math.floor(Number(d.msg_time) / 1000) : old.ts,
         status: 'sent'
-      })
-
-      // 1）先直接改本地 local 对象（z-paging 内部引用的是同一个对象）
-      Object.assign(local, patcher(local))
-
-      // 2）再用 local_key 做一次兜底更新 messages 数组
-      updateMessageByLocalKey(local.local_key, patcher)
+      }))
 
       if (Number(d.session_id || 0) > 0 && numericSid.value === 0) {
         numericSid.value = Number(d.session_id)
@@ -664,17 +762,20 @@ function sendPayload (msgPart) {
     })
     .catch(() => {
       // 超时 / 异常：同样要把状态改为 failed
-      local.status = 'failed'
       setMessageStatusByLocalKey(local.local_key, 'failed')
     })
 }
 
-/** 用 local_key 替换某条消息 */
+/** 用 local_key 替换某条消息 —— 关键点：生成一个新的数组引用 */
 function updateMessageByLocalKey (localKey, updater) {
-  const idx = messages.value.findIndex((x) => x.local_key === localKey)
+  const list = messages.value
+  const idx = list.findIndex((x) => x.local_key === localKey)
   if (idx >= 0) {
-    const next = typeof updater === 'function' ? updater(messages.value[idx]) : updater
-    messages.value.splice(idx, 1, next)
+    const old = list[idx]
+    const next = typeof updater === 'function' ? updater(old) : updater
+    const newList = list.slice()
+    newList.splice(idx, 1, next)
+    messages.value = newList
   }
 }
 function setMessageStatusByLocalKey (localKey, status) {
@@ -742,7 +843,8 @@ function handleIMEvent (payload) {
         )
       }
       if (idx >= 0) {
-        const old = messages.value[idx]
+        const list = messages.value
+        const old = list[idx]
         const merged = {
           ...old,
           id: ui.id || old.id,
@@ -750,7 +852,9 @@ function handleIMEvent (payload) {
           ts: ui.ts || old.ts,
           status: 'sent'
         }
-        messages.value.splice(idx, 1, merged)
+        const newList = list.slice()
+        newList.splice(idx, 1, merged)
+        messages.value = newList
         return
       }
     }
@@ -806,9 +910,7 @@ function toWsContent (part) {
   if (part.kind === 'text') {
     return { type: 'text', text: part.text }
   }
-  if (part.kind === 'emoji') {
-    return { type: 'emoji', emoji: part.emoji }
-  }
+  // 贴纸和普通图片统一走 image
   if (part.kind === 'image') {
     return { type: 'image', images: [{ url: part.url }] }
   }
@@ -824,7 +926,7 @@ function toWsContent (part) {
   return { type: 'text', text: '[未知类型]' }
 }
 
-/** 构建消息唯一签名 */
+/** 构建消息唯一签名（保留 emoji 分支以兼容历史消息） */
 function buildSig (m) {
   const kind = m.kind || (m.content?.type) || ''
   if (kind === 'text') return `t|${(m.text || '').slice(0, 200)}`
@@ -855,8 +957,6 @@ function buildLocalMsg (part) {
   let ui
   if (part.kind === 'text') {
     ui = { ...base, kind: 'text', text: part.text }
-  } else if (part.kind === 'emoji') {
-    ui = { ...base, kind: 'emoji', emoji: part.emoji }
   } else if (part.kind === 'image') {
     ui = { ...base, kind: 'image', url: part.url }
   } else {
@@ -923,10 +1023,8 @@ function wsToUiMessage (m) {
       ui = { ...base, kind: 'emoji', emoji: c.emoji }
       break
     case 'image': {
-      const url =
-        Array.isArray(c.images) && c.images[0]?.url
-          ? c.images[0].url
-          : ''
+      const img = Array.isArray(c.images) && c.images[0] ? c.images[0] : {}
+      const url = img.url || ''
       ui = { ...base, kind: 'image', url }
       break
     }
@@ -948,17 +1046,26 @@ function wsToUiMessage (m) {
   return ui
 }
 
-/** 发送状态文案 */
+/** 发送状态文案（保留你修过的逻辑） */
 function statusText (m) {
   if (!m || m.from_uid !== selfUid.value) return ''
+
+  const pts = Number(m.pts || 0)
+  const peerPts = Number(peerReadPts.value || 0)
+
   if (m.status === 'failed') return '发送失败'
-  if (
-    Number(m.pts || 0) > 0 &&
-    Number(peerReadPts.value || 0) >= Number(m.pts)
-  ) {
+
+  // 一旦有后端分配的 pts，说明已经成功发出，优先判断“已读”
+  if (pts > 0 && peerPts >= pts) {
     return '已读'
   }
-  if (m.status === 'sending') return '发送中…'
+
+  // 只有在还没有 pts（本地临时消息）且状态为 sending 时，才显示“发送中…”
+  if (pts === 0 && m.status === 'sending') {
+    return '发送中…'
+  }
+
+  // 其余情况都视为“已发送”
   return '已发送'
 }
 
@@ -1084,9 +1191,7 @@ function handleCardClick (m) {
     try {
       uni.navigateTo({ url: card.app_page })
       return
-    } catch (e) {
-      // 路径不存在等问题，继续走下方逻辑
-    }
+    } catch (e) {}
   }
 
   if (card.h5_url) {
@@ -1208,7 +1313,7 @@ function handleCardClick (m) {
   border-top-left-radius: 18rpx;
 }
 
-/* 气泡小三角 */
+/* 氣泡小三角 */
 .bubble::after {
   content: '';
   position: absolute;
@@ -1332,10 +1437,11 @@ function handleCardClick (m) {
 
 /* 底部输入条（放在 z-paging bottom 插槽内） */
 .chat-inputbar {
+  position: relative;
   background: #e0f0fb;
   padding: 18rpx 16rpx 30rpx;
   display: grid;
-  grid-template-columns: 140rpx 1fr 20rpx;
+  grid-template-columns: 140rpx 1fr;
   gap: 22rpx;
   .tools {
     display: flex;
@@ -1350,34 +1456,45 @@ function handleCardClick (m) {
     padding: 0 22rpx;
     font-size: 26rpx;
   }
-  .send-btn {
-    height: 68rpx;
-    line-height: 68rpx;
-    border-radius: 34rpx;
-    background: #e1f0fb;
-    color: #fff;
-    font-size: 26rpx;
-  }
-  .send-btn::after {
-    border: none;
-  }
 }
-.emoji-panel {
+
+/* 贴纸面板：绝对定位在输入框上方 */
+.sticker-panel {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 104rpx;
-  background: #fff;
+  background: #ffffff;
   border-top: 1rpx solid #eee;
-  padding: 12rpx;
-  .emoji-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
-  }
-  .emoji-item {
-    font-size: 40rpx;
-  }
+  padding: 12rpx 0;
+  box-shadow: 0 -6rpx 12rpx rgba(0, 0, 0, 0.03);
+}
+
+.sticker-scroll {
+  max-height: 420rpx;
+}
+
+.sticker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 20rpx;
+  gap: 16rpx;
+}
+
+.sticker-item {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 12rpx;
+  background: #f5f5f5;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker-thumb {
+  width: 100%;
+  height: 100%;
 }
 
 /* 隐藏滚动条 */
