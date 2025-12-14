@@ -519,7 +519,7 @@ function handleFunctionClick (key) {
       url = '/pkg-creator/creator_base/set_hair_showcase/set_hair_showcase'
       break
     case 'publish-plan':
-      url = '/pkg-creator/creator_base/order_plane/order_plane'
+      url = '/pkg-creator/creator_base/order_plan/order_plan'
       break
     case 'artist-settings':
       url = '/pkg-creator/creator_base/artist_setting/artist_setting'

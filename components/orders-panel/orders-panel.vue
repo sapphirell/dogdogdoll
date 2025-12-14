@@ -8,9 +8,7 @@
         :class="{ 'summary-item-active': activeOrderTypeTab === 'bjd' }"
         @click="changeOrderTypeTab('bjd')"
       >
-        <text class="summary-number font-title">
-          {{ totalBjd }}
-        </text>
+        <text class="summary-number font-title">{{ totalBjd }}</text>
         <text class="summary-label font-alimamashuhei">BJD约妆</text>
       </view>
 
@@ -21,9 +19,7 @@
         :class="{ 'summary-item-active': activeOrderTypeTab === 'hair' }"
         @click="changeOrderTypeTab('hair')"
       >
-        <text class="summary-number font-title">
-          {{ totalHair }}
-        </text>
+        <text class="summary-number font-title">{{ totalHair }}</text>
         <text class="summary-label font-alimamashuhei">手改毛投递</text>
       </view>
     </view>
@@ -37,9 +33,7 @@
         :class="{ 'second-tab-active': activeStatusTab === tab.key }"
         @click="changeStatusTab(tab.key)"
       >
-        <text class="second-tab-text font-alimama">
-          {{ tab.label }}
-        </text>
+        <text class="second-tab-text font-alimama">{{ tab.label }}</text>
       </view>
     </view>
 
@@ -52,9 +46,7 @@
       >
         <view class="empty-card">
           <text class="empty-title">还没有投递记录</text>
-          <text class="empty-desc">
-            去找喜欢的妆师 / 毛娘，投递你的第一个方案吧。
-          </text>
+          <text class="empty-desc">去找喜欢的妆师 / 毛娘，投递你的第一个方案吧。</text>
         </view>
       </view>
 
@@ -69,25 +61,21 @@
         </view>
       </view>
 
-      <!-- 列表卡片（按设计图样式） -->
+      <!-- 列表卡片 -->
       <view v-else>
         <view
           v-for="(row, index) in filteredList"
-          :key="row.submission?.id || row.submission?.ID"
+          :key="rowKey(row, index)"
           class="sub-card"
           :style="subCardStyle(index)"
           @click="goSubmissionDetail(row)"
         >
           <!-- 左侧缩略图 -->
           <view class="sub-card-left">
-            <image
-              class="sub-thumb"
-              :src="cardCover(row)"
-              mode="aspectFill"
-            />
+            <image class="sub-thumb" :src="cardCover(row)" mode="aspectFill" />
           </view>
 
-          <!-- 中间文本：与图片等高 -->
+          <!-- 中间文本 -->
           <view class="sub-card-middle">
             <view class="sub-title-row">
               <text class="status-pill font-alimama">
@@ -99,16 +87,12 @@
             </view>
 
             <view class="sub-subtitle-row">
-              <text class="sub-meta-text">
-                {{ itemsCount(row) }}个投递项
-              </text>
-              <text class="sub-meta-text price-text">
-                {{ cardAmount(row) }}¥
-              </text>
+              <text class="sub-meta-text">{{ itemsCount(row) }}个投递项</text>
+              <text class="sub-meta-text price-text">{{ cardAmount(row) }}</text>
             </view>
           </view>
 
-          <!-- 右侧：只有箭头 -->
+          <!-- 右侧箭头 -->
           <view class="sub-card-right">
             <uni-icons type="right" size="26" color="#444444" />
           </view>
@@ -120,12 +104,7 @@
         <view v-if="loading" class="footer-loading">
           <loading-jump-text></loading-jump-text>
         </view>
-        <text
-          v-else-if="finished && submissionList.length > 0"
-          class="footer-text"
-        >
-          已经到底了
-        </text>
+        <text v-else-if="finished && submissionList.length > 0" class="footer-text">已经到底了</text>
       </view>
     </view>
 
@@ -138,23 +117,19 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import {
-  onShow,
-  onPullDownRefresh,
-  onReachBottom
-} from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
 
 const props = defineProps({
-  active: {
-    type: Boolean,
-    default: true
-  }
+  active: { type: Boolean, default: true }
 })
+
+const API_PATH = '/with-state/artist-order/my-submissions'
 
 /** 顶部统计的类型切换：BJD / 手改毛 */
 const activeOrderTypeTab = ref('bjd') // 'bjd' | 'hair'
 function changeOrderTypeTab(type) {
+  if (activeOrderTypeTab.value === type) return
   activeOrderTypeTab.value = type
 }
 
@@ -166,42 +141,62 @@ const statusTabs = [
 ]
 const activeStatusTab = ref('all')
 
-/** 列表数据 */
-const submissionList = ref([]) // [{ submission, items }]
+/** 列表数据：统一为 [{ submission, items, queue_stat }] */
+const submissionList = ref([])
 const page = ref(1)
 const pageSize = 20
 const total = ref(0)
 const loading = ref(false)
 
-const finished = computed(
-  () => total.value > 0 && submissionList.value.length >= total.value
-)
+const finished = computed(() => total.value > 0 && submissionList.value.length >= total.value)
 
-/** 统计：按 order_type / mode 粗略统计 BJD / 手改毛数量
- * 注意：当前接口是“约妆列表”，样例数据 mode = 2 表示约妆
- * 这里约定：2 = BJD约妆，1 = 手改毛
+/**
+ * 顶部统计：分别缓存妆师/毛娘 total
+ * 注意：total 可能为 0 也代表“已加载”，因此要用 loaded 标记避免重复请求
  */
-function getOrderType(sub) {
-  if (!sub) return 0
-  let t =
-    sub.order_type ??
-    sub.OrderType ??
-    sub.orderType ??
-    null
-  if (t == null) {
-    t = sub.mode ?? sub.Mode ?? 0
-  }
-  return Number(t) || 0
+const typeTotals = ref({ bjd: 0, hair: 0 })
+const typeTotalsLoaded = ref({ bjd: false, hair: false })
+const typeTotalsLoading = ref({ bjd: false, hair: false })
+
+const totalBjd = computed(() => Number(typeTotals.value.bjd || 0))
+const totalHair = computed(() => Number(typeTotals.value.hair || 0))
+
+function tabToArtistType(tab) {
+  if (tab === 'bjd') return 1
+  if (tab === 'hair') return 2
+  return 0
+}
+function otherTab(tab) {
+  return tab === 'bjd' ? 'hair' : 'bjd'
 }
 
-const totalBjd = computed(() =>
-  submissionList.value.filter(row => getOrderType(row.submission) === 2)
-    .length
-)
-const totalHair = computed(() =>
-  submissionList.value.filter(row => getOrderType(row.submission) === 1)
-    .length
-)
+/** ============ 适配新后端返回结构 ============ */
+/**
+ * 兼容：
+ * - 新：{ submission, items }
+ * - 旧：{ submission, items, queue_stat }
+ * - 更旧：submission 直出（兜底）
+ */
+function normalizeRow(raw) {
+  if (!raw) return { submission: {}, items: [], queue_stat: null }
+  if (raw.submission || raw.Submission) {
+    return {
+      submission: raw.submission || raw.Submission || {},
+      items: raw.items || raw.Items || [],
+      queue_stat: raw.queue_stat || raw.QueueStat || raw.queueStat || null
+    }
+  }
+  return {
+    submission: raw,
+    items: raw.items || raw.Items || [],
+    queue_stat: raw.queue_stat || raw.QueueStat || raw.queueStat || null
+  }
+}
+
+function rowKey(row, index) {
+  const sub = row?.submission || {}
+  return sub.id || sub.ID || `${sub.plan_id || sub.PlanID || 'p'}-${sub.created_at || sub.CreatedAt || index}`
+}
 
 /** 确保登录状态 */
 async function ensureLogin() {
@@ -216,36 +211,23 @@ async function ensureLogin() {
   return !!global.isLogin
 }
 
-/** 提交状态数值 */
+/** 状态读取 */
 function getSubmissionStatus(sub) {
   if (!sub) return 0
   return Number(sub.status ?? sub.Status ?? 0)
 }
-
-/** 交易中：0排队中 / 1已抢到待付款 / 2已付款 */
 function isOngoing(sub) {
   const st = getSubmissionStatus(sub)
-  return st === 0 || st === 1 || st === 2
+  return st === 0 || st === 1 || st === 2 || st === 3
 }
-
-/** 交易结束：3排队失败 / 4取消 / 5支付超时 */
 function isFinishedStatus(sub) {
   const st = getSubmissionStatus(sub)
-  return st === 3 || st === 4 || st === 5
+  return st === 4 || st === 5 || st === 6 || st === 7
 }
 
-/** 过滤列表：根据 顶部类型(BJD/毛) + 二级 Tab(状态) */
+/** 二级 tab 过滤（接口已按 artist_type 过滤；这里仅按状态过滤） */
 const filteredList = computed(() => {
   let list = submissionList.value
-
-  // 顶部 BJD / 手改毛 过滤
-  if (activeOrderTypeTab.value === 'bjd') {
-    list = list.filter(row => getOrderType(row.submission) === 2)
-  } else if (activeOrderTypeTab.value === 'hair') {
-    list = list.filter(row => getOrderType(row.submission) === 1)
-  }
-
-  // 状态二级tab过滤
   if (activeStatusTab.value === 'ongoing') {
     list = list.filter(row => isOngoing(row.submission))
   } else if (activeStatusTab.value === 'finished') {
@@ -253,21 +235,69 @@ const filteredList = computed(() => {
   }
   return list
 })
-
-/** Tab 切换 */
 function changeStatusTab(key) {
   activeStatusTab.value = key
 }
 
-/** 列表 item 的动画样式：按 index 递增 delay */
+/** 动画延迟 */
 function subCardStyle(index) {
-  const delay = index * 80 // ms，与 info-follow-tab 保持一致节奏
-  return {
-    animationDelay: delay + 'ms'
+  const delay = index * 80
+  return { animationDelay: delay + 'ms' }
+}
+
+/** 请求封装 */
+async function requestMySubmissions(params) {
+  const token = uni.getStorageSync('token') || ''
+  return await uni.request({
+    url: `${websiteUrl.value}${API_PATH}`,
+    method: 'GET',
+    header: { Authorization: token },
+    data: params
+  })
+}
+
+function parsePageIndex(p, fallback) {
+  const v = Number(p.page ?? p.pageIndex ?? p.Page ?? p.PageIndex ?? fallback ?? 1)
+  return v > 0 ? v : 1
+}
+function parseTotal(p, fallback) {
+  const v = Number(p.total ?? p.Total ?? fallback ?? 0)
+  return v >= 0 ? v : 0
+}
+
+/** 拉取某类型 total（只拉一次，total=0 也算已加载） */
+async function fetchTotalForType(tab) {
+  if (typeTotalsLoaded.value[tab] || typeTotalsLoading.value[tab]) return
+
+  const ok = await ensureLogin()
+  if (!ok) return
+
+  typeTotalsLoading.value = { ...typeTotalsLoading.value, [tab]: true }
+
+  const artistType = tabToArtistType(tab)
+  try {
+    const res = await requestMySubmissions({
+      page: 1,
+      pageIndex: 1,
+      page_size: 1,
+      pageSize: 1,
+      size: 1,
+      artist_type: artistType
+    })
+    if (String(res.data?.status).toLowerCase() !== 'success') return
+    const p = res.data?.data?.page || {}
+    const t = parseTotal(p, 0)
+
+    typeTotals.value = { ...typeTotals.value, [tab]: t }
+    typeTotalsLoaded.value = { ...typeTotalsLoaded.value, [tab]: true }
+  } catch (e) {
+    console.warn('[orders-panel] fetchTotalForType failed:', e)
+  } finally {
+    typeTotalsLoading.value = { ...typeTotalsLoading.value, [tab]: false }
   }
 }
 
-/** 拉取列表 */
+/** 拉取列表（只负责当前 tab 列表 + 当前 tab total 回填） */
 async function fetchList(reset = false) {
   if (loading.value) return
 
@@ -277,6 +307,8 @@ async function fetchList(reset = false) {
       submissionList.value = []
       page.value = 1
       total.value = 0
+      typeTotals.value = { bjd: 0, hair: 0 }
+      typeTotalsLoaded.value = { bjd: false, hair: false }
     }
     uni.stopPullDownRefresh()
     return
@@ -289,19 +321,18 @@ async function fetchList(reset = false) {
   }
 
   loading.value = true
+
+  const currentTab = activeOrderTypeTab.value
+  const artistType = tabToArtistType(currentTab)
+
   try {
-    const token = uni.getStorageSync('token') || ''
-    const res = await uni.request({
-      url: `${websiteUrl.value}/with-state/artist-order/my-submissions`,
-      method: 'GET',
-      header: {
-        Authorization: token
-      },
-      data: {
-        page: page.value,
-        page_size: pageSize,
-        size: pageSize
-      }
+    const res = await requestMySubmissions({
+      page: page.value,
+      pageIndex: page.value,
+      page_size: pageSize,
+      pageSize: pageSize,
+      size: pageSize,
+      artist_type: artistType
     })
 
     if (String(res.data?.status).toLowerCase() !== 'success') {
@@ -309,8 +340,9 @@ async function fetchList(reset = false) {
       return
     }
 
-    const data = res.data.data || {}
-    const rows = data.list || []
+    const data = res.data?.data || {}
+    const rawRows = Array.isArray(data.list) ? data.list : []
+    const rows = rawRows.map(normalizeRow)
     const p = data.page || {}
 
     if (reset) {
@@ -319,11 +351,17 @@ async function fetchList(reset = false) {
       submissionList.value = submissionList.value.concat(rows)
     }
 
-    total.value = Number(p.total || total.value || rows.length || 0)
-    const currentPage = Number(p.page || page.value)
+    const newTotal = parseTotal(p, rows.length)
+    total.value = newTotal
+
+    // 当前 tab 的 total 直接用 page.total 回填，并标记已加载（即便为 0）
+    typeTotals.value = { ...typeTotals.value, [currentTab]: newTotal }
+    typeTotalsLoaded.value = { ...typeTotalsLoaded.value, [currentTab]: true }
+
+    const currentPage = parsePageIndex(p, page.value)
     page.value = currentPage + 1
   } catch (e) {
-    console.error('加载投递列表失败', e)
+    console.error('[orders-panel] fetchList failed:', e)
     uni.showToast({ title: '网络异常，加载失败', icon: 'none' })
   } finally {
     loading.value = false
@@ -331,146 +369,126 @@ async function fetchList(reset = false) {
   }
 }
 
-/** 品牌对象 */
-function getBrandObj(row) {
-  const sub = row?.submission || {}
-  return sub.brand || sub.Brand || {}
+/**
+ * 统一刷新入口：避免 onMounted/onShow/watch 重复触发导致多次请求
+ * - 同一个 tab + reset 在短时间内重复触发会被去重
+ */
+const lastRefreshKey = ref('')
+const lastRefreshAt = ref(0)
+let refreshPromise = null
+
+function buildRefreshKey(reset) {
+  return `${activeOrderTypeTab.value}|${reset ? 'reset' : 'more'}`
 }
 
-/** 品牌名称 */
-function brandName(row) {
-  const b = getBrandObj(row)
-  return b.brand_name || b.BrandName || '未知品牌'
-}
+async function refresh(reset = true, reason = '') {
+  if (!props.active) return
+  if (refreshPromise) return refreshPromise
 
-/** 品牌 Logo */
-function brandLogo(row) {
-  const b = getBrandObj(row)
-  return b.logo_image || b.LogoImage || ''
-}
+  const key = buildRefreshKey(reset)
+  const now = Date.now()
 
-/** 作品首图 */
-function firstRefImage(it) {
-  const raw = it.ref_images || it.RefImages || ''
-  if (!raw) return ''
-  const arr = String(raw).split(',')
-  return arr[0].trim()
-}
-
-/** 状态文案 */
-function statusText(row) {
-  const st = getSubmissionStatus(row?.submission)
-  switch (st) {
-    case 0:
-      return '排队中'
-    case 1:
-      return '已抢到名额'
-    case 2:
-      return '投递成功'
-    case 3:
-      return '未抢到名额'
-    case 4:
-      return '已取消'
-    case 5:
-      return '支付超时'
-    default:
-      return '未知状态'
+  // 去重窗口：避免 mounted + show 这种紧挨着触发
+  if (key === lastRefreshKey.value && now - lastRefreshAt.value < 800) {
+    return
   }
+  lastRefreshKey.value = key
+  lastRefreshAt.value = now
+
+  refreshPromise = (async () => {
+    await fetchList(reset)
+
+    // 确保另一种类型的 total 也拿到（只拉一次，避免 total=0 时不断拉）
+    const ot = otherTab(activeOrderTypeTab.value)
+    await fetchTotalForType(ot)
+  })().finally(() => {
+    refreshPromise = null
+  })
+
+  return refreshPromise
 }
 
-/** 卡片左侧封面 */
+/** plan 对象（新结构：submission.plan） */
+function getPlanObj(row) {
+  const sub = row?.submission || {}
+  return sub.plan || sub.Plan || {}
+}
+
+function mainTitle(row) {
+  const plan = getPlanObj(row)
+  return plan.artist_name || plan.ArtistName || plan.plan_title || plan.PlanTitle || '未命名计划'
+}
+
+function firstRefImage(it) {
+  const raw = it?.ref_images || it?.RefImages || ''
+  if (!raw) return ''
+  return String(raw).split(',')[0].trim()
+}
+function firstPlanImage(plan) {
+  const raw = plan?.images || plan?.Images || ''
+  if (!raw) return ''
+  return String(raw).split(',')[0].trim()
+}
+
 function cardCover(row) {
-  const items = row.items || []
+  const items = row?.items || []
   if (items.length > 0) {
     const img = firstRefImage(items[0])
     if (img) return img
   }
-  const logo = brandLogo(row)
-  if (logo) return logo
-  return ''
+  const plan = getPlanObj(row)
+  const pImg = firstPlanImage(plan)
+  return pImg || ''
 }
 
-/** 卡片主标题 */
-function mainTitle(row) {
-  const sub = row?.submission || {}
-  return (
-    sub.title ||
-    sub.Title ||
-    sub.plan_title ||
-    sub.PlanTitle ||
-    brandName(row)
-  )
-}
-
-/** 投递项数量 */
 function itemsCount(row) {
-  const items = row.items || []
+  const items = row?.items || []
   return items.length || 0
 }
 
-/** 计算一个 submission 下所有子项的总价：sum(price_total + adjust_price) */
-function calcRowTotalAmount(row) {
-  const items = row.items || []
-  let sum = 0
-  let hasItemPrice = false
-
-  items.forEach(it => {
-    if (!it) return
-    const priceTotalRaw =
-      it.price_total ??
-      it.PriceTotal ??
-      it.priceTotal ??
-      null
-    const adjustPriceRaw =
-      it.adjust_price ??
-      it.AdjustPrice ??
-      it.adjustPrice ??
-      null
-
-    const priceTotal = Number(priceTotalRaw || 0)
-    const adjustPrice = Number(adjustPriceRaw || 0)
-
-    if (
-      (!isNaN(priceTotal) && priceTotalRaw != null) ||
-      (!isNaN(adjustPrice) && adjustPriceRaw != null)
-    ) {
-      hasItemPrice = true
-      sum += (isNaN(priceTotal) ? 0 : priceTotal) +
-        (isNaN(adjustPrice) ? 0 : adjustPrice)
-    }
-  })
-
-  if (hasItemPrice) {
-    return sum
-  }
-
-  const sub = row?.submission || {}
-  const totalVal =
-    sub.price_total ??
-    sub.PriceTotal ??
-    sub.total_price ??
-    sub.TotalPrice ??
-    0
-  const n = Number(totalVal) || 0
-  return n
-}
-
-/** 卡片金额 */
-function cardAmount(row) {
-  const total = calcRowTotalAmount(row)
-  const n = Number(total) || 0
-  const fixed = n.toFixed(2)
-  return fixed.replace(/\.00$/, '')
-}
-
-/** 状态 pill 文案 */
+/** 状态 pill：统一短文案，避免折行 */
 function statusPillText(row) {
-  const txt = statusText(row)
-  if (txt === '已抢到名额') return '已中选'
-  return txt
+  const st = getSubmissionStatus(row?.submission)
+  switch (st) {
+    case 0: return '排队中'
+    case 1: return '已中选'
+    case 2: return '待确认'
+    case 3: return '待付款'
+    case 4: return '已付款'
+    case 5: return '失败'
+    case 6: return '已取消'
+    case 7: return '超时'
+    default: return '未知'
+  }
 }
 
-/** 打开详情页 */
+/** 金额：无价格时显示 0￥（不再显示横杠） */
+function calcRowTotalAmount(row) {
+  const items = row?.items || []
+  if (items.length === 0) return 0
+
+  let sum = 0
+  items.forEach(it => {
+    const priceTotal = Number(it?.price_total ?? it?.PriceTotal ?? it?.priceTotal ?? 0)
+    const adjustPrice = Number(it?.adjust_price ?? it?.AdjustPrice ?? it?.adjustPrice ?? 0)
+    sum += (isNaN(priceTotal) ? 0 : priceTotal) + (isNaN(adjustPrice) ? 0 : adjustPrice)
+  })
+  return sum
+}
+
+function formatMoney(n) {
+  const num = Number(n || 0)
+  if (!isFinite(num)) return '0￥'
+  // 规则：整数不显示 .00；否则保留两位并去掉末尾 0
+  const s = num.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
+  return `${s}￥`
+}
+
+function cardAmount(row) {
+  return formatMoney(calcRowTotalAmount(row))
+}
+
+/** 详情页跳转 */
 function goSubmissionDetail(row) {
   const sub = row?.submission || {}
   const id = sub.id || sub.ID
@@ -484,32 +502,31 @@ function goSubmissionDetail(row) {
   // #endif
 }
 
-/** 平台公告 */
 function jumpToAnnouncement() {
-  uni.navigateTo({
-    url: '/pages/article_detail/article_detail?id=3'
-  })
+  uni.navigateTo({ url: '/pages/article_detail/article_detail?id=3' })
 }
 
-/** 生命周期 */
+/** 生命周期：只触发 refresh()，由 refresh 内部去重，避免首屏 4 次请求 */
 onMounted(() => {
-  if (props.active) {
-    fetchList(true)
-  }
+  if (props.active) refresh(true, 'mounted')
 })
 
 onShow(() => {
-  if (props.active) {
-    fetchList(true)
-  }
+  if (props.active) refresh(true, 'show')
 })
 
 watch(
   () => props.active,
   val => {
-    if (val) {
-      fetchList(true)
-    }
+    if (val) refresh(true, 'active')
+  }
+)
+
+watch(
+  () => activeOrderTypeTab.value,
+  () => {
+    if (!props.active) return
+    refresh(true, 'tab')
   }
 )
 
@@ -518,7 +535,7 @@ onPullDownRefresh(() => {
     uni.stopPullDownRefresh()
     return
   }
-  fetchList(true)
+  refresh(true, 'pull')
 })
 
 onReachBottom(() => {
@@ -528,10 +545,7 @@ onReachBottom(() => {
 </script>
 
 <style lang="scss" scoped>
-/* 订单集整体容器 */
-.orders-panel {
-  padding: 0 40rpx 40rpx;
-}
+.orders-panel { padding: 0 40rpx 40rpx; }
 
 /* 顶部统计卡片 */
 .summary-card {
@@ -549,81 +563,26 @@ onReachBottom(() => {
   margin-bottom: 32rpx;
 }
 
-.summary-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+.summary-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.summary-number { font-size: 40rpx; font-weight: 700; color: #d0d0d0; }
+.summary-label { margin-top: 10rpx; font-size: 24rpx; color: #d0d0d0; }
 
-/* 默认灰色 */
-.summary-number {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #d0d0d0;
-}
-
-.summary-label {
-  margin-top: 10rpx;
-  font-size: 24rpx;
-  color: #d0d0d0;
-}
-
-/* 选中态 */
 .summary-item-active .summary-number,
-.summary-item-active .summary-label {
-  color: #222222;
-}
+.summary-item-active .summary-label { color: #222222; }
 
-/* 中间分割线 */
-.summary-divider {
-  width: 2rpx;
-  height: 60rpx;
-  background: #f2f2f2;
-}
+.summary-divider { width: 2rpx; height: 60rpx; background: #f2f2f2; }
 
-/* 二级 Tab：全部 / 交易中 / 交易结束 */
-.second-tabs {
-  margin: 12rpx 0 20rpx;
-  display: flex;
-  align-items: center;
-}
+/* 二级 Tab */
+.second-tabs { margin: 12rpx 0 20rpx; display: flex; align-items: center; }
+.second-tab { padding: 10rpx 24rpx; border-radius: 999rpx; margin-right: 16rpx; background: #f5f6fa; }
+.second-tab-text { font-size: 24rpx; color: #b3b3b3; }
+.second-tab-active { background: #ffffff; box-shadow: 0 4rpx 12rpx rgba(15, 35, 95, 0.06); }
+.second-tab-active .second-tab-text { color: #333333; }
 
-.second-tab {
-  padding: 10rpx 24rpx;
-  border-radius: 999rpx;
-  margin-right: 16rpx;
-  background: #f5f6fa;
-}
+.orders-list-wrap { padding-bottom: 10rpx; }
 
-.second-tab-text {
-  font-size: 24rpx;
-  color: #b3b3b3;
-}
-
-.second-tab-active {
-  background: #ffffff;
-  box-shadow: 0 4rpx 12rpx rgba(15, 35, 95, 0.06);
-}
-
-.second-tab-active .second-tab-text {
-  color: #333333;
-}
-
-/* 列表容器 */
-.orders-list-wrap {
-  padding-bottom: 10rpx;
-}
-
-/* 空态 */
-.empty-wrap {
-  padding: 30rpx 0;
-}
-
-.status-empty {
-  padding-top: 10rpx;
-}
+.empty-wrap { padding: 30rpx 0; }
+.status-empty { padding-top: 10rpx; }
 
 .empty-card {
   border-radius: 24rpx;
@@ -633,43 +592,20 @@ onReachBottom(() => {
   align-items: center;
 }
 
-.empty-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #505050;
-  display: block;
-  text-align: center;
-}
+.empty-title { font-size: 30rpx; font-weight: 600; color: #505050; display: block; text-align: center; }
+.empty-desc { margin-top: 10rpx; font-size: 26rpx; color: #999999; line-height: 1.7; display: block; text-align: center; }
 
-.empty-desc {
-  margin-top: 10rpx;
-  font-size: 26rpx;
-  color: #999999;
-  line-height: 1.7;
-  display: block;
-  text-align: center;
-}
-
-/* 淡入动画 */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* 每一条投递卡片 */
 .sub-card {
   margin-bottom: 24rpx;
-  padding: 0; /* 去掉上下内边距，图片和文字严格等高 */
+  padding: 0;
   display: flex;
   align-items: center;
 
-  /* 动画初始状态 + 通用配置 */
   opacity: 0;
   transform: translateY(16rpx);
   animation-name: fadeInUp;
@@ -678,7 +614,6 @@ onReachBottom(() => {
   animation-fill-mode: forwards;
 }
 
-/* 左侧缩略图 */
 .sub-card-left {
   width: 140rpx;
   height: 140rpx;
@@ -689,12 +624,8 @@ onReachBottom(() => {
   overflow: hidden;
   flex-shrink: 0;
 }
-.sub-thumb {
-  width: 100%;
-  height: 100%;
-}
+.sub-thumb { width: 100%; height: 100%; }
 
-/* 中间文案区域：与图片等高，无额外上下间距 */
 .sub-card-middle {
   flex: 1;
   height: 140rpx;
@@ -706,52 +637,49 @@ onReachBottom(() => {
   padding: 0;
 }
 
-/* 第一行：状态+标题 */
+/* 第一行：状态 + 标题 */
 .sub-title-row {
   display: flex;
   align-items: center;
+  min-width: 0;
   margin: 0 0 8rpx 0;
 }
 
-/* 状态 pill */
+/* 关键修复：pill 不折行、不基线错位 */
 .status-pill {
-  padding: 4rpx 16rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40rpx;
+  padding: 0 16rpx;
   border-radius: 999rpx;
   background: #8fd7ff;
   color: #ffffff;
   font-size: 22rpx;
+  line-height: 40rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
   margin-right: 16rpx;
+  box-sizing: border-box;
 }
 
-/* 主标题 */
+/* 标题：调小字号，避免“太大” */
 .sub-main-title {
-  font-size: 30rpx;
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
   font-weight: 700;
   color: #000000;
-  max-width: 420rpx;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 第二行：1个投递项  120¥ */
-.sub-subtitle-row {
-  display: flex;
-  align-items: baseline;
-  margin: 0;
-}
-.sub-meta-text {
-  font-size: 28rpx;
-  color: #000000;
-}
-.sub-meta-text + .sub-meta-text {
-  margin-left: 26rpx;
-}
-.price-text {
-  font-weight: 700;
-}
+.sub-subtitle-row { display: flex; align-items: baseline; margin: 0; }
+.sub-meta-text { font-size: 28rpx; color: #000000; }
+.sub-meta-text + .sub-meta-text { margin-left: 26rpx; }
+.price-text { font-weight: 700; }
 
-/* 右侧：只有箭头 */
 .sub-card-right {
   flex-shrink: 0;
   width: 60rpx;
@@ -762,22 +690,9 @@ onReachBottom(() => {
   margin-left: 8rpx;
 }
 
-/* 列表底部提示 */
-.list-footer {
-  padding: 12rpx 0 10rpx;
-  text-align: center;
-}
-
-.footer-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.footer-text {
-  font-size: 22rpx;
-  color: #a1a9b3;
-}
+.list-footer { padding: 12rpx 0 10rpx; text-align: center; }
+.footer-loading { display: flex; justify-content: center; align-items: center; }
+.footer-text { font-size: 22rpx; color: #a1a9b3; }
 
 /* 平台公告横幅 */
 .platform-announcement {

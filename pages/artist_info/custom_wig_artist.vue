@@ -10,7 +10,7 @@
         transparentFixedFontColor="#000"
         :titleCenter="true"
       >
-        <!-- 左侧：返回按钮 + “手改毛”文字（点击文字同样返回） -->
+        <!-- 左侧：返回按钮 + “BJD毛娘”文字 -->
         <template #left>
           <view class="nav-left">
             <view class="nav-back-pill" @click="goBack" aria-label="返回">
@@ -20,33 +20,33 @@
                 style="width: 14rpx;height: 14rpx;position: relative;top: 3rpx;"
               ></image>
             </view>
-            <text class="nav-back-text font-title" @click="goBack">返回</text>
+            <text class="nav-back-text font-title" @click="goBack">BJD毛娘</text>
           </view>
         </template>
 
-        <!-- 右侧：分享按钮（复用 common-share） -->
+        <!-- 右侧：分享按钮 -->
         <template #right>
           <common-share v-if="shareBtnVisible" @click="shareClick" />
         </template>
 
-        <!-- 透明层（页面顶部时显示）左右按钮 -->
+        <!-- 顶部透明层左侧（吸顶时显示） -->
         <template #transparentFixedLeft>
           <view class="nav-left">
             <view class="nav-back-pill" @click="goBack" aria-label="返回">
               <image
                 src="/static/artist/left.png"
                 mode="aspectFill"
-                style="width: 14rpx;height: 14rpx;position: relative;top: 3rpx;"
+                style="width: 14rpx;height: 14rpx;position: relative;top: 3rpx; "
               ></image>
             </view>
-            <text class="nav-back-text font-title" @click="goBack">手改毛</text>
+            <text class="nav-back-text font-title" @click="goBack">BJD毛娘</text>
           </view>
         </template>
         <template #transparentFixedRight>
           <common-share v-if="shareBtnVisible" @click="shareClick" />
         </template>
 
-        <!-- 默认槽：吸顶时显示的头像 + 名称 -->
+        <!-- 默认槽：中间吸顶标题（随滚动淡入） -->
         <template #default>
           <view class="nav-center">
             <image class="nav-center-avatar" :src="info.logo_image || defaultAvatar" mode="aspectFill" />
@@ -54,14 +54,15 @@
           </view>
         </template>
 
+        <!-- 透明层中间（可留空） -->
         <template #transparentFixed>
-          <!-- 顶部透明层中间留空 -->
+          <!-- 可按需放内容，这里留空 -->
         </template>
       </zhouWei-navBar>
 
       <common-placeholder></common-placeholder>
 
-      <!-- 头像 + 信息卡片（头像与卡片 1/2 重叠） -->
+      <!-- 头像 + 信息卡片 -->
       <view class="header">
         <view class="avatar-wrap">
           <image class="avatar" :src="info.logo_image || defaultAvatar" mode="aspectFill" />
@@ -115,15 +116,30 @@
     <view class="identity-card">
       <view class="id-title font-title">其它身份</view>
       <view class="id-row">
-        <view class="id-pill" @click="goRole('shop')">
+        <!-- 贩售 -->
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_brand }"
+          @click="identity.is_brand && goRole('shop')"
+        >
           <image class="id-img" src="/static/artist/iconify-uil_shop.png"></image>
           <text class="font-title">贩售</text>
         </view>
-        <view class="id-pill" @click="goRole('hair')">
+        <!-- 毛娘（当前页） -->
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_bjd_hairstylist }"
+          @click="identity.is_bjd_hairstylist && goRole('hair')"
+        >
           <image class="id-img" src="/static/artist/wig.png"></image>
           <text class="font-title">手改毛</text>
         </view>
-        <view class="id-pill" @click="goRole('artist')">
+        <!-- 妆师 -->
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_bjd_artist }"
+          @click="identity.is_bjd_artist && goRole('artist')"
+        >
           <image class="id-img" src="/static/artist/pen.png"></image>
           <text class="font-title">妆师</text>
         </view>
@@ -151,7 +167,7 @@
         </view>
       </view>
 
-      <!-- 手改毛网格（仅首图） -->
+      <!-- 毛图网格（仅首图） -->
       <view v-if="listTab === 'images'" class="grid">
         <view
           v-for="item in wigs"
@@ -184,19 +200,27 @@
           <view class="order-body">
             <view class="order-title font-title">{{ p.brand_name }} · 开单</view>
             <view class="order-meta">
-              <text class="chip" :class="statusClass(p)">{{ statusText(p) }}</text>
+              <text class="chip font-alimamashuhei" :class="statusClass(p)">
+                {{ statusText(p) }}
+              </text>
               <text class="time">开：{{ formatTime(p.open_time) }}</text>
               <text class="time">截：{{ formatTime(p.close_time) }}</text>
             </view>
-            <view class="tier-line">{{ tierRange(p) }}</view>
+            <view class="tier-line font-alimamashuhei">{{ tierRange(p) }}</view>
           </view>
         </view>
 
         <view v-if="orderLoadingMore" class="grid-tip">
           <uni-load-more status="loading" />
         </view>
-        <view v-else-if="!orderHasMore && orderPlans.length" class="grid-tip">— 没有更多记录 —</view>
-        <view v-else-if="!orderPlans.length && !orderLoadingMore" class="grid-tip">暂无记录</view>
+        <view
+          v-else-if="!orderHasMore && orderPlans.length"
+          class="grid-tip"
+        >— 没有更多记录 —</view>
+        <view
+          v-else-if="!orderPlans.length && !orderLoadingMore"
+          class="grid-tip"
+        >暂无记录</view>
       </view>
     </view>
   </view>
@@ -204,7 +228,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { onLoad, onReachBottom, onPageScroll } from '@dcloudio/uni-app'
+import { onLoad, onReachBottom, onPageScroll, onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 import { useCrossShare } from '@/common/share.js'
 
@@ -214,7 +238,7 @@ const scrollTop = ref(0)
 onPageScroll(e => (scrollTop.value = e.scrollTop || 0))
 const goBack = () => uni.navigateBack({ delta: 1 })
 
-/** 分享相关（简单沿用现有逻辑，文案改为手改毛） */
+// 分享逻辑（这里仍示例单个作品分享，可按需扩展）
 const pageId = ref('1')
 const detail = ref({
   title: '超好看的作品',
@@ -222,15 +246,15 @@ const detail = ref({
 })
 
 const { setupMpShare, shareBtnVisible, shareClick } = useCrossShare(() => ({
-  title: `手改毛 · ${detail.value.title || '精选'}`,
-  summary: '看看这个手改毛作品～',
+  title: `BJD毛娘 · ${detail.value.title || '精选'}`,
+  summary: '看看这个作品，超好看～',
   imageUrl: detail.value.images?.[0],
-  // 这里路径按你实际的毛娘作品详情页来改
+  // 这里示例跳转到毛娘作品详情页（按你的实际页面改）
   path: `/pages/custom_wig/detail?id=${pageId.value}`
 }))
 setupMpShare()
 
-/** 顶部信息 */
+/** 顶部信息 + 身份标记 */
 const info = reactive({
   brand_id: 0,
   brand_name: '',
@@ -239,6 +263,13 @@ const info = reactive({
   last_login_time: 0,
   artist_stats: null
 })
+
+const identity = reactive({
+  is_brand: 0,
+  is_bjd_artist: 0,
+  is_bjd_hairstylist: 0
+})
+
 const defaultAvatar = 'https://images1.fantuanpu.com/brand-avatar/default'
 
 const lastLoginText = computed(() => {
@@ -257,14 +288,14 @@ const punctualityRateText = computed(() => {
 
 /** 列表 Tab（图片 / 订单） */
 const listTab = ref('images')
-const switchListTab = async (tab) => {
+const switchListTab = async tab => {
   listTab.value = tab
   if (tab === 'orders' && orderPlans.value.length === 0) {
     await fetchOrderPlans()
   }
 }
 
-/** 手改毛列表（仅首图） */
+/** 毛图列表（仅首图） */
 const wigs = ref([]) // { id, previewUrl }
 const page = ref(1)
 const size = ref(30)
@@ -279,48 +310,33 @@ function mapWigs(list = []) {
         (it.custom_wig_images && it.custom_wig_images[0]) ||
         ''
       return first
-        ? { id: it.id, previewUrl: first }
+        ? {
+            id: it.id,
+            previewUrl: first
+          }
         : null
     })
     .filter(Boolean)
 }
 
-async function fetchWigs() {
-  if (!hasMore.value || loadingMore.value) return
-  loadingMore.value = true
-  const res = await uni.request({
-    url: `${websiteUrl.value}/brand-artist/custom-wig`,
-    method: 'GET',
-    data: {
-      brand_id: brandId.value,
-      page: page.value,
-      size: size.value
-      // 如需筛选，可以在此补充 material / color / tags
-    }
-  })
-  loadingMore.value = false
-
-  if (String(res.data?.status).toLowerCase() !== 'success') {
-    uni.showToast({
-      title: res.data?.msg || '加载失败',
-      icon: 'none'
-    })
-    return
-  }
-
-  const list = mapWigs(res.data?.data?.list || [])
-  wigs.value = [...wigs.value, ...list]
-
-  const total = Number(res.data?.data?.total || wigs.value.length)
-  hasMore.value = wigs.value.length < total
-  if (hasMore.value) page.value += 1
-}
-
 /** 档期（月度忙碌天数） */
 const monthBusyList = ref([]) // [{key,label,isCurrent,busy_days,total_days}]
-const MONTH_NAMES = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
+const MONTH_NAMES = [
+  '一月',
+  '二月',
+  '三月',
+  '四月',
+  '五月',
+  '六月',
+  '七月',
+  '八月',
+  '九月',
+  '十月',
+  '十一月',
+  '十二月'
+]
 
-/** 工具 */
+/** 工具函数 */
 function toFixed2(v) {
   const n = parseFloat(v)
   return Number.isNaN(n) ? 0 : Math.round(n * 100) / 100
@@ -352,7 +368,7 @@ function formatTime(ts) {
   return `${mm}/${dd} ${hh}:${mi}`
 }
 
-/** 请求：品牌/艺术家基本信息 */
+/** === 请求：info（带身份标记） === */
 async function fetchInfo() {
   const res = await uni.request({
     url: `${websiteUrl.value}/brand-artist/info`,
@@ -369,18 +385,62 @@ async function fetchInfo() {
     return
   }
   const d = res.data.data || {}
-  info.brand_id = d.brand_id || 0
-  info.brand_name = d.brand_name || ''
-  info.description = d.description || ''
-  info.logo_image = d.logo_image || ''
+
+  info.brand_id = d.brand_id || d.brand?.id || 0
+  info.brand_name = d.brand_name || d.brand?.brand_name || ''
+  info.description = d.description || d.brand?.description || ''
+  info.logo_image = d.logo_image || d.brand?.logo_image || ''
   info.last_login_time = Number(d.last_login_time || 0)
   info.artist_stats = d.artist_stats || null
+
+  // 身份字段：优先顶层，没有则读 brand 内部
+  identity.is_brand = Number(
+    d.is_brand ?? (d.brand && d.brand.is_brand) ?? 0
+  )
+  identity.is_bjd_artist = Number(
+    d.is_bjd_artist ?? (d.brand && d.brand.is_bjd_artist) ?? 0
+  )
+  identity.is_bjd_hairstylist = Number(
+    d.is_bjd_hairstylist ??
+      (d.brand && d.brand.is_bjd_hairstylist) ??
+      0
+  )
+}
+
+/** 毛图列表：/brand-artist/custom-wig */
+async function fetchWigs() {
+  if (!hasMore.value || loadingMore.value) return
+  loadingMore.value = true
+  const res = await uni.request({
+    url: `${websiteUrl.value}/brand-artist/custom-wig`,
+    method: 'GET',
+    data: {
+      brand_id: brandId.value,
+      page: page.value,
+      size: size.value
+    }
+  })
+  loadingMore.value = false
+  if (String(res.data?.status).toLowerCase() !== 'success') {
+    uni.showToast({
+      title: res.data?.msg || '加载失败',
+      icon: 'none'
+    })
+    return
+  }
+  const list = mapWigs(res.data?.data?.list || [])
+  wigs.value = [...wigs.value, ...list]
+  const total = Number(res.data?.data?.total || wigs.value.length)
+  hasMore.value = wigs.value.length < total
+  if (hasMore.value) page.value += 1
 }
 
 /** 档期接口（横向数据） */
 async function fetchMonthlyBusy() {
   const now = new Date()
-  const startMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const startMonth = `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, '0')}`
   const months = 6
   const res = await uni.request({
     url: `${websiteUrl.value}/brand-artist/monthly-busy`,
@@ -407,10 +467,11 @@ async function fetchMonthlyBusy() {
       })
     }
   }
-
   monthBusyList.value = rows.map((r, idx) => {
     const isCurrent = idx === 0
-    const label = isCurrent ? '本月' : MONTH_NAMES[(Number(r.month) - 1 + 12) % 12]
+    const label = isCurrent
+      ? '本月'
+      : MONTH_NAMES[(Number(r.month) - 1 + 12) % 12]
     return {
       key: `${r.year}-${r.month}`,
       label,
@@ -421,7 +482,7 @@ async function fetchMonthlyBusy() {
   })
 }
 
-/** 开单记录（毛娘：artist_type=2） */
+/** 开单记录（毛娘：artist_type = 2） */
 const orderPlans = ref([])
 const orderPage = ref(1)
 const orderSize = ref(5)
@@ -463,7 +524,7 @@ async function fetchOrderPlans() {
     method: 'GET',
     data: {
       brand_id: brandId.value,
-      artist_type: 2, // ✅ 毛娘
+      artist_type: 2, // 2 = 毛娘
       page: orderPage.value,
       size: orderSize.value
     }
@@ -500,7 +561,7 @@ function openOrder(id) {
   })
 }
 
-/** 图片预览（如需要） */
+/** 图片预览 */
 function preview(url) {
   const urls = wigs.value.map(i => i.previewUrl)
   const current = urls.indexOf(url)
@@ -510,41 +571,59 @@ function preview(url) {
   })
 }
 
-/** 跳转到手改毛详情 */
-const navigateToWig = (id) => {
-  uni.navigateTo({
-    // 这里路径按你新建的手改毛详情页来改
-    url: `/pkg-creator/creator_base/custom_wig/custom_wig?id=${id}`
-  })
-}
-
 /** 其它身份跳转 */
 function goRole(type) {
-  const map = {
-    shop: '/pages/shop/index',
-    hair: '/pages/hair/index',
-    artist: '/pages/artist/index'
+  if (!info.brand_id) return
+  const urlMap = {
+    // H5 对应：/#/pages/brand/brand?brand_id=1
+    shop: `/pages/brand/brand?brand_id=${info.brand_id}`,
+    // H5 对应：/#/pages/artist_info/bjd_faceup_artist?brand_id=1
+    artist: `/pages/artist_info/bjd_faceup_artist?brand_id=${info.brand_id}`,
+    // H5 对应：/#/pages/artist_info/custom_wig_artist?brand_id=1
+    hair: `/pages/artist_info/custom_wig_artist?brand_id=${info.brand_id}`
   }
-  uni.navigateTo({
-    url: map[type] || '/'
-  })
+  const url = urlMap[type]
+  if (!url) return
+  // 当前已经在毛娘页，再点“手改毛”就不再重复跳转
+  if (type === 'hair') return
+  uni.navigateTo({ url })
 }
 
-/** 生命周期 */
-onLoad(query => {
-  const bid = Number(query?.brand_id || 0)
+/** 毛图点击跳转到详情 */
+const navigateToWig = id => {
+  uni.navigateTo({
+    // 按你的实际路由来，这里用 custom_wig 详情示例
+    url: `/pages/custom_wig/detail?id=${id}`
+  })
+}
+// 记录是否已经通过路由参数完成初始化
+const inited = ref(false)
+
+// 首次进入页面时，从路由参数中读取 brand_id
+onLoad(async (options) => {
+  const bid = Number(options?.brand_id || 0)
   if (!bid) {
     uni.showToast({
       title: '缺少 brand_id',
       icon: 'none'
     })
+    // 看你需求要不要直接返回上一页
+    // uni.navigateBack()
     return
   }
   brandId.value = bid
+  inited.value = true
+
+  uni.showLoading({ title: '加载中...' })
+  try {
+    await fetchInfo()
+    await Promise.all([fetchMonthlyBusy(), fetchWigs(), fetchOrderPlans()])
+  } finally {
+    uni.hideLoading()
+  }
 })
 
-onMounted(async () => {
-  if (!brandId.value) return
+onShow(async () => {
   uni.showLoading({ title: '加载中...' })
   try {
     await fetchInfo()
@@ -567,13 +646,14 @@ onReachBottom(() => {
 }
 
 .head-container {
-  background: url("/static/bg.png");
+  background: url('/static/bg.png');
   background-size: cover;
   background-repeat: no-repeat;
 }
 
 .font-title {
-  font-weight: 800;
+  font-weight: 200;
+  color: #3f3f3f;
 }
 
 .nav-back-pill {
@@ -697,6 +777,11 @@ onReachBottom(() => {
   color: #333;
 }
 
+.id-pill--disabled {
+  opacity: 0.4;
+}
+
+/* 图标 */
 .id-img {
   width: 34rpx;
   height: 34rpx;
@@ -756,6 +841,13 @@ onReachBottom(() => {
 }
 
 /* Tab */
+.list-tabs {
+  margin: 20rpx 24rpx 0 20rpx;
+  display: flex;
+  gap: 40rpx;
+  position: relative;
+}
+
 .tab-btn {
   margin-left: 20rpx;
   position: relative;
@@ -769,13 +861,14 @@ onReachBottom(() => {
   color: #a0a7af;
   position: relative;
   z-index: 2;
-  transition: color .22s ease;
+  transition: color 0.22s ease;
 }
 
 .tab-btn.active .label {
   color: #000;
 }
 
+/* ink 椭圆 */
 .tab-btn .ink-ellipse {
   position: absolute;
   left: 50%;
@@ -784,9 +877,11 @@ onReachBottom(() => {
   height: 82rpx;
   background: rgba(168, 255, 252, 1);
   border-radius: 50%;
-  transform: translateX(-50%) rotate(60deg) scale(.7);
+  transform: translateX(-50%) rotate(60deg) scale(0.7);
   opacity: 0;
-  transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.22s ease;
   will-change: transform, opacity;
 }
 
@@ -795,6 +890,7 @@ onReachBottom(() => {
   opacity: 1;
 }
 
+/* 红点 */
 .red-dot {
   position: absolute;
   right: -6rpx;
@@ -806,7 +902,7 @@ onReachBottom(() => {
   box-shadow: 0 0 0 2rpx #fff;
 }
 
-/* 手改毛网格 */
+/* 毛图网格 */
 .grid {
   padding: 24rpx;
   display: flex;
@@ -836,9 +932,8 @@ onReachBottom(() => {
   padding: 20rpx 0;
 }
 
-/* 开单记录列表 */
+/* 开单记录 */
 .order-list {
-  padding: 24rpx;
   display: flex;
   flex-direction: column;
   gap: 16rpx;
@@ -888,13 +983,13 @@ onReachBottom(() => {
 }
 
 .chip.ongoing {
-  background: #e8f7ee;
-  color: #17a05d;
+  background: #ccffcf;
+  color: #577454;
 }
 
 .chip.upcoming {
-  background: #e8f3ff;
-  color: #2376ff;
+  background: #cce4ff;
+  color: #86b4ff;
 }
 
 .chip.ended {
@@ -923,6 +1018,7 @@ onReachBottom(() => {
   color: #000;
 }
 
+/* 吸顶标题 */
 .nav-center {
   display: flex;
   align-items: center;

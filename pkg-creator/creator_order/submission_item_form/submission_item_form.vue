@@ -151,7 +151,7 @@
           <!-- 娃头图片（最多3张） -->
           <view class="field-row">
             <view class="field-label">
-              <text class="label-text">娃头图片（最多3张）</text>
+              <text class="label-text">图片（最多3张）</text>
             </view>
             <view class="field-control image-field">
               <view class="upload-container">

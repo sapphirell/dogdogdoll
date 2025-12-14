@@ -242,6 +242,33 @@ const footerSafeRaw = ref(0)
 const headerOffsetPx = computed(() => toPx(windowTopPxRaw.value))
 const footerSafePx = computed(() => toPx(footerSafeRaw.value + 20))
 
+// ====== 消息提示音 ======
+let clickAudio = null
+
+function playClickSound () {
+  try {
+    if (!clickAudio) {
+      // 创建音频上下文，只创建一次复用
+      clickAudio = uni.createInnerAudioContext()
+      // 静态资源目录下的点击音：/static/click.mp3
+      clickAudio.src = '/static/click.mp3'
+      // 可选：不要循环
+      clickAudio.loop = false
+      // 可选：从头开始播
+      clickAudio.startTime = 0
+    } else {
+      // 确保每次从头播放
+      try {
+        clickAudio.stop()
+      } catch (e) {}
+    }
+
+    clickAudio.play()
+  } catch (e) {
+    console.warn('[CHAT-DBG] playClickSound error', e)
+  }
+}
+
 /** 等待 WS 连接就绪 */
 function waitWsReady (timeout = 5000) {
   return new Promise((resolve) => {
@@ -384,6 +411,14 @@ onUnload(() => {
     offIM()
     offIM = null
   }
+
+  if (clickAudio) {
+    try {
+      clickAudio.destroy()
+    } catch (e) {}
+    clickAudio = null
+  }
+
   leaveActiveSession()
 })
 
@@ -703,6 +738,8 @@ function appendNewMessage (uiMsg) {
     // 兜底：不通过 z-paging 方法时，手动替换数组引用，保证刷新
     messages.value = [...messages.value, uiMsg]
   }
+    // 发送消息 / 收到消息时播放提示音
+    playClickSound()
 }
 
 /** 发送统一实现 —— ACK 通过 local_key 更新数组，并强制替换 messages 引用 */

@@ -1,11 +1,7 @@
 <template>
   <view class="submission-page">
     <!-- 主体滚动区 -->
-    <scroll-view
-      class="scroll-body"
-      scroll-y
-      :show-scrollbar="false"
-    >
+    <scroll-view class="scroll-body" scroll-y :show-scrollbar="false">
       <!-- 未登录 -->
       <view v-if="!isLogin" class="state-box">
         <text class="state-title">请先登录</text>
@@ -33,15 +29,11 @@
 
       <!-- 正常内容 -->
       <view v-else class="content">
-
         <!-- 概览卡片：投递基本信息 + 作者信息 + 档期信息 -->
         <view class="card">
           <view class="card-header">
             <!-- 有作者信息时：展示作者 Logo + 名称 -->
-            <view
-              v-if="artistLogo || artistBrandName"
-              class="card-header-artist"
-            >
+            <view v-if="artistLogo || artistBrandName" class="card-header-artist">
               <image
                 v-if="artistLogo"
                 :src="artistLogo"
@@ -49,13 +41,8 @@
                 mode="aspectFill"
               />
               <view class="artist-meta">
-                <text class="artist-name">
-                  {{ artistBrandName || '投递作者' }}
-                </text>
-                <text
-                  v-if="planBasicText"
-                  class="artist-plan-text"
-                >
+                <text class="artist-name">{{ artistBrandName || '投递作者' }}</text>
+                <text v-if="planBasicText" class="artist-plan-text">
                   {{ planBasicText }}
                 </text>
               </view>
@@ -64,9 +51,7 @@
             <!-- 没有作者信息时：回退为原来的标题 -->
             <template v-else>
               <text class="card-title">投递详情</text>
-              <text class="card-sub" v-if="planBasicText">
-                {{ planBasicText }}
-              </text>
+              <text class="card-sub" v-if="planBasicText">{{ planBasicText }}</text>
             </template>
           </view>
 
@@ -93,17 +78,15 @@
           </view>
 
           <view class="info-row" v-if="maxSubmissionsPerUser > 0">
-            <text class="info-label">本次可投递头数上限</text>
+            <text class="info-label">本次可投递{{ subjectWord }}上限</text>
             <text class="info-val">
-              {{ maxSubmissionsPerUser }} 颗
-              <text class="info-extra">
-                （当前已填：{{ currentItemCount }} 颗）
-              </text>
+              {{ maxSubmissionsPerUser }} {{ unitWord }}
+              <text class="info-extra">（当前已填：{{ currentItemCount }} {{ unitWord }}）</text>
             </text>
           </view>
         </view>
 
-        <!-- 排队信息卡片（严格使用 ahead_count / status_text） -->
+        <!-- 排队信息卡片 -->
         <view class="card">
           <view class="card-header">
             <text class="card-title">排队进度</text>
@@ -112,48 +95,33 @@
           <view class="queue-summary">
             <view class="q-item">
               <text class="q-label">当前状态</text>
-              <text class="q-value">
-                {{ submission.status_text || '—' }}
-              </text>
+              <text class="q-value">{{ submission.status_text || '—' }}</text>
             </view>
+
             <view class="q-item">
-              <text class="q-label">前面还有</text>
-              <text class="q-value">
-                <text v-if="typeof submission.ahead_count === 'number'">
-                  {{ submission.ahead_count }} 人
-                </text>
-                <text v-else>--</text>
-              </text>
+              <text class="q-label">排队位置</text>
+              <text class="q-value">{{ queuePositionText }}</text>
             </view>
           </view>
         </view>
 
-        <!-- 作品列表卡片（items） + 我的草稿 -->
+        <!-- 列表卡片（items） + 我的草稿 -->
         <view class="card">
           <view class="card-header card-header-with-action">
             <view>
-              <text class="card-title">本次投递的娃头</text>
+              <text class="card-title">本次投递的{{ subjectWord }}</text>
               <text class="card-sub">
-                已填 {{ currentItemCount }} 颗
+                已填 {{ currentItemCount }} {{ unitWord }}
                 <text v-if="maxSubmissionsPerUser > 0">
-                  / 最多 {{ maxSubmissionsPerUser }} 颗
+                  / 最多 {{ maxSubmissionsPerUser }} {{ unitWord }}
                 </text>
               </text>
             </view>
 
             <!-- 新增投递按钮：达上限则隐藏 -->
             <view v-if="canAddItem" class="card-action">
-              <button
-                class="mini-add-btn"
-                type="default"
-                @click="goCreateItem"
-              >
-                <uni-icons
-                  class="mini-add-icon"
-                  type="plus"
-                  size="18"
-                  color="#ffffff"
-                />
+              <button class="mini-add-btn" type="default" @click="goCreateItem">
+                <uni-icons class="mini-add-icon" type="plus" size="18" color="#ffffff" />
                 <text class="mini-add-text">新增投递</text>
               </button>
             </view>
@@ -161,18 +129,12 @@
 
           <!-- 没有作品 -->
           <view v-if="!submission.items || !submission.items.length" class="empty-box">
-            <text class="empty-text">还没有填写任何娃头信息。</text>
-            <text v-if="canAddItem" class="empty-tip">
-              点右上角「新增投递」开始填写。
-            </text>
+            <text class="empty-text">还没有填写任何{{ subjectWord }}信息。</text>
+            <text v-if="canAddItem" class="empty-tip">点右上角「新增投递」开始填写。</text>
           </view>
 
-          <!-- 本次投递的娃头列表 -->
-          <view
-            v-for="item in submission.items"
-            :key="item.id"
-            class="item-row"
-          >
+          <!-- 本次投递列表 -->
+          <view v-for="item in submission.items" :key="item.id" class="item-row">
             <image
               v-if="getFirstRefImage(item.ref_images)"
               class="item-thumb"
@@ -181,23 +143,11 @@
             />
             <view class="item-main" @click="goEditItem(item)">
               <view class="item-title-row">
-                <text class="item-title">
-                  {{ item.work_subject || '未命名作品' }}
-                </text>
+                <text class="item-title">{{ item.work_subject || '未命名作品' }}</text>
               </view>
               <view class="item-tags">
-                <text
-                  v-if="item.size"
-                  class="item-tag"
-                >
-                  尺寸：{{ item.size }}
-                </text>
-                <text
-                  v-if="item.tier_title"
-                  class="item-tag"
-                >
-                  档位：{{ item.tier_title }}
-                </text>
+                <text v-if="item.size" class="item-tag">尺寸：{{ item.size }}</text>
+                <text v-if="item.tier_title" class="item-tag">档位：{{ item.tier_title }}</text>
                 <text
                   v-if="item.price_total !== undefined && item.price_total !== null"
                   class="item-tag"
@@ -205,39 +155,25 @@
                   总价：¥{{ Number(item.price_total) }}
                 </text>
               </view>
-              <view v-if="item.remark" class="item-remark">
-                {{ item.remark }}
-              </view>
+              <view v-if="item.remark" class="item-remark">{{ item.remark }}</view>
             </view>
 
             <!-- 编辑按钮 -->
             <view class="item-right">
-              <button
-                class="edit-btn"
-                type="default"
-                size="mini"
-                @click.stop="goEditItem(item)"
-              >
+              <button class="edit-btn" type="default" size="mini" @click.stop="goEditItem(item)">
                 <text class="edit-text">编辑</text>
               </button>
             </view>
           </view>
 
           <!-- 我的草稿 -->
-          <view
-            v-if="draftItems.length"
-            class="draft-section"
-          >
+          <view v-if="draftItems.length" class="draft-section">
             <view class="draft-header">
               <text class="draft-title">我的草稿</text>
               <text class="draft-sub">可将草稿绑定到本次投递</text>
             </view>
 
-            <view
-              v-for="d in draftItems"
-              :key="d.id"
-              class="draft-row"
-            >
+            <view v-for="d in draftItems" :key="d.id" class="draft-row">
               <image
                 v-if="getFirstRefImage(d.ref_images)"
                 class="item-thumb"
@@ -246,23 +182,11 @@
               />
               <view class="draft-main" @click="goEditItem(d)">
                 <view class="item-title-row">
-                  <text class="item-title">
-                    {{ d.work_subject || '未命名作品' }}
-                  </text>
+                  <text class="item-title">{{ d.work_subject || '未命名作品' }}</text>
                 </view>
                 <view class="item-tags">
-                  <text
-                    v-if="d.size"
-                    class="item-tag"
-                  >
-                    尺寸：{{ d.size }}
-                  </text>
-                  <text
-                    v-if="d.tier_title"
-                    class="item-tag"
-                  >
-                    档位：{{ d.tier_title }}
-                  </text>
+                  <text v-if="d.size" class="item-tag">尺寸：{{ d.size }}</text>
+                  <text v-if="d.tier_title" class="item-tag">档位：{{ d.tier_title }}</text>
                   <text
                     v-if="d.price_total !== undefined && d.price_total !== null"
                     class="item-tag"
@@ -273,12 +197,7 @@
               </view>
 
               <view class="draft-right">
-                <button
-                  class="use-btn"
-                  type="default"
-                  size="mini"
-                  @click.stop="useDraft(d)"
-                >
+                <button class="use-btn" type="default" size="mini" @click.stop="useDraft(d)">
                   <text class="use-text">使用</text>
                 </button>
               </view>
@@ -291,12 +210,7 @@
           <button class="chat-btn" type="default" @click="handleStartChat">
             <image :src="artistLogo" class="chat-logo" mode="aspectFill" />
             <text class="chat-text">发起对话</text>
-            <uni-icons
-              class="chat-arrow"
-              type="arrowright"
-              size="20"
-              color="#9ca3af"
-            />
+            <uni-icons class="chat-arrow" type="arrowright" size="20" color="#9ca3af" />
           </button>
         </view>
 
@@ -307,28 +221,16 @@
           </text>
         </view>
 
-        <!-- 底部留白：给底部去付款按钮预留空间 -->
+        <!-- 底部留白：给底部按钮预留空间 -->
         <view style="height: 180rpx;"></view>
       </view>
     </scroll-view>
 
-    <!-- 底部去付款按钮（恢复上一版结构，在按钮里展示总价） -->
-    <view
-      class="bottom-bar"
-      v-if="isLogin && submission.submission_id"
-    >
-      <button
-        class="pay-btn"
-        type="default"
-        @click="goPay"
-      >
-        <text
-          v-if="totalPrice > 0"
-          class="pay-amount"
-        >
-          合计 ¥{{ totalPrice }} ·
-        </text>
-        <text class="pay-text">去付款</text>
+    <!-- 底部按钮：仅“确认订单 / 去付款”两种 -->
+    <view class="bottom-bar" v-if="isLogin && submission.submission_id && bottomAction">
+      <button class="pay-btn" type="default" @click="handleBottomAction">
+        <text v-if="totalPrice > 0" class="pay-amount">合计 ¥{{ totalPrice }} ·</text>
+        <text class="pay-text">{{ bottomActionText }}</text>
       </button>
     </view>
   </view>
@@ -336,8 +238,17 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { websiteUrl, global } from '@/common/config.js'
+
+/** ====== 状态常量 ====== */
+const ItemStatusPending = 0
+const ItemStatusQueued = 1
+const ItemStatusSelectedPay = 2
+const ItemStatusOrdered = 3
+const ItemStatusNotSelected = 4
+const ItemStatusAbandoned = 5
+const ItemStatusExpired = 6
 
 /** ====== 路由参数 ====== */
 const submissionId = ref(0)
@@ -346,21 +257,16 @@ const submissionId = ref(0)
 const loading = ref(false)
 const hasFirstLoaded = ref(false)
 const errorMsg = ref('')
-
 const pollingTimer = ref(null)
+
+/** 用于丢弃过期响应（sid/seq 双校验） */
+let fetchSeq = 0
+
+/** H5 hashchange 监听器句柄 */
+let h5HashHandler = null
 
 /**
  * submission 排队信息（严格按照后端 SubmissionQueueInfoResp 映射）
- * type SubmissionQueueInfoResp struct {
- *   SubmissionID int64  `json:"submission_id"`
- *   PlanID       int    `json:"plan_id"`
- *   Mode         int64  `json:"mode"`
- *   AheadCount   int64  `json:"ahead_count"`
- *   Status       int64  `json:"status"`
- *   StatusText   string `json:"status_text"`
- *   Items        []model.OrderArtistSubmissionItem `json:"items"`
- *   DraftItems   []model.OrderArtistSubmissionItem `json:"draft_items"`
- * }
  */
 const submission = reactive({
   submission_id: 0,
@@ -376,10 +282,13 @@ const submission = reactive({
 /** 我的草稿（同 plan，submission_id = 0） */
 const draftItems = ref([])
 
-/** 单独缓存 plan 信息（只请求一次，不跟着轮询） */
+/** 单独缓存 plan 信息（不跟着轮询重复请求；每次进页面允许刷新一次） */
 const plan = reactive({
   id: 0,
   order_type: 0,
+  artist_type: 0,
+  service_scene: 0,
+  brand_admin_id: 0,
   max_submissions_per_user: 0,
   open_time: 0,
   close_time: 0,
@@ -395,24 +304,27 @@ const isLogin = computed(() => {
   return !!token || !!global.isLogin
 })
 
+/** 是否毛娘单：优先用 plan.artist_type（示例：2=毛娘） */
+const isHairOrder = computed(() => Number(plan.artist_type || 0) === 2)
+
+/** 名词/量词 */
+const subjectWord = computed(() => (isHairOrder.value ? '假毛' : '娃头'))
+const unitWord = computed(() => (isHairOrder.value ? '顶' : '颗'))
+
 /** 当前 submission 的作品数量 */
 const currentItemCount = computed(() =>
   submission.items && submission.items.length ? submission.items.length : 0
 )
 
 /** plan 限制人数 */
-const maxSubmissionsPerUser = computed(() =>
-  Number(plan.max_submissions_per_user || 0)
-)
+const maxSubmissionsPerUser = computed(() => Number(plan.max_submissions_per_user || 0))
 
 /** 是否还能新增作品 */
 const canAddItem = computed(() => {
   if (!isLogin.value) return false
   if (!submission.submission_id) return false
   const max = maxSubmissionsPerUser.value
-  if (!max || max <= 0) {
-    return true
-  }
+  if (!max || max <= 0) return true
   return currentItemCount.value < max
 })
 
@@ -423,53 +335,71 @@ const planBasicText = computed(() => {
   const mode = typeMap[Number(plan.order_type) || 0] || '档期'
   const open = fmtTime(plan.open_time)
   const close = fmtTime(plan.close_time)
-  if (plan.open_time && plan.close_time) {
-    return `${mode} · ${open} ~ ${close}`
-  }
+  if (plan.open_time && plan.close_time) return `${mode} · ${open} ~ ${close}`
   return mode
 })
 
 /** 作者 Logo：优先用 artist_info.LogoImage，其次 brand.logo_image */
 const artistLogo = computed(() => {
   if (plan.artist_info) {
-    return (
-      plan.artist_info.LogoImage ||
-      plan.artist_info.logo_image ||
-      ''
-    )
+    return plan.artist_info.LogoImage || plan.artist_info.logo_image || ''
   }
-  if (plan.brand) {
-    return plan.brand.logo_image || ''
-  }
+  if (plan.brand) return plan.brand.logo_image || ''
   return ''
 })
 
 /** 作者名称：优先用 artist_info.BrandName，其次 brand.brand_name */
 const artistBrandName = computed(() => {
   if (plan.artist_info) {
-    return (
-      plan.artist_info.BrandName ||
-      plan.artist_info.brand_name ||
-      ''
-    )
+    return plan.artist_info.BrandName || plan.artist_info.brand_name || ''
   }
-  if (plan.brand) {
-    return plan.brand.brand_name || ''
-  }
+  if (plan.brand) return plan.brand.brand_name || ''
   return ''
 })
 
-/** 总价（本次投递的娃头合计） */
+/** 总价（本次投递合计） */
 const totalPrice = computed(() => {
   if (!submission.items || !submission.items.length) return 0
   let sum = 0
   submission.items.forEach(it => {
     const v = Number(it.price_total || 0)
-    if (!Number.isNaN(v)) {
-      sum += v
-    }
+    if (!Number.isNaN(v)) sum += v
   })
   return Number(sum.toFixed(2))
+})
+
+/** 排队位置文案 */
+const queuePositionText = computed(() => {
+  const ahead = submission.ahead_count
+  const hasAhead = typeof ahead === 'number'
+
+  if (submission.status === ItemStatusQueued) {
+    return hasAhead ? `前面还有${ahead}人` : '前面还有--人'
+  }
+
+  // 非排队中：显示“您位于n号”（n = ahead_count + 1）
+  if (hasAhead) return `您位于${ahead + 1}号`
+  return '您位于--号'
+})
+
+/** 是否需要“确认订单”（以 status_text 包含“待买家确认”为准，避免后端状态码不一致） */
+const needConfirmOrder = computed(() => {
+  const t = String(submission.status_text || '')
+  return t.includes('待买家确认')
+})
+
+/** 底部按钮类型：仅两种 */
+const bottomAction = computed(() => {
+  if (!isLogin.value || !submission.submission_id) return ''
+  if (needConfirmOrder.value) return 'confirm'
+  if (submission.status === ItemStatusSelectedPay) return 'pay'
+  return ''
+})
+
+const bottomActionText = computed(() => {
+  if (bottomAction.value === 'confirm') return '确认订单'
+  if (bottomAction.value === 'pay') return '去付款'
+  return ''
 })
 
 /** 时间格式化（秒） */
@@ -488,53 +418,111 @@ function fmtTime (ts) {
 /** 取 ref_images 中的第一张图 */
 function getFirstRefImage (refImages) {
   if (!refImages) return ''
-  if (Array.isArray(refImages)) {
-    return refImages[0] || ''
-  }
+  if (Array.isArray(refImages)) return refImages[0] || ''
   const str = String(refImages)
   if (!str) return ''
   const parts = str.split(',').map(s => s.trim()).filter(Boolean)
   return parts[0] || ''
 }
 
+/** 从当前路由读取 submission_id（每次 onShow 都要重新读，防止沿用旧值） */
+function readSubmissionIdFromRoute () {
+  // #ifdef H5
+  try {
+    const hash = window.location.hash || ''
+    const qIndex = hash.indexOf('?')
+    if (qIndex >= 0) {
+      const qs = hash.slice(qIndex + 1)
+      const sp = new URLSearchParams(qs)
+      const sid = Number(sp.get('submission_id') || 0)
+      if (sid > 0) return sid
+    }
+  } catch (e) {
+    // ignore
+  }
+  // #endif
+
+  try {
+    const pages = getCurrentPages()
+    const cur = pages && pages.length ? pages[pages.length - 1] : null
+    const opt = (cur && (cur.options || cur.$page?.options)) || {}
+    const sid = Number(opt.submission_id || 0)
+    if (sid > 0) return sid
+  } catch (e) {
+    // ignore
+  }
+
+  return Number(submissionId.value || 0)
+}
+
+/** 进入页面时重置，避免展示旧数据 */
+function resetForEnter () {
+  stopPolling()
+
+  loading.value = true
+  hasFirstLoaded.value = false
+  errorMsg.value = ''
+
+  submission.submission_id = 0
+  submission.plan_id = 0
+  submission.mode = 0
+  submission.ahead_count = 0
+  submission.status = 0
+  submission.status_text = ''
+  submission.created_at = 0
+  submission.items = []
+  draftItems.value = []
+
+  plan.id = 0
+  plan.order_type = 0
+  plan.artist_type = 0
+  plan.service_scene = 0
+  plan.brand_admin_id = 0
+  plan.max_submissions_per_user = 0
+  plan.open_time = 0
+  plan.close_time = 0
+  plan.artist_name = ''
+  plan.artist_info = null
+  plan.brand = null
+  hasLoadedPlan.value = false
+}
+
+/** 确保 submissionId 与当前路由一致；不一致则切换并重置 */
+function ensureRouteSubmissionIdFresh () {
+  const routeSid = readSubmissionIdFromRoute()
+  const prevSid = Number(submissionId.value || 0)
+
+  if (routeSid > 0 && routeSid !== prevSid) {
+    console.log('[submission_detail] route sid changed:', { prevSid, routeSid })
+    submissionId.value = routeSid
+  }
+
+  return Number(submissionId.value || 0)
+}
+
 /** 填充 submission + draftItems */
 function fillSubmissionFromQueueInfo (raw) {
   if (!raw) return
-
-  submission.submission_id = Number(
-    raw.submission_id || submission.submission_id || submissionId.value || 0
-  )
-  submission.plan_id = Number(raw.plan_id || submission.plan_id || 0)
+  submission.submission_id = Number(raw.submission_id || submissionId.value || 0)
+  submission.plan_id = Number(raw.plan_id || 0)
   submission.mode = Number(raw.mode || 0)
 
-  if (typeof raw.ahead_count === 'number') {
-    submission.ahead_count = raw.ahead_count
-  }
-  if (typeof raw.status === 'number') {
-    submission.status = raw.status
-  }
+  if (typeof raw.ahead_count === 'number') submission.ahead_count = raw.ahead_count
+  if (typeof raw.status === 'number') submission.status = raw.status
   submission.status_text = raw.status_text || ''
 
-  if (typeof raw.created_at === 'number') {
-    submission.created_at = raw.created_at
-  }
+  if (typeof raw.created_at === 'number') submission.created_at = raw.created_at
 
-  if (Array.isArray(raw.items)) {
-    submission.items = raw.items
-  } else {
-    submission.items = []
-  }
-
-  if (Array.isArray(raw.draft_items)) {
-    draftItems.value = raw.draft_items
-  } else {
-    draftItems.value = []
-  }
+  submission.items = Array.isArray(raw.items) ? raw.items : []
+  draftItems.value = Array.isArray(raw.draft_items) ? raw.draft_items : []
 }
 
-/** queue-info 轮询 */
-async function fetchDetail () {
-  if (!isLogin.value || !submissionId.value) return
+/** queue-info 轮询（永远用 sid 快照；过期响应直接丢弃） */
+async function fetchDetail (sidArg) {
+  const sid = Number(sidArg || submissionId.value || 0)
+  if (!isLogin.value || !sid) return
+
+  const seq = ++fetchSeq
 
   if (!hasFirstLoaded.value) {
     loading.value = true
@@ -543,18 +531,22 @@ async function fetchDetail () {
 
   try {
     const token = uni.getStorageSync('token') || ''
+    console.log('[submission_detail] fetch queue-info:', { sid, seq })
+
     const res = await uni.request({
       url: `${websiteUrl.value}/with-state/artist-order/submission/queue-info`,
       method: 'GET',
       header: { Authorization: token },
-      data: { submission_id: submissionId.value }
+      data: { submission_id: sid }
     })
+
+    // 若期间切换了 submission_id / 触发了更新 seq，则丢弃旧响应
+    if (seq !== fetchSeq) return
+    if (sid !== Number(submissionId.value || 0)) return
 
     const body = res.data || {}
     if (String(body.status).toLowerCase() !== 'success') {
-      if (!hasFirstLoaded.value) {
-        throw new Error(body.msg || '加载失败')
-      }
+      if (!hasFirstLoaded.value) throw new Error(body.msg || '加载失败')
       console.warn('轮询 submission queue-info 失败：', body.msg)
       return
     }
@@ -569,11 +561,9 @@ async function fetchDetail () {
     hasFirstLoaded.value = true
   } catch (e) {
     console.error('加载 submission queue-info 失败', e)
-    if (!hasFirstLoaded.value) {
-      errorMsg.value = e?.message || '加载失败，请稍后重试'
-    }
+    if (!hasFirstLoaded.value) errorMsg.value = e?.message || '加载失败，请稍后重试'
   } finally {
-    loading.value = false
+    if (seq === fetchSeq) loading.value = false
   }
 }
 
@@ -594,11 +584,14 @@ async function fetchPlan (planId) {
     const d = body.data || {}
     plan.id = d.id || planId
     plan.order_type = d.order_type || 0
+    plan.artist_type = Number(d.artist_type || 0)
+    plan.service_scene = Number(d.service_scene || 0)
+    plan.brand_admin_id = Number(d.brand_admin_id || 0)
+
     plan.max_submissions_per_user = d.max_submissions_per_user ?? 0
     plan.open_time = Number(d.open_time || 0)
     plan.close_time = Number(d.close_time || 0)
     plan.artist_name = d.artist_name || ''
-
     plan.artist_info = d.artist_info || null
     plan.brand = d.brand || null
 
@@ -610,9 +603,10 @@ async function fetchPlan (planId) {
 
 /** 重试 detail */
 function reloadDetail () {
+  loading.value = true
   hasFirstLoaded.value = false
   errorMsg.value = ''
-  fetchDetail()
+  fetchDetail(submissionId.value)
 }
 
 /** 跳转：新增投递 */
@@ -673,7 +667,7 @@ async function useDraft (draft) {
     }
 
     uni.showToast({ title: '已绑定到本次投递', icon: 'success' })
-    fetchDetail()
+    fetchDetail(submissionId.value)
   } catch (e) {
     console.error('绑定草稿失败', e)
     uni.showToast({ title: e?.message || '绑定失败', icon: 'none' })
@@ -682,19 +676,19 @@ async function useDraft (draft) {
   }
 }
 
-/** 发起对话按钮点击 */
+/** 发起对话按钮点击：/#/pkg-im/chat/chat?peer_id=brand_admin_id */
 function handleStartChat () {
   if (!isLogin.value) {
     uni.showToast({ title: '请先登录后再发起对话', icon: 'none' })
     return
   }
-  if (!plan.artist_info || !plan.artist_info.id) {
-    uni.showToast({ title: '暂时无法获取作者信息', icon: 'none' })
+  const peerId = Number(plan.brand_admin_id || 0)
+  if (!peerId) {
+    uni.showToast({ title: '暂时无法获取对话对象', icon: 'none' })
     return
   }
 
-  const artistId = plan.artist_info.id
-  const url = `/pkg-im/chat/chat?artist_id=${artistId}`
+  const url = `/pkg-im/chat/chat?peer_id=${peerId}`
 
   // #ifdef H5
   window.location.hash = url
@@ -704,33 +698,97 @@ function handleStartChat () {
   // #endif
 }
 
-/** 去付款按钮点击 */
-function goPay () {
+/** 底部按钮点击：仅确认订单 / 去付款 */
+async function handleBottomAction () {
+  if (!bottomAction.value) return
   if (!isLogin.value) {
-    uni.showToast({ title: '请先登录后再付款', icon: 'none' })
+    uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
   if (!submission.submission_id) {
-    uni.showToast({ title: '投递信息异常，无法付款', icon: 'none' })
+    uni.showToast({ title: '投递信息异常', icon: 'none' })
     return
   }
 
-  const url =
-    `/pkg-creator/creator_order/submission_pay/submission_pay?submission_id=${submission.submission_id}`
+  if (bottomAction.value === 'confirm') {
+    await confirmOrder()
+    return
+  }
+  if (bottomAction.value === 'pay') {
+    await payNow()
+    return
+  }
+}
 
-  // #ifdef H5
-  window.location.hash = url
-  // #endif
-  // #ifndef H5
-  uni.navigateTo({ url })
-  // #endif
+/** 确认订单：/with-state/artist-order/submission/confirm-content */
+async function confirmOrder () {
+  const token = uni.getStorageSync('token') || ''
+  uni.showLoading({ title: '确认中...', mask: true })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/confirm-content`,
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/json',
+        Authorization: token
+      },
+      data: { submission_id: submission.submission_id }
+    })
+
+    const body = res.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      throw new Error(body.msg || '确认失败')
+    }
+
+    uni.showToast({ title: '已确认订单', icon: 'success' })
+    fetchDetail(submissionId.value)
+  } catch (e) {
+    console.error('确认订单失败', e)
+    uni.showToast({ title: e?.message || '确认失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+/** 去付款：/with-state/artist-order/pay（伪支付） */
+async function payNow () {
+  const token = uni.getStorageSync('token') || ''
+  uni.showLoading({ title: '支付中...', mask: true })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/pay`,
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/json',
+        Authorization: token
+      },
+      data: { submission_id: submission.submission_id }
+    })
+
+    const body = res.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      throw new Error(body.msg || '支付失败')
+    }
+
+    uni.showToast({ title: '支付成功', icon: 'success' })
+    fetchDetail(submissionId.value)
+  } catch (e) {
+    console.error('支付失败', e)
+    uni.showToast({ title: e?.message || '支付失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
 }
 
 /** 启动 / 停止轮询 */
 function startPolling () {
   stopPolling()
-  fetchDetail()
-  pollingTimer.value = setInterval(fetchDetail, 5000)
+  const sid = Number(submissionId.value || 0)
+  if (!sid) return
+  fetchDetail(sid)
+  pollingTimer.value = setInterval(() => {
+    fetchDetail(Number(submissionId.value || 0))
+  }, 5000)
 }
 function stopPolling () {
   if (pollingTimer.value) {
@@ -739,19 +797,65 @@ function stopPolling () {
   }
 }
 
+/** H5：页面展示期间监听 hashchange，确保 submission_id 变化能立即生效 */
+function bindH5HashChange () {
+  // #ifdef H5
+  if (h5HashHandler) return
+  h5HashHandler = () => {
+    const sid = readSubmissionIdFromRoute()
+    if (sid > 0 && sid !== Number(submissionId.value || 0)) {
+      submissionId.value = sid
+      resetForEnter()
+      startPolling()
+    }
+  }
+  window.addEventListener('hashchange', h5HashHandler)
+  // #endif
+}
+function unbindH5HashChange () {
+  // #ifdef H5
+  if (h5HashHandler) {
+    window.removeEventListener('hashchange', h5HashHandler)
+    h5HashHandler = null
+  }
+  // #endif
+}
+
 /** ====== 生命周期 ====== */
 onLoad((q = {}) => {
+  // 首次进入仍然读一次
   submissionId.value = Number(q.submission_id || 0)
   uni.setNavigationBarTitle({ title: '投递详情' })
 })
 
 onShow(() => {
-  if (!isLogin.value || !submissionId.value) return
+  // 所有 API 加载尽量放在 onShow：每次进入都刷新
+  bindH5HashChange()
+
+  if (!isLogin.value) {
+    stopPolling()
+    return
+  }
+
+  // 关键：每次 onShow 都重新从路由读 submission_id，避免沿用旧值
+  const sid = ensureRouteSubmissionIdFresh()
+  if (!sid) {
+    stopPolling()
+    return
+  }
+
+  resetForEnter()
   startPolling()
+})
+
+onHide(() => {
+  stopPolling()
+  unbindH5HashChange()
 })
 
 onUnload(() => {
   stopPolling()
+  unbindH5HashChange()
 })
 </script>
 
@@ -884,6 +988,11 @@ onUnload(() => {
   padding: 16rpx;
   border-radius: 16rpx;
   background: #f7f8fc;
+}
+.q-label,
+.q-value {
+  display: block;
+  width: 100%;
 }
 .q-label {
   font-size: 24rpx;
@@ -1069,7 +1178,7 @@ onUnload(() => {
   line-height: 1.7;
 }
 
-/* ====== 底部去付款按钮（恢复上一版样式） ====== */
+/* ====== 底部按钮 ====== */
 .bottom-bar {
   position: fixed;
   left: 0;

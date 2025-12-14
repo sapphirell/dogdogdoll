@@ -78,7 +78,7 @@ const navigateTo = (type) => {
       url = '/pkg-creator/creator_base/artist_info/artist_info'
       break
     case 'orderPlan':
-      url = '/pkg-creator/creator_base/order_plane/order_plane'
+      url = '/pkg-creator/creator_base/order_plan/order_plan'
       break
     default:
       return

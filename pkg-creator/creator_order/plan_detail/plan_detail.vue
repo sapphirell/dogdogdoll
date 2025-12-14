@@ -54,7 +54,7 @@
       </view>
     </view>
 
-    <!-- 高光图片：固定宽度 + 横向滚动 -->
+    <!-- 高光图片：固定宽度 + 横向滚动（按类型选择妆师/毛娘高光） -->
     <scroll-view v-if="highlightImages.length" class="hl-strip" scroll-x :show-scrollbar="false">
       <view class="hl-row">
         <image
@@ -70,9 +70,10 @@
 
     <!-- 信息卡（概览） -->
     <view class="card">
-      <view class="row">
+      <!-- 投递方式：可点击打开说明弹窗 -->
+      <view class="row" @click="openModeDescModal">
         <text class="label font-title">投递方式</text>
-        <view class="val">
+        <view class="val mode-val">
           <text class="mode-chip" :class="modeClass">{{ modeName }}</text>
           <text v-if="!isLocalPlan" class="external-tip">在其它平台开单</text>
         </view>
@@ -108,8 +109,8 @@
         </template>
       </template>
 
-      <!-- 定妆方式 -->
-      <view class="row">
+      <!-- 妆师：定妆方式 -->
+      <view class="row" v-if="isFaceup">
         <text class="label font-title">定妆方式</text>
         <view class="val finishing-val" @click="openFinishingModal">
           <text>{{ finishingMethodText }}</text>
@@ -117,13 +118,39 @@
         </view>
       </view>
 
-      <!-- 摘要 -->
-      <view class="row" v-if="perHeadCycleDays !== null">
-        <text class="label font-title">每颗头工期</text>
+      <!-- 毛娘：毛坯提供方式（圆角标签 + 说明弹窗） -->
+      <view class="row" v-else-if="isHairstylist">
+        <text class="label font-title">毛坯提供方式</text>
+        <view class="val wrap blank-val" @click="openBlankSupplyModal">
+          <view
+            v-if="blankOptions.length"
+            v-for="opt in blankOptions"
+            :key="opt.key"
+            class="blank-chip"
+            :class="opt.chipClass"
+          >
+            <text class="blank-chip-text font-alimamashuhei">{{ opt.label }}</text>
+            <image class="blank-chip-icon" src="/static/duigou.png" mode="aspectFit" />
+          </view>
+          <text v-else class="blank-empty">未设置</text>
+        </view>
+      </view>
+
+      <!-- 工期：手速排单 = 每颗头/每顶毛工期，自由排单 = 本次开单总工期 -->
+      <view class="row" v-if="showPerHeadCycle">
+        <text class="label font-title">{{ perHeadCycleLabel }}</text>
         <text class="val">{{ perHeadCycleDays }} 天</text>
       </view>
-	  <!-- max_submissions_per_user -->
+      <view class="row" v-if="showTotalCycle">
+        <text class="label font-title">本次开单总工期</text>
+        <text class="val">{{ totalCycleDays }} 天</text>
+      </view>
 
+      <!-- 本次开单是否可钞（放在工期下面） -->
+      <view class="row" v-if="showPremiumRow">
+        <text class="label font-title">本次开单是否可钞</text>
+        <text class="val">{{ premiumQueueText }}</text>
+      </view>
     </view>
 
     <!-- 开单详情 -->
@@ -168,8 +195,11 @@
           <text v-else class="oc-empty">—</text>
         </view>
 
-        <view class="oc-label"><text class="font-title">寄送约定</text></view>
-        <view class="oc-value oc-value-row">
+        <!-- 寄送约定：毛娘不展示 -->
+        <view class="oc-label" v-if="!isHairstylist">
+          <text class="font-title">寄送约定</text>
+        </view>
+        <view class="oc-value oc-value-row" v-if="!isHairstylist">
           <text v-if="shippingText" class="oc-plain">{{ shippingText }}</text>
           <text v-else class="oc-empty">—</text>
           <uni-icons
@@ -181,18 +211,23 @@
           />
         </view>
 
-        <view class="oc-label"><text class="font-title">补充说明</text></view>
-        <view class="oc-value">
+        <!-- 定妆说明：仅妆师展示 -->
+        <view class="oc-label" v-if="isFaceup">
+          <text class="font-title">定妆说明</text>
+        </view>
+        <view class="oc-value" v-if="isFaceup">
           <text v-if="finishingDescText" class="oc-desc">{{ finishingDescText }}</text>
           <text v-else class="oc-empty">—</text>
         </view>
       </view>
     </view>
 
-    <!-- 说明 -->
+    <!-- 说明（按类型解析妆师 / 毛娘规则） -->
     <view v-if="descText" class="desc-card">
-      <text class="desc-title font-title">说明</text>
-      <text class="desc">{{ descText }}</text>
+      <view class="desc-row">
+        <text class="desc-title font-title">说明</text>
+        <text class="desc">{{ descText }}</text>
+      </view>
     </view>
 
     <!-- 我的待投递（草稿项） -->
@@ -265,7 +300,7 @@
 
     <view style="height: 160rpx;"></view>
 
-    <!-- common-modal：定妆说明（统一子容器 80vw + aspectFit） -->
+    <!-- common-modal：定妆说明（只在妆师时会被触发） -->
     <common-modal
       :visible="finishingVisible"
       @update:visible="v => finishingVisible = v"
@@ -313,17 +348,57 @@
             <text class="cm-desc-title">{{ currentFinishingSlide.name }}</text>
             <text class="cm-desc-text">{{ currentFinishingSlide.desc }}</text>
           </view>
-		  
-		  <view>
-			  <text class="cm-desc-title">为什么需要喷涂这些？</text>
-			  <text class="cm-desc-text">打底可以保护娃头不受颜料染色，同时提供一些粗糙度，以供颜料和色粉附着。定妆是为了避免颜料和色粉被磨掉。</text>
-		  </view>
+
+          <view>
+            <text class="cm-desc-title">为什么需要喷涂这些？</text>
+            <text class="cm-desc-text">打底可以保护娃头不受颜料染色，同时提供一些粗糙度，以供颜料和色粉附着。定妆是为了避免颜料和色粉被磨掉。</text>
+          </view>
 
         </view>
       </view>
     </common-modal>
 
-    <!-- common-modal：寄送约定（同样使用 80vw 容器，统一观感） -->
+    <!-- common-modal：毛坯提供方式说明 -->
+    <common-modal
+      :visible="blankSupplyVisible"
+      @update:visible="v => blankSupplyVisible = v"
+      top="200rpx"
+      width="80vw"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">毛坯提供方式说明</view>
+        <view class="cm-body">
+          <view class="blank-modal-tags" v-if="blankOptions.length">
+            <view
+              v-for="opt in blankOptions"
+              :key="opt.key"
+              class="blank-chip"
+              :class="opt.chipClass"
+            >
+              <text class="blank-chip-text font-alimamashuhei">{{ opt.label }}</text>
+              <image class="blank-chip-icon" src="/static/duigou.png" mode="aspectFit" />
+            </view>
+          </view>
+
+          <text class="cm-desc-title">自带毛坯</text>
+          <text class="cm-desc-text">
+            由买家提供已经购买好的毛坯进行修剪。
+          </text>
+
+          <text class="cm-desc-title">指定购买毛坯</text>
+          <text class="cm-desc-text">
+            由毛娘提供一个第三方毛坯店铺的链接，指定买家购买毛坯并寄送。
+          </text>
+
+          <text class="cm-desc-title">选购现有毛坯</text>
+          <text class="cm-desc-text">
+            根据买家的指定造型，毛娘提供一些可选毛坯现货进行完成，需要支付毛坯和手工费。
+          </text>
+        </view>
+      </view>
+    </common-modal>
+
+    <!-- common-modal：寄送约定 -->
     <common-modal
       :visible="shippingVisible"
       @update:visible="v => shippingVisible = v"
@@ -350,6 +425,44 @@
               如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师有权利取消订单。
             </text>
           </view>
+        </view>
+      </view>
+    </common-modal>
+
+    <!-- common-modal：投递方式说明 -->
+    <common-modal
+      :visible="modeDescVisible"
+      @update:visible="v => modeDescVisible = v"
+      top="200rpx"
+      width="calc(80vw)"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">投递方式说明</view>
+        <view class="cm-body">
+          <text class="cm-desc-title">长期接单</text>
+          <text class="cm-desc-text">
+            如果库存足够，您可以随时拍下一个订单。
+          </text>
+
+          <text class="cm-desc-title">限时手速投递-手速排单</text>
+          <text class="cm-desc-text">
+            限时限量开放投递，并以投递顺序进行排单，您可以在订单中心看到自己的排位。限时手速模式允许超量抢购，如果前方有人未付款，后续队列将依次轮到。
+          </text>
+
+          <text class="cm-desc-title">限时抽选投递</text>
+          <text class="cm-desc-text">
+            限时限量开放投递，接单方在结束后将进行挑选。抽选模式不限制投递数量，当抽选数量达到库存限制之后，未中选的订单将标记为失败。
+          </text>
+
+          <text class="cm-desc-title">限时黑箱卡投递</text>
+          <text class="cm-desc-text">
+            功能暂未开放。
+          </text>
+
+          <text class="cm-desc-title">限时手速投递-自由排单</text>
+          <text class="cm-desc-text">
+            限时限量开放投递，所有投单的人共享一个工期，接单者可以自由排列订单顺序。您可以在订单中心看到自己的排位。限时手速模式允许超量抢购，如果前方有人未付款，后续队列将依次轮到。
+          </text>
         </view>
       </view>
     </common-modal>
@@ -397,11 +510,31 @@ const plan = reactive({
   tiers: [],
   addons: [],
   extra: {},
-  inventory: 0
+  inventory: 0,
+  premium_queue_limit: 0,
+  premium_inventory: 0,
+  premium_rate: 1
 })
+
+/** 类型标记：妆师 / 毛娘 */
+const isFaceup = computed(() => Number(plan.artist_type) === 1)
+const isHairstylist = computed(() => Number(plan.artist_type) === 2)
 
 /** 返回 */
 const goBack = () => uni.navigateBack({ delta: 1 })
+
+/** 跳转投递详情（带 submission_id） */
+function goSubmissionDetail(submissionId) {
+  if (!submissionId) return
+  const sid = Number(submissionId)
+  const url = `/pkg-creator/creator_order/submission_detail/submission_detail?submission_id=${sid}`
+  // #ifdef H5
+  window.location.hash = url
+  // #endif
+  // #ifndef H5
+  uni.navigateTo({ url })
+  // #endif
+}
 
 /** 拉取详情 */
 async function fetchPlan() {
@@ -437,6 +570,9 @@ async function fetchPlan() {
   plan.external_url = d.external_url || ''
   plan.is_local = plan.external_url ? 0 : 1
   plan.inventory = Number(d.inventory || 0)
+  plan.premium_queue_limit = Number(d.premium_queue_limit || 0)
+  plan.premium_inventory = Number(d.premium_inventory || 0)
+  plan.premium_rate = Number(d.premium_rate || 1)
 
   try {
     if (plan.order_config) {
@@ -469,24 +605,37 @@ const artistName = computed(() =>
   plan.artist_info?.BrandName || plan.brand?.brand_name || plan.artist_name || '—'
 )
 
-/** 高光图 */
+/** 高光图：按类型只解析对应字段 */
 const highlightImages = computed(() => {
-  const a = String(plan.artist_info?.artist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
-  const h = String(plan.artist_info?.hairstylist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
-  if (Number(plan.artist_type) === 2) return h.length ? h : a
-  return a.length ? a : h
+  const info = plan.artist_info || {}
+  const artistImgs = String(info.artist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
+  const hairImgs = String(info.hairstylist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
+
+  if (isHairstylist.value) {
+    return hairImgs.length ? hairImgs : artistImgs
+  }
+  if (isFaceup.value) {
+    return artistImgs.length ? artistImgs : hairImgs
+  }
+  return artistImgs.length ? artistImgs : hairImgs
 })
 function previewHL(idx) { uni.previewImage({ urls: highlightImages.value, current: idx || 0 }) }
 
 /** 是否本平台/阶段 */
 const isLocalPlan = computed(() => plan.is_local ? true : false)
-const modeMap = { 1: '常驻投递', 2: '限时手速', 3: '限时抽选', 4: '限时黑箱' }
-const modeName = computed(() => modeMap[Number(plan.order_type)] || '开单')
+const modeMap = {
+  1: '长期接单',
+  2: '限时手速投递-手速排单',
+  3: '限时抽选投递',
+  4: '限时黑箱卡投递',
+  5: '限时手速投递-自由排单'
+}
+const modeName = computed(() => modeMap[Number(plan.order_type)] || '未知')
 const modeClass = computed(() => {
   const m = Number(plan.order_type)
   return {
     'mode-direct': m === 1,
-    'mode-speed': m === 2,
+    'mode-speed': m === 2 || m === 5,
     'mode-lottery': m === 3,
     'mode-black': m === 4
   }
@@ -538,26 +687,96 @@ function tick() {
 function startTimer() { stopTimer(); tick(); timer = setInterval(tick, 1000) }
 function stopTimer() { if (timer) { clearInterval(timer); timer = null } }
 
-/** 库存文本：使用 inventory 字段 */
+/** 库存文本：普通库存 + 钞库存 */
 const stockText = computed(() => {
   const inv = Number(plan.inventory ?? 0)
-  if (Number.isNaN(inv)) return '库存 不限'
-  if (inv > 0) return `库存 ${inv}`
-  if (inv === 0) return '库存 0'
-  return '库存 不限'
+  const premiumLimit = Number(plan.premium_queue_limit ?? 0)
+  const premiumInv = Number(plan.premium_inventory ?? 0)
+
+  let baseText = ''
+  if (Number.isNaN(inv)) {
+    baseText = '库存 不限'
+  } else if (inv > 0) {
+    baseText = `库存 ${inv}`
+  } else if (inv === 0) {
+    baseText = '库存 0'
+  } else {
+    baseText = '库存 不限'
+  }
+
+  if (premiumLimit > 0) {
+    const premiumText = Number.isNaN(premiumInv) ? '' : ` 钞库存 ${premiumInv}`
+    return baseText + premiumText
+  }
+  return baseText
 })
 
-/** 配置/价格区间 */
+/** 配置/价格区间（工期、价格） */
 const perHeadCycleDays = computed(() => {
-  const n = Number(plan.extra?.per_head_cycle_days)
-  return Number.isFinite(n) ? n : null
+  const n = Number(plan.extra?.per_head_cycle_days || 0)
+  return n > 0 && Number.isFinite(n) ? n : null
 })
+const totalCycleDays = computed(() => {
+  const n = Number(plan.extra?.total_cycle_days || 0)
+  return n > 0 && Number.isFinite(n) ? n : null
+})
+const showPerHeadCycle = computed(
+  () => Number(plan.order_type) === 2 && perHeadCycleDays.value !== null
+)
+const showTotalCycle = computed(
+  () => Number(plan.order_type) === 5 && totalCycleDays.value !== null
+)
+const perHeadCycleLabel = computed(() => (isHairstylist.value ? '每顶毛工期' : '每颗头工期'))
+
+/** 是否支持加价队列及说明行 */
+const supportsPremiumQueue = computed(() => Number(plan.premium_queue_limit || 0) > 0)
+const showPremiumRow = computed(() => isLocalPlan.value)
+const premiumQueueText = computed(() => {
+  if (!showPremiumRow.value) return ''
+  if (supportsPremiumQueue.value) {
+    const premiumInv = Number(plan.premium_inventory ?? 0)
+    return '支持'
+  }
+  return '不支持'
+})
+
 const finishingMap = { oil: '油性消光', water: '水性消光', gloss: '罩光剂' }
 const finishingMethodText = computed(() => {
   const m = String(plan.extra?.finishing_method || '').trim()
   return finishingMap[m] || (m ? m : '未设置')
 })
 const finishingDescText = computed(() => String(plan.extra?.finishing_desc || '').trim())
+
+/** 毛娘专用：毛坯提供方式，仅在 isHairstylist 时使用（圆角标签） */
+const blankOptions = computed(() => {
+  if (!isHairstylist.value) return []
+  const extra = plan.extra || {}
+  const list = [
+    {
+      key: 'self',
+      label: '自带毛坯',
+      desc: '由买家提供已经购买好的毛坯进行修剪',
+      enabled: !!extra.support_self_blank,
+      chipClass: 'blank-chip--self'
+    },
+    {
+      key: 'third',
+      label: '指定购买毛坯',
+      desc: '由毛娘提供一个第三方毛坯店铺的链接，指定买家购买毛坯并寄送',
+      enabled: !!extra.support_third_party_blank,
+      chipClass: 'blank-chip--third'
+    },
+    {
+      key: 'stock',
+      label: '选购现有毛坯',
+      desc: '根据买家的指定造型，毛娘提供一些可选毛坯现货进行完成，需要支付毛坯和手工费',
+      enabled: !!extra.support_stock_blank,
+      chipClass: 'blank-chip--stock'
+    }
+  ]
+  return list.filter(o => o.enabled)
+})
+
 const shipping = computed(() => plan.extra?.shipping || {})
 const isUnifiedShipping = computed(() => shipping.value?.mode === 'unified')
 const shippingText = computed(() => {
@@ -630,6 +849,7 @@ function goArtistHome() {
  * 立即购买按钮：
  * - 外部平台：复制链接（原逻辑保留）
  * - 本平台：调用新投递接口 /with-state/artist-order/submit
+ *   若返回 submission_id，则跳转到投递详情页
  */
 async function handleCTA() {
   // 其它平台：复制链接
@@ -646,12 +866,12 @@ async function handleCTA() {
   // 本平台但按钮不可用（未开始/已结束）
   if (btnDisabled.value) return
 
-	// 改为只看 token：
-	const token = uni.getStorageSync('token') || ''
-	if (!token) {
-	  uni.showToast({ title: '请先登录', icon: 'none' })
-	  return
-	}
+  // 改为只看 token：
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
 
   try {
     uni.showLoading({ title: '投递中...', mask: true })
@@ -679,10 +899,12 @@ async function handleCTA() {
     const data = res.data?.data || {}
     const code = data.code
     const counter = data.brand_counter
+    const submissionId = data.submission_id
     let msg = ''
 
     if (code === 1) {
-      msg = '投递成功'
+      // 成功时优先使用后端返回的提示
+      msg = res.data?.msg || '投递成功'
     } else if (code === 0) {
       msg = '当前不在开单时间段'
     } else if (code === 2) {
@@ -695,6 +917,15 @@ async function handleCTA() {
 
     if (typeof counter === 'number' && counter > 0) {
       msg += `（当前品牌投递计数：${counter}）`
+    }
+
+    // ① 若返回 submission_id，则跳转到投递详情
+    if (code === 1 && submissionId) {
+      uni.showToast({ title: msg, icon: 'none', duration: 1200 })
+      setTimeout(() => {
+        goSubmissionDetail(submissionId)
+      }, 800)
+      return
     }
 
     uni.showToast({ title: msg, icon: 'none', duration: 3000 })
@@ -745,7 +976,6 @@ function goEditDraft(item) {
 
   uni.navigateTo({ url })
 }
-
 
 function confirmDeleteDraft(item) {
   if (!item || !item.id) return
@@ -801,11 +1031,11 @@ async function fetchHasLikeBrand() {
   } catch { }
 }
 async function toggleFollow() {
-	const token = uni.getStorageSync('token') || ''
-	if (!token) {
-	  uni.showToast({ title: '请先登录', icon: 'none' })
-	  return
-	}
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
   try {
     const url = `${websiteUrl.value}/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
     const res = await uni.request({
@@ -824,9 +1054,11 @@ async function toggleFollow() {
 
 /** 弹框可见性（common-modal） */
 const finishingVisible = ref(false)
+const blankSupplyVisible = ref(false)
 const shippingVisible = ref(false)
+const modeDescVisible = ref(false)
 
-/** ====== 定妆方式图文说明 ====== */
+/** ====== 定妆方式图文说明（妆师专用） ====== */
 const finishingSlides = [
   {
     key: 'oil',
@@ -862,6 +1094,7 @@ const finishingMethodKey = computed(() => {
 })
 
 function openFinishingModal() {
+  if (!isFaceup.value) return
   const key = finishingMethodKey.value
   const idx = finishingSlides.findIndex(s => s.key === key)
   finishingSlideIndex.value = idx >= 0 ? idx : 0
@@ -870,6 +1103,17 @@ function openFinishingModal() {
 
 function onFinishingSwiperChange(e) {
   finishingSlideIndex.value = e.detail?.current || 0
+}
+
+/** 打开毛坯提供方式说明弹窗 */
+function openBlankSupplyModal() {
+  if (!isHairstylist.value) return
+  blankSupplyVisible.value = true
+}
+
+/** 打开投递方式说明弹窗 */
+function openModeDescModal() {
+  modeDescVisible.value = true
 }
 
 /** 生命周期 */
@@ -887,19 +1131,28 @@ onMounted(async () => {
 })
 
 onShow(async () => {
-	try {
-	  await fetchPlan()
-	  if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
-	  if (global.isLogin) await fetchDraftItems()
-	} finally {
-	  uni.hideLoading()
-	}
+  try {
+    await fetchPlan()
+    if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
+    if (global.isLogin) await fetchDraftItems()
+  } finally {
+    uni.hideLoading()
+  }
 })
 onUnmounted(stopTimer)
 
-/** 安全区 & 说明文本（如原文件已有 descText，可替换回去） */
+/** 安全区 & 说明文本：按类型解析妆师/毛娘规则，兜底品牌说明 */
 const safeArea = true
-const descText = computed(() => '')
+const descText = computed(() => {
+  const info = plan.artist_info || {}
+  if (isFaceup.value) {
+    return String(info.rule_of_artist || info.Description || '').trim()
+  }
+  if (isHairstylist.value) {
+    return String(info.rule_of_hairstylist || info.Description || '').trim()
+  }
+  return String(info.Description || '').trim()
+})
 </script>
 
 <style scoped>
@@ -952,6 +1205,7 @@ const descText = computed(() => '')
 .row:last-child { border-bottom: none; }
 .label { color: #666; font-size: 26rpx; white-space: nowrap; }
 .val { color: #333; font-size: 28rpx; display: flex; align-items: center; gap: 12rpx; }
+.mode-val { /* 视觉上提示可点，H5 有效果，小程序忽略也没关系 */ }
 .finishing-val {
   background: #000;
   color: #fff;
@@ -967,6 +1221,48 @@ const descText = computed(() => '')
 .mode-lottery{ background: #f4f0ff; color: #6e4bd6;  }
 .mode-black  { background: #f5f5f5; color: #333;  }
 .external-tip { color: #999; font-size: 24rpx; }
+
+/* 毛坯提供方式：圆角标签 */
+.blank-val {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.blank-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  margin: 6rpx 12rpx 6rpx 0;
+}
+.blank-chip-text {
+  font-size: 24rpx;
+}
+.blank-chip-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-left: 8rpx;
+}
+.blank-chip--self {
+  background: #fff3e0;
+  color: #b15b00;
+}
+.blank-chip--third {
+  background: #e5f4ff;
+  color: #0a4f94;
+}
+.blank-chip--stock {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.blank-empty {
+  font-size: 26rpx;
+  color: #bbb;
+}
+.blank-modal-tags {
+  margin-bottom: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+}
 
 /* 详情网格 */
 .oc-card { margin-top: 16rpx; }
@@ -997,9 +1293,35 @@ const descText = computed(() => '')
 .oc-info-icon { margin-left: 2rpx; }
 
 /* 说明 */
-.desc-card { margin: 20rpx 24rpx 0; padding: 22rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06); }
-.desc-title { font-size: 28rpx; color: #333; }
-.desc { margin-top: 8rpx; font-size: 26rpx; color: #555; line-height: 1.7; }
+.desc-card {
+  margin: 20rpx 24rpx 0;
+  padding: 22rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06);
+}
+
+/* 新的左右排版 */
+.desc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24rpx;
+}
+.desc-title {
+  font-size: 28rpx;
+  color: #333;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.desc {
+  margin-top: 0;
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1 1 auto;
+}
 
 /* 我的待投递卡片 */
 .draft-card { margin-top: 20rpx; }
@@ -1212,7 +1534,7 @@ const descText = computed(() => '')
   color:#888;
 }
 uni-button:after {
-	border: none;
+  border: none;
 }
 /* 隐藏滚动条 */
 ::-webkit-scrollbar{ width:0!important; height:0!important; background:transparent!important; display:none!important; }

@@ -18,7 +18,7 @@
           @change="onOrderTypeChange"
           :disabled="!canEditOrderType"
         >
-          <view class="picker">{{ orderTypes[orderTypeIndex].text }}</view>
+          <view class="picker">{{ currentOrderTypeText }}</view>
         </picker>
         <!-- 多行提示 -->
         <view class="tip">
@@ -27,6 +27,10 @@
         <view class="tip" v-if="form.order_type === 1">
           长期接单的选项将会常驻在日历中推送。
         </view>
+        <!-- 手速两种模式：判断合并，仅文案不同 -->
+        <view class="tip" v-else-if="isSpeedOrder">
+          {{ speedOrderDesc }}
+        </view>
         <view class="tip" v-else>
           如需「手速×5、抽选×5」，请创建两条计划；先创建一条，再在列表中“复制”并编辑。
         </view>
@@ -34,7 +38,6 @@
           接单已开始，不能修改接单方式。
         </view>
       </view>
-
 
       <!-- 接单场所：switch -->
       <view class="form-item">
@@ -54,21 +57,26 @@
         <view class="inline-control">
           <switch
             :checked="!!form.require_platform_account"
-            @change="e => form.require_platform_account = !!e.detail.value"
+            @change="e => (form.require_platform_account = !!e.detail.value)"
           />
           <text class="inline-tip">{{ form.require_platform_account ? '需要' : '不需要' }}</text>
         </view>
       </view>
 
-      <!-- 手速专属：仅在 本平台 且 接单方式=手速 时显示 -->
-      <view class="form-item" v-if="form.service_scene === 2 && form.order_type === 2">
+      <!-- 手速专属：仅在 本平台 且 接单方式=任一手速模式 时显示 -->
+      <view class="form-item" v-if="form.service_scene === 2 && isSpeedOrder">
         <text class="label">手速有效作答窗口(秒)</text>
         <uni-number-box v-model="form.queue_window_sec" :min="10" :max="600" />
       </view>
 
-      <view class="form-item" v-if="form.service_scene === 2 && form.order_type === 2">
+      <view class="form-item" v-if="form.service_scene === 2 && isSpeedOrder">
         <text class="label">题目类型</text>
-        <picker :range="challengeTypes" range-key="text" :value="challengeTypeIndex" @change="onChallengeTypeChange">
+        <picker
+          :range="challengeTypes"
+          range-key="text"
+          :value="challengeTypeIndex"
+          @change="onChallengeTypeChange"
+        >
           <view class="picker">{{ challengeTypes[challengeTypeIndex].text }}</view>
         </picker>
       </view>
@@ -79,7 +87,7 @@
         <view class="inline-control">
           <switch
             :checked="form.check_showcase === 1"
-            @change="e => form.check_showcase = e.detail.value ? 1 : 0"
+            @change="e => (form.check_showcase = e.detail.value ? 1 : 0)"
           />
           <text class="inline-tip">{{ form.check_showcase ? '是' : '否' }}</text>
         </view>
@@ -149,7 +157,6 @@
           </view>
           <view class="inventory-col" v-if="!isLongTermOrder">
             <text class="inv-label">当前加价库存</text>
-            <!-- 这里展示 premium_queue_limit（可钞人数上限） -->
             <text class="inv-value">{{ originalPremiumInventory }}</text>
           </view>
         </view>
@@ -160,7 +167,7 @@
           <text class="label-small">增加普通库存</text>
           <uni-number-box v-model="form.inventory" :min="0" :max="100000" />
         </view>
-         <view class="mt-12" v-if="!isLongTermOrder">
+        <view class="mt-12" v-if="!isLongTermOrder">
           <text class="label-small">增加加价库存</text>
           <uni-number-box v-model="form.premium_inventory" :min="0" :max="100000" />
         </view>
@@ -170,8 +177,12 @@
       <view class="form-item">
         <text class="label">开始时间</text>
         <view class="datetime-row">
-          <view class="picker-col" @click="showOpenDate = true">{{ form.open_date || '选择日期' }}</view>
-          <view class="picker-col" @click="showOpenTime = true">{{ form.open_time || '选择时间' }}</view>
+          <view class="picker-col" @click="showOpenDate = true">
+            {{ form.open_date || '选择日期' }}
+          </view>
+          <view class="picker-col" @click="showOpenTime = true">
+            {{ form.open_time || '选择时间' }}
+          </view>
         </view>
         <common-date-picker v-model:show="showOpenDate" v-model="form.open_date" title="选择开始日期" />
         <common-time-picker v-model:show="showOpenTime" v-model="form.open_time" title="选择开始时间" />
@@ -184,8 +195,12 @@
       <view class="form-item">
         <text class="label">结束时间</text>
         <view class="datetime-row">
-          <view class="picker-col" @click="showCloseDate = true">{{ form.close_date || '选择日期' }}</view>
-          <view class="picker-col" @click="showCloseTime = true">{{ form.close_time || '选择时间' }}</view>
+          <view class="picker-col" @click="showCloseDate = true">
+            {{ form.close_date || '选择日期' }}
+          </view>
+          <view class="picker-col" @click="showCloseTime = true">
+            {{ form.close_time || '选择时间' }}
+          </view>
         </view>
         <common-date-picker v-model:show="showCloseDate" v-model="form.close_date" title="选择结束日期" />
         <common-time-picker v-model:show="showCloseTime" v-model="form.close_time" title="选择结束时间" />
@@ -205,7 +220,12 @@
         <!-- 定妆方式 -->
         <view class="form-item">
           <text class="label">定妆方式</text>
-          <picker :range="finishingMethods" range-key="text" :value="finishingMethodIndex" @change="onFinishingChange">
+          <picker
+            :range="finishingMethods"
+            range-key="text"
+            :value="finishingMethodIndex"
+            @change="onFinishingChange"
+          >
             <view class="picker">{{ finishingMethods[finishingMethodIndex].text }}</view>
           </picker>
           <view class="tip" v-if="form.order_config.extra.finishing_method === 'oil'">
@@ -292,11 +312,7 @@
 
         <!-- 尺寸加价列表 -->
         <view class="size-price-list" v-if="form.order_config.extra.size_surcharges.length">
-          <view
-            class="size-price-item"
-            v-for="(it, idx) in form.order_config.extra.size_surcharges"
-            :key="it.size"
-          >
+          <view class="size-price-item" v-for="(it, idx) in form.order_config.extra.size_surcharges" :key="it.size">
             <text class="sp-label">{{ it.size }} 加价 +</text>
             <input
               class="sp-input"
@@ -349,7 +365,7 @@
             class="input"
             type="digit"
             :value="displayPrice(tier.price)"
-            @blur="e => tier.price = toFixed2(e.detail.value)"
+            @blur="e => (tier.price = toFixed2(e.detail.value))"
             placeholder="价格(0.00)"
           />
         </view>
@@ -386,7 +402,7 @@
             class="input"
             type="digit"
             :value="displayPrice(addon.price)"
-            @blur="e => addon.price = toFixed2(e.detail.value)"
+            @blur="e => (addon.price = toFixed2(e.detail.value))"
             placeholder="价格(0.00)"
           />
         </view>
@@ -410,12 +426,7 @@
     <view class="form-item" v-if="form.service_scene === 2">
       <view class="label-row">
         <text class="label">节点配置</text>
-        <picker
-          :range="stepOptions"
-          range-key="label"
-          @change="onStepPickerChange"
-          :disabled="!canEditStepConfig"
-        >
+        <picker :range="stepOptions" range-key="label" @change="onStepPickerChange" :disabled="!canEditStepConfig">
           <button class="btn-mini">+ 添加节点</button>
         </picker>
       </view>
@@ -467,7 +478,7 @@
     <!-- 提交 -->
     <view class="submit-box">
       <button class="btn-submit" :disabled="submitting" @click="submitPlan">
-        {{ submitting ? '提交中...' : (isEditMode ? '保存修改' : '提交新计划') }}
+        {{ submitting ? '提交中...' : isEditMode ? '保存修改' : '提交新计划' }}
       </button>
     </view>
 
@@ -493,28 +504,44 @@ const artistTypes = [
     text: '毛娘'
   }
 ]
-const orderTypes = [
+
+// 默认接单方式（接口失败时兜底）
+const defaultOrderTypes = [
   {
     value: 1,
-    text: '长期接单'
+    text: '长期接单',
+    keyword: 'StatusLongTerm'
   },
   {
     value: 2,
-    text: '限时手速'
+    text: '限时手速投递-手速排单',
+    keyword: 'StatusSpeedDelivery'
+  },
+  {
+    value: 5,
+    text: '限时手速投递-自由排单',
+    keyword: 'StatusSpeedDeliveryFree'
   },
   {
     value: 3,
-    text: '限时抽选'
+    text: '限时抽选投递',
+    keyword: 'StatusLotteryDelivery'
   },
   {
     value: 4,
-    text: '限时黑箱卡'
+    text: '限时黑箱卡投递',
+    keyword: 'StatusBlackCard'
   },
   {
     value: 9,
-    text: '关闭投递'
+    text: '关闭投递',
+    keyword: 'StatusClosed'
   }
 ]
+
+// 动态接单方式选项（从接口获取）
+const orderTypes = ref([...defaultOrderTypes])
+
 const challengeTypes = [
   {
     value: 1,
@@ -574,8 +601,7 @@ const form = ref({
   inventory: 0, // 编辑时作为“增加库存”的偏移量使用
   premium_queue_limit: 0, // 最大加价排队人数（创建时填写）
   premium_inventory: 0, // 编辑时作为“增加加价库存”的偏移量使用
-  // 钞排队倍率（前端字段名），请求时映射为 premium_rate
-  premium_queue_multiplier: 2, // 默认 2 倍
+  premium_queue_multiplier: 2, // 默认 2 倍，钞排队倍率
 
   // 节点配置：节点对象数组 [{ name, breach_compensation_rate }]
   step_config_json: [],
@@ -605,16 +631,46 @@ const originalPlan = ref({
   service_scene: 1,
   max_participants: 0,
   inventory: 0,
-  premium_inventory: 0 // 这里用于展示“当前加价库存”，对应 premium_queue_limit
+  premium_inventory: 0 // 这里用于展示“当前加价库存”
 })
 
-/* ====== 选择器索引 ====== */
+/* ====== 选择器索引 / 计算属性 ====== */
 const artistTypeIndex = computed(() =>
   Math.max(0, artistTypes.findIndex(x => x.value === form.value.artist_type))
 )
-const orderTypeIndex = computed(() =>
-  Math.max(0, orderTypes.findIndex(x => x.value === form.value.order_type))
+
+const orderTypeIndex = computed(() => {
+  const list = orderTypes.value || []
+  const idx = list.findIndex(x => x.value === form.value.order_type)
+  return idx >= 0 ? idx : 0
+})
+
+// 当前接单方式文字（避免 orderTypes 为空时报错）
+const currentOrderTypeText = computed(() => {
+  const list = orderTypes.value || []
+  if (!list.length) return '请选择接单方式'
+  const idx = list.findIndex(x => x.value === form.value.order_type)
+  return idx >= 0 ? list[idx].text : list[0].text
+})
+
+// 是否为任一“手速模式”（手速排单 + 自由排单）
+const isSpeedOrder = computed(
+  () => form.value.order_type === 2 || form.value.order_type === 5
 )
+
+// 手速模式文案（根据 keyword 区分两种）
+const speedOrderDesc = computed(() => {
+  if (!isSpeedOrder.value) return ''
+  const list = orderTypes.value || []
+  const opt = list.find(x => x.value === form.value.order_type)
+  const keyword = opt?.keyword
+  if (keyword === 'StatusSpeedDeliveryFree') {
+    return '在一次开单中，所有抢购成功的客户都将共享一段工期，例如在30天内完成10人的所有订单。客户虽然无法要求自己的排期顺序，但是会看到其它客户的进度。'
+  }
+  // 默认：手速排单
+  return '您的客户将以抢购顺序进行排列，每个人都享有一段独立的工期（对应每颗头工期），您必须依照抢购顺序完成订单，您的客户也将看到在您的排期日历的顺序。'
+})
+
 const challengeTypeIndex = computed(() =>
   Math.max(0, challengeTypes.findIndex(x => x.value === form.value.challenge_type))
 )
@@ -647,6 +703,7 @@ const unifiedMinDate = computed(() => {
   const d = new Date((ct + 10 * 86400) * 1000)
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 })
+
 /* ====== 是否为长期接单 ====== */
 const isLongTermOrder = computed(() => form.value.order_type === 1)
 
@@ -656,13 +713,10 @@ const hasStarted = computed(() => {
   return nowUnix() >= originalPlan.value.open_time
 })
 
-/** 新增：子配置（档位 / 加购 / 节点）是否允许删除 */
+/** 子配置（档位 / 加购 / 节点）是否允许删除 */
 const canDeleteConfigItem = computed(() => !hasStarted.value || isLongTermOrder.value)
 
-
-/** 接单方式是否可编辑：
- *  - 只要已开始，就不允许修改接单方式
- */
+/** 接单方式是否可编辑：只要已开始，就不允许修改接单方式 */
 const canEditOrderType = computed(() => !hasStarted.value)
 
 /* ====== service_scene / 节点配置可编辑性 ====== */
@@ -672,7 +726,6 @@ const canEditServiceScene = computed(() => {
   if (!originalPlan.value.open_time) return true
   return nowUnix() < originalPlan.value.open_time
 })
-
 
 const canEditStepConfig = computed(() => {
   if (!isEditMode.value) return true
@@ -722,7 +775,6 @@ const premiumQueueEnabled = computed({
       form.value.premium_queue_limit = 0
     } else if (!form.value.premium_queue_limit) {
       form.value.premium_queue_limit = 1
-      // 首次开启时，如果没有填写倍率，则给一个默认值 2
       if (!form.value.premium_queue_multiplier) {
         form.value.premium_queue_multiplier = 2
       }
@@ -730,27 +782,7 @@ const premiumQueueEnabled = computed({
   }
 })
 
-/* ====== 生命周期 ====== */
-onLoad(query => {
-  if (query && query.id) {
-    isEditMode.value = true
-    currentId.value = Number(query.id)
-    loadDetail(currentId.value)
-  } else {
-    isEditMode.value = false
-    currentId.value = null
-    // 创建模式下拉取档位/加购/节点模板
-    fetchCommonConfigs(form.value.artist_type)
-    fetchStepOptions(form.value.artist_type)
-  }
-})
-onMounted(() => {
-  uni.setNavigationBarTitle({
-    title: '发布BJD接妆计划'
-  })
-})
-
-/* ====== 工具 ====== */
+/* ====== 工具函数 ====== */
 const pad2 = n => (n < 10 ? '0' + n : '' + n)
 
 function toUnix(dateStr, timeStr) {
@@ -771,6 +803,7 @@ function toFixed2(v) {
   if (Number.isNaN(num)) return 0
   return Math.round(num * 100) / 100
 }
+
 // 专用于钞倍率：最多保留一位小数
 function toFixed1(v) {
   const raw = String(v ?? '').trim()
@@ -778,12 +811,13 @@ function toFixed1(v) {
   let s = raw.replace(/[^\d.]/g, '')
   const parts = s.split('.')
   if (parts.length > 1) {
-    parts[1] = parts[1].slice(0, 1) // 最多一位小数
+    parts[1] = parts[1].slice(0, 1)
   }
   const num = parseFloat(parts.join('.'))
   if (Number.isNaN(num)) return 0
   return Math.round(num * 10) / 10
 }
+
 // 展示用钞倍率：空/<=0 返回空字符串
 function displayPremiumMultiplier(v) {
   const num = Number(v)
@@ -793,6 +827,40 @@ function displayPremiumMultiplier(v) {
 
 function getAuthorization() {
   return uni.getStorageSync('token') || ''
+}
+
+/* ====== 接单方式列表拉取（新） ====== */
+async function fetchOrderTypes() {
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/order-plan/artist-order-type`,
+      method: 'GET',
+      header: {
+        Authorization: getAuthorization()
+      }
+    })
+    if (String(res.data?.status).toLowerCase() === 'success' && Array.isArray(res.data?.data)) {
+      const list = res.data.data.map(it => ({
+        value: it.id,
+        text: it.name,
+        keyword: it.keyword
+      }))
+      if (list.length) {
+        orderTypes.value = list
+      }
+      // 确保当前 order_type 在列表中
+      const has = orderTypes.value.some(ot => ot.value === form.value.order_type)
+      if (!has && orderTypes.value.length) {
+        form.value.order_type = orderTypes.value[0].value
+      }
+    } else {
+      console.error('获取接单方式失败，使用默认配置:', res.data)
+      orderTypes.value = [...defaultOrderTypes]
+    }
+  } catch (err) {
+    console.error('获取接单方式异常，使用默认配置:', err)
+    orderTypes.value = [...defaultOrderTypes]
+  }
 }
 
 /* ====== 选择器事件 ====== */
@@ -814,13 +882,16 @@ function onOrderTypeChange(e) {
     return
   }
   const idx = Number(e.detail.value || 0)
-  form.value.order_type = orderTypes[idx].value
+  const opt = orderTypes.value[idx]
+  if (!opt) return
+  form.value.order_type = opt.value
+
+  // 长期接单时强制分别寄送
   if (form.value.order_type === 1) {
     form.value.order_config.extra.shipping.mode = 'separate'
     form.value.order_config.extra.shipping.unified_date = ''
   }
 }
-
 
 function onChallengeTypeChange(e) {
   const idx = Number(e.detail.value || 0)
@@ -920,7 +991,6 @@ async function fetchCommonConfigs(artistType) {
 /* ====== 默认节点模板拉取（stepOptions） ====== */
 async function fetchStepOptions(artistType) {
   try {
-    // 这里用你新增的「返回默认节点配置」接口
     const res = await uni.request({
       url: `${websiteUrl.value}/brand-manager/order-plan/default-steps?artist_type=${artistType}`,
       method: 'GET',
@@ -1059,7 +1129,7 @@ function displayStepPercent(rate) {
   const v = num * 100
   return (Math.round(v * 100) / 100).toString().replace(/\.00$/, '')
 }
-// val 是输入的百分比字符串（如 "5"），内部转成小数（5 -> 0.05）
+
 function onStepPercentBlur(idx, val) {
   const str = String(val || '').trim()
   if (!str) {
@@ -1071,7 +1141,6 @@ function onStepPercentBlur(idx, val) {
     form.value.step_config_json[idx].breach_compensation_rate = 0
     return
   }
-  // 大于 1 认为是“百分比”，例如 5 -> 0.05
   const rate = num > 1 ? num / 100 : num
   form.value.step_config_json[idx].breach_compensation_rate = Math.round(rate * 10000) / 10000
 }
@@ -1079,7 +1148,6 @@ function onStepPercentBlur(idx, val) {
 /* ====== 钞倍率输入处理（保留一位小数） ====== */
 function onPremiumMultiplierBlur(val) {
   const num = toFixed1(val)
-  // 没填或 <=0 时回退到默认 2.0
   form.value.premium_queue_multiplier = num > 0 ? num : 2
 }
 
@@ -1091,13 +1159,11 @@ function onStepPickerChange(e) {
   if (!opt) return
 
   if (opt.value === 'blank') {
-    // 添加空白节点
     form.value.step_config_json.push({
       name: '',
       breach_compensation_rate: 0
     })
   } else {
-    // 选择默认节点对象（复制一份避免引用同一个对象）
     form.value.step_config_json.push({
       name: String(opt.value.name || ''),
       breach_compensation_rate: Number(opt.value.breach_compensation_rate || 0)
@@ -1145,11 +1211,12 @@ async function chooseAndUpload() {
       }
     }
     form.value.images = [...form.value.images, ...uploadedUrls]
-    if (uploadedUrls.length > 0)
+    if (uploadedUrls.length > 0) {
       uni.showToast({
         title: `成功上传 ${uploadedUrls.length} 张`,
         icon: 'success'
       })
+    }
   } catch (e) {
     console.error('选择/上传失败：', e)
     uni.showToast({
@@ -1354,23 +1421,26 @@ async function loadDetail(id) {
 
 /* ====== 提交 ====== */
 async function submitPlan() {
-  if (!form.value.artist_name)
+  if (!form.value.artist_name) {
     return uni.showToast({
       title: '请填写计划名称',
       icon: 'none'
     })
+  }
   const openUnix = toUnix(form.value.open_date, form.value.open_time)
   const closeUnix = toUnix(form.value.close_date, form.value.close_time)
-  if (!openUnix || !closeUnix)
+  if (!openUnix || !closeUnix) {
     return uni.showToast({
       title: '请选择开始与结束时间',
       icon: 'none'
     })
-  if (closeUnix <= openUnix)
+  }
+  if (closeUnix <= openUnix) {
     return uni.showToast({
       title: '结束时间必须晚于开始时间',
       icon: 'none'
     })
+  }
 
   if (isEditMode.value && originalPlan.value.service_scene === 2 && originalPlan.value.open_time) {
     const started = nowUnix() >= originalPlan.value.open_time
@@ -1398,13 +1468,11 @@ async function submitPlan() {
     ? (form.value.step_config_json || [])
         .map(x => ({
           name: String(x.name || ''),
-          // 这里已经是小数形式（例如 0.05 表示 5%）
           breach_compensation_rate: Number(x.breach_compensation_rate || 0)
         }))
         .filter(it => it.name)
     : []
 
-  // 创建 & 本平台 & 开启了钞排队，则要求倍率 >0
   if (
     !isEditMode.value &&
     isPlatform &&
@@ -1435,7 +1503,6 @@ async function submitPlan() {
     challenge_type: form.value.challenge_type,
     images: form.value.images,
 
-    // 创建：如果是本平台，初始库存 = max_participants；编辑：inventory / premium_inventory 是增量
     inventory: isEditMode.value
       ? Number(form.value.inventory || 0)
       : isPlatform
@@ -1443,15 +1510,12 @@ async function submitPlan() {
       : 0,
 
     premium_queue_limit: Number(form.value.premium_queue_limit || 0),
-
     premium_inventory: isEditMode.value ? Number(form.value.premium_inventory || 0) : 0,
 
-    // 钞排队倍率（float，对齐后端 premium_rate，保留一位小数）
     premium_rate: premiumQueueEnabled.value
       ? toFixed1(form.value.premium_queue_multiplier || 2)
       : 0,
 
-    // 对齐后端：使用 step_config，而不是 step_config_json
     step_config: stepConfigToSend,
 
     order_config: {
@@ -1490,14 +1554,9 @@ async function submitPlan() {
     }
   }
 
-  // 编辑模式下，库存 / 加价库存为 0 时，不传给后端，表示“不要变更”
   if (isEditMode.value) {
-    if (!payload.inventory) {
-      delete payload.inventory
-    }
-    if (!payload.premium_inventory) {
-      delete payload.premium_inventory
-    }
+    if (!payload.inventory) delete payload.inventory
+    if (!payload.premium_inventory) delete payload.premium_inventory
   }
 
   if (payload.inventory < 0 || payload.premium_inventory < 0) {
@@ -1508,15 +1567,12 @@ async function submitPlan() {
     return
   }
 
-  // 非本平台接单不需要 step_config
   if (!isPlatform) {
     delete payload.step_config
   }
-  // 编辑 & 节点不可编辑时，不传 step_config，避免后端校验失败
   if (isEditMode.value && !canEditStepConfig.value) {
     delete payload.step_config
   }
-  // 未开启钞排队时，不传 premium_rate，让后端保留默认值
   if (!premiumQueueEnabled.value) {
     delete payload.premium_rate
   }
@@ -1544,12 +1600,7 @@ async function submitPlan() {
       })
       setTimeout(() => uni.navigateBack(), 800)
     } else {
-      // ⭐ 兼容后端 msg / message / error 三种字段
-      const msg =
-        res.data?.message ||
-        res.data?.msg ||
-        res.data?.error ||
-        '提交失败'
+      const msg = res.data?.message || res.data?.msg || res.data?.error || '提交失败'
       uni.showToast({
         title: msg,
         icon: 'none'
@@ -1565,6 +1616,29 @@ async function submitPlan() {
     submitting.value = false
   }
 }
+
+/* ====== 生命周期 ====== */
+onLoad(query => {
+  // 拉取接单方式（接口版）
+  fetchOrderTypes()
+
+  if (query && query.id) {
+    isEditMode.value = true
+    currentId.value = Number(query.id)
+    loadDetail(currentId.value)
+  } else {
+    isEditMode.value = false
+    currentId.value = null
+    fetchCommonConfigs(form.value.artist_type)
+    fetchStepOptions(form.value.artist_type)
+  }
+})
+
+onMounted(() => {
+  uni.setNavigationBarTitle({
+    title: '发布BJD接妆计划'
+  })
+})
 </script>
 
 <style scoped>
