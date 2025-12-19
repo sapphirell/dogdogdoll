@@ -60,7 +60,6 @@
       <scroll-view
         v-if="results.length"
         class="results"
-        :style="{ width: '100%' }"
         scroll-y
       >
         <view
@@ -211,7 +210,7 @@ function tapHistory(w) {
   kw.value = w.name || ''
   if (routeMode.value === 'return') {
     // 保持原逻辑：直接使用
-    choose(w.payload || { id: w.key, name: w.name }, true)
+    choose(w.payload || { id: w.key, name: w.name })
     return
   }
   // 普通搜索页：弹出搜索框
@@ -252,8 +251,7 @@ function clearInput() {
 }
 function closeResults() {
   showResults.value = false
-  // 不强制失焦，方便用户继续编辑；如需关闭键盘可顺带：
-  // inputFocused.value = false
+  // 不强制失焦，方便用户继续编辑
 }
 
 async function onInput() {
@@ -310,13 +308,25 @@ function choose(item) {
 
   if (routeMode.value === 'jump') {
     if (activeType.value === 'goods') {
+      // 娃物
       uni.navigateTo({
         url: `/pages/goods/goods?goods_id=${item.id}`,
       })
-    } else {
+    } else if (activeType.value === 'brand') {
+      // 品牌主页
       uni.navigateTo({
         url: `/pages/brand/brand?brand_id=${item.id}`,
       })
+    } else if (activeType.value === 'artist') {
+      // 妆师：跳妆师主页
+      const url = `/pages/artist_info/bjd_faceup_artist?brand_id=${item.id}`
+	   uni.navigateTo({
+		 url: url,
+	   })
+    } else if (activeType.value === 'hair') {
+      // 毛娘：跳毛娘主页
+      const url = `/pages/artist_info/custom_wig_artist?brand_id=${item.id}`
+      uni.navigateTo({ url })
     }
   } else {
     const payload = {
@@ -326,7 +336,9 @@ function choose(item) {
       name: item.name,
       brand_name: item.brand_name || '',
     }
-    const eventChannel = getOpenerEventChannel?.()
+    const eventChannel = typeof getOpenerEventChannel === 'function'
+      ? getOpenerEventChannel()
+      : null
     if (eventChannel && eventChannel.emit) {
       eventChannel.emit('search-selected', payload)
     } else {
@@ -478,6 +490,7 @@ onMounted(() => {
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
   max-height: 60vh;
   z-index: 20;
+  width: calc(100vw - 48rpx);
 }
 .result {
   display: flex;

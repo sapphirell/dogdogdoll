@@ -460,7 +460,7 @@ function updateBrandIdentity (field, value, onSuccess, onRollback) {
 // 去成为入驻作者
 function goBecomeCreator () {
   uni.navigateTo({
-    url: '/pkg-creator/creator_base/brand_manager/brand_manager'
+    url: '/pkg-creator/creator_base/creator_base'
   })
 }
 
@@ -475,7 +475,7 @@ function goOrderHome () {
     return
   }
   uni.navigateTo({
-    url: `/pages/artist_info/artist_info?brand_id=${bid}`
+    url: `/pages/artist_info/bjd_faceup_artist?brand_id=${bid}`
   })
 }
 
@@ -519,7 +519,7 @@ function handleFunctionClick (key) {
       url = '/pkg-creator/creator_base/set_hair_showcase/set_hair_showcase'
       break
     case 'publish-plan':
-      url = '/pkg-creator/creator_base/order_plane/order_plane'
+      url = '/pkg-creator/creator_base/order_plan/order_plan'
       break
     case 'artist-settings':
       url = '/pkg-creator/creator_base/artist_setting/artist_setting'

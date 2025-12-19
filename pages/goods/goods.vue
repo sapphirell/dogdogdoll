@@ -285,10 +285,10 @@
       :goods-type="Number(goods.type) || 0"
     ></item-impression>
 
-    <!-- 搭配参考 -->
+    <!-- 返图 -->
     <view class="collocation-section">
       <view class="section-header">
-        <text class="section-title">搭配参考</text>
+        <text class="section-title">返图参考</text>
         <view class="more-link" @tap="jump2collocation">
           <text>查看更多</text>
           <image src="../../static/right2.png"></image>
@@ -357,7 +357,6 @@
             mode="aspectFill"
             class="faceup-cover"
           ></image>
-          <view class="faceup-title">{{ faceup.title }}</view>
         </view>
       </view>
 

@@ -151,7 +151,7 @@
           <!-- 娃头图片（最多3张） -->
           <view class="field-row">
             <view class="field-label">
-              <text class="label-text">娃头图片（最多3张）</text>
+              <text class="label-text">图片（最多3张）</text>
             </view>
             <view class="field-control image-field">
               <view class="upload-container">
@@ -333,15 +333,52 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 
 /** ====== 路由参数 ====== */
-const submissionId = ref(0)        // 父投递 ID（允许为 0，用于草稿）
-const itemId = ref(0)              // 子项 ID（编辑时使用，参数名：submission_item_id / item_id）
-const planId = ref(0)              // 投递所属的方案 ID（用于加载 plan 信息）
+const submissionId = ref(0)
+const itemId = ref(0)
+const planId = ref(0)
+
+/** 用于检测 URL 是否变化（含 query） */
+const lastRouteKey = ref('')
+
+/** ====== “每次 onShow 刷新”下，为避免覆盖未保存本地改动：脏标记 + 应用锁 ====== */
+const isApplyingServerData = ref(false)
+const dirty = reactive({
+  work_subject: false,
+  size: false,
+  tier_title: false,
+  remark: false,
+  subject_goods_id: false,
+  ref_images: false,
+  headMode: false,
+  addons: false,
+  displayGoods: false,
+  displayCabinet: false
+})
+
+function resetDirtyFlags () {
+  Object.keys(dirty).forEach(function (k) {
+    dirty[k] = false
+  })
+}
+function withApplyingLock (fn) {
+  isApplyingServerData.value = true
+  try {
+    fn && fn()
+  } finally {
+    isApplyingServerData.value = false
+  }
+}
+function markDirty (key) {
+  if (key && Object.prototype.hasOwnProperty.call(dirty, key)) {
+    dirty[key] = true
+  }
+}
 
 /** 娃头选择模式：select 分步选择 / cabinet 从娃柜中添加 / manual 手动输入 */
 const headMode = ref('select')
@@ -355,7 +392,9 @@ function loadHeadModeSnapshot () {
     const snap = uni.getStorageSync(key)
     console.log('[item-form] loadHeadModeSnapshot key=', key, 'snap=', snap)
     if (snap === 'select' || snap === 'cabinet' || snap === 'manual') {
-      headMode.value = snap
+      withApplyingLock(function () {
+        headMode.value = snap
+      })
       hasHeadModeFromStorage.value = true
     }
   } catch (e) {
@@ -378,16 +417,16 @@ function saveHeadModeSnapshot () {
 const loading = ref(false)
 const saving = ref(false)
 const errorMsg = ref('')
-const hasLoadedItem = ref(false)   // 当前 page 实例是否已经拉过这个 item 的数据
+const hasLoadedItem = ref(false)
 
 const form = reactive({
-  work_subject: '',       // 娃头名称（手动输入 or 从商品 / 娃柜名称带出）
-  size: '',               // 尺寸
-  tier_title: '',         // 档位标题
-  price_text: '',         // 价格预估，仅前端展示
-  remark: '',             // 补充说明
-  subject_goods_id: 0,    // 选中的娃物 ID（分步选择模式下）
-  ref_images: []          // 参考图（最多 3 张）
+  work_subject: '',
+  size: '',
+  tier_title: '',
+  price_text: '',
+  remark: '',
+  subject_goods_id: 0,
+  ref_images: []
 })
 
 /** 选择品牌 / 娃物（用于展示） */
@@ -406,15 +445,13 @@ const firstRefImage = computed(() => {
 })
 
 /** plan 相关状态 */
-const sizeOptions = ref([])      // [{ size, price }]
-const tierOptions = ref([])      // [{ title, price, description }]
-const addonOptions = ref([])     // [{ title, price, description }]
+const sizeOptions = ref([])
+const tierOptions = ref([])
+const addonOptions = ref([])
 
 const selectedSizeIndex = ref(-1)
 const selectedTierIndex = ref(-1)
 const selectedAddonIndexes = ref([])
-
-/** 从 item 详情解析出来的“已选加购标题列表”（用于和 addonOptions 对齐） */
 const rawAddonTitles = ref([])
 
 const hasPlanConfig = computed(() => {
@@ -435,7 +472,38 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 const uploadStatusText = ref('')
 
-/** ====== 重置整条记录的状态（当切换 itemId 时用） ====== */
+/** ====== Watch：标记用户本地改动（用于刷新时不覆盖） ====== */
+watch(() => form.work_subject, () => {
+  if (isApplyingServerData.value) return
+  markDirty('work_subject')
+})
+watch(() => form.size, () => {
+  if (isApplyingServerData.value) return
+  markDirty('size')
+})
+watch(() => form.tier_title, () => {
+  if (isApplyingServerData.value) return
+  markDirty('tier_title')
+})
+watch(() => form.remark, () => {
+  if (isApplyingServerData.value) return
+  markDirty('remark')
+})
+watch(() => form.subject_goods_id, () => {
+  if (isApplyingServerData.value) return
+  markDirty('subject_goods_id')
+  markDirty('displayGoods')
+})
+watch(() => (Array.isArray(form.ref_images) ? form.ref_images.slice() : []), () => {
+  if (isApplyingServerData.value) return
+  markDirty('ref_images')
+})
+watch(() => headMode.value, () => {
+  if (isApplyingServerData.value) return
+  markDirty('headMode')
+})
+
+/** ====== 重置整条记录的状态（当切换 itemId / planId / submissionId 时用） ====== */
 function resetStateForNewItem () {
   console.log('[item-form] resetStateForNewItem, oldItemId=', itemId.value)
 
@@ -444,13 +512,15 @@ function resetStateForNewItem () {
   errorMsg.value = ''
   hasLoadedItem.value = false
 
-  form.work_subject = ''
-  form.size = ''
-  form.tier_title = ''
-  form.price_text = ''
-  form.remark = ''
-  form.subject_goods_id = 0
-  form.ref_images = []
+  withApplyingLock(function () {
+    form.work_subject = ''
+    form.size = ''
+    form.tier_title = ''
+    form.price_text = ''
+    form.remark = ''
+    form.subject_goods_id = 0
+    form.ref_images = []
+  })
 
   selectedBrand.value = {}
   selectedGoods.value = {}
@@ -469,62 +539,148 @@ function resetStateForNewItem () {
   uploadProgress.value = 0
   uploadStatusText.value = ''
 
-  headMode.value = 'select'
+  withApplyingLock(function () {
+    headMode.value = 'select'
+  })
   hasHeadModeFromStorage.value = false
+
+  resetDirtyFlags()
 }
 
-/** ====== 从当前 page 的 options 同步一遍路由参数（主要给 H5 复用组件时用） ====== */
-function syncRouteParamsFromCurrentPage () {
+/** ====== URL / Query 解析（不要只信 cur.options） ====== */
+function buildStableQueryString (opts) {
+  opts = opts || {}
+  const keys = Object.keys(opts).sort()
+  return keys.map(function (k) {
+    return String(k) + '=' + String(opts[k])
+  }).join('&')
+}
+
+function safeGetH5Hash () {
+  try {
+    if (typeof window !== 'undefined' && window.location) return window.location.hash || ''
+    if (typeof location !== 'undefined') return location.hash || ''
+  } catch (e) {}
+  return ''
+}
+
+function parseQueryStringToObj (qs) {
+  const out = {}
+  if (!qs) return out
+  const s = String(qs).replace(/^\?/, '')
+  if (!s) return out
+
+  s.split('&').forEach(function (pair) {
+    if (!pair) return
+    const idx = pair.indexOf('=')
+    const k = idx >= 0 ? pair.slice(0, idx) : pair
+    const v = idx >= 0 ? pair.slice(idx + 1) : ''
+    const key = decodeURIComponent((k || '').trim())
+    if (!key) return
+    const val = decodeURIComponent(String(v || '').replace(/\+/g, ' '))
+    out[key] = val
+  })
+  return out
+}
+
+function extractQueryFromUrl (urlLike) {
+  const s = String(urlLike || '')
+  const qIdx = s.indexOf('?')
+  if (qIdx < 0) return { base: s, query: {} }
+  const base = s.slice(0, qIdx)
+  const tail = s.slice(qIdx + 1)
+  const qs = tail.split('#')[0]
+  return { base, query: parseQueryStringToObj(qs) }
+}
+
+function getCurrentPageSnapshot () {
   let pages = []
   try {
     pages = getCurrentPages && getCurrentPages()
   } catch (e) {
-    console.log('[item-form] syncRouteParams getCurrentPages error', e)
+    console.log('[item-form] getCurrentPages error', e)
   }
   const cur = pages && pages.length ? pages[pages.length - 1] : null
-  const opts = (cur && cur.options) || {}
+
+  const rawOpts = (cur && cur.options) || (cur && cur.$page && cur.$page.options) || {}
+  const route = (cur && (cur.route || (cur.$page && cur.$page.route))) || ''
+  const fullPath = (cur && cur.$page && cur.$page.fullPath) ? cur.$page.fullPath : ''
+
+  const h5Hash = safeGetH5Hash()
+  const hashParsed = h5Hash ? extractQueryFromUrl(h5Hash) : null
+  const fullParsed = fullPath ? extractQueryFromUrl(fullPath) : null
+
+  const mergedOpts = Object.assign(
+    {},
+    rawOpts || {},
+    (fullParsed && fullParsed.query) ? fullParsed.query : {},
+    (hashParsed && hashParsed.query) ? hashParsed.query : {}
+  )
+
+  const key = h5Hash
+    ? String(h5Hash)
+    : (fullPath
+        ? String(fullPath)
+        : (String(route) + '?' + buildStableQueryString(mergedOpts)))
+
+  return { opts: mergedOpts, route, fullPath, key }
+}
+
+/** 将 options 应用到页面，并在“URL 变化”时强制刷新内容 */
+function applyRouteOptionsAndRefresh (opts, reason) {
+  opts = opts || {}
 
   const newSubmissionId = Number(opts.submission_id || 0)
   const newItemId = Number(opts.item_id || opts.submission_item_id || 0)
   const newPlanId = Number(opts.plan_id || opts.order_plan_id || 0)
+  const goodsIdFromQuery = Number(opts.goods_id || 0)
 
-  console.log('[item-form] syncRouteParamsFromCurrentPage opts=', opts,
-    'prevSubmissionId=', submissionId.value,
-    'prevItemId=', itemId.value,
-    'prevPlanId=', planId.value,
-    'newSubmissionId=', newSubmissionId,
-    'newItemId=', newItemId,
-    'newPlanId=', newPlanId
+  const needReset =
+    (newItemId !== itemId.value) ||
+    (newPlanId !== planId.value) ||
+    (newSubmissionId !== submissionId.value)
+
+  console.log('[item-form] applyRouteOptionsAndRefresh reason=', reason,
+    'opts=', opts,
+    'needReset=', needReset,
+    'prev={submissionId,itemId,planId}=', submissionId.value, itemId.value, planId.value,
+    'next={submissionId,itemId,planId}=', newSubmissionId, newItemId, newPlanId,
+    'goodsIdFromQuery=', goodsIdFromQuery
   )
 
-  // 检测是否切换到另一条记录
-  if (newItemId && newItemId !== itemId.value) {
-    console.log('[item-form] detect item switch, oldItemId=', itemId.value, 'newItemId=', newItemId)
+  if (needReset) {
+    try { uni.removeStorageSync('__pickedMyItemFromStock') } catch (e) {}
     resetStateForNewItem()
-    submissionId.value = newSubmissionId
-    itemId.value = newItemId
-    planId.value = newPlanId
+  }
 
-    if (itemId.value) {
-      loadHeadModeSnapshot()
-    }
-    if (planId.value) {
-      fetchPlanInfo()
-    }
-  } else {
-    // 新建 or 同一条记录（比如从子页面返回）
-    if (!itemId.value && newItemId) {
-      console.log('[item-form] syncRouteParams: init itemId from opts, newItemId=', newItemId)
-      itemId.value = newItemId
-    }
-    if (!planId.value && newPlanId) {
-      console.log('[item-form] syncRouteParams: init planId from opts, newPlanId=', newPlanId)
-      planId.value = newPlanId
-    }
-    if (!submissionId.value && newSubmissionId) {
-      console.log('[item-form] syncRouteParams: init submissionId from opts, newSubmissionId=', newSubmissionId)
-      submissionId.value = newSubmissionId
-    }
+  submissionId.value = newSubmissionId
+  itemId.value = newItemId
+  planId.value = newPlanId
+
+  try {
+    uni.setNavigationBarTitle({ title: itemId.value ? '编辑投递' : '新增投递' })
+  } catch (e) {}
+
+  if (itemId.value) {
+    loadHeadModeSnapshot()
+  }
+
+  if (!itemId.value && goodsIdFromQuery) {
+    withApplyingLock(function () {
+      form.subject_goods_id = goodsIdFromQuery
+      if (!hasHeadModeFromStorage.value) {
+        headMode.value = 'select'
+      }
+    })
+  }
+
+  if (planId.value) {
+    fetchPlanInfo()
+  }
+
+  if (itemId.value) {
+    hasLoadedItem.value = false
+    fetchItem(true, { silent: false })
   }
 }
 
@@ -532,27 +688,28 @@ function syncRouteParamsFromCurrentPage () {
 function switchHeadMode (mode) {
   if (headMode.value === mode) return
   console.log('[item-form] switchHeadMode from', headMode.value, 'to', mode, 'itemId=', itemId.value)
-  headMode.value = mode
 
-  // 分步选择模式以外，清空商品绑定（id + 展示），避免误用
+  headMode.value = mode
+  markDirty('headMode')
+
   if (mode !== 'select') {
     form.subject_goods_id = 0
     selectedGoods.value = {}
     selectedBrand.value = {}
+    markDirty('subject_goods_id')
+    markDirty('displayGoods')
   }
 
-  // 娃柜以外，清空娃柜展示
   if (mode !== 'cabinet') {
     cabinetItem.value = null
+    markDirty('displayCabinet')
   }
 
   saveHeadModeSnapshot()
 }
 
-
 /** 选娃头入口（分步选择：品牌->商品） */
 function goPickHead () {
-  // 进入分步选择时，强制切到 select 模式，并保存快照
   if (headMode.value !== 'select') {
     headMode.value = 'select'
     saveHeadModeSnapshot()
@@ -560,36 +717,31 @@ function goPickHead () {
 
   console.log('[item-form] goPickHead itemId=', itemId.value)
 
-  // 只监听一次分步选择返回
   uni.$once('associate:done', (payload) => {
     console.log('[item-form] associate:done payload=', payload)
 
     const brandInfo = payload && payload.brand
     const goodsInfo = payload && payload.goods
 
-    // 回填品牌、商品展示用信息
     selectedBrand.value = brandInfo || {}
     selectedGoods.value = goodsInfo || {}
+    markDirty('displayGoods')
 
-    // ★ 关键：根据回跳携带的 goods 信息填充表单
     if (goodsInfo && goodsInfo.id) {
-      // 保存选中的商品 ID
       form.subject_goods_id = goodsInfo.id
-
-      // 用商品名覆盖娃头标题（按你的需求：根据 goods 填充表单）
       form.work_subject = goodsInfo.name || ''
 
-      // 如果有封面图，用封面图作为第一张参考图
       if (goodsInfo.cover) {
         form.ref_images = [goodsInfo.cover]
       }
+      markDirty('subject_goods_id')
+      markDirty('work_subject')
+      markDirty('ref_images')
     }
 
-    // 记录当前是分步选择模式
     saveHeadModeSnapshot()
   })
 
-  // 跳转到品牌选择入口（后面会再进到你给的分步选择页）
   uni.navigateTo({
     url: '/pkg-common/brand-pick/brand-pick',
     success (res) {
@@ -602,7 +754,6 @@ function goPickHead () {
     }
   })
 }
-
 
 /** 从娃柜中选择入口 */
 function goPickFromCabinet () {
@@ -633,45 +784,107 @@ function applyPickedCabinetItem (payload) {
   if (!payload) return
   console.log('[item-form] applyPickedCabinetItem payload=', payload)
   cabinetItem.value = payload
+  markDirty('displayCabinet')
 
   const name = payload.name || payload.title || ''
   if (name) {
     form.work_subject = name
+    markDirty('work_subject')
   }
   if (payload.image) {
     form.ref_images = [payload.image]
+    markDirty('ref_images')
   }
 
   headMode.value = 'cabinet'
+  markDirty('headMode')
   saveHeadModeSnapshot()
 }
 
-/** 将接口数据填充到表单 */
-function normalizeRefImages (val) {
-  if (!val) return []
-  if (Array.isArray(val)) {
-    return val.filter(Boolean)
-  }
-  if (typeof val === 'string') {
-    return val.split(',').map(function (s) { return s.trim() }).filter(Boolean)
-  }
-  return []
+/** ====== 数据归一化：ref_images / addons_json ====== */
+function safeJsonParse (s) {
+  try { return JSON.parse(s) } catch (e) { return null }
 }
 
-/** 解析 addons_json（Base64）为数组 */
-function decodeAddonsJson (base64Str) {
-  if (!base64Str) return []
-  try {
-    if (typeof atob !== 'function') {
-      console.warn('[item-form] atob not found, skip decode addons_json')
-      return []
+function normalizeRefImages (val) {
+  // 目标：返回 string[]
+  if (!val) return []
+
+  // 1) 已经是数组
+  if (Array.isArray(val)) {
+    return val
+      .map(function (x) {
+        if (!x) return ''
+        if (typeof x === 'string') return x.trim()
+        if (typeof x === 'object' && x.url) return String(x.url).trim()
+        return String(x).trim()
+      })
+      .filter(Boolean)
+  }
+
+  // 2) 字符串：可能是单 URL / 逗号分隔 / JSON 数组字符串
+  if (typeof val === 'string') {
+    const s = val.trim()
+    if (!s) return []
+
+    // 2.1 JSON 数组字符串： "[]" / ["a","b"]
+    if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('{') && s.endsWith('}'))) {
+      const parsed = safeJsonParse(s)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(function (x) { return (x ? String(x).trim() : '') })
+          .filter(Boolean)
+      }
+      // 如果是对象而不是数组，继续走兜底 split
     }
-    // 兼容中文：Base64 -> UTF8 字符串
-    const text = decodeURIComponent(escape(atob(base64Str)))
-    const arr = JSON.parse(text)
+
+    // 2.2 逗号/换行分隔
+    const parts = s
+      .split(/[\s,]+/g)
+      .map(function (x) { return (x || '').trim() })
+      .filter(Boolean)
+
+    // 如果只有一个且看起来像 URL，直接返回
+    return parts
+  }
+
+  // 3) 其他类型兜底
+  try {
+    return [String(val).trim()].filter(Boolean)
+  } catch (e) {
+    return []
+  }
+}
+
+function looksLikeBase64 (s) {
+  if (!s) return false
+  const t = String(s).trim()
+  if (!t) return false
+  // base64 一般只含这些字符且长度为 4 的倍数（不强制）
+  return /^[A-Za-z0-9+/=]+$/.test(t)
+}
+
+/** 解析 addons_json：兼容 "[]"（纯 JSON 字符串）以及 Base64(JSON) 两种 */
+function decodeAddonsJson (str) {
+  if (!str) return []
+  const s = String(str).trim()
+  if (!s) return []
+
+  // 1) 直接就是 JSON
+  if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('{') && s.endsWith('}'))) {
+    const parsed = safeJsonParse(s)
+    return Array.isArray(parsed) ? parsed : []
+  }
+
+  // 2) Base64(JSON)
+  try {
+    if (typeof atob !== 'function') return []
+    if (!looksLikeBase64(s)) return []
+    const text = decodeURIComponent(escape(atob(s)))
+    const arr = safeJsonParse(text)
     return Array.isArray(arr) ? arr : []
   } catch (e) {
-    console.error('[item-form] decode addons_json failed', e, 'base64=', base64Str)
+    console.error('[item-form] decodeAddonsJson failed', e, 'raw=', s)
     return []
   }
 }
@@ -680,7 +893,6 @@ function decodeAddonsJson (base64Str) {
 function syncSelectionsFromFormAndPlan () {
   console.log('[item-form] syncSelectionsFromFormAndPlan form.size=', form.size, 'form.tier_title=', form.tier_title, 'rawAddonTitles=', rawAddonTitles.value)
 
-  // 尺寸
   if (form.size && sizeOptions.value.length) {
     const idx1 = sizeOptions.value.findIndex(function (s) {
       return String(s.size) === String(form.size)
@@ -688,7 +900,6 @@ function syncSelectionsFromFormAndPlan () {
     selectedSizeIndex.value = idx1
   }
 
-  // 档位
   if (form.tier_title && tierOptions.value.length) {
     const idx2 = tierOptions.value.findIndex(function (t) {
       return String(t.title) === String(form.tier_title)
@@ -696,101 +907,141 @@ function syncSelectionsFromFormAndPlan () {
     selectedTierIndex.value = idx2
   }
 
-  // 加购：用“标题”对齐
-  if (addonOptions.value.length && rawAddonTitles.value && rawAddonTitles.value.length) {
-    const selected = []
-    addonOptions.value.forEach(function (addon, idx) {
-      const t = addon && addon.title
-      if (t && rawAddonTitles.value.indexOf(String(t)) > -1) {
-        selected.push(idx)
-      }
-    })
-    selectedAddonIndexes.value = selected
+  if (!dirty.addons) {
+    if (addonOptions.value.length && rawAddonTitles.value && rawAddonTitles.value.length) {
+      const selected = []
+      addonOptions.value.forEach(function (addon, idx) {
+        const t = addon && addon.title
+        if (t && rawAddonTitles.value.indexOf(String(t)) > -1) {
+          selected.push(idx)
+        }
+      })
+      selectedAddonIndexes.value = selected
+    } else if (addonOptions.value.length) {
+      selectedAddonIndexes.value = []
+    }
   }
 
-  // 是否需要立刻根据 plan 重算一次价格：这里保持原有逻辑，仅在已有档位时计算
   if (selectedTierIndex.value >= 0) {
     recalcPriceFromPlan()
   }
 }
 
-function fillFormFromRaw (raw) {
+function fillFormFromRaw (raw, opt) {
+  opt = opt || {}
+  const isFirstLoad = !!opt.isFirstLoad
+
   if (!raw) return
-  console.log('[item-form] fillFormFromRaw id=', raw.id, 'work_subject=', raw.work_subject, 'size=', raw.size)
+  console.log('[item-form] fillFormFromRaw id=', raw.id, 'work_subject=', raw.work_subject, 'size=', raw.size, 'isFirstLoad=', isFirstLoad)
 
-  form.work_subject = raw.work_subject || raw.title || ''
-  form.size = raw.size || ''
-  form.tier_title = raw.tier_title || raw.tier || ''
-  if (typeof raw.price_total !== 'undefined' && raw.price_total !== null) {
-    const n = Number(raw.price_total)
-    form.price_text = isNaN(n) ? '' : String(n)
-  } else {
-    form.price_text = ''
-  }
-  form.remark = raw.remark || raw.note || ''
+  // 先把服务端 ref_images 归一化出来，方便打点
+  const incomingImages = normalizeRefImages(raw.ref_images || raw.images || raw.ref_images_str)
+  console.log('[item-form] incomingImages normalized=', incomingImages, 'raw.ref_images=', raw.ref_images)
 
-  // 参考图片：优先用 ref_images
-  form.ref_images = normalizeRefImages(raw.ref_images || raw.images || raw.ref_images_str)
-
-  // 兼容 subject_goods_id / goods_id
-  form.subject_goods_id = Number(raw.subject_goods_id || raw.goods_id || 0)
-  const goodsId = form.subject_goods_id
-
-  if (goodsId > 0) {
-    selectedGoods.value = {
-      id: goodsId,
-      name: raw.subject_goods_name || raw.goods_name || raw.work_subject || form.work_subject,
-      cover: (form.ref_images && form.ref_images.length > 0)
-        ? form.ref_images[0]
-        : (raw.subject_goods_cover || raw.goods_cover || '')
+  withApplyingLock(function () {
+    if (!dirty.work_subject) {
+      form.work_subject = raw.work_subject || raw.title || ''
     }
-    selectedBrand.value = {
-      id: raw.subject_brand_id || raw.brand_id || 0,
-      brand_name: raw.subject_brand_name || raw.brand_name || ''
+
+    if (!dirty.size) {
+      form.size = raw.size || ''
     }
-  } else {
-    selectedGoods.value = {}
-    selectedBrand.value = {}
-  }
-
-  // 已选加购：解析 addons_json -> 取出 title 列表
-  rawAddonTitles.value = []
-  if (raw.addons_json) {
-    const arr = decodeAddonsJson(raw.addons_json)
-    rawAddonTitles.value = arr
-      .map(function (a) { return a && a.title })
-      .filter(function (t) { return !!t })
-  }
-
-  if (!hasHeadModeFromStorage.value) {
-    if (goodsId > 0) {
-      headMode.value = 'select'
-    } else if (raw.from_cabinet) {
-      headMode.value = 'cabinet'
-    } else if (form.work_subject) {
-      headMode.value = 'manual'
-    } else {
-      headMode.value = 'select'
+    if (!dirty.tier_title) {
+      form.tier_title = raw.tier_title || raw.tier || ''
     }
-    console.log('[item-form] fillFormFromRaw guess headMode =', headMode.value)
-  }
 
-  // 如果 plan 已经加载完成，则根据当前表单值同步一次选中状态（尺寸 / 档位 / 加购）
+    if (!(dirty.size || dirty.tier_title || dirty.addons)) {
+      if (typeof raw.price_total !== 'undefined' && raw.price_total !== null) {
+        const n = Number(raw.price_total)
+        form.price_text = isNaN(n) ? '' : String(n)
+      } else {
+        form.price_text = ''
+      }
+    }
+
+    if (!dirty.remark) {
+      form.remark = raw.remark || raw.note || ''
+    }
+
+    // 关键修复点：
+    // - 首次加载该 item：无条件应用服务端 ref_images
+    // - 非首次加载：尊重 dirty.ref_images（避免覆盖用户正在编辑的图片）
+    if (isFirstLoad || !dirty.ref_images) {
+      form.ref_images = incomingImages
+    }
+
+    if (!dirty.subject_goods_id) {
+      form.subject_goods_id = Number(raw.subject_goods_id || raw.goods_id || 0)
+      const goodsId = form.subject_goods_id
+
+      if (!dirty.displayGoods) {
+        if (goodsId > 0) {
+          selectedGoods.value = {
+            id: goodsId,
+            name: raw.subject_goods_name || raw.goods_name || raw.work_subject || form.work_subject,
+            cover: (Array.isArray(form.ref_images) && form.ref_images.length > 0)
+              ? form.ref_images[0]
+              : (raw.subject_goods_cover || raw.goods_cover || '')
+          }
+          selectedBrand.value = {
+            id: raw.subject_brand_id || raw.brand_id || 0,
+            brand_name: raw.subject_brand_name || raw.brand_name || ''
+          }
+        } else {
+          selectedGoods.value = {}
+          selectedBrand.value = {}
+        }
+      }
+    }
+
+    if (!dirty.addons) {
+      rawAddonTitles.value = []
+      if (raw.addons_json) {
+        const arr = decodeAddonsJson(raw.addons_json) // 兼容 "[]"
+        rawAddonTitles.value = arr
+          .map(function (a) {
+            // 兼容 ["标题"] 或 [{title:"标题"}]
+            if (!a) return ''
+            if (typeof a === 'string') return a
+            return a.title || ''
+          })
+          .filter(function (t) { return !!t })
+      }
+    }
+
+    if (!hasHeadModeFromStorage.value && !dirty.headMode) {
+      const goodsId = Number(raw.subject_goods_id || raw.goods_id || 0)
+      if (goodsId > 0) {
+        headMode.value = 'select'
+      } else if (raw.from_cabinet) {
+        headMode.value = 'cabinet'
+      } else if ((form.work_subject || '').trim()) {
+        headMode.value = 'manual'
+      } else {
+        headMode.value = 'select'
+      }
+      console.log('[item-form] fillFormFromRaw guess headMode =', headMode.value)
+    }
+  })
+
+  console.log('[item-form] after fill, form.ref_images=', form.ref_images)
+
   if (sizeOptions.value.length || tierOptions.value.length || addonOptions.value.length) {
     syncSelectionsFromFormAndPlan()
   }
 }
 
 /** 加载单个 item 详情（编辑模式） */
-async function fetchItem (force) {
-  // 记录当前这次请求针对的 itemId，防止异步竞态覆盖
-  const reqItemId = itemId.value
+async function fetchItem (force, opt) {
+  opt = opt || {}
+  const silent = !!opt.silent
+  const keepOldOnError = (typeof opt.keepOldOnError === 'boolean') ? opt.keepOldOnError : silent
 
+  const reqItemId = itemId.value
   if (!reqItemId) {
     console.log('[item-form] fetchItem skip, no reqItemId')
     return
   }
-
   if (!isEdit.value) {
     console.log('[item-form] fetchItem skip, not edit mode, itemId=', reqItemId)
     return
@@ -802,27 +1053,29 @@ async function fetchItem (force) {
 
   const token = uni.getStorageSync('token') || ''
   if (!token) {
-    errorMsg.value = '请先登录后再编辑投递信息'
+    if (!keepOldOnError) errorMsg.value = '请先登录后再编辑投递信息'
     console.log('[item-form] fetchItem no token')
     return
   }
 
-  console.log('[item-form] fetchItem start, reqItemId=', reqItemId, 'force=', force, 'current itemId=', itemId.value)
+  // 用于决定是否“首次加载该 item”
+  const isFirstLoad = !hasLoadedItem.value
 
-  loading.value = true
-  errorMsg.value = ''
+  console.log('[item-form] fetchItem start, reqItemId=', reqItemId, 'force=', force, 'silent=', silent, 'isFirstLoad=', isFirstLoad, 'current itemId=', itemId.value)
+
+  if (!silent) {
+    loading.value = true
+  }
+  if (!silent) {
+    errorMsg.value = ''
+  }
 
   try {
     const res = await uni.request({
       url: websiteUrl.value + '/with-state/artist-order/item/detail',
       method: 'GET',
-      header: {
-        Authorization: token
-      },
-      data: {
-        // 这里用的是当时记录下来的 reqItemId，而不是直接用 itemId.value
-        item_id: reqItemId
-      }
+      header: { Authorization: token },
+      data: { item_id: reqItemId }
     })
 
     const body = res.data || {}
@@ -835,15 +1088,10 @@ async function fetchItem (force) {
     const raw = body.data || {}
     console.log('[item-form] fetchItem data=', raw, 'reqItemId=', reqItemId, 'current itemId=', itemId.value)
 
-    // ★ 关键：如果这时候当前页面的 itemId 已经不是这次请求的 reqItemId 了，
-    // 说明用户已经切换到另一个子项（例如从 1 切到 2），
-    // 这次响应是“过期”的，不能再覆盖掉当前表单
     if (reqItemId !== itemId.value) {
       console.log('[item-form] fetchItem stale response, ignore. reqItemId=', reqItemId, 'current itemId=', itemId.value)
       return
     }
-
-    // ===== 下面的逻辑只在“响应仍然匹配当前 itemId”时才执行 =====
 
     submissionId.value = Number(raw.submission_id || submissionId.value || 0)
     if (!planId.value) {
@@ -853,17 +1101,24 @@ async function fetchItem (force) {
       }
     }
 
-    fillFormFromRaw(raw)
+    fillFormFromRaw(raw, { isFirstLoad })
     hasLoadedItem.value = true
   } catch (e) {
     console.error('[item-form] 加载 item 详情失败', e)
-    errorMsg.value = e && e.message ? e.message : '加载失败，请稍后重试'
-  } finally {
-    // 这里也要判断一下，避免把别的 item 的 loading 状态给关错
-    if (reqItemId === itemId.value) {
-      loading.value = false
+    const msg = e && e.message ? e.message : '加载失败，请稍后重试'
+
+    if (keepOldOnError && hasLoadedItem.value) {
+      uni.showToast({ title: '刷新失败：' + msg, icon: 'none' })
     } else {
-      console.log('[item-form] fetchItem finally: skip loading=false 因为 itemId 已切换, reqItemId=', reqItemId, 'current itemId=', itemId.value)
+      errorMsg.value = msg
+    }
+  } finally {
+    if (!silent) {
+      if (reqItemId === itemId.value) {
+        loading.value = false
+      } else {
+        console.log('[item-form] fetchItem finally: skip loading=false 因为 itemId 已切换, reqItemId=', reqItemId, 'current itemId=', itemId.value)
+      }
     }
   }
 }
@@ -871,21 +1126,28 @@ async function fetchItem (force) {
 function reloadItem () {
   console.log('[item-form] reloadItem clicked itemId=', itemId.value)
   hasLoadedItem.value = false
-  fetchItem(true)
+  fetchItem(true, { silent: false })
 }
 
 /** 加载方案 plan 信息 */
 async function fetchPlanInfo () {
   if (!planId.value) return
-  console.log('[item-form] fetchPlanInfo planId=', planId.value)
+  const reqPlanId = planId.value
+  console.log('[item-form] fetchPlanInfo planId=', reqPlanId)
   try {
     const res = await uni.request({
       url: websiteUrl.value + '/brand-artist/order-plan-info',
       method: 'GET',
-      data: { id: planId.value }
+      data: { id: reqPlanId }
     })
     const body = res.data || {}
-    console.log('[item-form] fetchPlanInfo body=', body)
+    console.log('[item-form] fetchPlanInfo body=', body, 'reqPlanId=', reqPlanId, 'current planId=', planId.value)
+
+    if (reqPlanId !== planId.value) {
+      console.log('[item-form] fetchPlanInfo stale response, ignore. reqPlanId=', reqPlanId, 'current planId=', planId.value)
+      return
+    }
+
     if (String(body.status).toLowerCase() !== 'success') {
       return
     }
@@ -906,8 +1168,7 @@ async function fetchPlanInfo () {
 
     console.log('[item-form] plan parsed sizeOptions=', sizeOptions.value, 'tierOptions=', tierOptions.value, 'addonOptions=', addonOptions.value)
 
-    // 统一用一个函数，根据“已填表单 + plan 配置”来做高亮 & 价格
-    if (form.size || form.tier_title || (rawAddonTitles.value && rawAddonTitles.value.length)) {
+    if (form.size || form.tier_title || (rawAddonTitles.value && rawAddonTitles.value.length) || (selectedAddonIndexes.value && selectedAddonIndexes.value.length)) {
       syncSelectionsFromFormAndPlan()
     }
   } catch (e) {
@@ -919,7 +1180,6 @@ async function fetchPlanInfo () {
 function recalcPriceFromPlan () {
   const tier = selectedTierIndex.value >= 0 ? tierOptions.value[selectedTierIndex.value] : null
   if (!tier) {
-    // 没选档位时，不强制覆盖后端返回的 price_text
     return
   }
 
@@ -943,6 +1203,7 @@ function recalcPriceFromPlan () {
 
 /** 选择尺寸 */
 function handleSelectSize (idx) {
+  markDirty('size')
   if (selectedSizeIndex.value === idx) {
     selectedSizeIndex.value = -1
     form.size = ''
@@ -959,6 +1220,7 @@ function handleSelectSize (idx) {
 
 /** 选择档位 */
 function handleSelectTier (idx) {
+  markDirty('tier_title')
   if (selectedTierIndex.value === idx) {
     selectedTierIndex.value = -1
     form.tier_title = ''
@@ -973,6 +1235,7 @@ function handleSelectTier (idx) {
 
 /** 勾选/取消勾选加购 */
 function toggleAddon (idx) {
+  markDirty('addons')
   const list = selectedAddonIndexes.value.slice()
   const i = list.indexOf(idx)
   if (i > -1) {
@@ -1044,6 +1307,7 @@ async function handleUploadRefImages () {
           form.ref_images = []
         }
         form.ref_images.push(ret.imageUrl)
+        markDirty('ref_images')
         uploadProgress.value = Math.round(((i + 1) / files.length) * 100)
       }
     }
@@ -1077,6 +1341,7 @@ function removeRefImage (index) {
     success (res) {
       if (res.confirm) {
         form.ref_images.splice(index, 1)
+        markDirty('ref_images')
         uni.showToast({ title: '已删除', icon: 'success' })
       }
     }
@@ -1146,6 +1411,7 @@ async function handleSave () {
       }
 
       saveHeadModeSnapshot()
+      resetDirtyFlags()
 
       uni.showToast({
         title: '保存成功',
@@ -1190,6 +1456,7 @@ async function handleSave () {
 
       itemId.value = newItemId
       saveHeadModeSnapshot()
+      resetDirtyFlags()
 
       if (submissionId.value > 0) {
         const attachRes = await uni.request({
@@ -1237,51 +1504,53 @@ async function handleSave () {
 onLoad(function (q) {
   q = q || {}
   console.log('[item-form] onLoad q=', q)
-  uni.setNavigationBarTitle({ title: '新增投递' })
 
-  submissionId.value = Number(q.submission_id || 0)
-  itemId.value = Number(q.item_id || q.submission_item_id || 0)
-  planId.value = Number(q.plan_id || q.order_plan_id || 0)
+  const snap = getCurrentPageSnapshot()
+  const merged = Object.assign({}, q, (snap && snap.opts) ? snap.opts : {})
+  lastRouteKey.value = snap && snap.key ? snap.key : (buildStableQueryString(merged) || '')
+  console.log('[item-form] onLoad set lastRouteKey=', lastRouteKey.value, 'snap=', snap)
 
-  console.log('[item-form] onLoad parsed submissionId=', submissionId.value, 'itemId=', itemId.value, 'planId=', planId.value)
-
-  if (itemId.value) {
-    loadHeadModeSnapshot()
-  }
-
-  const goodsIdFromQuery = Number(q.goods_id || 0)
-  if (goodsIdFromQuery) {
-    form.subject_goods_id = goodsIdFromQuery
-    if (!hasHeadModeFromStorage.value) {
-      headMode.value = 'select'
-    }
-  }
-
-  if (planId.value) {
-    fetchPlanInfo()
-  }
-
-  if (itemId.value) {
-    fetchItem(true)
-  }
+  applyRouteOptionsAndRefresh(merged, 'onLoad')
 })
 
 onShow(function () {
   console.log('[item-form] onShow enter, current itemId=', itemId.value, 'planId=', planId.value, 'submissionId=', submissionId.value)
 
-  // H5 场景里，同一路径不同 query 会复用组件，在这里再同步一遍当前路由的参数
-  syncRouteParamsFromCurrentPage()
+  const snap = getCurrentPageSnapshot()
+  const newKey = snap && snap.key ? String(snap.key) : ''
+  const snapItemId = Number((snap && snap.opts && (snap.opts.item_id || snap.opts.submission_item_id)) || 0)
 
-  console.log('[item-form] onShow after sync, itemId=', itemId.value, 'planId=', planId.value, 'submissionId=', submissionId.value)
+  let didApplyRouteRefresh = false
 
-  // ★ 修正点：只有当前 item 还没加载过的时候才重新拉详情，
-  // 避免从子页面返回时再次切换到「加载中」导致 ResizeSensor 报错、
-  // 以及覆盖从娃柜/品牌页带回来的本地修改
-  if (isEdit.value && !hasLoadedItem.value) {
-    fetchItem(true)
+  if (!lastRouteKey.value) {
+    lastRouteKey.value = newKey
+    console.log('[item-form] onShow init lastRouteKey=', lastRouteKey.value)
+  } else if (newKey && newKey !== lastRouteKey.value) {
+    console.log('[item-form] onShow URL changed, oldKey=', lastRouteKey.value, 'newKey=', newKey, 'snap=', snap)
+    lastRouteKey.value = newKey
+    didApplyRouteRefresh = true
+    applyRouteOptionsAndRefresh(snap.opts, 'onShow-url-changed')
+  } else {
+    console.log('[item-form] onShow URL not changed, key=', newKey)
   }
 
-  // 娃柜选择的兜底回传（H5 / 其他端通过 storage）
+  if (!didApplyRouteRefresh && snapItemId > 0 && snapItemId !== itemId.value) {
+    console.log('[item-form] onShow id mismatch, force applyRoute. snapItemId=', snapItemId, 'current itemId=', itemId.value, 'snap=', snap)
+    lastRouteKey.value = newKey || lastRouteKey.value
+    didApplyRouteRefresh = true
+    applyRouteOptionsAndRefresh(snap.opts, 'onShow-id-mismatch')
+  }
+
+  // 你的要求：只要编辑模式，每次 onShow 都刷新（静默刷新优先）
+  if (isEdit.value) {
+    if (!didApplyRouteRefresh) {
+      fetchItem(true, { silent: hasLoadedItem.value, keepOldOnError: true })
+    } else {
+      console.log('[item-form] onShow skip extra fetchItem because route refresh already triggered')
+    }
+  }
+
+  // 娃柜选择的兜底回传
   try {
     const cached = uni.getStorageSync('__pickedMyItemFromStock')
     if (cached && cached.id) {
@@ -1446,8 +1715,6 @@ onShow(function () {
 }
 .chip {
   padding: 20rpx 30rpx;
-  /* border-radius: 999rpx; */
-  /* border: 1rpx solid #d1d5db; */
   background: #f9fafb;
   display: inline-flex;
   align-items: center;

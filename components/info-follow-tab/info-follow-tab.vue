@@ -1,25 +1,19 @@
-<!-- info-follow-tab.vue -->
 <template>
   <view class="follow-tab">
-    <!-- 三级 Tab：品牌 / 商品 / 搭配 / 展示柜 -->
     <view class="follow-sub-tabs">
       <view
         v-for="tab in subTabs"
         :key="tab.key"
         class="sub-tab-item"
         :class="{ 'sub-tab-item-active': activeSubTab === tab.key }"
-        @click="changeSubTab(tab.key)"
+        @click="emit('change-sub-tab', tab.key)"
       >
         <text class="sub-tab-text font-alimamashuhei">{{ tab.label }}</text>
       </view>
     </view>
 
-    <!-- 品牌列表 -->
     <view v-if="activeSubTab === 'brand'" class="list-wrap">
-      <view
-        v-if="!brandLoading && brandList.length === 0"
-        class="empty-box"
-      >
+      <view v-if="!brandLoading && brandList.length === 0" class="empty-box">
         <text class="empty-text font-alimamashuhei">还没有关注任何品牌哦</text>
       </view>
 
@@ -28,27 +22,19 @@
         :key="item.id"
         class="brand-item"
         :style="brandItemStyle(index)"
-        @click="goBrandDetail(item)"
+        @click="emit('open-brand', item)"
       >
         <view class="brand-avatar">
-          <image
-            class="brand-avatar-img"
-            :src="resolveImage(item.logo_image)"
-            mode="aspectFill"
-          />
+          <image class="brand-avatar-img" :src="resolveImage(item.logo_image)" mode="aspectFill" />
         </view>
 
         <view class="brand-main">
-          <text class="brand-name font-alimamashuhei">
-            {{ item.brand_name || '未命名品牌' }}
-          </text>
+          <text class="brand-name font-alimamashuhei">{{ item.brand_name || '未命名品牌' }}</text>
 
           <view class="brand-meta">
             <text class="meta-tag font-alimamashuhei">待开售 {{ getWaitingCount(item) }}</text>
             <text class="meta-label font-alimamashuhei">新情报</text>
-            <text class="meta-time font-alimamashuhei">
-              {{ formatTime(item.latest_news_time) }}
-            </text>
+            <text class="meta-time font-alimamashuhei">{{ formatTime(item.latest_news_time) }}</text>
           </view>
         </view>
 
@@ -57,32 +43,26 @@
           <text class="arrow-symbol font-alimamashuhei">→</text>
         </view>
       </view>
+
       <view v-if="brandLoading" class="loading-box">
-        <loading-jump-text></loading-jump-text>
+        <loading-jump-text />
       </view>
 
       <view
         v-else-if="!brandFinished && brandList.length > 0"
         class="load-more-box"
-        @click="loadBrandMore"
+        @click="emit('load-brand-more')"
       >
         <text class="load-more-text font-alimamashuhei">点击加载更多</text>
       </view>
 
-      <view
-        v-else-if="brandFinished && brandList.length > 0"
-        class="load-more-box"
-      >
+      <view v-else-if="brandFinished && brandList.length > 0" class="load-more-box">
         <text class="load-more-text font-alimamashuhei">已经到底啦</text>
       </view>
     </view>
 
-    <!-- 商品列表 -->
     <view v-else-if="activeSubTab === 'goods'" class="list-wrap">
-      <view
-        v-if="!goodsLoading && goodsList.length === 0"
-        class="empty-box"
-      >
+      <view v-if="!goodsLoading && goodsList.length === 0" class="empty-box">
         <text class="empty-text font-alimamashuhei">还没有关注任何商品哦</text>
       </view>
 
@@ -91,23 +71,19 @@
         :key="item.id"
         class="goods-item"
         :style="goodsItemStyle(index)"
-        @click="goGoodsDetail(item)"
+        @click="emit('open-goods', item)"
       >
         <view class="goods-thumb">
-          <image
-            class="goods-thumb-img"
-            :src="resolveImage(item.first_image)"
-            mode="aspectFill"
+          <image 
+            class="goods-thumb-img" 
+            :src="resolveImage(item.goods_image || (item.goods_images && item.goods_images[0]))" 
+            mode="aspectFill" 
           />
         </view>
 
         <view class="goods-main">
-          <text class="goods-title font-alimamashuhei">
-            {{ itemTitle(item) }}
-          </text>
-          <text class="goods-brand font-alimamashuhei">
-            {{ item.brand_name || '未知品牌' }}
-          </text>
+          <text class="goods-title font-alimamashuhei">{{ itemTitle(item) }}</text>
+          <text class="goods-brand font-alimamashuhei">{{ item.brand_name || '未知品牌' }}</text>
         </view>
 
         <view class="brand-arrow">
@@ -117,26 +93,22 @@
       </view>
 
       <view v-if="goodsLoading" class="loading-box">
-        <loading-jump-text></loading-jump-text>
+        <loading-jump-text />
       </view>
 
       <view
         v-else-if="!goodsFinished && goodsList.length > 0"
         class="load-more-box"
-        @click="loadGoodsMore"
+        @click="emit('load-goods-more')"
       >
         <text class="load-more-text font-alimamashuhei">点击加载更多</text>
       </view>
 
-      <view
-        v-else-if="goodsFinished && goodsList.length > 0"
-        class="load-more-box"
-      >
+      <view v-else-if="goodsFinished && goodsList.length > 0" class="load-more-box">
         <text class="load-more-text font-alimamashuhei">已经到底啦</text>
       </view>
     </view>
 
-    <!-- 搭配 / 展示柜 占位 -->
     <view v-else class="empty-box">
       <text class="empty-text font-alimamashuhei">该模块后续接入～</text>
     </view>
@@ -144,53 +116,48 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { websiteUrl, image1Url } from '@/common/config.js'
+import { image1Url } from '@/common/config.js'
 
-const emit = defineEmits(['update-stats'])
+const emit = defineEmits([
+  'change-sub-tab',
+  'load-brand-more',
+  'load-goods-more',
+  'open-brand',
+  'open-goods'
+])
 
 const props = defineProps({
-  active: {
-    type: Boolean,
-    default: true
-  }
+  active: { type: Boolean, default: true },
+
+  activeSubTab: { type: String, default: 'brand' },
+
+  brandList: { type: Array, default: () => [] },
+  brandLoading: { type: Boolean, default: false },
+  brandFinished: { type: Boolean, default: false },
+
+  goodsList: { type: Array, default: () => [] },
+  goodsLoading: { type: Boolean, default: false },
+  goodsFinished: { type: Boolean, default: false }
 })
 
-// 三级 Tab
 const subTabs = [
   { key: 'brand', label: '品牌' },
   { key: 'goods', label: '商品' },
   { key: 'mix', label: '搭配' },
   { key: 'display', label: '展示柜' }
 ]
-const activeSubTab = ref('brand')
-
-// 品牌数据
-const brandList = ref([])
-const brandPage = ref(1)
-const brandPageSize = 10
-const brandTotal = ref(0)
-const brandLoading = ref(false)
-const brandFinished = ref(false)
-
-// 商品数据
-const goodsList = ref([])
-const goodsPage = ref(1)
-const goodsPageSize = 10
-const goodsTotal = ref(0)
-const goodsLoading = ref(false)
-const goodsFinished = ref(false)
 
 const defaultImg = 'https://images1.fantuanpu.com/home/jpt.gif'
 
-// ---------- 通用工具 ----------
-function resolveImage(url) {
+function resolveImage (url) {
   if (!url) return defaultImg
-  if (typeof url === 'string' && url.indexOf('http') === 0) return url
+  // 如果是完整链接 (http开头)，直接返回
+  if (typeof url === 'string' && (url.indexOf('http') === 0 || url.indexOf('//') === 0)) return url
+  // 否则拼接域名
   return image1Url + url
 }
 
-function formatTime(ts) {
+function formatTime (ts) {
   if (!ts) return '--'
   const d = new Date(ts * 1000)
   if (isNaN(d.getTime())) return '--'
@@ -202,230 +169,24 @@ function formatTime(ts) {
   return y + '-' + m + '-' + day + ' ' + hh + ':' + mm
 }
 
-function getWaitingCount(brand) {
+function getWaitingCount (brand) {
   const list = brand.waiting_goods || []
   return Array.isArray(list) ? list.length : 0
 }
 
-function itemTitle(item) {
-  return (
-    item.title ||
-    item.goods_title ||
-    item.goods_name ||
-    item.name ||
-    '未命名商品'
-  )
+function itemTitle (item) {
+  return item.title || item.goods_title || item.goods_name || item.name || '未命名商品'
 }
 
-// ---------- 列表动画：按 index 逐条淡入 ----------
-function brandItemStyle(index) {
+function brandItemStyle (index) {
   const delay = index * 80
-  return {
-    animationDelay: delay + 'ms'
-  }
+  return { animationDelay: delay + 'ms' }
 }
 
-function goodsItemStyle(index) {
+function goodsItemStyle (index) {
   const delay = index * 80
-  return {
-    animationDelay: delay + 'ms'
-  }
+  return { animationDelay: delay + 'ms' }
 }
-
-// ---------- Tab 切换 ----------
-function changeSubTab(key) {
-  activeSubTab.value = key
-}
-
-watch(
-  () => activeSubTab.value,
-  key => {
-    if (key === 'brand' && brandList.value.length === 0) {
-      loadBrand(true)
-    }
-    if (key === 'goods' && goodsList.value.length === 0) {
-      loadGoods(true)
-    }
-  }
-)
-
-// ---------- 品牌接口 ----------
-function loadBrand(reset) {
-  const token = uni.getStorageSync('token')
-  if (!token) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none'
-    })
-    return
-  }
-
-  if (brandLoading.value) return
-  if (!reset && brandFinished.value) return
-
-  if (reset) {
-    brandPage.value = 1
-    brandFinished.value = false
-    brandList.value = []
-  }
-
-  brandLoading.value = true
-
-  uni.request({
-    url: websiteUrl.value + '/with-state/my-liked-brands',
-    method: 'GET',
-    header: {
-      Authorization: token
-    },
-    data: {
-      page: brandPage.value,
-      page_size: brandPageSize
-    },
-    success: res => {
-      const resp = res.data || {}
-      if (resp.status !== 'success') {
-        uni.showToast({
-          title: resp.msg || '获取关注品牌失败',
-          icon: 'none'
-        })
-        return
-      }
-
-      const data = resp.data || {}
-      const list = data.list || []
-      const total = Number(data.total || 0)
-
-      if (reset) {
-        brandList.value = list
-      } else {
-        brandList.value = brandList.value.concat(list)
-      }
-      brandTotal.value = total
-
-      // 是否全部加载
-      if (brandList.value.length >= total || list.length < brandPageSize) {
-        brandFinished.value = true
-      } else {
-        brandPage.value = brandPage.value + 1
-      }
-
-      // 上报关注总数给父组件，用于“关注”统计
-      emit('update-stats', { followTotal: total })
-    },
-    fail: () => {
-      uni.showToast({
-        title: '网络错误，获取关注品牌失败',
-        icon: 'none'
-      })
-    },
-    complete: () => {
-      brandLoading.value = false
-    }
-  })
-}
-
-function loadBrandMore() {
-  loadBrand(false)
-}
-
-// ---------- 商品接口 ----------
-function loadGoods(reset) {
-  const token = uni.getStorageSync('token')
-  if (!token) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none'
-    })
-    return
-  }
-
-  if (goodsLoading.value) return
-  if (!reset && goodsFinished.value) return
-
-  if (reset) {
-    goodsPage.value = 1
-    goodsFinished.value = false
-    goodsList.value = []
-  }
-
-  goodsLoading.value = true
-
-  uni.request({
-    url: websiteUrl.value + '/with-state/my-liked-goods',
-    method: 'GET',
-    header: {
-      Authorization: token
-    },
-    data: {
-      page: goodsPage.value,
-      page_size: goodsPageSize
-    },
-    success: res => {
-      const resp = res.data || {}
-      if (resp.status !== 'success') {
-        uni.showToast({
-          title: resp.msg || '获取关注商品失败',
-          icon: 'none'
-        })
-        return
-      }
-
-      const data = resp.data || {}
-      const list = data.list || []
-      const total = Number(data.total || 0)
-
-      if (reset) {
-        goodsList.value = list
-      } else {
-        goodsList.value = goodsList.value.concat(list)
-      }
-      goodsTotal.value = total
-
-      if (goodsList.value.length >= total || list.length < goodsPageSize) {
-        goodsFinished.value = true
-      } else {
-        goodsPage.value = goodsPage.value + 1
-      }
-    },
-    fail: () => {
-      uni.showToast({
-        title: '网络错误，获取关注商品失败',
-        icon: 'none'
-      })
-    },
-    complete: () => {
-      goodsLoading.value = false
-    }
-  })
-}
-
-function loadGoodsMore() {
-  loadGoods(false)
-}
-
-// ---------- 跳转 ----------
-function jump2brand(id) {
-  uni.navigateTo({ url: '/pages/brand/brand?brand_id=' + id })
-}
-
-function goBrandDetail(item) {
-  if (!item || !item.id) return
-  jump2brand(item.id)
-}
-
-function goGoodsDetail(item) {
-  uni.showToast({
-    title: '商品详情开发中',
-    icon: 'none'
-  })
-}
-
-// 初次进入默认加载品牌列表
-onMounted(() => {
-  if (props.active && activeSubTab.value === 'brand') {
-    loadBrand(true)
-  }
-})
 </script>
 
 <style lang="scss" scoped>

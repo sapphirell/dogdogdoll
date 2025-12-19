@@ -205,7 +205,17 @@
 		"style" : 
 		{
 			"navigationBarTitleText" : "",
-			 "navigationStyle": "custom"
+			 "navigationStyle": "custom",
+			 "app-plus": {
+			 	"bounce": "none"
+			 }
+		}
+	},
+	{
+		"path": "pages/artist_info/custom_wig_artist",
+		"style": {
+			"navigationBarTitleText": "",
+			"navigationStyle": "custom"
 		}
 	}
   ],
@@ -233,13 +243,13 @@
         { "path": "creator_base/artist_setting/artist_setting" },
         { "path": "creator_base/set_showcase/set_showcase" },
         { "path": "creator_base/faceup_editor/faceup_editor" },
-        { "path": "creator_base/order_plane/order_plane" },
+        { "path": "creator_base/order_plan/order_plan" },
         { "path": "creator_base/news/news" },
         { "path": "creator_base/set_hair_showcase/set_hair_showcase" },
-        { "path": "creator_base/order_plane/form-artist"},
-        { "path": "creator_base/order_plane/form-wig"},
+        { "path": "creator_base/order_plan/form-artist"},
+        { "path": "creator_base/order_plan/form-wig"},
 		{
-			"path" : "creator_order/plane_detail/plane_detail",
+			"path" : "creator_order/plan_detail/plan_detail",
 			"style" : 
 			{ "navigationStyle": "custom" } 
 		},
@@ -264,13 +274,24 @@
 		{
 			"path": "creator_order/received-list/received-list",
 			"style": {
-				"navigationBarTitleText": ""
 			}
 		},
 		{
 			"path": "creator_order/received-detail/received-detail",
 			"style": {
 				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_base/custom_wig/custom_wig",
+			"style": {
+				"navigationStyle": "custom" 
+			}
+		},
+		{
+			"path": "creator_base/hair_artist/hair_artist",
+			"style": {
+				"navigationStyle": "custom" 
 			}
 		}
       ]

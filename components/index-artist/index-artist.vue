@@ -275,7 +275,7 @@ const navigateToArtistDetail = (artist) => {
     })
   } else {
     uni.navigateTo({
-      url: '/pages/artist_info/artist_info?brand_id=' + artist.brand_id,
+      url: '/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=' + artist.brand_id,
     })
   }
 }

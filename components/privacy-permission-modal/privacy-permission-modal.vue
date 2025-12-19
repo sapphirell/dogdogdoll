@@ -1,6 +1,6 @@
 <!-- components/privacy-permission-modal.vue -->
 <template>
-	<common-modal v-model:visible="showModal" top="20vh" height="auto" :closeable="false">
+	<common-modal v-model:visible="showModal" top="20vh" width="85vw" height="auto" :closeable="false">
 		<view class="privacy-container">
 			<view class="header">
 				<image src="/static/new-icon/write.gif" class="logo" />
@@ -110,7 +110,7 @@
 		padding: 24rpx;
 		display: flex;
 		flex-direction: column;
-		width: 85vw;
+		width: calc(85vw - 70rpx);
 		box-sizing: border-box;
 
 		.header {

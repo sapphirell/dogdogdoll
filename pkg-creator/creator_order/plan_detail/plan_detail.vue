@@ -1,6 +1,6 @@
 <template>
   <view class="booking-page">
-    <!-- 吸顶标题栏（滚动后出现：头像 + 名字，可点击跳转） -->
+    <!-- 1. 吸顶导航栏 (白色背景) -->
     <view
       class="sticky-titlebar"
       v-show="showStickyTitle"
@@ -14,10 +14,15 @@
         <image class="st-logo" :src="avatarUrl" mode="aspectFill" />
         <text class="st-name">{{ artistName }}</text>
       </view>
-      <view class="st-right"></view>
+      <view class="st-right">
+        <!-- 修改：移除了收藏按钮，只保留分享 -->
+        <view class="icon-btn" @click="shareClick">
+           <uni-icons type="redo" size="24" color="#000"></uni-icons>
+        </view>
+      </view>
     </view>
 
-    <!-- 渐变透明自定义导航（保留返回按钮与字体） -->
+    <!-- 2. 透明/渐变导航栏 -->
     <zhouWei-navBar
       type="transparentFixed"
       :backState="2000"
@@ -33,6 +38,14 @@
           <text class="back-text font-alimamashuhei">返回</text>
         </view>
       </template>
+      <template #right>
+        <view class="nav-right-icon" style="padding-right: 40rpx; display: flex; align-items: center;">
+            <!-- 修改：移除了收藏按钮，只保留分享 -->
+            <view @click="shareClick">
+                <uni-icons type="redo" size="24" :color="scrollTop > 100 ? '#000' : '#fff'"></uni-icons>
+            </view>
+        </view>
+      </template>
       <template #transparentFixedLeft>
         <view class="nav-left" @click="goBack" aria-label="返回">
           <image class="back-icon" src="/static/artist/left.png" mode="aspectFit" />
@@ -41,7 +54,7 @@
       </template>
     </zhouWei-navBar>
 
-    <!-- 沉浸式大图 -->
+    <!-- Hero 区域 -->
     <view class="hero">
       <image class="hero-img" :src="coverUrl" mode="aspectFill" />
       <view class="hero-mask"></view>
@@ -51,10 +64,16 @@
           <text class="brand-name font-title" @click="goArtistHome">{{ artistName }}</text>
           <text class="plan-title font-alimamashuhei">开单</text>
         </view>
+        <!-- 修改：收藏按钮放在这里，位于 Hero Title 右边 -->
+        <view class="hero-follow" @click.stop="toggleFollow">
+           <!-- 未关注显示白色，已关注显示红色 -->
+		   <image src="/static/new-icon/like.png" v-if="!hasLikeBrand" mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+		   <image src="/static/new-icon/like-fill.png" v-else mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+        </view>
       </view>
     </view>
 
-    <!-- 高光图片：固定宽度 + 横向滚动 -->
+    <!-- 高光图 -->
     <scroll-view v-if="highlightImages.length" class="hl-strip" scroll-x :show-scrollbar="false">
       <view class="hl-row">
         <image
@@ -68,48 +87,45 @@
       </view>
     </scroll-view>
 
-    <!-- 信息卡（概览） -->
+    <!-- 基础信息卡片 -->
     <view class="card">
-      <view class="row">
+      <view class="row" @click="openModeDescModal">
         <text class="label font-title">投递方式</text>
-        <view class="val">
+        <view class="val mode-val">
           <text class="mode-chip" :class="modeClass">{{ modeName }}</text>
           <text v-if="!isLocalPlan" class="external-tip">在其它平台开单</text>
         </view>
       </view>
 
-      <template v-if="isLocalPlan">
-        <view class="row" v-if="isPermanent">
-          <text class="label font-title">档期</text>
-          <text class="val">常驻可约 · 按时间顺序排期</text>
-        </view>
+      <view class="row" v-if="isPermanent">
+        <text class="label font-title">档期</text>
+        <text class="val">常驻可约 · 按时间顺序排期</text>
+      </view>
 
-        <template v-else>
-          <view class="row">
-            <text class="label font-title">开始时间</text>
-            <text class="val">{{ fmtTime(plan.open_time) }}</text>
-          </view>
-          <view class="row">
-            <text class="label font-title">截止时间</text>
-            <text class="val">{{ fmtTime(plan.close_time) }}</text>
-          </view>
-          <view class="row" v-if="phase === 'upcoming'">
-            <text class="label font-title">距离开始</text>
-            <text class="val strong">{{ startsInText }}</text>
-          </view>
-          <view class="row" v-if="phase === 'ongoing'">
-            <text class="label font-title">距离截止</text>
-            <text class="val strong">{{ endsInText }}</text>
-          </view>
-          <view class="row" v-if="phase === 'ended'">
-            <text class="label font-title">状态</text>
-            <text class="val strong">已截止</text>
-          </view>
-        </template>
+      <template v-else>
+        <view class="row">
+          <text class="label font-title">开始时间</text>
+          <text class="val"><text class="font-title">{{ fmtTime(plan.open_time) }}</text></text>
+        </view>
+        <view class="row">
+          <text class="label font-title">截止时间</text>
+          <text class="val"><text class="font-title">{{ fmtTime(plan.close_time) }}</text></text>
+        </view>
+        <view class="row" v-if="phase === 'upcoming'">
+          <text class="label font-title">距离开始</text>
+          <text class="val strong"><text class="font-title">{{ startsInText }}</text></text>
+        </view>
+        <view class="row" v-if="phase === 'ongoing'">
+          <text class="label font-title">距离截止</text>
+          <text class="val strong"><text class="font-title">{{ endsInText }}</text></text>
+        </view>
+        <view class="row" v-if="phase === 'ended'">
+          <text class="label font-title">状态</text>
+          <text class="val strong">已截止</text>
+        </view>
       </template>
 
-      <!-- 定妆方式 -->
-      <view class="row">
+      <view class="row" v-if="isFaceup">
         <text class="label font-title">定妆方式</text>
         <view class="val finishing-val" @click="openFinishingModal">
           <text>{{ finishingMethodText }}</text>
@@ -117,16 +133,53 @@
         </view>
       </view>
 
-      <!-- 摘要 -->
-      <view class="row" v-if="perHeadCycleDays !== null">
-        <text class="label font-title">每颗头工期</text>
-        <text class="val">{{ perHeadCycleDays }} 天</text>
+      <view class="row" v-else-if="isHairstylist">
+        <text class="label font-title">毛坯提供方式</text>
+        <view class="val wrap blank-val" @click="openBlankSupplyModal">
+          <view
+            v-if="blankOptions.length"
+            v-for="opt in blankOptions"
+            :key="opt.key"
+            class="blank-chip"
+            :class="opt.chipClass"
+          >
+            <text class="blank-chip-text font-alimamashuhei">{{ opt.label }}</text>
+            <image class="blank-chip-icon" src="/static/duigou.png" mode="aspectFit" />
+          </view>
+          <text v-else class="blank-empty">未设置</text>
+        </view>
       </view>
-	  <!-- max_submissions_per_user -->
 
+      <view class="row" v-if="showPerHeadCycle">
+        <text class="label font-title">{{ perHeadCycleLabel }}</text>
+        <text class="val"><text class="font-title">{{ perHeadCycleDays }}</text> 天</text>
+      </view>
+      <view class="row" v-if="showTotalCycle">
+        <text class="label font-title">本次开单总工期</text>
+        <text class="val"><text class="font-title">{{ totalCycleDays }}</text> 天</text>
+      </view>
+
+      <view class="row" v-if="showPremiumRow">
+        <text class="label font-title">本次开单是否可钞</text>
+        <view class="val" style="display: flex; align-items: center;">
+          <text>{{ premiumQueueText }}</text>
+          <view v-if="supportsPremiumQueue" @click.stop="openPremiumTip" style="margin-left: 8rpx; display: flex;">
+            <uni-icons
+              class="oc-info-icon"
+              type="info"
+              size="18"
+              color="#1677ff"
+            />
+          </view>
+        </view>
+      </view>
+      <view class="row" v-if="showPremiumRow && supportsPremiumQueue">
+        <text class="label font-title">钞倍数</text>
+        <text class="val"><text class="font-title">{{ plan.extra?.premium_price_multiple || 0 }}</text> 倍</text>
+      </view>
     </view>
 
-    <!-- 开单详情 -->
+    <!-- 档位卡片 -->
     <view class="card oc-card">
       <view class="oc-grid">
         <view class="oc-label"><text class="font-title">档位</text></view>
@@ -168,8 +221,10 @@
           <text v-else class="oc-empty">—</text>
         </view>
 
-        <view class="oc-label"><text class="font-title">寄送约定</text></view>
-        <view class="oc-value oc-value-row">
+        <view class="oc-label" v-if="!isHairstylist">
+          <text class="font-title">寄送约定</text>
+        </view>
+        <view class="oc-value oc-value-row" v-if="!isHairstylist">
           <text v-if="shippingText" class="oc-plain">{{ shippingText }}</text>
           <text v-else class="oc-empty">—</text>
           <uni-icons
@@ -181,21 +236,25 @@
           />
         </view>
 
-        <view class="oc-label"><text class="font-title">补充说明</text></view>
-        <view class="oc-value">
+        <view class="oc-label" v-if="isFaceup">
+          <text class="font-title">定妆说明</text>
+        </view>
+        <view class="oc-value" v-if="isFaceup">
           <text v-if="finishingDescText" class="oc-desc">{{ finishingDescText }}</text>
           <text v-else class="oc-empty">—</text>
         </view>
       </view>
     </view>
 
-    <!-- 说明 -->
+    <!-- 说明卡片 -->
     <view v-if="descText" class="desc-card">
-      <text class="desc-title font-title">说明</text>
-      <text class="desc">{{ descText }}</text>
+      <view class="desc-row">
+        <text class="desc-title font-title">说明</text>
+        <text class="desc">{{ descText }}</text>
+      </view>
     </view>
 
-    <!-- 我的待投递（草稿项） -->
+    <!-- 待投递卡片 -->
     <view v-if="isLocalPlan" class="card draft-card">
       <view class="draft-header">
         <text class="draft-title font-title">我的待投递</text>
@@ -241,31 +300,50 @@
       </view>
     </view>
 
-    <!-- 底部 buybar：左关注；右胶囊按钮 显示 价格｜库存｜操作 -->
+    <!-- 7. 底部购买栏 -->
     <view class="buybar" :class="{ safe: safeArea }">
       <view class="buy-left">
-        <view class="follow" :class="{ active: hasLikeBrand }" @click="toggleFollow">
-          <uni-icons type="heart" size="22" :color="hasLikeBrand ? '#ff6a6c' : '#b3bcc6'" />
+        <!-- 排钞开关：仅在支持排钞时显示 -->
+        <view v-if="supportsPremiumQueue" class="premium-switch-box">
+           <switch 
+              :checked="usePremiumQueue === 1" 
+              @change="onPremiumSwitchChange" 
+              color="#8ad3ff" 
+              style="transform: scale(0.7);"
+           />
+           <text class="premium-switch-label font-alimamashuhei" :class="{active: usePremiumQueue === 1}">
+             {{ usePremiumQueue === 1 ? '接受排钞' : '不排钞' }}
+           </text>
         </view>
       </view>
 
       <button
         class="buy-cta"
-        :class="ctaClass"
+        :class="[ctaClass, { 'btn-premium-active': usePremiumQueue === 1 }]"
         :disabled="btnDisabled"
         @click="handleCTA"
       >
-        <text class="price-text">{{ tierRangePriceText }}</text>
-        <view class="sep"></view>
-        <text class="stock-text">{{ stockText }}</text>
-        <view class="sep"></view>
-        <text class="cta-text">{{ btnText }}</text>
+        <template v-if="!isValidPlatformArtist">
+              <text class="cta-text font-alimamashuhei">不在本平台开单·不可投递</text>
+        </template>
+        <template v-else>
+            <!-- 名额信息 -->
+            <text class="stock-text font-alimamashuhei">{{ commonStockInfo }}</text>
+            
+            <template v-if="premiumStockInfo">
+                <view class="sep"></view>
+                <text class="stock-text font-alimamashuhei">{{ premiumStockInfo }}</text>
+            </template>
+
+            <view class="sep"></view>
+            <text class="cta-text font-alimamashuhei">{{ btnText }}</text>
+        </template>
       </button>
     </view>
 
     <view style="height: 160rpx;"></view>
 
-    <!-- common-modal：定妆说明（统一子容器 80vw + aspectFit） -->
+    <!-- 弹窗组件 -->
     <common-modal
       :visible="finishingVisible"
       @update:visible="v => finishingVisible = v"
@@ -275,12 +353,9 @@
       <view class="cm-wrapper">
         <view class="cm-title">定妆方式说明</view>
         <view class="cm-body">
-          <!-- 总体说明 -->
           <text class="cm-intro">
             定妆工具一般分为三种，油性消光、水性消光、罩光剂三种，它们的特点和区别如下：
           </text>
-
-          <!-- 图片左右滑动 -->
           <view class="cm-swiper-wrapper">
             <swiper
               class="cm-swiper"
@@ -293,37 +368,55 @@
               indicator-active-color="#86b9fb"
               @change="onFinishingSwiperChange"
             >
-              <swiper-item
-                v-for="(item, idx) in finishingSlides"
-                :key="item.key"
-              >
+              <swiper-item v-for="(item, idx) in finishingSlides" :key="item.key">
                 <view class="cm-slide">
-                  <image
-                    class="cm-img"
-                    :src="item.img"
-                    mode="aspectFit"
-                  />
+                  <image class="cm-img" :src="item.img" mode="aspectFit" />
                 </view>
               </swiper-item>
             </swiper>
           </view>
-
-          <!-- 当前滑块对应文字（与轮播图保持一定间距） -->
           <view class="cm-desc-wrapper">
             <text class="cm-desc-title">{{ currentFinishingSlide.name }}</text>
             <text class="cm-desc-text">{{ currentFinishingSlide.desc }}</text>
           </view>
-		  
-		  <view>
-			  <text class="cm-desc-title">为什么需要喷涂这些？</text>
-			  <text class="cm-desc-text">打底可以保护娃头不受颜料染色，同时提供一些粗糙度，以供颜料和色粉附着。定妆是为了避免颜料和色粉被磨掉。</text>
-		  </view>
-
+          <view>
+            <text class="cm-desc-title">为什么需要喷涂这些？</text>
+            <text class="cm-desc-text">打底可以保护娃头不受颜料染色，同时提供一些粗糙度，以供颜料和色粉附着。定妆是为了避免颜料和色粉被磨掉。</text>
+          </view>
         </view>
       </view>
     </common-modal>
 
-    <!-- common-modal：寄送约定（同样使用 80vw 容器，统一观感） -->
+    <common-modal
+      :visible="blankSupplyVisible"
+      @update:visible="v => blankSupplyVisible = v"
+      top="200rpx"
+      width="80vw"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">毛坯提供方式说明</view>
+        <view class="cm-body">
+          <view class="blank-modal-tags" v-if="blankOptions.length">
+            <view
+              v-for="opt in blankOptions"
+              :key="opt.key"
+              class="blank-chip"
+              :class="opt.chipClass"
+            >
+              <text class="blank-chip-text font-alimamashuhei">{{ opt.label }}</text>
+              <image class="blank-chip-icon" src="/static/duigou.png" mode="aspectFit" />
+            </view>
+          </view>
+          <text class="cm-desc-title">自带毛坯</text>
+          <text class="cm-desc-text">由买家提供已经购买好的毛坯进行修剪。</text>
+          <text class="cm-desc-title">指定购买毛坯</text>
+          <text class="cm-desc-text">由毛娘提供一个第三方毛坯店铺的链接，指定买家购买毛坯并寄送。</text>
+          <text class="cm-desc-title">选购现有毛坯</text>
+          <text class="cm-desc-text">根据买家的指定造型，毛娘提供一些可选毛坯现货进行完成，需要支付毛坯和手工费。</text>
+        </view>
+      </view>
+    </common-modal>
+
     <common-modal
       :visible="shippingVisible"
       @update:visible="v => shippingVisible = v"
@@ -334,25 +427,58 @@
         <view class="cm-title">寄送约定</view>
         <view class="cm-body">
           <view v-if="isUnifiedShipping">
-            <text class="cm-desc-text">
-              需要在指定日期前寄送到妆师地址。
-            </text>
-            <text class="cm-desc-text">
-              如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师取消订单。
-            </text>
+            <text class="cm-desc-text">需要在指定日期前寄送到妆师地址。</text>
+            <text class="cm-desc-text">如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师取消订单。</text>
           </view>
-
           <view v-else>
-            <text class="cm-desc-text">
-              会根据排单顺序约定寄送日期.
-            </text>
-            <text class="cm-desc-text">
-              如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师有权利取消订单。
-            </text>
+            <text class="cm-desc-text">会根据排单顺序约定寄送日期.</text>
+            <text class="cm-desc-text">如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师有权利取消订单。</text>
           </view>
         </view>
       </view>
     </common-modal>
+
+    <common-modal
+      :visible="modeDescVisible"
+      @update:visible="v => modeDescVisible = v"
+      top="200rpx"
+      width="calc(80vw)"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">投递方式说明</view>
+        <view class="cm-body">
+          <text class="cm-desc-title">长期接单</text>
+          <text class="cm-desc-text">如果库存足够，您可以随时拍下一个订单。</text>
+          <text class="cm-desc-title">限时手速投递-手速排单</text>
+          <text class="cm-desc-text">限时限量开放投递，并以投递顺序进行排单，您可以在订单中心看到自己的排位。限时手速模式允许超量抢购，如果前方有人未付款，后续队列将依次轮到。</text>
+          <text class="cm-desc-title">限时抽选投递</text>
+          <text class="cm-desc-text">限时限量开放投递，接单方在结束后将进行挑选。抽选模式不限制投递数量，当抽选数量达到库存限制之后，未中选的订单将标记为失败。</text>
+          <text class="cm-desc-title">限时黑箱卡投递</text>
+          <text class="cm-desc-text">功能暂未开放。</text>
+          <text class="cm-desc-title">限时手速投递-自由排单</text>
+          <text class="cm-desc-text">限时限量开放投递，所有投单的人共享一个工期，接单者可以自由排列订单顺序。您可以在订单中心看到自己的排位。限时手速模式允许超量抢购，如果前方有人未付款，后续队列将依次轮到。</text>
+        </view>
+      </view>
+    </common-modal>
+
+    <common-modal
+      :visible="premiumTipVisible"
+      @update:visible="v => premiumTipVisible = v"
+      top="30vh"
+      width="600rpx"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">关于加价队列</view>
+        <view class="cm-body">
+          <text class="cm-desc-text">您可以选择付额外的钱，在普单投满的情况下，排入加价队列。</text>
+          <text class="cm-desc-text" style="margin-top:10rpx;">如果您抢到了普单名额，那么也不需要额外付钱。</text>
+        </view>
+        <view style="margin-top: 30rpx; text-align: center;">
+             <button @click="premiumTipVisible = false" style="background:#f0f0f0; color:#333; font-size:26rpx; border-radius:30rpx; width:200rpx; height:60rpx; line-height:60rpx;">知道了</button>
+        </view>
+      </view>
+    </common-modal>
+
   </view>
 </template>
 
@@ -360,6 +486,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onPageScroll, onShow } from '@dcloudio/uni-app'
 import { websiteUrl, global } from '@/common/config.js'
+import { useCrossShare } from '@/common/share.js'
 
 /** ====== 滚动 & 吸顶标题栏 ====== */
 const scrollTop = ref(0)
@@ -397,11 +524,42 @@ const plan = reactive({
   tiers: [],
   addons: [],
   extra: {},
-  inventory: 0
+  inventory: 0,
+  premium_queue_limit: 0,
+  premium_inventory: 0,
+  premium_rate: 1,
+  brand_admin_id: 0 // 新增：作者ID用于判断是否入驻
 })
+
+/** 状态：是否接受排钞 (0=不接受, 1=接受) */
+const usePremiumQueue = ref(0)
+
+/** 类型标记：妆师 / 毛娘 */
+const isFaceup = computed(() => Number(plan.artist_type) === 1)
+const isHairstylist = computed(() => Number(plan.artist_type) === 2)
 
 /** 返回 */
 const goBack = () => uni.navigateBack({ delta: 1 })
+
+/** ====== 分享逻辑 (Step 1) ====== */
+const { shareClick, setupMpShare } = useCrossShare(() => ({
+    title: '快来看看这个开单！',
+    path: `/pkg-creator/creator_order/plan_detail/plan_detail?id=${planId.value}`,
+    imageUrl: coverUrl.value || ''
+}))
+
+/** 跳转投递详情（带 submission_id） */
+function goSubmissionDetail(submissionId) {
+  if (!submissionId) return
+  const sid = Number(submissionId)
+  const url = `/pkg-creator/creator_order/submission_detail/submission_detail?submission_id=${sid}`
+  // #ifdef H5
+  window.location.hash = url
+  // #endif
+  // #ifndef H5
+  uni.navigateTo({ url })
+  // #endif
+}
 
 /** 拉取详情 */
 async function fetchPlan() {
@@ -437,6 +595,10 @@ async function fetchPlan() {
   plan.external_url = d.external_url || ''
   plan.is_local = plan.external_url ? 0 : 1
   plan.inventory = Number(d.inventory || 0)
+  plan.premium_queue_limit = Number(d.premium_queue_limit || 0)
+  plan.premium_inventory = Number(d.premium_inventory || 0)
+  plan.premium_rate = Number(d.premium_rate || 1)
+  plan.brand_admin_id = Number(d.brand_admin_id || 0) // 获取作者入驻ID
 
   try {
     if (plan.order_config) {
@@ -469,32 +631,45 @@ const artistName = computed(() =>
   plan.artist_info?.BrandName || plan.brand?.brand_name || plan.artist_name || '—'
 )
 
-/** 高光图 */
+/** 高光图：按类型只解析对应字段 */
 const highlightImages = computed(() => {
-  const a = String(plan.artist_info?.artist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
-  const h = String(plan.artist_info?.hairstylist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
-  if (Number(plan.artist_type) === 2) return h.length ? h : a
-  return a.length ? a : h
+  const info = plan.artist_info || {}
+  const artistImgs = String(info.artist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
+  const hairImgs = String(info.hairstylist_highlight_images || '').split(',').map(s => s.trim()).filter(Boolean)
+
+  if (isHairstylist.value) {
+    return hairImgs.length ? hairImgs : artistImgs
+  }
+  if (isFaceup.value) {
+    return artistImgs.length ? artistImgs : hairImgs
+  }
+  return artistImgs.length ? artistImgs : hairImgs
 })
 function previewHL(idx) { uni.previewImage({ urls: highlightImages.value, current: idx || 0 }) }
 
 /** 是否本平台/阶段 */
 const isLocalPlan = computed(() => plan.is_local ? true : false)
-const modeMap = { 1: '常驻投递', 2: '限时手速', 3: '限时抽选', 4: '限时黑箱' }
-const modeName = computed(() => modeMap[Number(plan.order_type)] || '开单')
+const modeMap = {
+  1: '长期接单',
+  2: '限时手速投递-手速排单',
+  3: '限时抽选投递',
+  4: '限时黑箱卡投递',
+  5: '限时手速投递-自由排单'
+}
+const modeName = computed(() => modeMap[Number(plan.order_type)] || '未知')
 const modeClass = computed(() => {
   const m = Number(plan.order_type)
   return {
     'mode-direct': m === 1,
-    'mode-speed': m === 2,
+    'mode-speed': m === 2 || m === 5,
     'mode-lottery': m === 3,
     'mode-black': m === 4
   }
 })
 const isPermanent = computed(() => Number(plan.order_type) === 1 && (!plan.open_time || !plan.close_time))
 const nowSec = () => Math.floor(Date.now() / 1000)
+// 修改 phase 计算：即使不是 local plan，也计算时间状态以便显示倒计时
 const phase = computed(() => {
-  if (!isLocalPlan.value) return 'external'
   if (isPermanent.value) return 'ongoing'
   const n = nowSec()
   if (n < plan.open_time) return 'upcoming'
@@ -538,26 +713,93 @@ function tick() {
 function startTimer() { stopTimer(); tick(); timer = setInterval(tick, 1000) }
 function stopTimer() { if (timer) { clearInterval(timer); timer = null } }
 
-/** 库存文本：使用 inventory 字段 */
-const stockText = computed(() => {
+/** 库存文本：普通名额 + 钞名额 (修改1, 2) */
+const commonStockInfo = computed(() => {
   const inv = Number(plan.inventory ?? 0)
-  if (Number.isNaN(inv)) return '库存 不限'
-  if (inv > 0) return `库存 ${inv}`
-  if (inv === 0) return '库存 0'
-  return '库存 不限'
+  if (Number.isNaN(inv)) return '名额 不限'
+  if (inv > 0) return `名额 ${inv}`
+  return '名额 0'
 })
 
-/** 配置/价格区间 */
-const perHeadCycleDays = computed(() => {
-  const n = Number(plan.extra?.per_head_cycle_days)
-  return Number.isFinite(n) ? n : null
+const premiumStockInfo = computed(() => {
+  const premiumLimit = Number(plan.premium_queue_limit ?? 0)
+  const premiumInv = Number(plan.premium_inventory ?? 0)
+  if (premiumLimit <= 0) return null
+  return Number.isNaN(premiumInv) ? '' : `钞名额 ${premiumInv}`
 })
+
+/** 配置/价格区间（工期、价格） */
+const perHeadCycleDays = computed(() => {
+  const n = Number(plan.extra?.per_head_cycle_days || 0)
+  return n > 0 && Number.isFinite(n) ? n : null
+})
+const totalCycleDays = computed(() => {
+  const n = Number(plan.extra?.total_cycle_days || 0)
+  return n > 0 && Number.isFinite(n) ? n : null
+})
+const showPerHeadCycle = computed(
+  () => Number(plan.order_type) === 2 && perHeadCycleDays.value !== null
+)
+const showTotalCycle = computed(
+  () => Number(plan.order_type) === 5 && totalCycleDays.value !== null
+)
+const perHeadCycleLabel = computed(() => (isHairstylist.value ? '每顶毛工期' : '每颗头工期'))
+
+/** 是否支持加价队列及说明行 */
+const supportsPremiumQueue = computed(() => Number(plan.premium_queue_limit || 0) > 0)
+const showPremiumRow = computed(() => isLocalPlan.value)
+const premiumQueueText = computed(() => {
+  if (!showPremiumRow.value) return ''
+  if (supportsPremiumQueue.value) {
+    const premiumInv = Number(plan.premium_inventory ?? 0)
+    return '支持'
+  }
+  return '不支持'
+})
+
+// 加价队列说明弹窗
+const premiumTipVisible = ref(false)
+function openPremiumTip() {
+  premiumTipVisible.value = true
+}
+
 const finishingMap = { oil: '油性消光', water: '水性消光', gloss: '罩光剂' }
 const finishingMethodText = computed(() => {
   const m = String(plan.extra?.finishing_method || '').trim()
   return finishingMap[m] || (m ? m : '未设置')
 })
 const finishingDescText = computed(() => String(plan.extra?.finishing_desc || '').trim())
+
+/** 毛娘专用：毛坯提供方式，仅在 isHairstylist 时使用（圆角标签） */
+const blankOptions = computed(() => {
+  if (!isHairstylist.value) return []
+  const extra = plan.extra || {}
+  const list = [
+    {
+      key: 'self',
+      label: '自带毛坯',
+      desc: '由买家提供已经购买好的毛坯进行修剪',
+      enabled: !!extra.support_self_blank,
+      chipClass: 'blank-chip--self'
+    },
+    {
+      key: 'third',
+      label: '指定购买毛坯',
+      desc: '由毛娘提供一个第三方毛坯店铺的链接，指定买家购买毛坯并寄送',
+      enabled: !!extra.support_third_party_blank,
+      chipClass: 'blank-chip--third'
+    },
+    {
+      key: 'stock',
+      label: '选购现有毛坯',
+      desc: '根据买家的指定造型，毛娘提供一些可选毛坯现货进行完成，需要支付毛坯和手工费',
+      enabled: !!extra.support_stock_blank,
+      chipClass: 'blank-chip--stock'
+    }
+  ]
+  return list.filter(o => o.enabled)
+})
+
 const shipping = computed(() => plan.extra?.shipping || {})
 const isUnifiedShipping = computed(() => shipping.value?.mode === 'unified')
 const shippingText = computed(() => {
@@ -599,22 +841,40 @@ const tierRangeText = computed(() => {
 const tierRangePriceText = computed(() => tierRangeText.value)
 
 /** CTA 文案/状态 */
+// 是否是有效的入驻作者且在本平台开单 (Step 3)
+const isValidPlatformArtist = computed(() => {
+    return plan.brand_admin_id > 0 && plan.service_scene === 2
+})
+
 const btnText = computed(() => {
+  // 如果不是本平台开单，但通过检验是入驻作者，保持旧逻辑
   if (!isLocalPlan.value) return '在其它平台开单'
   if (phase.value === 'upcoming') return '即将开始'
-  if (phase.value === 'ongoing') return '立即购买'
+  // 修改3: 立即购买 -> 投递
+  if (phase.value === 'ongoing') return '投递' 
   if (phase.value === 'ended') return '已结束'
-  return '立即购买'
+  return '投递'
 })
+
 const btnDisabled = computed(() => {
+  if (!isValidPlatformArtist.value) return true // 不在本平台且非入驻作者 -> 禁用
   if (!isLocalPlan.value) return false
   return phase.value === 'upcoming' || phase.value === 'ended'
 })
-const ctaClass = computed(() => ({
-  'btn-grey': phase.value === 'ended' || btnDisabled.value,
-  'btn-warn': phase.value === 'upcoming',
-  'btn-primary': phase.value === 'ongoing' && !btnDisabled.value
-}))
+
+const ctaClass = computed(() => {
+    if (!isValidPlatformArtist.value) return 'btn-grey'
+    return {
+      'btn-grey': phase.value === 'ended' || btnDisabled.value,
+      'btn-warn': phase.value === 'upcoming',
+      'btn-primary': phase.value === 'ongoing' && !btnDisabled.value
+    }
+})
+
+// 切换排钞
+function onPremiumSwitchChange(e) {
+  usePremiumQueue.value = e.detail.value ? 1 : 0
+}
 
 function goArtistHome() {
   const url = `/pages/artist_info/bjd_faceup_artist?brand_id=${plan.brand_id}`
@@ -627,11 +887,14 @@ function goArtistHome() {
 }
 
 /**
- * 立即购买按钮：
+ * 投递按钮：
  * - 外部平台：复制链接（原逻辑保留）
  * - 本平台：调用新投递接口 /with-state/artist-order/submit
+ * 若返回 submission_id，则跳转到投递详情页
  */
 async function handleCTA() {
+  if (!isValidPlatformArtist.value) return // 禁用点击
+
   // 其它平台：复制链接
   if (!isLocalPlan.value) {
     if (plan.external_url) {
@@ -646,12 +909,12 @@ async function handleCTA() {
   // 本平台但按钮不可用（未开始/已结束）
   if (btnDisabled.value) return
 
-	// 改为只看 token：
-	const token = uni.getStorageSync('token') || ''
-	if (!token) {
-	  uni.showToast({ title: '请先登录', icon: 'none' })
-	  return
-	}
+  // 改为只看 token：
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
 
   try {
     uni.showLoading({ title: '投递中...', mask: true })
@@ -666,7 +929,9 @@ async function handleCTA() {
         plan_id: plan.id,
         // 这里先用空字符串占位，后续如果有账号/备注输入，再从表单取值
         platform_account: '',
-        requirement: ''
+        requirement: '',
+        // 传递排钞参数
+        use_premium_queue: usePremiumQueue.value
       }
     })
     uni.hideLoading()
@@ -679,10 +944,12 @@ async function handleCTA() {
     const data = res.data?.data || {}
     const code = data.code
     const counter = data.brand_counter
+    const submissionId = data.submission_id
     let msg = ''
 
     if (code === 1) {
-      msg = '投递成功'
+      // 成功时优先使用后端返回的提示
+      msg = res.data?.msg || '投递成功'
     } else if (code === 0) {
       msg = '当前不在开单时间段'
     } else if (code === 2) {
@@ -694,7 +961,16 @@ async function handleCTA() {
     }
 
     if (typeof counter === 'number' && counter > 0) {
-      msg += `（当前品牌投递计数：${counter}）`
+      msg += `（您的序号：${counter}）`
+    }
+
+    // ① 若返回 submission_id，则跳转到投递详情
+    if (code === 1 && submissionId) {
+      uni.showToast({ title: msg, icon: 'none', duration: 1200 })
+      setTimeout(() => {
+        goSubmissionDetail(submissionId)
+      }, 800)
+      return
     }
 
     uni.showToast({ title: msg, icon: 'none', duration: 3000 })
@@ -745,7 +1021,6 @@ function goEditDraft(item) {
 
   uni.navigateTo({ url })
 }
-
 
 function confirmDeleteDraft(item) {
   if (!item || !item.id) return
@@ -801,11 +1076,14 @@ async function fetchHasLikeBrand() {
   } catch { }
 }
 async function toggleFollow() {
-	const token = uni.getStorageSync('token') || ''
-	if (!token) {
-	  uni.showToast({ title: '请先登录', icon: 'none' })
-	  return
-	}
+  // 1. 触感反馈
+  uni.vibrateShort()
+
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
   try {
     const url = `${websiteUrl.value}/with-state/${hasLikeBrand.value ? 'unlike' : 'add-like'}`
     const res = await uni.request({
@@ -824,26 +1102,28 @@ async function toggleFollow() {
 
 /** 弹框可见性（common-modal） */
 const finishingVisible = ref(false)
+const blankSupplyVisible = ref(false)
 const shippingVisible = ref(false)
+const modeDescVisible = ref(false)
 
-/** ====== 定妆方式图文说明 ====== */
+/** ====== 定妆方式图文说明（妆师专用） ====== */
 const finishingSlides = [
   {
     key: 'oil',
     name: '油性消光',
-    img: 'https://images1.fantuanpu.com/admin/sys/youxingxiaoguang.png',
+    img: 'https://images1.fantuanpu.com/admin/sys/youxingxiaoguang.jpg',
     desc: '经典定妆溶剂，耐磨度较高。缺点是定妆需要在空气湿度较低的情况下操作，且未干透前有毒性。'
   },
   {
     key: 'water',
     name: '水性消光',
-    img: 'https://images1.fantuanpu.com/admin/sys/shuixingxiaoguang.png',
+    img: 'https://images1.fantuanpu.com/admin/sys/shuixingxiaoguang.jpg',
     desc: '基本无毒，定妆时不需要受限于空气湿度，基本不泛白。缺点是定妆的强度相对较低，可以被酒精轻易擦掉。'
   },
   {
     key: 'gloss',
     name: '罩光剂',
-    img: 'https://images1.fantuanpu.com/admin/sys/zhaoguangji.png',
+    img: 'https://images1.fantuanpu.com/admin/sys/zhaoguangji.jpg',
     desc: '近几年被广泛使用的定妆方式，无毒且不受限空气湿度。缺点是定妆强度过于高，很难卸掉，并且比较沾灰。另外如果采用蘸取拍打方式打底，手感将与喷涂方式不同。'
   }
 ]
@@ -862,6 +1142,7 @@ const finishingMethodKey = computed(() => {
 })
 
 function openFinishingModal() {
+  if (!isFaceup.value) return
   const key = finishingMethodKey.value
   const idx = finishingSlides.findIndex(s => s.key === key)
   finishingSlideIndex.value = idx >= 0 ? idx : 0
@@ -872,6 +1153,17 @@ function onFinishingSwiperChange(e) {
   finishingSlideIndex.value = e.detail?.current || 0
 }
 
+/** 打开毛坯提供方式说明弹窗 */
+function openBlankSupplyModal() {
+  if (!isHairstylist.value) return
+  blankSupplyVisible.value = true
+}
+
+/** 打开投递方式说明弹窗 */
+function openModeDescModal() {
+  modeDescVisible.value = true
+}
+
 /** 生命周期 */
 onLoad((q = {}) => {
   planId.value = Number(q?.id || 0)
@@ -879,6 +1171,8 @@ onLoad((q = {}) => {
     const wi = uni.getWindowInfo && uni.getWindowInfo()
     safeTop.value = wi?.safeAreaInsets?.top ?? wi?.statusBarHeight ?? 0
   } catch { safeTop.value = 20 }
+  // 小程序分享初始化
+  setupMpShare()
 })
 onMounted(async () => {
   if (!planId.value) { uni.showToast({ title: '缺少参数：id', icon: 'none' }); return }
@@ -887,19 +1181,28 @@ onMounted(async () => {
 })
 
 onShow(async () => {
-	try {
-	  await fetchPlan()
-	  if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
-	  if (global.isLogin) await fetchDraftItems()
-	} finally {
-	  uni.hideLoading()
-	}
+  try {
+    await fetchPlan()
+    if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
+    if (global.isLogin) await fetchDraftItems()
+  } finally {
+    uni.hideLoading()
+  }
 })
 onUnmounted(stopTimer)
 
-/** 安全区 & 说明文本（如原文件已有 descText，可替换回去） */
+/** 安全区 & 说明文本：按类型解析妆师/毛娘规则，兜底品牌说明 */
 const safeArea = true
-const descText = computed(() => '')
+const descText = computed(() => {
+  const info = plan.artist_info || {}
+  if (isFaceup.value) {
+    return String(info.rule_of_artist || info.Description || '').trim()
+  }
+  if (isHairstylist.value) {
+    return String(info.rule_of_hairstylist || info.Description || '').trim()
+  }
+  return String(info.Description || '').trim()
+})
 </script>
 
 <style scoped>
@@ -921,6 +1224,8 @@ const descText = computed(() => '')
 .st-center{ display:flex; align-items:center; justify-content:center; gap: 12rpx; min-height: 56rpx; }
 .st-logo{ width: 44rpx; height: 44rpx; border-radius: 50%; border: 2rpx solid rgba(255,255,255,.9); box-shadow: 0 2rpx 8rpx rgba(0,0,0,.08); }
 .st-name{ max-width: 56vw; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 28rpx; color: #222; font-weight: 600; letter-spacing: .3rpx; }
+/* 修改：移除 margin-right，统一 padding-right 为 40rpx 以对齐透明导航栏 */
+.st-right { display: flex; align-items: center; justify-content: flex-end; padding-right: 40rpx; }
 
 /* 沉浸式大图 */
 .hero { width: 100vw; height: 60vh; position: relative; overflow: hidden; }
@@ -928,7 +1233,17 @@ const descText = computed(() => '')
 .hero-mask { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.55) 100%); }
 .hero-footer { position: absolute; left: 24rpx; right: 24rpx; bottom: 24rpx; display: flex; align-items: center; gap: 20rpx; }
 .avatar { width: 96rpx; height: 96rpx; border-radius: 50%; border: 4rpx solid rgba(255,255,255,.9); box-shadow: 0 6rpx 18rpx rgba(0,0,0,.25); }
-.hero-title { display: flex; flex-direction: column; color: #fff; text-shadow: 0 2rpx 6rpx rgba(0,0,0,.35); }
+.hero-title { 
+  display: flex; flex-direction: column; color: #fff; text-shadow: 0 2rpx 6rpx rgba(0,0,0,.35);
+  flex: 1; /* 占据剩余空间 */
+}
+.hero-follow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80rpx; 
+  height: 80rpx;
+}
 .brand-name { font-size: 28rpx; opacity: .95; color: #fff;}
 .plan-title { font-size: 40rpx; font-weight: 600; margin-top: 4rpx; color: #fff;}
 
@@ -937,7 +1252,8 @@ const descText = computed(() => '')
 .hl-row { white-space: nowrap; padding: 0 24rpx 6rpx; }
 .hl-img {
   display: inline-block;
-  width: 520rpx; height: 320rpx;
+  /* 修改为 3:4 比例，例如 300rpx : 400rpx */
+  width: 300rpx; height: 400rpx;
   border-radius: 16rpx; margin-right: 16rpx;
   background:#f6f7f9; box-shadow: 0 6rpx 18rpx rgba(0,0,0,0.08);
   vertical-align: top;
@@ -952,6 +1268,7 @@ const descText = computed(() => '')
 .row:last-child { border-bottom: none; }
 .label { color: #666; font-size: 26rpx; white-space: nowrap; }
 .val { color: #333; font-size: 28rpx; display: flex; align-items: center; gap: 12rpx; }
+.mode-val { /* 视觉上提示可点，H5 有效果，小程序忽略也没关系 */ }
 .finishing-val {
   background: #000;
   color: #fff;
@@ -967,6 +1284,48 @@ const descText = computed(() => '')
 .mode-lottery{ background: #f4f0ff; color: #6e4bd6;  }
 .mode-black  { background: #f5f5f5; color: #333;  }
 .external-tip { color: #999; font-size: 24rpx; }
+
+/* 毛坯提供方式：圆角标签 */
+.blank-val {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.blank-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  margin: 6rpx 12rpx 6rpx 0;
+}
+.blank-chip-text {
+  font-size: 24rpx;
+}
+.blank-chip-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-left: 8rpx;
+}
+.blank-chip--self {
+  background: #fff3e0;
+  color: #b15b00;
+}
+.blank-chip--third {
+  background: #e5f4ff;
+  color: #0a4f94;
+}
+.blank-chip--stock {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.blank-empty {
+  font-size: 26rpx;
+  color: #bbb;
+}
+.blank-modal-tags {
+  margin-bottom: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+}
 
 /* 详情网格 */
 .oc-card { margin-top: 16rpx; }
@@ -997,9 +1356,35 @@ const descText = computed(() => '')
 .oc-info-icon { margin-left: 2rpx; }
 
 /* 说明 */
-.desc-card { margin: 20rpx 24rpx 0; padding: 22rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06); }
-.desc-title { font-size: 28rpx; color: #333; }
-.desc { margin-top: 8rpx; font-size: 26rpx; color: #555; line-height: 1.7; }
+.desc-card {
+  margin: 20rpx 24rpx 0;
+  padding: 22rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06);
+}
+
+/* 新的左右排版 */
+.desc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24rpx;
+}
+.desc-title {
+  font-size: 28rpx;
+  color: #333;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.desc {
+  margin-top: 0;
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1 1 auto;
+}
 
 /* 我的待投递卡片 */
 .draft-card { margin-top: 20rpx; }
@@ -1097,26 +1482,57 @@ const descText = computed(() => '')
 }
 .buybar.safe { padding-bottom: calc(16rpx + env(safe-area-inset-bottom)); }
 
-/* 关注 */
-.buy-left { display: flex; align-items: center; }
-.follow{ display:flex; flex-direction:column; align-items:center; gap:10rpx; color:#a0abb6; font-size:22rpx; }
-.follow.active{ color:#ff6a6c; }
+.buy-left { display: flex; align-items: center; gap: 24rpx;}
+
+/* 修改：Switch横向排列 */
+.premium-switch-box {
+  display: flex; flex-direction: row; align-items: center; gap: 8rpx;
+}
+.premium-switch-label {
+  font-size: 24rpx; color: #888;
+  font-weight: bold;
+}
+.premium-switch-label.active {
+  color: #333;
+}
 
 /* 胶囊按钮：价格｜库存｜操作 */
 .buy-cta {
   height: 72rpx; padding: 0 36rpx;
   border-radius: 999rpx; border: none;
   display: flex; align-items: center; justify-content: center; gap: 28rpx;
-  box-shadow: 0 6rpx 20rpx rgba(24,144,255,.25);
+  /* box-shadow: 0 6rpx 20rpx rgba(24,144,255,.25); */
   color:#0e1318; font-weight: 800; letter-spacing: .3rpx;margin:0;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
 }
-.btn-primary { background: linear-gradient(90deg, #89d4ff 0%, #64c7ff 45%, #2fb1ff 75%, #1499f0 100%); }
+
+.buy-cta::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* background: linear-gradient(90deg, #ffbb9b 0%, #ffcfb3 45%, #8ad3ff 75%, #b2e0ff 100%); */
+ background: #ff8c2d;
+ background: linear-gradient(90deg, #ffbb9b 0%, #ff8c2d 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+.buy-cta.btn-premium-active::before {
+  opacity: 1;
+}
+
+/* .btn-primary { background: linear-gradient(90deg, #89d4ff 0%, #64c7ff 45%, #2fb1ff 75%, #1499f0 100%); } */
+.btn-primary { background: #5ebbed; }
 .btn-warn    { background: linear-gradient(90deg, #ffe39a 0%, #ffc45a 60%, #ffa11a 100%); }
+/* .btn-warn    { background: #ff8c2d; } */
 .btn-grey    { background: linear-gradient(90deg, #d7dbe0 0%, #c8ced6 50%, #b8c0c9 100%); color:#3a4046; }
-.price-text { font-size: 24rpx; color: #fff; }
-.stock-text { font-size: 24rpx; color: #fff;}
-.sep { width: 2rpx; height: 26rpx; background: rgba(0,0,0,.18); }
-.cta-text { font-size: 24rpx; color: #fff;}
+
+.stock-text { font-size: 24rpx; color: #fff; z-index: 2;}
+.sep { width: 2rpx; height: 26rpx; background: rgba(0,0,0,.18); z-index: 2;}
+.cta-text { font-size: 24rpx; color: #fff; z-index: 2;}
 
 /* 弹窗统一子容器 */
 .cm-wrapper{
@@ -1212,7 +1628,7 @@ const descText = computed(() => '')
   color:#888;
 }
 uni-button:after {
-	border: none;
+  border: none;
 }
 /* 隐藏滚动条 */
 ::-webkit-scrollbar{ width:0!important; height:0!important; background:transparent!important; display:none!important; }

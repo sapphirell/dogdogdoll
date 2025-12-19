@@ -20,7 +20,7 @@
                 :src="global.userInfo.avatar || defaultAvatar"
               />
             </view>
-            <text class="profile-name font-alimama">
+            <text class="profile-name font-alimama" @click="jumpToSetName">
               {{ global.userInfo.username || '未设置昵称' }}
             </text>
             <text class="profile-id">
@@ -64,9 +64,7 @@
         />
 
         <!-- 工作台：使用新的子组件 -->
-        <mine-workspace-panel
-          v-else-if="activeMainTab === 'workspace'"
-        />
+        <mine-workspace-panel v-else-if="activeMainTab === 'workspace'" />
 
         <!-- 设置我：按钮列表组件 -->
         <mine-settings-panel
@@ -76,7 +74,8 @@
       </view>
 
       <!-- 未登录视图 -->
-      <view v-else class="login-wrap">
+      <!-- 关键：这里额外加 unlogin-wrap，用渐变铺满整个安全区 -->
+      <view v-else class="login-wrap unlogin-wrap">
         <view class="header-placeholders"></view>
         <login-panel @success="handleLoginSuccess" />
       </view>
@@ -101,12 +100,12 @@ const defaultAvatar =
 
 // 一级 Tab
 const mainTabs = [
-  { key: 'orders', label: '订单集' },
+  // { key: 'orders', label: '订单集' },
   { key: 'inbox', label: '信息集' },
   { key: 'workspace', label: '工作台' },
   { key: 'settings', label: '设置我' }
 ]
-const activeMainTab = ref('orders')
+const activeMainTab = ref('inbox')
 
 const isLogin = computed(() => !!global.isLogin)
 
@@ -255,6 +254,13 @@ function jumpSetting () {
   })
 }
 
+// 跳转到设置用户名
+function jumpToSetName () {
+  uni.navigateTo({
+    url: '/pages/setting/username/username'
+  })
+}
+
 // 处理设置面板按钮点击
 function handleSettingsAction (type) {
   if (type === 'profile') {
@@ -300,11 +306,22 @@ onShow(async () => {
 <style lang="scss" scoped>
 .my-center-page {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
 }
 
 .login-wrap {
+  /* 登录 / 未登录共同的容器：先撑满剩余高度 */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
+}
+
+/* 未登录场景：使用渐变背景，把顶部 header-placeholders 和底部安全区都染色 */
+.unlogin-wrap {
+  background: linear-gradient(135deg, #e0f3ff 0%, #fff9fb 100%);
 }
 
 .headbg {

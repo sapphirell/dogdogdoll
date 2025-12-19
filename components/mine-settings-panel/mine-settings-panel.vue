@@ -9,7 +9,6 @@
       @click="handleClick(item.key)"
     >
       <text class="settings-label">{{ item.label }}</text>
-      <!-- 箭头：uni-icons -->
       <uni-icons
         class="settings-arrow-icon"
         type="arrow-right"
@@ -18,8 +17,41 @@
       />
     </view>
 
+    <!-- 底部居中：文章轮播（紧凑：icon + 标题） -->
+    <view
+      v-if="articleList.length > 0"
+      class="article-ticker"
+      @tap="gotoCurrentArticle"
+      aria-label="跳转到文章详情"
+    >
+      <view class="ticker-inline">
+        <uni-icons
+          class="ticker-icon"
+          type="paperplane"
+          size="14"
+          color="#b5b5b5"
+        />
+
+        <view class="ticker-viewport">
+          <view class="ticker-inner" :style="tickerInnerStyle">
+            <text class="ticker-text" number-of-lines="1">
+              {{ currentTitle }}
+            </text>
+
+            <text
+              v-if="articleList.length > 1"
+              class="ticker-text"
+              number-of-lines="1"
+            >
+              {{ nextTitle }}
+            </text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 退出确认弹窗 -->
-    <common-modal v-model:visible="showLogoutConfirm" top="32%"  width="80vw">
+    <common-modal v-model:visible="showLogoutConfirm" top="32%" width="80vw">
       <view class="logout-modal font-alimamashuhei">
         <view class="logout-title">确认退出账号？</view>
         <view class="logout-desc">
@@ -40,13 +72,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import {
-  websiteUrl,
-  global,
-  asyncGetUserInfo,
-  getUserInfo
-} from '@/common/config.js'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { websiteUrl, global } from '@/common/config.js'
 
 const emit = defineEmits(['action'])
 
@@ -56,60 +83,155 @@ const items = [
   { key: 'logout', label: '退出账号' }
 ]
 
-// 控制退出确认弹窗
 const showLogoutConfirm = ref(false)
 
-function handleClick(key) {
-  if (key === 'logout') {
-    showLogoutConfirm.value = true
-  } else {
-    emit('action', key)
-  }
+function handleClick (key) {
+  if (key === 'logout') showLogoutConfirm.value = true
+  else emit('action', key)
 }
 
-// 确认退出
-function onConfirmLogout() {
+function onConfirmLogout () {
   showLogoutConfirm.value = false
-  // 清理本地登录态 
-  uni.removeStorageSync('token') 
-  global.isLogin = false 
-  global.userInfo = {} 
+  uni.removeStorageSync('token')
+  global.isLogin = false
+  global.userInfo = {}
   uni.showToast({ title: '已退出', icon: 'none' })
 }
 
-// 取消退出
-function onCancelLogout() {
+function onCancelLogout () {
   showLogoutConfirm.value = false
 }
 
-// 逐个滑入动画延迟
-const itemStyle = index => {
-  const delay = index * 80 // 每个 item 相差 80ms
-  return {
-    animationDelay: `${delay}ms`
-  }
+const itemStyle = (index) => {
+  const delay = index * 80
+  return { animationDelay: `${delay}ms` }
 }
+
+// ==================== 文章轮播（category=1） ====================
+const baseURL = computed(() => {
+  if (typeof websiteUrl === 'string') return websiteUrl
+  if (websiteUrl && typeof websiteUrl === 'object' && 'value' in websiteUrl) return websiteUrl.value
+  return ''
+})
+
+const articleList = ref([]) // [{id,title}]
+const tickerIndex = ref(0)
+const tickerAnimating = ref(false)
+let tickerTimer = null
+
+const currentArticle = computed(() => {
+  if (articleList.value.length === 0) return null
+  return articleList.value[tickerIndex.value] || null
+})
+
+const nextArticle = computed(() => {
+  const len = articleList.value.length
+  if (len <= 1) return null
+  return articleList.value[(tickerIndex.value + 1) % len] || null
+})
+
+const currentTitle = computed(() => currentArticle.value?.title || '')
+const nextTitle = computed(() => nextArticle.value?.title || '')
+
+const tickerInnerStyle = computed(() => {
+  return {
+    transform: tickerAnimating.value ? 'translateY(-36rpx)' : 'translateY(0)',
+    transition: tickerAnimating.value ? 'transform 420ms ease' : 'none'
+  }
+})
+
+function startTicker () {
+  stopTicker()
+  if (articleList.value.length <= 1) return
+
+  tickerTimer = setInterval(() => {
+    tickerAnimating.value = true
+    setTimeout(() => {
+      tickerIndex.value = (tickerIndex.value + 1) % articleList.value.length
+      tickerAnimating.value = false
+    }, 430)
+  }, 2600)
+}
+
+function stopTicker () {
+  if (tickerTimer) {
+    clearInterval(tickerTimer)
+    tickerTimer = null
+  }
+  tickerAnimating.value = false
+}
+
+function requestPublic ({ url, method = 'GET', data }) {
+  return new Promise((resolve) => {
+    uni.request({
+      url,
+      method,
+      data,
+      timeout: 15000,
+      success: (res) => resolve({ ok: true, data: res?.data }),
+      fail: () => resolve({ ok: false, data: null })
+    })
+  })
+}
+
+async function fetchArticlesCategory1 () {
+  if (!baseURL.value) return
+
+  const res = await requestPublic({
+    url: `${baseURL.value}/articles`,
+    method: 'GET',
+    data: { page: 1, page_size: 20, category: 1 }
+  })
+
+  const resp = res.data || {}
+  if (!res.ok || resp.status !== 'success') {
+    articleList.value = []
+    stopTicker()
+    return
+  }
+
+  const list = resp.data?.list || []
+  const filtered = list
+    .map(a => ({
+      id: a?.id,
+      title: (a?.title || '').trim()
+    }))
+    .filter(a => a.id && a.title)
+
+  articleList.value = filtered
+  tickerIndex.value = 0
+  startTicker()
+}
+
+function gotoCurrentArticle () {
+  const a = currentArticle.value
+  if (!a || !a.id) return
+  uni.navigateTo({
+    url: `/pages/article_detail/article_detail?id=${a.id}`
+  })
+}
+
+onMounted(() => {
+  fetchArticlesCategory1()
+})
+
+onUnmounted(() => {
+  stopTicker()
+})
 </script>
 
 <style lang="scss" scoped>
 .settings-panel {
-  padding: 32rpx 40rpx 40rpx;
+  position: relative;
+  padding: 32rpx 40rpx 120rpx; /* 底部留空间，避免压住列表 */
   box-sizing: border-box;
 }
 
-/* 进入动画：从左侧滑入 + 淡入 */
 @keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-40rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-40rpx); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-/* 每一行是一个“无边框按钮” */
 .settings-item {
   display: flex;
   align-items: center;
@@ -130,27 +252,73 @@ const itemStyle = index => {
   animation-fill-mode: forwards;
 }
 
-/* 点击时稍微有点反馈 */
 .settings-item:active {
   background: #eef5ff;
   transform: translateY(2rpx);
 }
 
-.settings-label {
-  font-size: 28rpx;
-}
+.settings-label { font-size: 28rpx; }
 
-/* 箭头 icon */
 .settings-arrow-icon {
   margin-left: 12rpx;
   transform: translateX(4rpx);
+}
+
+/* ===== 底部居中：紧凑 inline（icon + title） ===== */
+.article-ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 20rpx);
+  display: flex;
+  justify-content: center;
+  padding: 0 40rpx;
+  box-sizing: border-box;
+}
+
+.article-ticker:active { opacity: 0.75; }
+
+/* 关键：inline-flex + gap 小，避免分散 */
+.ticker-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  max-width: 100%;
+}
+
+.ticker-icon {
+  flex-shrink: 0;
+  transform: translateY(1rpx);
+}
+
+/* 视口负责裁切，整体紧凑居中 */
+.ticker-viewport {
+  width: 520rpx;
+  max-width: 100%;
+  height: 36rpx;
+  overflow: hidden;
+}
+
+.ticker-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 标题文本居中，且与 icon 紧挨 */
+.ticker-text {
+  height: 36rpx;
+  line-height: 36rpx;
+  font-size: 24rpx;
+  color: #b5b5b5;
+  text-align: center;
 }
 
 /* ==== 退出确认弹窗 UI ==== */
 .logout-modal {
   padding: 32rpx 24rpx 24rpx;
   box-sizing: border-box;
-   width: calc(80vw - 70rpx);
+  width: calc(80vw - 70rpx);
 }
 
 .logout-title {
@@ -184,13 +352,11 @@ const itemStyle = index => {
   font-size: 28rpx;
 }
 
-/* 取消按钮：浅灰 */
 .logout-btn-cancel {
   background: #f5f5f5;
   color: #666666;
 }
 
-/* 确认按钮：渐变高亮 */
 .logout-btn-confirm {
   background-image: linear-gradient(90deg, #ffa0a0 0%, #ffacac 100%);
   color: #ffffff;

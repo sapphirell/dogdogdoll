@@ -1,172 +1,193 @@
 <template>
   <view class="chat-page">
     <!-- 顶部：固定半透明导航条（不随滚动渐变） -->
-    <zhouWei-navBar
-      type="fixed"
-      :backState="1000"
-      :homeState="2000"
-      bgColor="rgba(255,255,255,0.8)"
-      fontColor="#000000"
-      :shadow="false"
-    >
-      <!-- 左侧返回胶囊 -->
-      <template #left>
-        <view class="nav-back-pill nav-back-pill--offset" @click="goBack" aria-label="返回">
-          <uni-icons type="left" size="22" color="#000" />
-        </view>
-      </template>
+    <view id="navWrapper" class="nav-wrapper">
+      <zhouWei-navBar
+        type="fixed"
+        :backState="1000"
+        :homeState="2000"
+        bgColor="rgba(255,255,255,0.8)"
+        fontColor="#000000"
+        :shadow="false"
+      >
+        <!-- 左侧返回胶囊 -->
+        <template #left>
+          <view class="nav-back-pill nav-back-pill--offset" @click="goBack" aria-label="返回">
+            <uni-icons type="left" size="22" color="#000" />
+          </view>
+        </template>
 
-      <!-- 中间：会话名 + 在线状态 -->
-      <template #default>
-        <view class="nav-center">
-          <text class="nav-title-ellipsis">{{ peerInfo.user_name || '私信' }}</text>
-          <text class="nav-sub">{{ onlineText }}</text>
-        </view>
-      </template>
-    </zhouWei-navBar>
+        <!-- 中间：会话名 + 在线状态 -->
+        <template #default>
+          <view class="nav-center">
+            <text class="nav-title-ellipsis">{{ peerInfo.user_name || '私信' }}</text>
+            <text class="nav-sub">{{ onlineText }}</text>
+          </view>
+        </template>
+      </zhouWei-navBar>
+    </view>
 
-    <!-- 中间滚动区：top 使用 config.js 计算的安全距离 -->
-    <scroll-view
+    <!-- 中间区域：使用 z-paging 聊天模式替代 scroll-view -->
+    <z-paging
+      ref="pagingRef"
+      v-model="messages"
       class="chat-body"
-      :scroll-y="true"
-      :scroll-with-animation="true"
-      :scroll-into-view="scrollIntoId"
-      :upper-threshold="100"
-      @scrolltoupper="loadMore"
-      :style="{ top: headerOffsetPx, bottom: bodyBottomOffset }"
+      :style="{ top: pagingTopPx }"
+      :auto="false"
+      use-chat-record-mode
+      use-virtual-list
+      cell-height-mode="dynamic"
+      safe-area-inset-bottom
+      bottom-bg-color="#e0f0fb"
+      :default-page-size="pageSize"
+      :auto-show-system-loading="false"
+      @query="onPagingQuery"
     >
-      <view class="load-more" v-if="hasMore && !loadingMore" @click="loadMore">下拉加载更多</view>
-      <view class="load-more" v-if="loadingMore">
-		  <loading-jump-text></loading-jump-text>
-	  </view>
+      <!-- 单条消息渲染（必须加 scaleY(-1) 包一层，否则内容会倒置） -->
+      <template #cell="{ item }">
+        <view style="transform: scaleY(-1)">
+          <view class="msg-item" :class="{ self: item.from_uid === selfUid }">
+            <image
+              class="avatar"
+              :src="item.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar"
+            />
 
-      <view class="msg-list">
-        <view
-          v-for="(m, idx) in messages"
-          :key="m.local_key || m.id || idx"
-          class="msg-item"
-          :class="{ self: m.from_uid === selfUid }"
-          :id="'msg-' + (m.local_key || m.id || idx)"
-        >
-          <image class="avatar" :src="m.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar" />
+            <!-- 包裹：气泡 + meta 垂直排列 -->
+            <view class="content">
+              <view class="bubble">
+                <!-- 文本 -->
+                <template v-if="item.kind === 'text'">
+                  <rich-text :nodes="safeText(item.text)"></rich-text>
+                </template>
 
-          <!-- 包裹：气泡 + meta 垂直排列 -->
-          <view class="content">
-            <view class="bubble">
-              <!-- 文本 -->
-              <template v-if="m.kind === 'text'">
-                <rich-text :nodes="safeText(m.text)"></rich-text>
-              </template>
+                <!-- 兼容旧数据：emoji 文本表情（不再发送新的，只展示历史） -->
+                <template v-else-if="item.kind === 'emoji'">
+                  <text class="emoji">{{ item.emoji }}</text>
+                </template>
 
-              <!-- 表情 -->
-              <template v-else-if="m.kind === 'emoji'">
-                <text class="emoji">{{ m.emoji }}</text>
-              </template>
+                <!-- 图片（包括普通图片 + 贴纸） -->
+                <template v-else-if="item.kind === 'image'">
+                  <image
+                    class="img-msg"
+                    :src="item.url"
+                    mode="widthFix"
+                    @click="previewImage(item.url)"
+                  />
+                </template>
 
-              <!-- 图片 -->
-              <template v-else-if="m.kind === 'image'">
-                <image class="img-msg" :src="m.url" mode="widthFix" @click="previewImage(m.url)" />
-              </template>
+                <!-- ===== 带 MessageCard 的 other 消息 ===== -->
+                <template v-else-if="item.kind === 'other' && (item.card || (item.payload && item.payload.card))">
+                  <view class="msg-card" @click="handleCardClick(item)">
+                    <view class="msg-card-header">
+                      <text class="msg-card-tag">{{ cardTag(item) }}</text>
+                      <text class="msg-card-title">{{ cardTitle(item) }}</text>
+                    </view>
 
-              <!-- ===== 带 MessageCard 的 other 消息 ===== -->
-              <template v-else-if="m.kind === 'other' && (m.card || (m.payload && m.payload.card))">
-                <view class="msg-card" @click="handleCardClick(m)">
-                  <view class="msg-card-header">
-                    <text class="msg-card-tag">{{ cardTag(m) }}</text>
-                    <text class="msg-card-title">{{ cardTitle(m) }}</text>
+                    <!-- 卡片封面图 -->
+                    <view v-if="cardImage(item)" class="msg-card-image-wrap">
+                      <image
+                        class="msg-card-image"
+                        :src="cardImage(item)"
+                        mode="aspectFill"
+                        @click.stop="previewImage(cardImage(item))"
+                      />
+                    </view>
+
+                    <view class="msg-card-body" v-if="cardDescription(item)">
+                      <text class="msg-card-desc">{{ cardDescription(item) }}</text>
+                    </view>
+
+                    <view class="msg-card-footer">
+                      <text class="msg-card-action font-alimamashuhei">{{ cardActionText(item) }}</text>
+                    </view>
                   </view>
+                </template>
 
-                  <!-- 卡片封面图 -->
-                  <view v-if="cardImage(m)" class="msg-card-image-wrap">
-                    <image
-                      class="msg-card-image"
-                      :src="cardImage(m)"
-                      mode="aspectFill"
-                      @click.stop="previewImage(cardImage(m))"
-                    />
+                <!-- 兼容旧版 other：没有 card 的结构 -->
+                <template v-else-if="item.kind === 'other'">
+                  <view class="other-card">
+                    <text class="title">[{{ item.sub_type || '其它' }}]</text>
+                    <text class="desc">{{ briefOther(item) }}</text>
                   </view>
+                </template>
 
-                  <view class="msg-card-body" v-if="cardDescription(m)">
-                    <text class="msg-card-desc">{{ cardDescription(m) }}</text>
+                <!-- 兜底：未知类型 -->
+                <template v-else>
+                  <view class="other-card">
+                    <text class="title">[未知]</text>
+                    <text class="desc">[暂不支持的消息类型]</text>
                   </view>
+                </template>
+              </view>
 
-                  <view class="msg-card-footer">
-                    <text class="msg-card-action font-alimamashuhei">{{ cardActionText(m) }}</text>
-                  </view>
-                </view>
-              </template>
-
-              <!-- 兼容旧版 other：没有 card 的结构 -->
-              <template v-else-if="m.kind === 'other'">
-                <view class="other-card">
-                  <text class="title">[{{ m.sub_type || '其它' }}]</text>
-                  <text class="desc">{{ briefOther(m) }}</text>
-                </view>
-              </template>
-
-              <!-- 兜底：未知类型 -->
-              <template v-else>
-                <view class="other-card">
-                  <text class="title">[未知]</text>
-                  <text class="desc">[暂不支持的消息类型]</text>
-                </view>
-              </template>
-            </view>
-
-            <!-- meta 挪到气泡下方 -->
-            <view class="meta font-alimamashuhei">
-              <text class="time">{{ fmtTime(m.ts) }}</text>
-              <text class="status" v-if="m.from_uid === selfUid">{{ statusText(m) }}</text>
+              <!-- meta 挪到气泡下方 -->
+              <view class="meta font-alimamashuhei">
+                <text class="time">{{ fmtTime(item.ts) }}</text>
+                <text class="status" v-if="item.from_uid === selfUid">{{ statusText(item) }}</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
+      </template>
 
-      <view :id="bottomAnchorId" class="bottom-anchor" />
-    </scroll-view>
+      <!-- 底部聊天输入条：放在 z-paging 的 bottom 插槽里 -->
+      <template #bottom>
+        <view class="chat-inputbar" :class="{ 'with-sticker': showStickerPanel }">
+          <view class="inputbar-wrap">
+            <view class="tools">
+              <!-- 发送图片：只允许单张 -->
+              <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
+              <!-- 现在的纸飞机按钮：打开贴纸面板 -->
+              <uni-icons type="paperplane" size="24" color="#666" @click="toggleStickerPanel" />
+            </view>
 
-    <!-- 底部固定输入条 -->
-    <view class="chat-inputbar" :class="{ 'with-emoji': showEmoji }">
-      <view class="tools">
-        <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
-        <uni-icons type="smile" size="24" color="#666" @click="toggleEmoji" />
-        <uni-icons type="paperplane" size="24" color="#666" @click="sendSampleOther" />
-      </view>
-      <input
-        class="text-input"
-        type="text"
-        v-model.trim="draft"
-        confirm-type="send"
-        :disabled="isBlocked"
-        @confirm="sendText"
-        @focus="scrollToBottomSoon"
-      />
+            <input
+              class="text-input"
+              type="text"
+              v-model.trim="draft"
+              confirm-type="send"
+              :disabled="isBlocked"
+			  :adjust-position="false"
+              @confirm="sendText"
+              @focus="handleInputFocus"
+			  
+            />
 
-      <view class="emoji-panel" v-if="showEmoji">
-        <view class="emoji-row">
-          <text v-for="e in emojis" :key="e" class="emoji-item" @click="sendEmoji(e)">{{ e }}</text>
+            <!-- 贴纸面板：展示缩略图，发送时使用完整图片 -->
+            <view class="sticker-panel" v-if="showStickerPanel">
+              <scroll-view scroll-y class="sticker-scroll">
+                <view class="sticker-grid">
+                  <view
+                    v-for="s in stickers"
+                    :key="s.id"
+                    class="sticker-item"
+                    @click="sendSticker(s)"
+                  >
+                    <image
+                      class="sticker-thumb"
+                      :src="s.thumb_url || s.image_url"
+                      mode="aspectFit"
+                    />
+                  </view>
+                </view>
+              </scroll-view>
+            </view>
+          </view>
         </view>
-      </view>
-    </view>
-
-    <!-- 额外的底部安全区域 -->
-    <view class="chat-safe-bottom" :style="{ height: footerSafePx }"></view>
+      </template>
+    </z-paging>
   </view>
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue'
-import {
-  onLoad,
-  onUnload,
-  onShow,
-  onHide
-} from '@dcloudio/uni-app'
+import { ref, nextTick, computed, getCurrentInstance } from 'vue'
+import { onLoad, onUnload, onShow, onHide } from '@dcloudio/uni-app'
 import {
   websiteUrl,
   getWindowTop,
   getFooterPlaceholderHeight,
-  toPx
+  toPx,
+  image1Url,
 } from '@/common/config.js'
 import {
   connectIM,
@@ -175,6 +196,12 @@ import {
   setActiveSession,
   clearActiveSession
 } from '@/common/im.js'
+
+/** 当前组件实例（用于 selectorQuery.in） */
+const _ins = getCurrentInstance()
+
+/** z-paging 引用 */
+const pagingRef = ref(null)
 
 /** 路由与会话 */
 const peerId = ref(0)
@@ -187,19 +214,17 @@ const selfInfo = ref({ id: 0, avatar: '' })
 const peerInfo = ref({ user_name: '', avatar: '' })
 const onlineText = ref('')
 
-/** 列表与分页 */
-const messages = ref([]) // 升序
-const page = ref(1)
+/** 列表与分页（z-paging v-model 绑定的就是 messages） */
+const messages = ref([])
 const pageSize = 20
-const hasMore = ref(true)
-const loadingMore = ref(false)
-const bottomAnchorId = 'bottom-anchor'
-const scrollIntoId = ref('')
 
 /** 输入与工具 */
 const draft = ref('')
-const showEmoji = ref(false)
-const emojis = ['😀','😁','😂','🤣','😊','😍','😘','😎','😡','👍','👏','🎉']
+
+/** 新：贴纸面板 & 贴纸数据 */
+const showStickerPanel = ref(false)
+const stickers = ref([])
+const stickerLoading = ref(false)
 
 /** 屏蔽/已读 */
 const isBlocked = ref(false)
@@ -215,19 +240,57 @@ const hasInitOnce = ref(false)
 /** 顶部 / 底部安全区域计算 */
 const windowTopPxRaw = ref(0)
 const footerSafeRaw = ref(0)
-const headerOffsetPx = computed(() => toPx(windowTopPxRaw.value))
 
-// 底部安全区在原基础上 +20
-const footerSafePx = computed(() => toPx(footerSafeRaw.value + 20))
+/** 关键：实际测出来的 nav-bar bottom（px） */
+const navBarBottomPxRaw = ref(0)
 
-/**
- * 聊天内容区域底部偏移：
- * - 104rpx 为输入条高度
- */
-const bodyBottomOffset = computed(() => '104rpx')
+/** z-paging 的 top：优先用 navBarBottom；测不到则回退 windowTop */
+const pagingTopPx = computed(() => {
+  const n = Number(navBarBottomPxRaw.value || 0)
+  if (n > 0) return toPx(n)
+  return toPx(windowTopPxRaw.value || 0)
+})
 
-/* ---------- 工具：初始化本端 uid ---------- */
-function initSelfUidFromStorage() {
+/** ====== 消息提示音 ====== */
+let clickAudio = null
+function playClickSound () {
+  try {
+    if (!clickAudio) {
+      clickAudio = uni.createInnerAudioContext()
+      clickAudio.src = '/static/click.mp3'
+      clickAudio.loop = false
+      clickAudio.startTime = 0
+    } else {
+      try { clickAudio.stop() } catch (e) {}
+    }
+    clickAudio.play()
+  } catch (e) {
+    console.warn('[CHAT-DBG] playClickSound error', e)
+  }
+}
+
+/** 等待 WS 连接就绪 */
+function waitWsReady (timeout = 5000) {
+  return new Promise((resolve) => {
+    const start = Date.now()
+    function check () {
+      const socket = getWS()
+      if (socket && socket.readyState === 1) {
+        resolve(socket)
+        return
+      }
+      if (Date.now() - start >= timeout) {
+        resolve(null)
+        return
+      }
+      setTimeout(check, 150)
+    }
+    check()
+  })
+}
+
+/** 工具：初始化本端 uid */
+function initSelfUidFromStorage () {
   try {
     const u = uni.getStorageSync('userInfo') || {}
     const id = Number(u?.id || u?.Id || 0)
@@ -239,8 +302,43 @@ function initSelfUidFromStorage() {
   } catch (_) {}
 }
 
+/** 工具：测量 nav-bar 实际高度（避免被遮挡） */
+function measureNavBar () {
+  return new Promise((resolve) => {
+    // 为了兼容不同端：优先 in(this component)，失败就退化到全局 query
+    const q1 = (() => {
+      try {
+        return uni.createSelectorQuery().in(_ins)
+      } catch (_) {
+        return null
+      }
+    })()
+
+    const query = q1 || uni.createSelectorQuery()
+    query
+      .select('#navWrapper')
+      .boundingClientRect((rect) => {
+        const bottom = Number(rect?.bottom || 0)
+        const height = Number(rect?.height || 0)
+        // fixed 顶部一般 bottom=height，但少数端 bottom 取不到，兜底 height
+        const v = bottom > 0 ? bottom : height
+        if (v > 0) navBarBottomPxRaw.value = v
+        resolve(v)
+      })
+      .exec()
+  })
+}
+
+/** 刷新布局参数（首屏 & 返回页面都做一次） */
+async function refreshLayoutOffsets () {
+  windowTopPxRaw.value = getWindowTop()
+  footerSafeRaw.value = getFooterPlaceholderHeight()
+  await nextTick()
+  await measureNavBar()
+}
+
 /* ---------- 工具：从 read 事件里识别“读者是谁” ---------- */
-function pickReaderId(d) {
+function pickReaderId (d) {
   return Number(
     d?.reader_id ??
     d?.reader ??
@@ -250,26 +348,30 @@ function pickReaderId(d) {
     0
   )
 }
-
-/* ---------- 工具：应用对方已读进度（幂等） ---------- */
-function applyPeerReadPts(newPts) {
+function applyPeerReadPts (newPts) {
   const n = Number(newPts || 0)
   if (n <= 0 || n <= peerReadPts.value) return
   peerReadPts.value = n
 }
 
 /* ---------- 生命周期 ---------- */
-onLoad((query) => {
+onLoad(async (query) => {
   peerId.value = Number(query.peer_id || 0)
   initSelfUidFromStorage()
 
-  // 初始化安全区信息
-  windowTopPxRaw.value = getWindowTop()
-  footerSafeRaw.value = getFooterPlaceholderHeight()
-  console.log('footerSafe:', footerSafeRaw.value)
+  await refreshLayoutOffsets()
+  console.log('[CHAT-DBG]', 'layout:', {
+    windowTopPxRaw: windowTopPxRaw.value,
+    navBarBottomPxRaw: navBarBottomPxRaw.value
+  })
 })
 
 onShow(async () => {
+  console.log('[CHAT-DBG]', 'onShow: enter, hasInitOnce =', hasInitOnce.value)
+
+  // 每次进来都刷新一次，避免机型/旋转/安全区变化导致遮挡
+  await refreshLayoutOffsets()
+
   if (!hasInitOnce.value) {
     await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
 
@@ -296,23 +398,27 @@ onShow(async () => {
         if (peerPtsFromStart > 0) applyPeerReadPts(peerPtsFromStart)
       } else {
         console.warn('[CHAT] start-session failed', res?.data)
+        uni.showToast({ title: '会话初始化失败，请稍后重试', icon: 'none' })
         return
       }
     } catch (e) {
       console.error('[CHAT] start-session error', e)
+      uni.showToast({ title: '会话初始化异常', icon: 'none' })
       return
     }
 
-    page.value = 1
     messages.value = []
-    hasMore.value = true
-    await loadHistory()
-
-    markReadToBottom()
-
-    setActiveSession(numericSid.value > 0 ? numericSid.value : sessionKey.value)
-
     hasInitOnce.value = true
+
+    const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
+    if (key) setActiveSession(key)
+
+    nextTick(() => {
+      console.log('[CHAT-DBG]', 'call paging.reload()')
+      if (pagingRef.value && typeof pagingRef.value.reload === 'function') {
+        pagingRef.value.reload()
+      }
+    })
     return
   }
 
@@ -321,30 +427,47 @@ onShow(async () => {
   offIM = onIMEvent(handleIMEvent)
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) setActiveSession(key)
+
+  markReadToBottom()
 })
 
 onHide(() => {
-  if (offIM) { offIM = null }
+  if (offIM) {
+    offIM()
+    offIM = null
+  }
 })
 
 onUnload(() => {
-  if (offIM) { offIM = null }
+  if (offIM) {
+    offIM()
+    offIM = null
+  }
+  if (clickAudio) {
+    try { clickAudio.destroy() } catch (e) {}
+    clickAudio = null
+  }
   leaveActiveSession()
 })
 
-function leaveActiveSession() {
+function leaveActiveSession () {
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) clearActiveSession(key)
 }
 
 /** HTTP 基础信息 */
-async function fetchPeerInfo() {
+async function fetchPeerInfo () {
+  const t0 = Date.now()
   try {
     const res = await uni.request({ url: `${websiteUrl.value}/user-info?uid=${peerId.value}` })
     if (res?.data?.status === 'success') peerInfo.value = res.data.data || {}
-  } catch (_) {}
+    console.log('[CHAT-DBG]', 'fetchPeerInfo: cost=', Date.now() - t0, 'ms, status=success')
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'fetchPeerInfo error=', e)
+  }
 }
-async function fetchSelfInfo() {
+async function fetchSelfInfo () {
+  const t0 = Date.now()
   try {
     const token = uni.getStorageSync('token')
     if (!token) return
@@ -358,150 +481,259 @@ async function fetchSelfInfo() {
       const id = Number(selfInfo.value?.id || 0)
       if (id) selfUid.value = id
     }
-  } catch (_) {}
+    console.log('[CHAT-DBG]', 'fetchSelfInfo: cost=', Date.now() - t0, 'ms, status=success')
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'fetchSelfInfo error=', e)
+  }
 }
 
-/** 历史优先 WS sync；否则 HTTP */
-async function loadHistory() {
-  if (!hasMore.value || loadingMore.value) return
-  loadingMore.value = true
+/** z-paging 的查询回调：首屏 + 上拉加载历史统一走这里 */
+async function onPagingQuery (pageNo, sizeFromPaging) {
+  console.log('[CHAT-DBG]', 'onPagingQuery pageNo=', pageNo, ' pageSize=', sizeFromPaging)
 
-  let keepAnchor = ''
-  if (messages.value.length > 0) {
-    const top = messages.value[0]
-    keepAnchor = 'msg-' + (top.local_key || top.id || 0)
-  }
+  const isFirstPage = pageNo === 1 && messages.value.length === 0
 
   try {
-    if (numericSid.value > 0) {
-      const socket = getWS()
-      if (socket && socket.readyState === 1) {
-        let afterPTS = 0
-        if (messages.value.length > 0) {
-          afterPTS = Math.min(...messages.value.map(m => Number(m.pts || 0))) - 1
-          if (afterPTS < 0) afterPTS = 0
-        }
-        const reqId = 'sync_' + Date.now()
-        const pkt = {
-          type: 'im.req',
-          action: 'sync',
-          req_id: reqId,
-          data: { session_id: Number(numericSid.value), after_pts: Number(afterPTS), limit: pageSize }
-        }
-        const resp = await waitWsResponseOnce(socket, 'sync', reqId, 8000, () => {
-          socket.send(JSON.stringify(pkt))
-        })
-        if (resp?.status === 'success') {
-          const arr = (resp.data?.messages || []).map(wsToUiMessage)
-          messages.value = [...arr, ...messages.value]
-          hasMore.value = !!resp.data?.has_more
-          page.value += 1
+    if (numericSid.value <= 0) {
+      console.warn('[CHAT] numericSid missing, cannot sync history via WS')
+      if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+        pagingRef.value.complete(false)
+      }
+      return
+    }
 
-          const peerPtsFromSync = Number(
-            resp?.data?.peer_read_pts ?? resp?.data?.peerReadPts ?? resp?.data?.read_pts_peer ?? 0
-          )
-          if (peerPtsFromSync > 0) applyPeerReadPts(peerPtsFromSync)
-
-          await nextTick()
-          if (page.value === 2) {
-            scrollToBottomSoon()
-          } else if (keepAnchor) {
-            scrollIntoId.value = keepAnchor
-            setTimeout(() => { scrollIntoId.value = '' }, 50)
+    let socket = getWS()
+    if (!socket || socket.readyState !== 1) {
+      if (isFirstPage) {
+        socket = await waitWsReady(5000)
+        if (!socket || socket.readyState !== 1) {
+          console.warn('[CHAT] waitWsReady timeout (z-paging first page)')
+          uni.showToast({ title: '连接超时，请稍后重试', icon: 'none' })
+          if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+            pagingRef.value.complete(false)
           }
           return
         }
+      } else {
+        console.warn('[CHAT] WS not ready when loading more history')
+        if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+          pagingRef.value.complete(false)
+        }
+        return
       }
     }
 
-    if (!sessionKey.value) return
-    const token = uni.getStorageSync('token') || ''
-    const res = await uni.request({
-      url: `${websiteUrl.value}/with-state/im/history`,
-      method: 'GET',
-      data: { session_id: sessionKey.value, page: page.value, page_size: pageSize },
-      header: token ? { Authorization: token } : {}
+    let beforePTS = 0
+    let afterPTS = 0
+    if (messages.value.length === 0) {
+      afterPTS = 0
+    } else {
+      beforePTS = Math.min(...messages.value.map((m) => Number(m.pts || 0)))
+    }
+
+    const reqId = 'sync_' + Date.now()
+    const data = {
+      session_id: Number(numericSid.value),
+      limit: sizeFromPaging || pageSize
+    }
+    if (beforePTS > 0) {
+      data.before_pts = Number(beforePTS)
+    } else {
+      data.after_pts = Number(afterPTS)
+    }
+
+    const pkt = {
+      type: 'im.req',
+      action: 'sync',
+      req_id: reqId,
+      data
+    }
+
+    const resp = await waitWsResponseOnce(socket, 'sync', reqId, 8000, () => {
+      socket.send(JSON.stringify(pkt))
     })
-    if (res?.data?.status === 'success') {
-      const d = res.data.data || {}
-      const list = (d.list || []).map(httpToUiMessage)
-      messages.value = [...list, ...messages.value]
-      const total = Number(d.total || 0)
-      hasMore.value = total > 0 ? (messages.value.length < total) : list.length === pageSize
-      page.value += 1
-
-      const peerPtsFromHttp = Number(
-        d?.peer_read_pts ?? d?.peerReadPts ?? d?.peer_read ?? d?.read_pts_peer ?? 0
-      )
-      if (peerPtsFromHttp > 0) applyPeerReadPts(peerPtsFromHttp)
-
-      await nextTick()
-      if (page.value === 2) {
-        scrollToBottomSoon()
-      } else if (keepAnchor) {
-        scrollIntoId.value = keepAnchor
-        setTimeout(() => { scrollIntoId.value = '' }, 50)
+    if (!resp || resp.status !== 'success') {
+      console.warn('[CHAT] sync history failed', resp)
+      if (isFirstPage) {
+        uni.showToast({ title: '加载聊天记录失败', icon: 'none' })
       }
+      if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+        pagingRef.value.complete(false)
+      }
+      return
+    }
+
+    const rawArr = (resp.data?.messages || []).map(wsToUiMessage)
+
+    const existIds = new Set(messages.value.map((m) => m.id))
+    const dedupArr = rawArr.filter((m) => !existIds.has(m.id))
+
+    const segmentDesc = dedupArr.sort((a, b) => {
+      const pa = Number(a.pts || 0)
+      const pb = Number(b.pts || 0)
+      if (pb !== pa) return pb - pa
+      return Number(b.id || 0) - Number(a.id || 0)
+    })
+
+    if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+      pagingRef.value.complete(segmentDesc)
+    } else {
+      if (messages.value.length === 0 || beforePTS === 0) {
+        messages.value = [...messages.value, ...segmentDesc]
+      } else {
+        messages.value = [...segmentDesc, ...messages.value]
+      }
+    }
+
+    const peerPtsFromSync = Number(
+      resp?.data?.peer_read_pts ??
+      resp?.data?.peerReadPts ??
+      resp?.data?.read_pts_peer ??
+      0
+    )
+    if (peerPtsFromSync > 0) applyPeerReadPts(peerPtsFromSync)
+
+    await nextTick()
+    if (isFirstPage) {
+      scrollToBottomSoon()
+      markReadToBottom()
     }
   } catch (e) {
     console.error('[CHAT] loadHistory error', e)
-  } finally {
-    loadingMore.value = false
+    if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
+      pagingRef.value.complete(false)
+    }
   }
 }
-function loadMore() {
-  if (hasMore.value && !loadingMore.value) loadHistory()
-}
 
-/** 发送：文本/表情/图片/其它 */
-function sendText() {
+/** 发送：文本/图片/其它（贴纸也是 image） */
+function sendText () {
   if (!draft.value) return
   const text = draft.value
   draft.value = ''
+  showStickerPanel.value = false
   sendPayload({ kind: 'text', text })
 }
-function sendEmoji(e) {
-  showEmoji.value = false
-  sendPayload({ kind: 'emoji', emoji: e })
-}
-function toggleEmoji() { showEmoji.value = !showEmoji.value }
 
-async function pickAndSendImage() {
+function handleInputFocus () {
+  showStickerPanel.value = false
+  scrollToBottomSoon()
+}
+
+async function loadStickers () {
+  if (stickerLoading.value || stickers.value.length > 0) return
+  stickerLoading.value = true
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/stickers`,
+      method: 'GET',
+      data: {
+        category: '',
+        page: 1,
+        pageSize: 200
+      }
+    })
+    const data = res?.data || {}
+    if (data.status === 'success' || data.code === 0) {
+      const list = data.data || data.list || []
+      stickers.value = Array.isArray(list) ? list : []
+    } else {
+      uni.showToast({ title: '加载表情失败', icon: 'none' })
+    }
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'loadStickers error=', e)
+    uni.showToast({ title: '加载表情失败', icon: 'none' })
+  } finally {
+    stickerLoading.value = false
+  }
+}
+
+function toggleStickerPanel () {
+  showStickerPanel.value = !showStickerPanel.value
+  if (showStickerPanel.value) {
+    loadStickers()
+  }
+}
+
+function sendSticker (s) {
+  if (!s || !s.image_url) return
+  showStickerPanel.value = false
+  sendPayload({
+    kind: 'image',
+    url: s.image_url
+  })
+}
+
+async function pickAndSendImage () {
   try {
     const chooseRes = await uni.chooseImage({ count: 1, sizeType: ['compressed'] })
+    if (!chooseRes || !chooseRes.tempFilePaths || !chooseRes.tempFilePaths.length) return
     const filePath = chooseRes.tempFilePaths[0]
+
     const tkRes = await uni.request({
       url: `${websiteUrl.value}/with-state/qiniu-token`,
       method: 'POST',
       header: authHeader()
     })
     if (tkRes?.data?.status !== 'success') {
-      return uni.showToast({ title: '上传凭证失败', icon: 'none' })
+      uni.showToast({ title: '上传凭证失败', icon: 'none' })
+      return
     }
-    const { upload_url, token, key, domain } = tkRes.data.data
+
+    const data = tkRes.data.data || {}
+    const token = data.token
+    const key = data.key || data.path
+    const uploadUrl = data.upload_url || 'https://up-cn-east-2.qiniup.com'
+    const domain = data.domain || image1Url
+
+    if (!token || !key) {
+      uni.showToast({ title: '上传参数错误', icon: 'none' })
+      return
+    }
+
     const upRes = await uni.uploadFile({
-      url: upload_url,
+      url: uploadUrl,
       filePath,
       name: 'file',
-      formData: { token, key }
+      formData: {
+        token,
+        key
+      }
     })
-    const body = JSON.parse(upRes.data || '{}')
-    const url = (domain ? domain.replace(/\/$/, '') + '/' : '') + (body.key || key)
+
+    let body = {}
+    try {
+      body = JSON.parse(upRes.data || '{}')
+    } catch (_) {}
+
+    const finalKey = body.key || key
+    const prefix = domain ? String(domain).replace(/\/$/, '') + '/' : ''
+    const url = prefix + finalKey
+
+    if (!url) {
+      uni.showToast({ title: '上传失败', icon: 'none' })
+      return
+    }
+
     sendPayload({ kind: 'image', url })
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[CHAT-DBG]', 'pickAndSendImage error=', e)
+    uni.showToast({ title: '发送图片失败', icon: 'none' })
+  }
 }
 
-/** 示例的 other 消息 */
-function sendSampleOther() {
-  sendPayload({
-    kind: 'other',
-    sub_type: 'order',
-    payload: { order_id: 'D1234567', price: 199.0, title: '示例订单' }
-  })
+/** 将一条“新消息”（本地 or 实时推送）追加到底部 */
+function appendNewMessage (uiMsg) {
+  if (pagingRef.value && typeof pagingRef.value.addChatRecordData === 'function') {
+    pagingRef.value.addChatRecordData([uiMsg])
+  } else {
+    messages.value = [...messages.value, uiMsg]
+  }
+  playClickSound()
 }
 
-/** 发送统一实现 */
-function sendPayload(msgPart) {
+/** 发送统一实现 —— ACK 通过 local_key 更新数组，并强制替换 messages 引用 */
+function sendPayload (msgPart) {
   const socket = getWS()
   if (!socket || socket.readyState !== 1) {
     uni.showToast({ title: '连接未就绪', icon: 'none' })
@@ -510,7 +742,8 @@ function sendPayload(msgPart) {
 
   const client_mid = genClientMID()
   const local = buildLocalMsg({ ...msgPart, client_mid })
-  messages.value.push(local)
+
+  appendNewMessage(local)
   scrollToBottomSoon()
 
   const pkt = {
@@ -532,7 +765,9 @@ function sendPayload(msgPart) {
         setMessageStatusByLocalKey(local.local_key, 'failed')
         return
       }
+
       const d = resp.data || {}
+
       updateMessageByLocalKey(local.local_key, (old) => ({
         ...old,
         id: Number(d.message_id || old.id || 0),
@@ -540,6 +775,7 @@ function sendPayload(msgPart) {
         ts: d.msg_time ? Math.floor(Number(d.msg_time) / 1000) : old.ts,
         status: 'sent'
       }))
+
       if (Number(d.session_id || 0) > 0 && numericSid.value === 0) {
         numericSid.value = Number(d.session_id)
       }
@@ -553,20 +789,23 @@ function sendPayload(msgPart) {
     })
 }
 
-/** 用 local_key 替换某条消息 */
-function updateMessageByLocalKey(localKey, updater) {
-  const idx = messages.value.findIndex((x) => x.local_key === localKey)
+function updateMessageByLocalKey (localKey, updater) {
+  const list = messages.value
+  const idx = list.findIndex((x) => x.local_key === localKey)
   if (idx >= 0) {
-    const next = typeof updater === 'function' ? updater(messages.value[idx]) : updater
-    messages.value.splice(idx, 1, next)
+    const old = list[idx]
+    const next = typeof updater === 'function' ? updater(old) : updater
+    const newList = list.slice()
+    newList.splice(idx, 1, next)
+    messages.value = newList
   }
 }
-function setMessageStatusByLocalKey(localKey, status) {
+function setMessageStatusByLocalKey (localKey, status) {
   updateMessageByLocalKey(localKey, (old) => ({ ...old, status }))
 }
 
 /** 已读（拿到 numericSid 后再发） */
-function markReadToBottom() {
+function markReadToBottom () {
   if (numericSid.value <= 0) return
   const maxPts = messages.value.reduce(
     (mx, m) => Math.max(mx, Number(m.pts || 0)),
@@ -589,7 +828,7 @@ function markReadToBottom() {
 }
 
 /** 事件处理 */
-function handleIMEvent(payload) {
+function handleIMEvent (payload) {
   if (!payload || typeof payload !== 'object') return
 
   if (payload.type === 'im.event' && payload.event === 'message') {
@@ -626,7 +865,8 @@ function handleIMEvent(payload) {
         )
       }
       if (idx >= 0) {
-        const old = messages.value[idx]
+        const list = messages.value
+        const old = list[idx]
         const merged = {
           ...old,
           id: ui.id || old.id,
@@ -634,12 +874,14 @@ function handleIMEvent(payload) {
           ts: ui.ts || old.ts,
           status: 'sent'
         }
-        messages.value.splice(idx, 1, merged)
+        const newList = list.slice()
+        newList.splice(idx, 1, merged)
+        messages.value = newList
         return
       }
     }
 
-    messages.value.push(ui)
+    appendNewMessage(ui)
     scrollToBottomSoon()
     markReadToBottom()
     return
@@ -665,7 +907,7 @@ function handleIMEvent(payload) {
 }
 
 /** 等待一次 WS ACK */
-function waitWsResponseOnce(socket, action, reqId, timeout = 8000, sender) {
+function waitWsResponseOnce (socket, action, reqId, timeout = 8000, sender) {
   return new Promise((resolve) => {
     let timer = null
     const off = onIMEvent((payload) => {
@@ -685,12 +927,9 @@ function waitWsResponseOnce(socket, action, reqId, timeout = 8000, sender) {
 }
 
 /** 发送内容 -> WS content */
-function toWsContent(part) {
+function toWsContent (part) {
   if (part.kind === 'text') {
     return { type: 'text', text: part.text }
-  }
-  if (part.kind === 'emoji') {
-    return { type: 'emoji', emoji: part.emoji }
   }
   if (part.kind === 'image') {
     return { type: 'image', images: [{ url: part.url }] }
@@ -707,8 +946,7 @@ function toWsContent(part) {
   return { type: 'text', text: '[未知类型]' }
 }
 
-/** 构建消息唯一签名 */
-function buildSig(m) {
+function buildSig (m) {
   const kind = m.kind || (m.content?.type) || ''
   if (kind === 'text') return `t|${(m.text || '').slice(0, 200)}`
   if (kind === 'emoji') return `e|${m.emoji || ''}`
@@ -717,11 +955,10 @@ function buildSig(m) {
     const payload = m.payload || m.content?.other || {}
     return `o|${m.sub_type || payload.biz || 'other'}|${JSON.stringify(payload)}`
   }
-  return `u|`
+  return 'u|'
 }
 
-/** 本地临时消息 */
-function buildLocalMsg(part) {
+function buildLocalMsg (part) {
   const now = Date.now()
   const base = {
     local_key:
@@ -738,8 +975,6 @@ function buildLocalMsg(part) {
   let ui
   if (part.kind === 'text') {
     ui = { ...base, kind: 'text', text: part.text }
-  } else if (part.kind === 'emoji') {
-    ui = { ...base, kind: 'emoji', emoji: part.emoji }
   } else if (part.kind === 'image') {
     ui = { ...base, kind: 'image', url: part.url }
   } else {
@@ -756,32 +991,7 @@ function buildLocalMsg(part) {
   return ui
 }
 
-/** HTTP -> UI 消息结构 */
-function httpToUiMessage(n) {
-  const payload = n.payload || {}
-  const ui = {
-    id: Number(n.id || 0),
-    pts: Number(n.pts || 0),
-    session_id: sessionKey.value,
-    from_uid: Number(n.from_uid || 0),
-    to_uid: Number(n.to_uid || 0),
-    kind: n.kind || 'text',
-    text: n.text,
-    emoji: n.emoji,
-    url: n.url,
-    sub_type: n.sub_type,
-    payload,
-    card: payload.card || null,
-    ts: Number(n.ts || Math.floor(Date.now() / 1000)),
-    status: 'sent',
-    client_mid: n.client_mid
-  }
-  ui.sig = buildSig(ui)
-  return ui
-}
-
-/** WS 消息 -> UI 消息结构 */
-function wsToUiMessage(m) {
+function wsToUiMessage (m) {
   const base = {
     id: Number(m.id || 0),
     pts: Number(m.pts || 0),
@@ -806,10 +1016,8 @@ function wsToUiMessage(m) {
       ui = { ...base, kind: 'emoji', emoji: c.emoji }
       break
     case 'image': {
-      const url =
-        Array.isArray(c.images) && c.images[0]?.url
-          ? c.images[0].url
-          : ''
+      const img = Array.isArray(c.images) && c.images[0] ? c.images[0] : {}
+      const url = img.url || ''
       ui = { ...base, kind: 'image', url }
       break
     }
@@ -832,29 +1040,26 @@ function wsToUiMessage(m) {
 }
 
 /** 发送状态文案 */
-function statusText(m) {
+function statusText (m) {
   if (!m || m.from_uid !== selfUid.value) return ''
+
+  const pts = Number(m.pts || 0)
+  const peerPts = Number(peerReadPts.value || 0)
+
   if (m.status === 'failed') return '发送失败'
-  if (
-    Number(m.pts || 0) > 0 &&
-    Number(peerReadPts.value || 0) >= Number(m.pts)
-  ) {
-    return '已读'
-  }
-  if (m.status === 'sending') return '发送中…'
+  if (pts > 0 && peerPts >= pts) return '已读'
+  if (pts === 0 && m.status === 'sending') return '发送中…'
   return '已发送'
 }
 
-/** 时间格式：HH:mm */
-function fmtTime(ts) {
+function fmtTime (ts) {
   const d = new Date(Number(ts) * 1000)
   const hh = String(d.getHours()).padStart(2, '0')
   const m = String(d.getMinutes()).padStart(2, '0')
   return `${hh}:${m}`
 }
 
-/** 旧版 other 消息的简要描述 */
-function briefOther(m) {
+function briefOther (m) {
   try {
     const card = m.card || m.payload?.card
     if (card) {
@@ -865,45 +1070,32 @@ function briefOther(m) {
       }
       return '[卡片消息]'
     }
-
-    if (m.sub_type === 'order') {
-      return `订单：${m.payload?.title || ''} ￥${m.payload?.price ?? ''}`
-    }
-    if (m.sub_type === 'transfer') {
-      return `转账：￥${m.payload?.amount ?? ''}`
-    }
-    if (m.sub_type === 'goods') {
-      return `商品：${m.payload?.name || ''} ￥${m.payload?.price ?? ''}`
-    }
   } catch (_) {}
   return '[点击查看]'
 }
 
-/** 文本安全显示 */
-function safeText(t) {
+function safeText (t) {
   return (t || '').replace(/\n/g, '<br/>')
 }
-function previewImage(url) {
+function previewImage (url) {
   uni.previewImage({ urls: [url] })
 }
-function scrollToBottomSoon() {
+function scrollToBottomSoon () {
   nextTick(() => {
-    scrollIntoId.value = bottomAnchorId
-    setTimeout(() => {
-      scrollIntoId.value = ''
-    }, 50)
+    if (pagingRef.value && typeof pagingRef.value.scrollToBottom === 'function') {
+      pagingRef.value.scrollToBottom()
+    }
   })
 }
-function goBack() {
+function goBack () {
   uni.navigateBack()
 }
 
-/** 鉴权头 + client_msg_id 工具 */
-function authHeader() {
+function authHeader () {
   const token = uni.getStorageSync('token') || ''
   return token ? { Authorization: token } : {}
 }
-function genClientMID() {
+function genClientMID () {
   return (
     'm_' +
     Date.now().toString(36) +
@@ -913,8 +1105,7 @@ function genClientMID() {
 }
 
 /* ===================== 消息卡片相关工具 ===================== */
-
-function mapCardTypeLabel(cardType) {
+function mapCardTypeLabel (cardType) {
   switch (cardType) {
     case 'artist_order_step_request':
       return '节点确认请求'
@@ -926,51 +1117,95 @@ function mapCardTypeLabel(cardType) {
       return '价格调整'
     case 'artist_order_change_item':
       return '投递内容更新'
+    case 'artist_order_submission_create':
+      return '投递创建'
     default:
       return '系统通知'
   }
 }
-
-/** 取卡片对象 */
-function pickCard(m) {
+function pickCard (m) {
   return m?.card || m?.payload?.card || null
 }
-
-function cardTag(m) {
+function cardTag (m) {
   const card = pickCard(m) || {}
   return mapCardTypeLabel(card.card_type || '')
 }
-function cardTitle(m) {
+function cardTitle (m) {
   const card = pickCard(m) || {}
   return card.title || '消息通知'
 }
-function cardDescription(m) {
+function cardDescription (m) {
   const card = pickCard(m) || {}
   return card.description || ''
 }
-/** 取卡片图片 URL */
-function cardImage(m) {
+function cardImage (m) {
   const card = pickCard(m) || {}
   const url = card.image_url || card.imageUrl || card.img_url || ''
   return typeof url === 'string' ? url : ''
 }
-function cardActionText(m) {
+function cardActionText (m) {
   const card = pickCard(m) || {}
   return card.action_text || '查看详情'
 }
 
+/** 从 card.app_page 中按当前 uid 选出正确跳转 URL（兼容旧 string） */
+function pickCardAppPageUrl (card, uid) {
+  if (!card) return ''
+
+  const ap =
+    card.app_page ??
+    card.appPage ??
+    card.app_pages ??
+    card.appPages ??
+    null
+
+  if (typeof ap === 'string') return ap
+
+  if (Array.isArray(ap)) {
+    const myUid = Number(uid || 0)
+    const hit = ap.find((x) => Number(x?.uid || 0) === myUid && typeof x?.url === 'string' && x.url)
+    if (hit && hit.url) return hit.url
+
+    const first = ap.find((x) => x && typeof x.url === 'string' && x.url)
+    if (first && first.url) return first.url
+  }
+
+  if (ap && typeof ap === 'object' && typeof ap.url === 'string') {
+    return ap.url
+  }
+
+  return ''
+}
+
+/** 跳转 */
+function goToCardUrl (url) {
+  if (!url) return
+
+  uni.navigateTo({
+    url,
+    fail: (err) => {
+      // #ifdef H5
+      try {
+        window.location.href = url
+        return
+      } catch (_) {}
+      // #endif
+
+      console.warn('[CHAT] navigateTo failed:', err, 'url=', url)
+      uni.showToast({ title: '跳转失败', icon: 'none' })
+    }
+  })
+}
+
 /** 点击消息卡片 */
-function handleCardClick(m) {
+function handleCardClick (m) {
   const card = pickCard(m)
   if (!card) return
 
-  if (card.app_page) {
-    try {
-      uni.navigateTo({ url: card.app_page })
-      return
-    } catch (e) {
-      // 路径不存在等问题，继续走下方逻辑
-    }
+  const url = pickCardAppPageUrl(card, selfUid.value)
+  if (url) {
+    goToCardUrl(url)
+    return
   }
 
   if (card.h5_url) {
@@ -1001,7 +1236,12 @@ function handleCardClick(m) {
   background: #ffffff;
 }
 
-/* 顶部返回的小胶囊 */
+/* nav 外层只是用于测量，不改变 zhouWei-navBar 的 fixed 行为 */
+.nav-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
 .nav-back-pill {
   height: 56rpx;
   padding: 0 18rpx;
@@ -1036,35 +1276,22 @@ function handleCardClick(m) {
   margin-top: 4rpx;
 }
 
-/* 中间滚动区固定在 自定义导航条 与输入条之间 */
 .chat-body {
   position: fixed;
   left: 0;
   right: 0;
+  bottom: 0;
   padding: 20rpx;
-  padding-bottom: 20rpx;
-  padding-top: 100rpx;
+  padding-bottom: 0;
   box-sizing: border-box;
   background: #f5f5f5;
 }
-.load-more {
-  width: 100%;
-  text-align: center;
-  color: #6b7280;
-  font-size: 24rpx;
-  padding: 16rpx 0;
-}
 
-/* 列表与气泡布局 */
-.msg-list {
-  display: flex;
-  flex-direction: column;
-  gap: 26rpx;
-}
 .msg-item {
   display: flex;
   align-items: flex-start;
   gap: 24rpx;
+  margin-bottom: 26rpx;
   &.self {
     flex-direction: row-reverse;
   }
@@ -1076,7 +1303,6 @@ function handleCardClick(m) {
   background: #eee;
 }
 
-/* 垂直内容：气泡 + meta */
 .content {
   max-width: 78%;
   display: flex;
@@ -1087,7 +1313,6 @@ function handleCardClick(m) {
   align-items: flex-end;
 }
 
-/* 气泡 */
 .bubble {
   position: relative;
   max-width: 100%;
@@ -1103,7 +1328,6 @@ function handleCardClick(m) {
   border-top-left-radius: 18rpx;
 }
 
-/* 气泡小三角 */
 .bubble::after {
   content: '';
   position: absolute;
@@ -1121,7 +1345,6 @@ function handleCardClick(m) {
   right: -8rpx;
 }
 
-/* 文本/图片/卡片细节 */
 .bubble .emoji {
   font-size: 40rpx;
   line-height: 1.2;
@@ -1131,7 +1354,6 @@ function handleCardClick(m) {
   border-radius: 12rpx;
 }
 
-/* 旧版其它消息块 */
 .bubble .other-card {
   min-width: 300rpx;
   background: #f7fafc;
@@ -1150,7 +1372,6 @@ function handleCardClick(m) {
   }
 }
 
-/* ===== 消息卡片样式 ===== */
 .msg-card {
   min-width: 320rpx;
   max-width: 520rpx;
@@ -1178,7 +1399,6 @@ function handleCardClick(m) {
   color: #111827;
 }
 
-/* 卡片图片区域 */
 .msg-card-image-wrap {
   margin-bottom: 12rpx;
   border-radius: 12rpx;
@@ -1190,7 +1410,6 @@ function handleCardClick(m) {
   display: block;
 }
 
-/* 卡片描述 & 底部 */
 .msg-card-body {
   margin-bottom: 12rpx;
 }
@@ -1208,7 +1427,6 @@ function handleCardClick(m) {
   color: #a2b7c0;
 }
 
-/* meta 在气泡下方 + 灰色 + 小字号 */
 .meta {
   display: flex;
   align-items: center;
@@ -1225,77 +1443,93 @@ function handleCardClick(m) {
   font-size: 20rpx;
 }
 
-/* 锚点 */
-.bottom-anchor {
-  height: 1rpx;
+/* ====== 输入条与贴纸面板（仅样式调整，JS 不变） ====== */
+.chat-inputbar {
+  position: relative;
+  background: transparent;
+  padding-top: 14rpx;
+  padding-bottom: calc(14rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(14rpx + constant(safe-area-inset-bottom));
 }
 
-/* 底部输入条固定 */
-.chat-inputbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
-  background: #e0f0fb;
-  padding: 18rpx 16rpx 30rpx;
-  display: grid;
-  grid-template-columns: 140rpx 1fr 20rpx;
-  gap: 22rpx;
-  .tools {
-    display: flex;
-    align-items: center;
-    gap: 18rpx;
-    padding-left: 8rpx;
-  }
-  .text-input {
-    height: 68rpx;
-    background: #fff;
-    border-radius: 34rpx;
-    padding: 0 22rpx;
-    font-size: 26rpx;
-  }
-  .send-btn {
-    height: 68rpx;
-    line-height: 68rpx;
-    border-radius: 34rpx;
-    background: #e1f0fb;
-    color: #fff;
-    font-size: 26rpx;
-  }
-  .send-btn::after {
-    border: none;
-  }
+/* 输入条主体：圆角浮层 */
+.inputbar-wrap {
+  position: relative;
+  margin: 0 12rpx;
+  padding: 12rpx 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10rpx 26rpx rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
 }
-.emoji-panel {
+
+.inputbar-wrap .tools {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-left: 6rpx;
+  flex-shrink: 0;
+}
+
+.inputbar-wrap .text-input {
+  flex: 1;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+/* 贴纸面板：锚定在输入条上方，避免与输入框重叠 */
+.sticker-panel {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 104rpx;
-  background: #fff;
-  border-top: 1rpx solid #eee;
-  padding: 12rpx;
-  .emoji-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
-  }
-  .emoji-item {
-    font-size: 40rpx;
-  }
-}
-
-/* 底部安全区域 */
-.chat-safe-bottom {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  bottom: calc(100% + 14rpx);
   background: #ffffff;
-  z-index: 5;
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  border-radius: 24rpx;
+  padding: 14rpx 0 8rpx;
+  box-shadow: 0 18rpx 40rpx rgba(0, 0, 0, 0.10);
+  z-index: 30;
+  overflow: hidden;
 }
 
-/* 隐藏滚动条 */
+.sticker-scroll {
+  max-height: 520rpx;
+  max-height: 56vh;
+}
+
+.sticker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 20rpx;
+  gap: 16rpx;
+}
+
+.sticker-item {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 14rpx;
+  background: #f3f4f6;
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker-thumb {
+  width: 100%;
+  height: 100%;
+}
+
 ::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;
