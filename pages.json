@@ -210,13 +210,6 @@
 			 	"bounce": "none"
 			 }
 		}
-	},
-	{
-		"path": "pages/artist_info/custom_wig_artist",
-		"style": {
-			"navigationBarTitleText": "",
-			"navigationStyle": "custom"
-		}
 	}
   ],
 
