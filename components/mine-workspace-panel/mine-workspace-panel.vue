@@ -475,7 +475,7 @@ function goOrderHome () {
     return
   }
   uni.navigateTo({
-    url: `/pages/artist_info/bjd_faceup_artist?brand_id=${bid}`
+    url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${bid}`
   })
 }
 

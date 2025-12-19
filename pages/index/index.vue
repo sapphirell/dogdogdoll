@@ -532,7 +532,7 @@ const formatTime = (timestamp) => {
 
 const goSearch = () => {
   uni.navigateTo({
-    url: '/pages/search/search?tabs=1,2,3,4&mode=jump',
+    url: '/pkg-common/search/search?tabs=1,2,3,4&mode=jump',
   })
 }
 
@@ -567,7 +567,7 @@ const handleBannerClick = (item) => {
 const jump2saleNews = (item) => {
   uni.navigateTo({
     url:
-      '/pages/sale_news/sale_news?id=' +
+      '/pkg-common/sale_news/sale_news?id=' +
       item.id +
       '&brand_id=' +
       item.brand_id,

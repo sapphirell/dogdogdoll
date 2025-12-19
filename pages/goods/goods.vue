@@ -560,7 +560,7 @@ const getFaceupList = async (id = currentId.value) => {
 }
 const refreshFaceupList = () => { if (!faceupLoading.value) getFaceupList() }
 const getFirstImage = (s) => (s ? s.split(',')[0].trim() : '')
-function jump2faceup (id) { uni.navigateTo({ url: '/pages/artwork/artwork?id=' + id }) }
+function jump2faceup (id) { uni.navigateTo({ url: '/pkg-common/artwork/artwork?id=' + id }) }
 
 /* ===== 其它交互 ===== */
 const groupedSizes = computed(() => {

@@ -222,7 +222,7 @@ const { setupMpShare, shareBtnVisible, shareClick } = useCrossShare(() => ({
   title: `BJD妆师 · ${detail.value.title || '精选'}`,
   summary: '看看这个作品，超好看～',
   imageUrl: detail.value.images?.[0],
-  path: `/pages/artist_info/bjd_faceup_artist?brand_id=${brandId.value}`,
+  path: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${brandId.value}`,
 }))
 setupMpShare()
 
@@ -536,7 +536,7 @@ function goRole(type) {
   const urlMap = {
     shop: `/pages/brand/brand?brand_id=${bid}`,
     hair: `/pages/artist_info/custom_wig_artist?brand_id=${bid}`,
-    artist: `/pages/artist_info/bjd_faceup_artist?brand_id=${bid}`
+    artist: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${bid}`
   }
   const url = urlMap[type]
   if (!url) return
@@ -585,7 +585,7 @@ onShow(async () => {
 
 const navigateToFaceup = (id) => {
   uni.navigateTo({
-    url: `/pages/artwork/artwork?id=${id}`
+    url: `/pkg-common/artwork/artwork?id=${id}`
   })
 }
 

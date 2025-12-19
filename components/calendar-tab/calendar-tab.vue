@@ -543,7 +543,7 @@ const navigateToArtistDetail = (artist)=> {
   
   if (activeTab.value==='makeup') {
 	  uni.navigateTo({
-	    url: "/pages/artist_info/bjd_faceup_artist?brand_id=" + artist.brand_id
+	    url: "/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=" + artist.brand_id
 	  });
   } else {
 	    uni.navigateTo({ url: '/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=' + brandId })
@@ -643,8 +643,10 @@ async function goStickyTarget () {
   if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
 
   // 约妆 & 约毛都跳作者详情
-  if (kind === 'makeup' || kind === 'hair') {
-    uni.navigateTo({ url: `/pages/artist_info/artist_info?brand_id=${id}` })
+  if (kind === 'makeup') {
+    uni.navigateTo({ url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${id}` })
+  } else if (kind === 'hair') {
+	  uni.navigateTo({ url: `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${id}` })
   } else {
     uni.navigateTo({ url: `/pages/brand/brand?brand_id=${id}` })
   }

@@ -877,7 +877,7 @@ function onPremiumSwitchChange(e) {
 }
 
 function goArtistHome() {
-  const url = `/pages/artist_info/bjd_faceup_artist?brand_id=${plan.brand_id}`
+  const url = `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${plan.brand_id}`
   // #ifdef H5
   window.location.hash = url
   // #endif
