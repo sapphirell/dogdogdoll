@@ -42,9 +42,16 @@
       <!-- 接单场所：switch -->
       <view class="form-item">
         <text class="label">接单场所</text>
-        <view class="inline-control">
-          <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
-          <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
+        <view class="inline-control inline-control--between">
+          <view class="inline-left">
+            <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
+            <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
+          </view>
+
+          <!-- ✅ role < 2 且 本平台 时，右侧灰字提示 -->
+          <text class="inline-warn font-alimamashuhei" v-if="showPlatformRealnameHint">
+            需要先完成实名认证或受到邀请
+          </text>
         </view>
         <view class="tip" v-if="isEditMode && !canEditServiceScene">
           已开始的本平台计划不能切换为其它平台。
@@ -489,91 +496,148 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { websiteUrl } from '@/common/config.js'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
+import { websiteUrl, asyncGetUserInfo } from '@/common/config.js'
+
+const userInfo = ref({})
+const brandId = ref(0)
+const identityLoaded = ref(false)
+
 
 /* ====== 数据源 ====== */
 const artistTypes = [
-  {
-    value: 1,
-    text: '妆师'
-  },
-  {
-    value: 2,
-    text: '毛娘'
-  }
+  { value: 1, text: '妆师' },
+  { value: 2, text: '毛娘' }
 ]
 
 // 默认接单方式（接口失败时兜底）
 const defaultOrderTypes = [
-  {
-    value: 1,
-    text: '长期接单',
-    keyword: 'StatusLongTerm'
-  },
-  {
-    value: 2,
-    text: '限时手速投递-手速排单',
-    keyword: 'StatusSpeedDelivery'
-  },
-  {
-    value: 5,
-    text: '限时手速投递-自由排单',
-    keyword: 'StatusSpeedDeliveryFree'
-  },
-  {
-    value: 3,
-    text: '限时抽选投递',
-    keyword: 'StatusLotteryDelivery'
-  },
-  {
-    value: 4,
-    text: '限时黑箱卡投递',
-    keyword: 'StatusBlackCard'
-  },
-  {
-    value: 9,
-    text: '关闭投递',
-    keyword: 'StatusClosed'
-  }
+  { value: 1, text: '长期接单', keyword: 'StatusLongTerm' },
+  { value: 2, text: '限时手速投递-手速排单', keyword: 'StatusSpeedDelivery' },
+  { value: 5, text: '限时手速投递-自由排单', keyword: 'StatusSpeedDeliveryFree' },
+  { value: 3, text: '限时抽选投递', keyword: 'StatusLotteryDelivery' },
+  { value: 4, text: '限时黑箱卡投递', keyword: 'StatusBlackCard' },
+  { value: 9, text: '关闭投递', keyword: 'StatusClosed' }
 ]
 
 // 动态接单方式选项（从接口获取）
 const orderTypes = ref([...defaultOrderTypes])
 
-const challengeTypes = [
-  {
-    value: 1,
-    text: '四则运算'
-  }
-]
+const challengeTypes = [{ value: 1, text: '四则运算' }]
 
 const finishingMethods = [
-  {
-    value: 'oil',
-    text: '油性消光'
-  },
-  {
-    value: 'varnish',
-    text: '罩光剂'
-  },
-  {
-    value: 'water',
-    text: '水性消光'
-  }
+  { value: 'oil', text: '油性消光' },
+  { value: 'varnish', text: '罩光剂' },
+  { value: 'water', text: '水性消光' }
 ]
 const shippingOptions = [
-  {
-    value: 'unified',
-    text: '统一寄送'
-  },
-  {
-    value: 'separate',
-    text: '分别寄送'
-  }
+  { value: 'unified', text: '统一寄送' },
+  { value: 'separate', text: '分别寄送' }
 ]
 const allSizes = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分']
+
+/* ====== brand-artist/info：role 判定（新增） ====== */
+// role: null=未拉取；number=接口返回
+const brandArtistRole = ref(null)
+const brandArtistInfo = ref(null)
+
+const showPlatformRealnameHint = computed(() => {
+  const r = brandArtistRole.value
+  return form.value.service_scene === 2 && typeof r === 'number' && r < 2
+})
+
+function extractBrandIdFromQuery(q) {
+  const v = q?.brand_id ?? q?.brandId ?? q?.brandID ?? q?.bid
+  if (v === undefined || v === null || v === '') return 0
+  const n = Number(v)
+  return Number.isNaN(n) ? 0 : n
+}
+
+async function ensureIdentityLoaded() {
+  if (identityLoaded.value) return
+
+  try {
+    const u = await asyncGetUserInfo()
+    userInfo.value = u || {}
+    brandId.value = Number(userInfo.value.brand_id || 0)
+
+    // 没有 brand_id：通常代表未入驻作者
+    if (!brandId.value) return
+  } catch (e) {
+    console.error('加载用户/身份失败:', e)
+  } finally {
+    identityLoaded.value = true
+  }
+}
+
+function parseQueryFromPath(path) {
+  if (!path) return {}
+  const idx = path.indexOf('?')
+  if (idx < 0) return {}
+  const qs = path.slice(idx + 1)
+  const obj = {}
+  qs.split('&').forEach(pair => {
+    if (!pair) return
+    const pidx = pair.indexOf('=')
+    const k = pidx >= 0 ? pair.slice(0, pidx) : pair
+    const v = pidx >= 0 ? pair.slice(pidx + 1) : ''
+    if (!k) return
+    obj[decodeURIComponent(k)] = decodeURIComponent(v || '')
+  })
+  return obj
+}
+
+// ✅ 避免依赖 getCurrentPages().options：优先 fullPath / H5 hash 解析 query
+function getCurrentQuerySafe() {
+  try {
+    const pages = getCurrentPages()
+    const cur = pages && pages.length ? pages[pages.length - 1] : null
+    const fullPath = cur?.$page?.fullPath
+    if (fullPath) return parseQueryFromPath(fullPath)
+  } catch (e) {}
+
+  // H5 fallback
+  try {
+    if (typeof window !== 'undefined' && window.location && window.location.hash) {
+      const hash = window.location.hash.replace(/^#/, '')
+      return parseQueryFromPath(hash)
+    }
+  } catch (e) {}
+
+  return {}
+}
+
+async function fetchBrandArtistInfo(bid) {
+  const id = Number(bid || 0)
+  if (!id) return
+
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/brand-artist/info?brand_id=${id}`,
+      method: 'GET',
+      header: {
+        Authorization: getAuthorization()
+      }
+    })
+    if (String(res.data?.status).toLowerCase() === 'success') {
+      const data = res.data?.data || null
+      brandArtistInfo.value = data
+      const roleRaw = data?.role
+      const roleNum = typeof roleRaw === 'number' ? roleRaw : Number(roleRaw)
+      brandArtistRole.value = Number.isNaN(roleNum) ? 0 : roleNum
+    } else {
+      // 不强行给默认值，避免误报；仅记录日志
+      console.error('获取 brand-artist/info 失败：', res.data)
+      brandArtistInfo.value = null
+      brandArtistRole.value = null
+    }
+  } catch (err) {
+    console.error('获取 brand-artist/info 异常：', err)
+    brandArtistInfo.value = null
+    brandArtistRole.value = null
+  }
+}
 
 /* ====== 表单 ====== */
 const isEditMode = ref(false)
@@ -654,9 +718,7 @@ const currentOrderTypeText = computed(() => {
 })
 
 // 是否为任一“手速模式”（手速排单 + 自由排单）
-const isSpeedOrder = computed(
-  () => form.value.order_type === 2 || form.value.order_type === 5
-)
+const isSpeedOrder = computed(() => form.value.order_type === 2 || form.value.order_type === 5)
 
 // 手速模式文案（根据 keyword 区分两种）
 const speedOrderDesc = computed(() => {
@@ -675,16 +737,10 @@ const challengeTypeIndex = computed(() =>
   Math.max(0, challengeTypes.findIndex(x => x.value === form.value.challenge_type))
 )
 const finishingMethodIndex = computed(() =>
-  Math.max(
-    0,
-    finishingMethods.findIndex(x => x.value === form.value.order_config.extra.finishing_method)
-  )
+  Math.max(0, finishingMethods.findIndex(x => x.value === form.value.order_config.extra.finishing_method))
 )
 const shippingIndex = computed(() =>
-  Math.max(
-    0,
-    shippingOptions.findIndex(x => x.value === form.value.order_config.extra.shipping.mode)
-  )
+  Math.max(0, shippingOptions.findIndex(x => x.value === form.value.order_config.extra.shipping.mode))
 )
 
 /* ====== 时间弹层 ====== */
@@ -738,26 +794,11 @@ const originalInventory = computed(() => originalPlan.value.inventory || 0)
 const originalPremiumInventory = computed(() => originalPlan.value.premium_inventory || 0)
 
 /* ====== 常用配置 ====== */
-const tierOptions = ref([
-  {
-    label: '添加空白档位',
-    value: 'blank'
-  }
-])
-const addonOptions = ref([
-  {
-    label: '添加空白加购',
-    value: 'blank'
-  }
-])
+const tierOptions = ref([{ label: '添加空白档位', value: 'blank' }])
+const addonOptions = ref([{ label: '添加空白加购', value: 'blank' }])
 
 /* 节点模板列表：第一项是“添加空白节点” */
-const stepOptions = ref([
-  {
-    label: '添加空白节点',
-    value: 'blank'
-  }
-])
+const stepOptions = ref([{ label: '添加空白节点', value: 'blank' }])
 
 /* ====== 上传状态 ====== */
 const uploading = ref(false)
@@ -916,6 +957,11 @@ function onServiceSceneSwitch(e) {
   }
 
   form.value.service_scene = targetScene
+
+  // ✅ 切到“本平台”时，确保已拉取 role（如 brand_id 有值且还未拉取）
+  if (targetScene === 2 && brandId.value && brandArtistRole.value === null) {
+    fetchBrandArtistInfo(brandId.value)
+  }
 }
 
 function onFinishingChange(e) {
@@ -954,10 +1000,7 @@ async function fetchCommonConfigs(artistType) {
     })
     if (String(tRes.data?.status).toLowerCase() === 'success') {
       tierOptions.value = [
-        {
-          label: '添加空白档位',
-          value: 'blank'
-        },
+        { label: '添加空白档位', value: 'blank' },
         ...(tRes.data?.data || []).map(it => ({
           label: it.title,
           value: it
@@ -973,10 +1016,7 @@ async function fetchCommonConfigs(artistType) {
     })
     if (String(aRes.data?.status).toLowerCase() === 'success') {
       addonOptions.value = [
-        {
-          label: '添加空白加购',
-          value: 'blank'
-        },
+        { label: '添加空白加购', value: 'blank' },
         ...(aRes.data?.data || []).map(it => ({
           label: it.title,
           value: it
@@ -1001,10 +1041,7 @@ async function fetchStepOptions(artistType) {
     if (String(res.data?.status).toLowerCase() === 'success' && Array.isArray(res.data?.data)) {
       const list = res.data.data || []
       stepOptions.value = [
-        {
-          label: '添加空白节点',
-          value: 'blank'
-        },
+        { label: '添加空白节点', value: 'blank' },
         ...list.map(item => ({
           label: item.name,
           value: {
@@ -1017,21 +1054,11 @@ async function fetchStepOptions(artistType) {
         }))
       ]
     } else {
-      stepOptions.value = [
-        {
-          label: '添加空白节点',
-          value: 'blank'
-        }
-      ]
+      stepOptions.value = [{ label: '添加空白节点', value: 'blank' }]
     }
   } catch (err) {
     console.error('获取节点模板失败：', err)
-    stepOptions.value = [
-      {
-        label: '添加空白节点',
-        value: 'blank'
-      }
-    ]
+    stepOptions.value = [{ label: '添加空白节点', value: 'blank' }]
   }
 }
 
@@ -1041,11 +1068,7 @@ function onTierPickerChange(e) {
   const opt = tierOptions.value[idx]
   if (!opt) return
   if (opt.value === 'blank') {
-    form.value.order_config.tiers.push({
-      title: '',
-      price: 0,
-      description: ''
-    })
+    form.value.order_config.tiers.push({ title: '', price: 0, description: '' })
   } else {
     form.value.order_config.tiers.push({
       title: opt.value.title || '',
@@ -1069,11 +1092,7 @@ function onAddonPickerChange(e) {
   const opt = addonOptions.value[idx]
   if (!opt) return
   if (opt.value === 'blank') {
-    form.value.order_config.addons.push({
-      title: '',
-      price: 0,
-      description: ''
-    })
+    form.value.order_config.addons.push({ title: '', price: 0, description: '' })
   } else {
     form.value.order_config.addons.push({
       title: opt.value.title || '',
@@ -1101,16 +1120,10 @@ function handleSizeTap(size) {
   const arr = form.value.order_config.extra.size_surcharges
   const exists = arr.find(x => x.size === size)
   if (exists) {
-    uni.showToast({
-      title: '已选择该尺寸',
-      icon: 'none'
-    })
+    uni.showToast({ title: '已选择该尺寸', icon: 'none' })
     return
   }
-  arr.push({
-    size,
-    price: 0
-  })
+  arr.push({ size, price: 0 })
 }
 
 function onSizePriceBlur(idx, val) {
@@ -1159,10 +1172,7 @@ function onStepPickerChange(e) {
   if (!opt) return
 
   if (opt.value === 'blank') {
-    form.value.step_config_json.push({
-      name: '',
-      breach_compensation_rate: 0
-    })
+    form.value.step_config_json.push({ name: '', breach_compensation_rate: 0 })
   } else {
     form.value.step_config_json.push({
       name: String(opt.value.name || ''),
@@ -1204,25 +1214,16 @@ async function chooseAndUpload() {
         if (ret && ret.imageUrl) uploadedUrls.push(ret.imageUrl)
       } catch (err) {
         console.error(`第 ${i + 1} 张上传失败：`, err)
-        uni.showToast({
-          title: `第 ${i + 1} 张上传失败`,
-          icon: 'none'
-        })
+        uni.showToast({ title: `第 ${i + 1} 张上传失败`, icon: 'none' })
       }
     }
     form.value.images = [...form.value.images, ...uploadedUrls]
     if (uploadedUrls.length > 0) {
-      uni.showToast({
-        title: `成功上传 ${uploadedUrls.length} 张`,
-        icon: 'success'
-      })
+      uni.showToast({ title: `成功上传 ${uploadedUrls.length} 张`, icon: 'success' })
     }
   } catch (e) {
     console.error('选择/上传失败：', e)
-    uni.showToast({
-      title: '图片上传失败',
-      icon: 'none'
-    })
+    uni.showToast({ title: '图片上传失败', icon: 'none' })
   } finally {
     uploading.value = false
     uploadedCount.value = 0
@@ -1236,10 +1237,7 @@ function removeImage(i) {
 }
 
 function preview(list, current) {
-  uni.previewImage({
-    urls: list,
-    current
-  })
+  uni.previewImage({ urls: list, current })
 }
 
 /* ====== 详情加载 ====== */
@@ -1282,6 +1280,16 @@ async function loadDetail(id) {
     originalPlan.value.inventory = p.inventory || 0
     originalPlan.value.premium_inventory = p.premium_inventory || 0
 
+    // ✅ 若详情里带 brand_id，则同步并拉取 role
+    const bid = Number(p.brand_id || p.brandId || 0)
+    if (bid && bid !== brandId.value) {
+      brandId.value = bid
+      brandArtistRole.value = null
+      fetchBrandArtistInfo(bid)
+    } else if (bid && brandArtistRole.value === null) {
+      fetchBrandArtistInfo(bid)
+    }
+
     // 钞倍率：优先读取 premium_rate，兼容旧字段 premium_queue_multiplier
     let rate = 0
     if (typeof p.premium_rate === 'number') {
@@ -1319,9 +1327,7 @@ async function loadDetail(id) {
         .map(s => s.trim())
         .filter(Boolean)
     } else if (Array.isArray(p.images)) {
-      form.value.images = p.images
-        .map(x => (typeof x === 'string' ? x : x.url))
-        .filter(Boolean)
+      form.value.images = p.images.map(x => (typeof x === 'string' ? x : x.url)).filter(Boolean)
     } else {
       form.value.images = []
     }
@@ -1338,26 +1344,14 @@ async function loadDetail(id) {
           price: toFixed2(t.price || 0),
           description: t.description || ''
         }))
-      : [
-          {
-            title: '',
-            price: 0,
-            description: ''
-          }
-        ]
+      : [{ title: '', price: 0, description: '' }]
     form.value.order_config.addons = Array.isArray(cfg.addons)
       ? cfg.addons.map(a => ({
           title: a.title || '',
           price: toFixed2(a.price || 0),
           description: a.description || ''
         }))
-      : [
-          {
-            title: '',
-            price: 0,
-            description: ''
-          }
-        ]
+      : [{ title: '', price: 0, description: '' }]
     form.value.order_config.extra = Object.assign(
       {
         per_head_cycle_days: 0,
@@ -1398,10 +1392,7 @@ async function loadDetail(id) {
               : Number(x.breach_compensation_rate || 0)
         }
       }
-      return {
-        name: String(x || ''),
-        breach_compensation_rate: 0
-      }
+      return { name: String(x || ''), breach_compensation_rate: 0 }
     })
 
     originalPlan.value.service_scene = form.value.service_scene
@@ -1412,51 +1403,33 @@ async function loadDetail(id) {
     fetchStepOptions(form.value.artist_type)
   } catch (err) {
     console.error('加载失败：', err)
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none'
-    })
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
 /* ====== 提交 ====== */
 async function submitPlan() {
   if (!form.value.artist_name) {
-    return uni.showToast({
-      title: '请填写计划名称',
-      icon: 'none'
-    })
+    return uni.showToast({ title: '请填写计划名称', icon: 'none' })
   }
   const openUnix = toUnix(form.value.open_date, form.value.open_time)
   const closeUnix = toUnix(form.value.close_date, form.value.close_time)
   if (!openUnix || !closeUnix) {
-    return uni.showToast({
-      title: '请选择开始与结束时间',
-      icon: 'none'
-    })
+    return uni.showToast({ title: '请选择开始与结束时间', icon: 'none' })
   }
   if (closeUnix <= openUnix) {
-    return uni.showToast({
-      title: '结束时间必须晚于开始时间',
-      icon: 'none'
-    })
+    return uni.showToast({ title: '结束时间必须晚于开始时间', icon: 'none' })
   }
 
   if (isEditMode.value && originalPlan.value.service_scene === 2 && originalPlan.value.open_time) {
     const started = nowUnix() >= originalPlan.value.open_time
     if (started) {
       if (openUnix > originalPlan.value.open_time) {
-        uni.showToast({
-          title: '已开始的本平台计划不能将开始时间改晚',
-          icon: 'none'
-        })
+        uni.showToast({ title: '已开始的本平台计划不能将开始时间改晚', icon: 'none' })
         return
       }
       if (originalPlan.value.close_time && closeUnix < originalPlan.value.close_time) {
-        uni.showToast({
-          title: '已开始的本平台计划不能缩短结束时间',
-          icon: 'none'
-        })
+        uni.showToast({ title: '已开始的本平台计划不能缩短结束时间', icon: 'none' })
         return
       }
     }
@@ -1479,10 +1452,7 @@ async function submitPlan() {
     premiumQueueEnabled.value &&
     !Number(form.value.premium_queue_multiplier || 0)
   ) {
-    uni.showToast({
-      title: '请填写钞倍率',
-      icon: 'none'
-    })
+    uni.showToast({ title: '请填写钞倍率', icon: 'none' })
     return
   }
 
@@ -1492,8 +1462,7 @@ async function submitPlan() {
     artist_type: form.value.artist_type,
     order_type: form.value.order_type,
     max_participants: form.value.order_type === 1 ? 0 : form.value.max_participants,
-    max_submissions_per_user:
-      form.value.order_type === 1 ? 1 : form.value.max_submissions_per_user,
+    max_submissions_per_user: form.value.order_type === 1 ? 1 : form.value.max_submissions_per_user,
     open_time: openUnix,
     close_time: closeUnix,
     service_scene: form.value.service_scene,
@@ -1512,9 +1481,7 @@ async function submitPlan() {
     premium_queue_limit: Number(form.value.premium_queue_limit || 0),
     premium_inventory: isEditMode.value ? Number(form.value.premium_inventory || 0) : 0,
 
-    premium_rate: premiumQueueEnabled.value
-      ? toFixed1(form.value.premium_queue_multiplier || 2)
-      : 0,
+    premium_rate: premiumQueueEnabled.value ? toFixed1(form.value.premium_queue_multiplier || 2) : 0,
 
     step_config: stepConfigToSend,
 
@@ -1541,9 +1508,7 @@ async function submitPlan() {
               : '',
           separate_days_before_start:
             form.value.order_config.extra.shipping.mode === 'separate'
-              ? Number(
-                  form.value.order_config.extra.shipping.separate_days_before_start || 0
-                )
+              ? Number(form.value.order_config.extra.shipping.separate_days_before_start || 0)
               : 0
         },
         size_surcharges: (form.value.order_config.extra.size_surcharges || []).map(it => ({
@@ -1560,10 +1525,7 @@ async function submitPlan() {
   }
 
   if (payload.inventory < 0 || payload.premium_inventory < 0) {
-    uni.showToast({
-      title: '库存增量不能为负数',
-      icon: 'none'
-    })
+    uni.showToast({ title: '库存增量不能为负数', icon: 'none' })
     return
   }
 
@@ -1581,9 +1543,7 @@ async function submitPlan() {
   try {
     const url =
       websiteUrl.value +
-      (isEditMode.value
-        ? '/brand-manager/order-plan/update'
-        : '/brand-manager/order-plan/add')
+      (isEditMode.value ? '/brand-manager/order-plan/update' : '/brand-manager/order-plan/add')
     const res = await uni.request({
       url,
       method: 'POST',
@@ -1594,24 +1554,15 @@ async function submitPlan() {
       }
     })
     if (String(res.data?.status).toLowerCase() === 'success') {
-      uni.showToast({
-        title: isEditMode.value ? '更新成功' : '添加成功',
-        icon: 'success'
-      })
+      uni.showToast({ title: isEditMode.value ? '更新成功' : '添加成功', icon: 'success' })
       setTimeout(() => uni.navigateBack(), 800)
     } else {
       const msg = res.data?.message || res.data?.msg || res.data?.error || '提交失败'
-      uni.showToast({
-        title: msg,
-        icon: 'none'
-      })
+      uni.showToast({ title: msg, icon: 'none' })
     }
   } catch (err) {
     console.error('提交失败：', err)
-    uni.showToast({
-      title: '请求失败',
-      icon: 'none'
-    })
+    uni.showToast({ title: '请求失败', icon: 'none' })
   } finally {
     submitting.value = false
   }
@@ -1621,6 +1572,14 @@ async function submitPlan() {
 onLoad(query => {
   // 拉取接单方式（接口版）
   fetchOrderTypes()
+
+  // ✅ 同步 brand_id -> 拉取 role
+  const bid = extractBrandIdFromQuery(query || {})
+  if (bid) {
+    brandId.value = bid
+    brandArtistRole.value = null
+    fetchBrandArtistInfo(bid)
+  }
 
   if (query && query.id) {
     isEditMode.value = true
@@ -1634,10 +1593,17 @@ onLoad(query => {
   }
 })
 
+// ✅ 页面每次进入/返回时，尽量用 fullPath/hash 解析出最新 query，并刷新 brand-artist/info
+onShow(() => {
+   ensureIdentityLoaded()
+  if (!brandId.value) return
+
+  // 你原本要请求的接口
+   fetchBrandArtistInfo(brandId.value) 
+})
+
 onMounted(() => {
-  uni.setNavigationBarTitle({
-    title: '发布BJD接妆计划'
-  })
+  uni.setNavigationBarTitle({ title: '发布BJD接妆计划' })
 })
 </script>
 
@@ -1674,9 +1640,30 @@ onMounted(() => {
   gap: 12rpx;
 }
 
+.inline-control--between {
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.inline-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
 .inline-tip {
   color: #909399;
   font-size: 24rpx;
+}
+
+/* ✅ 右侧灰字提示 */
+.inline-warn {
+  flex: 1;
+  text-align: right;
+  color: #696969;
+  font-size: 22rpx;
+  line-height: 1.4;
 }
 
 /* 通用 */

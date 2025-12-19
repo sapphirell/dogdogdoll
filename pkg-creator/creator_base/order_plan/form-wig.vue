@@ -42,9 +42,16 @@
       <!-- 接单场所：switch -->
       <view class="form-item">
         <text class="label">接单场所</text>
-        <view class="inline-control">
-          <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
-          <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
+        <view class="inline-control inline-control--between">
+          <view class="inline-left">
+            <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
+            <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
+          </view>
+
+          <!-- ✅ role < 2 且 本平台 时，右侧灰字提示 -->
+          <text class="inline-warn font-alimamashuhei" v-if="showPlatformRealnameHint">
+            需要先完成实名认证或受到邀请
+          </text>
         </view>
         <view class="tip" v-if="isEditMode && !canEditServiceScene">
           已开始的本平台计划不能切换为其它平台。
@@ -469,8 +476,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { websiteUrl } from '@/common/config.js'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { websiteUrl, asyncGetUserInfo } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 
 /* ====== 数据源 ====== */
@@ -547,6 +554,111 @@ const shippingOptions = [
 
 const allSizes = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分']
 
+/* ====== brand-artist/info：role 判定（同步妆师表单） ====== */
+const userInfo = ref({})
+const brandId = ref(0)
+const identityLoaded = ref(false)
+
+// role: null=未拉取；number=接口返回
+const brandArtistRole = ref(null)
+const brandArtistInfo = ref(null)
+
+function extractBrandIdFromQuery(q) {
+  const v = q?.brand_id ?? q?.brandId ?? q?.brandID ?? q?.bid
+  if (v === undefined || v === null || v === '') return 0
+  const n = Number(v)
+  return Number.isNaN(n) ? 0 : n
+}
+
+async function ensureIdentityLoaded() {
+  if (identityLoaded.value) return
+
+  try {
+    const u = await asyncGetUserInfo()
+    userInfo.value = u || {}
+
+    // 兜底：仅当 URL 没带 brand_id 时，才用用户信息中的 brand_id
+    if (!brandId.value) {
+      brandId.value = Number(userInfo.value.brand_id || 0)
+    }
+
+    // 没有 brand_id：通常代表未入驻作者
+    if (!brandId.value) return
+  } catch (e) {
+    console.error('加载用户/身份失败:', e)
+  } finally {
+    identityLoaded.value = true
+  }
+}
+
+function parseQueryFromPath(path) {
+  if (!path) return {}
+  const idx = path.indexOf('?')
+  if (idx < 0) return {}
+  const qs = path.slice(idx + 1)
+  const obj = {}
+  qs.split('&').forEach(pair => {
+    if (!pair) return
+    const pidx = pair.indexOf('=')
+    const k = pidx >= 0 ? pair.slice(0, pidx) : pair
+    const v = pidx >= 0 ? pair.slice(pidx + 1) : ''
+    if (!k) return
+    obj[decodeURIComponent(k)] = decodeURIComponent(v || '')
+  })
+  return obj
+}
+
+// ✅ 避免依赖 getCurrentPages().options：优先 fullPath / H5 hash 解析 query
+function getCurrentQuerySafe() {
+  try {
+    const pages = getCurrentPages()
+    const cur = pages && pages.length ? pages[pages.length - 1] : null
+    const fullPath = cur?.$page?.fullPath
+    if (fullPath) return parseQueryFromPath(fullPath)
+  } catch (e) {}
+
+  // H5 fallback
+  try {
+    if (typeof window !== 'undefined' && window.location && window.location.hash) {
+      const hash = window.location.hash.replace(/^#/, '')
+      return parseQueryFromPath(hash)
+    }
+  } catch (e) {}
+
+  return {}
+}
+
+async function fetchBrandArtistInfo(bid) {
+  const id = Number(bid || 0)
+  if (!id) return
+
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/brand-artist/info?brand_id=${id}`,
+      method: 'GET',
+      header: {
+        Authorization: getAuthorization()
+      }
+    })
+    if (String(res.data?.status).toLowerCase() === 'success') {
+      const data = res.data?.data || null
+      brandArtistInfo.value = data
+      const roleRaw = data?.role
+      const roleNum = typeof roleRaw === 'number' ? roleRaw : Number(roleRaw)
+      brandArtistRole.value = Number.isNaN(roleNum) ? 0 : roleNum
+    } else {
+      // 不强行给默认值，避免误报；仅记录日志
+      console.error('获取 brand-artist/info 失败：', res.data)
+      brandArtistInfo.value = null
+      brandArtistRole.value = null
+    }
+  } catch (err) {
+    console.error('获取 brand-artist/info 异常：', err)
+    brandArtistInfo.value = null
+    brandArtistRole.value = null
+  }
+}
+
 /* ====== 表单 ====== */
 const isEditMode = ref(false)
 const currentId = ref(null)
@@ -613,6 +725,11 @@ const originalPlan = ref({
 })
 
 /* ====== 选择器索引 / 计算属性 ====== */
+
+const showPlatformRealnameHint = computed(() => {
+  const r = brandArtistRole.value
+  return form.value.service_scene === 2 && typeof r === 'number' && r < 2
+})
 
 const orderTypeIndex = computed(() => {
   const list = orderTypes.value || []
@@ -1622,6 +1739,14 @@ onLoad(query => {
   // 拉取接单方式（接口版）
   fetchOrderTypes()
 
+  // ✅ 同步 brand_id -> 拉取 role
+  const bid = extractBrandIdFromQuery(query || {})
+  if (bid) {
+    brandId.value = bid
+    brandArtistRole.value = null
+    fetchBrandArtistInfo(bid)
+  }
+
   if (query && query.id) {
     isEditMode.value = true
     currentId.value = Number(query.id)
@@ -1633,6 +1758,23 @@ onLoad(query => {
     fetchCommonConfigs(form.value.artist_type)
     fetchStepOptions(form.value.artist_type)
   }
+})
+
+// ✅ 页面每次进入/返回时：尽量解析最新 query，并刷新 brand-artist/info
+onShow(async () => {
+  // 先从当前 URL 解析 brand_id，避免某些端 options 滞后
+  const q = getCurrentQuerySafe()
+  const bid = extractBrandIdFromQuery(q)
+  if (bid) {
+    brandId.value = bid
+  }
+
+  // 再兜底加载用户身份（无 URL 参数时）
+  await ensureIdentityLoaded()
+  if (!brandId.value) return
+
+  // 你原本要请求的接口：brand-artist/info
+  fetchBrandArtistInfo(brandId.value)
 })
 
 onMounted(() => {
@@ -1673,6 +1815,23 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12rpx;
+}
+
+.inline-control--between {
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.inline-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.inline-warn {
+  color: #696969;
+  font-size: 24rpx;
 }
 
 .inline-tip {

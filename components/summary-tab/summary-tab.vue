@@ -22,10 +22,10 @@
       </view>
     </view>
 
-    <!-- 今日上新（新增，显示在热榜上方） -->
+    <!-- 今日上新 -->
     <view class="section s-today" :class="[{ 'is-inview': secInView.today }, { 'is-active': activeSection==='today' }]">
       <view class="section-hd">
-        <text class="title">今日</text>
+        <text class="title">今日贩售</text>
         <view class="sub sub-row">
           <text v-if="todayLoading" class="loading-mini">加载中…</text>
           <text class="link-calendar" @tap="goCalendar">查看全部</text>
@@ -34,7 +34,7 @@
 
       <view v-if="todayList.length === 0 && !todayLoading" class="empty">
         <image src="/static/empty-box.png" mode="aspectFit"></image>
-        <text>今天暂无开售</text>
+        <text>今天暂无商品开售</text>
       </view>
 
       <scroll-view v-else scroll-x class="theme-scroll" :show-scrollbar="false">
@@ -53,37 +53,103 @@
         </view>
       </scroll-view>
     </view>
-	
-	<!-- 等待贩售（新增，显示在“今日”下方） -->
-	<view class="section s-waiting" :class="[{ 'is-inview': secInView.waiting }, { 'is-active': activeSection==='waiting' }]">
-	  <view class="section-hd">
-	    <text class="title">蹲开售</text>
-	    <view class="sub sub-row">
-	      <text v-if="waitingLoading" class="loading-mini">加载中…</text>
-	    </view>
-	  </view>
-	
-	  <view v-if="waitingList.length === 0 && !waitingLoading" class="empty">
-	    <image src="/static/empty-box.png" mode="aspectFit"></image>
-	    <text>暂无等待贩售的商品</text>
-	  </view>
-	
-	  <scroll-view v-else scroll-x class="theme-scroll" :show-scrollbar="false">
-	    <view
-	      class="goods-mini"
-	      v-for="it in waitingList"
-	      :key="'wait-' + it.goodsId"
-	      @tap="goGoods(it.goodsId)"
-	    >
-	      <image :src="it.cover" mode="aspectFill"></image>
-	      <text class="type-badge" v-if="it.type">{{ it.type }}</text>
-	      <view class="gname ellipsis-2">{{ it.goods_name }}</view>
-	      <scroll-view class="meta" scroll-y="true">
-	        <text class="size" v-if="it.sizeText">{{ it.sizeText }}</text>
-	      </scroll-view>
-	    </view>
-	  </scroll-view>
-	</view>
+
+    <!-- 【新增】今日开妆约毛 (显示在今日上新下方) -->
+    <view class="section s-artist-today" :class="[{ 'is-inview': secInView.artistToday }, { 'is-active': activeSection==='artistToday' }]">
+      <view class="section-hd">
+        <!-- <text class="title">今日开妆约毛</text> -->
+<!--        <view class="sub sub-row">
+          <text v-if="artistPlanLoading" class="loading-mini">加载中…</text>
+        </view> -->
+      </view>
+
+      <view v-if="faceupList.length === 0 && hairList.length === 0 && !artistPlanLoading" class="empty">
+        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <text>24小时内暂无妆/毛掉落</text>
+      </view>
+
+      <view v-else class="artist-plan-container">
+        <!-- 妆面列表 -->
+        <view v-if="faceupList.length > 0" class="sub-section">
+          <view class="sub-label-row">
+            <view class="dot-deco makeup"></view>
+            <text class="sub-label">开妆</text>
+          </view>
+          <scroll-view scroll-x class="theme-scroll" :show-scrollbar="false">
+            <view
+              class="goods-mini artist-mini"
+              v-for="plan in faceupList"
+              :key="'faceup-' + plan.id"
+              @tap="goPlan(plan.id)"
+            >
+              <!-- 优先取作品图，没有则取Logo -->
+              <image :src="getPlanCover(plan)" mode="aspectFill"></image>
+              <text class="time-badge">{{ fmtHM(plan.open_time) }} 开投</text>
+              <view class="gname ellipsis-1">{{ plan.artist_name || plan.brand_name }}</view>
+              <view class="artist-meta ellipsis-1">
+                 <text v-if="plan.tiers && plan.tiers.length">¥{{plan.tiers[0].price}}起</text>
+                 <text v-else>无报价</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+
+        <!-- 约毛列表 -->
+        <view v-if="hairList.length > 0" class="sub-section" :style="{ marginTop: faceupList.length > 0 ? '24rpx' : '0' }">
+          <view class="sub-label-row">
+            <view class="dot-deco wig"></view>
+            <text class="sub-label">约毛</text>
+          </view>
+          <scroll-view scroll-x class="theme-scroll" :show-scrollbar="false">
+            <view
+              class="goods-mini artist-mini"
+              v-for="plan in hairList"
+              :key="'hair-' + plan.id"
+              @tap="goPlan(plan.id)"
+            >
+              <image :src="getPlanCover(plan)" mode="aspectFill"></image>
+              <text class="time-badge wig-bg">{{ fmtHM(plan.open_time) }} 开投</text>
+              <view class="gname ellipsis-1">{{ plan.artist_name || plan.brand_name }}</view>
+              <view class="artist-meta ellipsis-1">
+                 <text v-if="plan.tiers && plan.tiers.length">¥{{plan.tiers[0].price}}起</text>
+                 <text v-else>无报价</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 等待贩售 -->
+    <view class="section s-waiting" :class="[{ 'is-inview': secInView.waiting }, { 'is-active': activeSection==='waiting' }]">
+      <view class="section-hd">
+        <text class="title">蹲开售</text>
+        <view class="sub sub-row">
+          <text v-if="waitingLoading" class="loading-mini">加载中…</text>
+        </view>
+      </view>
+    
+      <view v-if="waitingList.length === 0 && !waitingLoading" class="empty">
+        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <text>暂无等待贩售的商品</text>
+      </view>
+    
+      <scroll-view v-else scroll-x class="theme-scroll" :show-scrollbar="false">
+        <view
+          class="goods-mini"
+          v-for="it in waitingList"
+          :key="'wait-' + it.goodsId"
+          @tap="goGoods(it.goodsId)"
+        >
+          <image :src="it.cover" mode="aspectFill"></image>
+          <text class="type-badge" v-if="it.type">{{ it.type }}</text>
+          <view class="gname ellipsis-2">{{ it.goods_name }}</view>
+          <scroll-view class="meta" scroll-y="true">
+            <text class="size" v-if="it.sizeText">{{ it.sizeText }}</text>
+          </scroll-view>
+        </view>
+      </scroll-view>
+    </view>
 
     <!-- 热榜：今日 / 近7日（总榜）切换 -->
     <view class="section s-hot" :class="[{ 'is-inview': secInView.hot }, { 'is-active': activeSection==='hot' }]">
@@ -313,13 +379,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue' // FIX: 增加 nextTick
+import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import { websiteUrl, asyncGetUserInfo } from '@/common/config.js'
 
 /** ----------------- 状态 ----------------- */
 const todayList = ref([])     // 今日上新（新增）
 const todayLoading = ref(true)
+
+// 【新增】开妆约毛数据
+const faceupList = ref([])
+const hairList = ref([])
+const artistPlanLoading = ref(true)
 
 const hotList = ref([])       // 今日热榜
 const hot7List = ref([])      // 近7日热榜（总榜）
@@ -394,7 +465,6 @@ function destroyTlObserver () {
   tlObserver = null
 }
 
-// FIX: 新增——每次时间线数据变化后，重置显隐状态并重建观察器
 function resetTimelineRevealAndObserve () {
   stopStaggerReveal()
   visibleCount.value = 0
@@ -405,7 +475,6 @@ function resetTimelineRevealAndObserve () {
   })
 }
 
-// FIX: 新增——极限兜底：若短时间内仍未显现任何一条，强制全部可见，避免空白
 function forceRevealIfStuck () {
   setTimeout(() => {
     if (timeline.value.length > 0 && visibleCount.value === 0 && !staggerStarted.value) {
@@ -457,6 +526,7 @@ function fetchWaitingSale () {
 /** ----------------- Section In-View & Active（只允许一个旋转） ----------------- */
 const sectionMap = [
   { sel: '.s-today', key: 'today' },
+  { sel: '.s-artist-today', key: 'artistToday' }, // 新增
   { sel: '.s-waiting', key: 'waiting' },
   { sel: '.s-hot', key: 'hot' },
   { sel: '.s-themes', key: 'themes' },
@@ -465,7 +535,7 @@ const sectionMap = [
   { sel: '.s-timeline', key: 'timeline' }
 ]
 const secInView = ref({
-  today: false, waiting: false, hot: false, themes: false,
+  today: false, artistToday: false, waiting: false, hot: false, themes: false,
   ops: false, likes: false, timeline: false
 })
 const lastRatios = ref({})
@@ -543,7 +613,8 @@ async function refreshAll (isInit = false) {
   try {
     await Promise.all([
       fetchTodaySales(),    // 今日上新
-	  fetchWaitingSale(),  // 等待贩售
+      fetchArtistPlansNext24h(), // 【新增】今日开妆约毛
+      fetchWaitingSale(),   // 等待贩售
       fetchHotToday(),      // 今日热榜
       fetchThemes(),        // 主题合集
       fetchLikes(),         // 订阅品牌
@@ -604,6 +675,28 @@ function fetchTodaySales() {
     const list = res?.data?.data?.list || res?.data?.data || []
     todayList.value = normalizeGoodsList(list)
   }).finally(() => { todayLoading.value = false })
+}
+
+/** 【新增】拉取未来24小时开妆约毛 */
+function fetchArtistPlansNext24h() {
+  artistPlanLoading.value = true
+  return uni.request({
+    url: websiteUrl.value + '/order-plan/next-24h',
+    method: 'GET',
+    timeout: 5000
+  }).then(res => {
+    const d = res?.data?.data || {}
+    faceupList.value = d.faceup_list || []
+    hairList.value = d.hairstylist_list || []
+  }).finally(() => { artistPlanLoading.value = false })
+}
+
+// 辅助：获取Plan封面图
+function getPlanCover(plan) {
+  // 优先取图册第一张
+  if (plan.images && plan.images.length > 0) return plan.images[0]
+  // 兜底Logo
+  return plan.logo_image || ''
 }
 
 function fetchHotToday() {
@@ -704,10 +797,8 @@ function fetchTimeline() {
     norm.sort((a, b) => a.time - b.time)
     timeline.value = norm
 
-    // FIX: 每次时间线数据变更，都重置显隐状态并重建观察器
     resetTimelineRevealAndObserve()
 
-    // 保留你的兜底：当下已在视口内时立即尝试启动
     setTimeout(() => {
       if (!staggerStarted.value) {
         uni.createSelectorQuery().in(instance).select('.timeline').boundingClientRect(rect => {
@@ -804,7 +895,6 @@ function sizeChips(sizes) {
 function go2recentFeed() {
   uni.navigateTo({ url: "/pages/recent-feed/recent-feed" })
 }
-/** 旧方法（保留） */
 function goOpsFeed () {
   if (process.env.UNI_PLATFORM === 'h5') {
     location.href = '/#/pages/ops_feed/ops_feed'
@@ -812,7 +902,6 @@ function goOpsFeed () {
   }
   uni.navigateTo({ url: '/pages/ops_feed/ops_feed' })
 }
-/** 查看日历/全部（恢复） */
 function goCalendar () {
   if (process.env.UNI_PLATFORM === 'h5') {
     location.href = '/#/pages/calendar/calendar'
@@ -864,6 +953,13 @@ function goGoods(goodsId, recordId) {
 function goBrand(brandId) {
   uni.navigateTo({ url: `/pages/brand/brand?brand_id=${brandId}` })
 }
+// 新增：跳转开单详情
+function goPlan(planId) {
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/plan_detail/plan_detail?id=${planId}`
+  })
+}
+
 function goOpsItem (op) {
   if (!op) return
   // 优先跳商品
@@ -884,7 +980,6 @@ function goOpsItem (op) {
 }
 
 function goSearchPage () {
-  // 配置：1234；模式：跳转模式
   const tabs = '1,2,3,4'
   const mode = 'jump'
   uni.navigateTo({
@@ -899,7 +994,6 @@ async function handlePullDownRefresh () {
   try {
     uni.showNavigationBarLoading()
     await refreshAll(false)
-    // FIX: 若 timeline 有数据但未显现，重置并尝试启动
     if (timeline.value.length > 0 && visibleCount.value === 0) {
       resetTimelineRevealAndObserve()
       startStaggerReveal()
@@ -928,7 +1022,6 @@ onShow(() => {
     if (last && last !== now) {
       // 隔天自动刷新数据
       refreshAll(false).then(() => {
-        // FIX: 隔天刷新后兜底一次（只影响时间线显隐/观察器）
         if (timeline.value.length > 0) {
           resetTimelineRevealAndObserve()
           startStaggerReveal()
@@ -953,7 +1046,7 @@ onBeforeUnmount(() => {
 
 <style lang="less" scoped>
 /* =========================================================
-   统一主题变量（header 渐变除外）
+   统一主题变量
    ========================================================= */
 .summary-wrap {
   --c-primary: #63cce7;
@@ -973,7 +1066,6 @@ onBeforeUnmount(() => {
   --c-primary-g: 204;
   --c-primary-b: 231;
 
-  /* 星星旋转速度（调大变慢） */
   --star-rot-speed: 3.2s;
 }
 
@@ -999,7 +1091,7 @@ onBeforeUnmount(() => {
     }
   }
 
-  .search-box{ /* 保留占位，样式见下方 .fake-search */ }
+  .search-box{ /* 保留占位 */ }
 }
 
 /* 区块外框 */
@@ -1348,5 +1440,47 @@ onBeforeUnmount(() => {
   }
 
   &:active { opacity: .9; }
+}
+
+/* 【新增】今日开妆约毛样式 */
+
+.sub-section {
+  position: relative;
+}
+.sub-label-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding-left: 10rpx;
+}
+.dot-deco {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  &.makeup { background: #ff9a9e; box-shadow: 0 0 8rpx rgba(255, 154, 158, 0.6); }
+  &.wig { background: #a18cd1; box-shadow: 0 0 8rpx rgba(161, 140, 209, 0.6); }
+}
+.sub-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+.artist-mini {
+	height: auto;
+  /* 复用 .goods-mini 基础样式，微调内部 */
+  .time-badge {
+    position: absolute; left: 12rpx; top: 12rpx;
+    padding: 6rpx 12rpx; border-radius: 8rpx; font-size: 20rpx; font-weight: 600;
+    background: rgba(255, 111, 145, 0.9); color:#fff; backdrop-filter: blur(2rpx);
+    &.wig-bg { background: rgba(132, 94, 194, 0.9); }
+  }
+  .artist-meta {
+    margin: 8rpx 12rpx 16rpx;
+    height: 36rpx;
+    font-size: 24rpx;
+    color: #ff5a6e;
+    font-weight: 600;
+  }
 }
 </style>

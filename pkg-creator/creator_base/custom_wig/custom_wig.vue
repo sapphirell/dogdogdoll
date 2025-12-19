@@ -152,14 +152,6 @@
       </view>
     </view>
 
-    <!-- 更多该品牌手改毛 -->
-    <view
-      class="more-section"
-      v-if="detail.brand_id"
-      @click="navigateToBrandCustomWigList(detail.brand_id)"
-    >
-      <text class="more-text">查看更多该品牌的手改毛 →</text>
-    </view>
 
     <!-- 占位 -->
     <view style="width: 100%;height: 120rpx;"></view>

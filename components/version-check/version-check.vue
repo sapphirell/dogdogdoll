@@ -672,6 +672,7 @@ defineExpose({
         line-height: 1.6;
         padding-left: 20rpx;
         word-break: break-word;
+		white-space: pre-wrap;
       }
     }
   }

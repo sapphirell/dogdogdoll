@@ -100,12 +100,12 @@ const defaultAvatar =
 
 // 一级 Tab
 const mainTabs = [
-  { key: 'orders', label: '订单集' },
+  // { key: 'orders', label: '订单集' },
   { key: 'inbox', label: '信息集' },
   { key: 'workspace', label: '工作台' },
   { key: 'settings', label: '设置我' }
 ]
-const activeMainTab = ref('orders')
+const activeMainTab = ref('inbox')
 
 const isLogin = computed(() => !!global.isLogin)
 

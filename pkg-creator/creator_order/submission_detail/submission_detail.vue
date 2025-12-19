@@ -241,7 +241,8 @@ import { ref, reactive, computed } from 'vue'
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { websiteUrl, global } from '@/common/config.js'
 
-/** ====== 状态常量 ====== */
+/** ====== 子项状态常量（item） ====== */
+// 子项状态：0待处理 1队列中 2待支付 3已下单 4未中选 5放弃 6过期
 const ItemStatusPending = 0
 const ItemStatusQueued = 1
 const ItemStatusSelectedPay = 2
@@ -249,6 +250,18 @@ const ItemStatusOrdered = 3
 const ItemStatusNotSelected = 4
 const ItemStatusAbandoned = 5
 const ItemStatusExpired = 6
+
+/** ====== 父投递状态常量（submission） ====== */
+// 投递整体状态（一次投递维度）
+// 0排队中 1已抢到待确认 2买家已确认待卖家确认 3已确认待付款 4已付款 5排队失败 6取消 7支付超时
+const SubmissionStatusQueued = 0
+const SubmissionStatusSelectedConfirm = 1
+const SubmissionStatusBuyerConfirmed = 2
+const SubmissionStatusSelectedPay = 3
+const SubmissionStatusPaid = 4
+const SubmissionStatusFailed = 5
+const SubmissionStatusCancelled = 6
+const SubmissionStatusTimeout = 7
 
 /** ====== 路由参数 ====== */
 const submissionId = ref(0)
@@ -373,7 +386,8 @@ const queuePositionText = computed(() => {
   const ahead = submission.ahead_count
   const hasAhead = typeof ahead === 'number'
 
-  if (submission.status === ItemStatusQueued) {
+  // ✅ 修正：submission.status 是“父投递状态”，排队中为 0
+  if (submission.status === SubmissionStatusQueued) {
     return hasAhead ? `前面还有${ahead}人` : '前面还有--人'
   }
 
@@ -382,17 +396,27 @@ const queuePositionText = computed(() => {
   return '您位于--号'
 })
 
-/** 是否需要“确认订单”（以 status_text 包含“待买家确认”为准，避免后端状态码不一致） */
+/** 是否需要“确认订单”（以 status_text 包含“待买家确认”为准，避免后端状态码/文案不一致） */
 const needConfirmOrder = computed(() => {
   const t = String(submission.status_text || '')
   return t.includes('待买家确认')
+})
+
+/** ✅ 是否需要“去付款”（已确认待付款） */
+const needPayNow = computed(() => {
+  // 1) 以状态码为主：父投递 status=3 表示“已确认待付款”
+  if (Number(submission.status) === SubmissionStatusSelectedPay) return true
+
+  // 2) 文案兜底：只要包含“待付款”都视为可支付（兼容“已确认待付款”等）
+  const t = String(submission.status_text || '')
+  return t.includes('待付款')
 })
 
 /** 底部按钮类型：仅两种 */
 const bottomAction = computed(() => {
   if (!isLogin.value || !submission.submission_id) return ''
   if (needConfirmOrder.value) return 'confirm'
-  if (submission.status === ItemStatusSelectedPay) return 'pay'
+  if (needPayNow.value) return 'pay'
   return ''
 })
 

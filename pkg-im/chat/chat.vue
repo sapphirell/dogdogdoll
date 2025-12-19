@@ -1,36 +1,38 @@
 <template>
   <view class="chat-page">
     <!-- 顶部：固定半透明导航条（不随滚动渐变） -->
-    <zhouWei-navBar
-      type="fixed"
-      :backState="1000"
-      :homeState="2000"
-      bgColor="rgba(255,255,255,0.8)"
-      fontColor="#000000"
-      :shadow="false"
-    >
-      <!-- 左侧返回胶囊 -->
-      <template #left>
-        <view class="nav-back-pill nav-back-pill--offset" @click="goBack" aria-label="返回">
-          <uni-icons type="left" size="22" color="#000" />
-        </view>
-      </template>
+    <view id="navWrapper" class="nav-wrapper">
+      <zhouWei-navBar
+        type="fixed"
+        :backState="1000"
+        :homeState="2000"
+        bgColor="rgba(255,255,255,0.8)"
+        fontColor="#000000"
+        :shadow="false"
+      >
+        <!-- 左侧返回胶囊 -->
+        <template #left>
+          <view class="nav-back-pill nav-back-pill--offset" @click="goBack" aria-label="返回">
+            <uni-icons type="left" size="22" color="#000" />
+          </view>
+        </template>
 
-      <!-- 中间：会话名 + 在线状态 -->
-      <template #default>
-        <view class="nav-center">
-          <text class="nav-title-ellipsis">{{ peerInfo.user_name || '私信' }}</text>
-          <text class="nav-sub">{{ onlineText }}</text>
-        </view>
-      </template>
-    </zhouWei-navBar>
+        <!-- 中间：会话名 + 在线状态 -->
+        <template #default>
+          <view class="nav-center">
+            <text class="nav-title-ellipsis">{{ peerInfo.user_name || '私信' }}</text>
+            <text class="nav-sub">{{ onlineText }}</text>
+          </view>
+        </template>
+      </zhouWei-navBar>
+    </view>
 
     <!-- 中间区域：使用 z-paging 聊天模式替代 scroll-view -->
     <z-paging
       ref="pagingRef"
       v-model="messages"
       class="chat-body"
-      :style="{ top: headerOffsetPx }"
+      :style="{ top: pagingTopPx }"
       :auto="false"
       use-chat-record-mode
       use-virtual-list
@@ -44,10 +46,7 @@
       <!-- 单条消息渲染（必须加 scaleY(-1) 包一层，否则内容会倒置） -->
       <template #cell="{ item }">
         <view style="transform: scaleY(-1)">
-          <view
-            class="msg-item"
-            :class="{ self: item.from_uid === selfUid }"
-          >
+          <view class="msg-item" :class="{ self: item.from_uid === selfUid }">
             <image
               class="avatar"
               :src="item.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar"
@@ -134,41 +133,45 @@
       <!-- 底部聊天输入条：放在 z-paging 的 bottom 插槽里 -->
       <template #bottom>
         <view class="chat-inputbar" :class="{ 'with-sticker': showStickerPanel }">
-          <view class="tools">
-            <!-- 发送图片：只允许单张 -->
-            <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
-            <!-- 现在的纸飞机按钮：打开贴纸面板 -->
-            <uni-icons type="paperplane" size="24" color="#666" @click="toggleStickerPanel" />
-          </view>
+          <view class="inputbar-wrap">
+            <view class="tools">
+              <!-- 发送图片：只允许单张 -->
+              <uni-icons type="image" size="24" color="#666" @click="pickAndSendImage" />
+              <!-- 现在的纸飞机按钮：打开贴纸面板 -->
+              <uni-icons type="paperplane" size="24" color="#666" @click="toggleStickerPanel" />
+            </view>
 
-          <input
-            class="text-input"
-            type="text"
-            v-model.trim="draft"
-            confirm-type="send"
-            :disabled="isBlocked"
-            @confirm="sendText"
-            @focus="handleInputFocus"
-          />
+            <input
+              class="text-input"
+              type="text"
+              v-model.trim="draft"
+              confirm-type="send"
+              :disabled="isBlocked"
+			  :adjust-position="false"
+              @confirm="sendText"
+              @focus="handleInputFocus"
+			  
+            />
 
-          <!-- 贴纸面板：展示缩略图，发送时使用完整图片 -->
-          <view class="sticker-panel" v-if="showStickerPanel">
-            <scroll-view scroll-y class="sticker-scroll">
-              <view class="sticker-grid">
-                <view
-                  v-for="s in stickers"
-                  :key="s.id"
-                  class="sticker-item"
-                  @click="sendSticker(s)"
-                >
-                  <image
-                    class="sticker-thumb"
-                    :src="s.thumb_url || s.image_url"
-                    mode="aspectFit"
-                  />
+            <!-- 贴纸面板：展示缩略图，发送时使用完整图片 -->
+            <view class="sticker-panel" v-if="showStickerPanel">
+              <scroll-view scroll-y class="sticker-scroll">
+                <view class="sticker-grid">
+                  <view
+                    v-for="s in stickers"
+                    :key="s.id"
+                    class="sticker-item"
+                    @click="sendSticker(s)"
+                  >
+                    <image
+                      class="sticker-thumb"
+                      :src="s.thumb_url || s.image_url"
+                      mode="aspectFit"
+                    />
+                  </view>
                 </view>
-              </view>
-            </scroll-view>
+              </scroll-view>
+            </view>
           </view>
         </view>
       </template>
@@ -177,13 +180,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue'
-import {
-  onLoad,
-  onUnload,
-  onShow,
-  onHide
-} from '@dcloudio/uni-app'
+import { ref, nextTick, computed, getCurrentInstance } from 'vue'
+import { onLoad, onUnload, onShow, onHide } from '@dcloudio/uni-app'
 import {
   websiteUrl,
   getWindowTop,
@@ -198,6 +196,9 @@ import {
   setActiveSession,
   clearActiveSession
 } from '@/common/im.js'
+
+/** 当前组件实例（用于 selectorQuery.in） */
+const _ins = getCurrentInstance()
 
 /** z-paging 引用 */
 const pagingRef = ref(null)
@@ -214,7 +215,7 @@ const peerInfo = ref({ user_name: '', avatar: '' })
 const onlineText = ref('')
 
 /** 列表与分页（z-paging v-model 绑定的就是 messages） */
-const messages = ref([]) // 由 z-paging 管理顺序
+const messages = ref([])
 const pageSize = 20
 
 /** 输入与工具 */
@@ -239,30 +240,29 @@ const hasInitOnce = ref(false)
 /** 顶部 / 底部安全区域计算 */
 const windowTopPxRaw = ref(0)
 const footerSafeRaw = ref(0)
-const headerOffsetPx = computed(() => toPx(windowTopPxRaw.value))
-const footerSafePx = computed(() => toPx(footerSafeRaw.value + 20))
 
-// ====== 消息提示音 ======
+/** 关键：实际测出来的 nav-bar bottom（px） */
+const navBarBottomPxRaw = ref(0)
+
+/** z-paging 的 top：优先用 navBarBottom；测不到则回退 windowTop */
+const pagingTopPx = computed(() => {
+  const n = Number(navBarBottomPxRaw.value || 0)
+  if (n > 0) return toPx(n)
+  return toPx(windowTopPxRaw.value || 0)
+})
+
+/** ====== 消息提示音 ====== */
 let clickAudio = null
-
 function playClickSound () {
   try {
     if (!clickAudio) {
-      // 创建音频上下文，只创建一次复用
       clickAudio = uni.createInnerAudioContext()
-      // 静态资源目录下的点击音：/static/click.mp3
       clickAudio.src = '/static/click.mp3'
-      // 可选：不要循环
       clickAudio.loop = false
-      // 可选：从头开始播
       clickAudio.startTime = 0
     } else {
-      // 确保每次从头播放
-      try {
-        clickAudio.stop()
-      } catch (e) {}
+      try { clickAudio.stop() } catch (e) {}
     }
-
     clickAudio.play()
   } catch (e) {
     console.warn('[CHAT-DBG] playClickSound error', e)
@@ -289,7 +289,7 @@ function waitWsReady (timeout = 5000) {
   })
 }
 
-/* ---------- 工具：初始化本端 uid ---------- */
+/** 工具：初始化本端 uid */
 function initSelfUidFromStorage () {
   try {
     const u = uni.getStorageSync('userInfo') || {}
@@ -300,6 +300,41 @@ function initSelfUidFromStorage () {
       if (legacy) selfUid.value = legacy
     }
   } catch (_) {}
+}
+
+/** 工具：测量 nav-bar 实际高度（避免被遮挡） */
+function measureNavBar () {
+  return new Promise((resolve) => {
+    // 为了兼容不同端：优先 in(this component)，失败就退化到全局 query
+    const q1 = (() => {
+      try {
+        return uni.createSelectorQuery().in(_ins)
+      } catch (_) {
+        return null
+      }
+    })()
+
+    const query = q1 || uni.createSelectorQuery()
+    query
+      .select('#navWrapper')
+      .boundingClientRect((rect) => {
+        const bottom = Number(rect?.bottom || 0)
+        const height = Number(rect?.height || 0)
+        // fixed 顶部一般 bottom=height，但少数端 bottom 取不到，兜底 height
+        const v = bottom > 0 ? bottom : height
+        if (v > 0) navBarBottomPxRaw.value = v
+        resolve(v)
+      })
+      .exec()
+  })
+}
+
+/** 刷新布局参数（首屏 & 返回页面都做一次） */
+async function refreshLayoutOffsets () {
+  windowTopPxRaw.value = getWindowTop()
+  footerSafeRaw.value = getFooterPlaceholderHeight()
+  await nextTick()
+  await measureNavBar()
 }
 
 /* ---------- 工具：从 read 事件里识别“读者是谁” ---------- */
@@ -313,8 +348,6 @@ function pickReaderId (d) {
     0
   )
 }
-
-/* ---------- 工具：应用对方已读进度（幂等） ---------- */
 function applyPeerReadPts (newPts) {
   const n = Number(newPts || 0)
   if (n <= 0 || n <= peerReadPts.value) return
@@ -322,29 +355,30 @@ function applyPeerReadPts (newPts) {
 }
 
 /* ---------- 生命周期 ---------- */
-onLoad((query) => {
+onLoad(async (query) => {
   peerId.value = Number(query.peer_id || 0)
   initSelfUidFromStorage()
 
-  // 初始化安全区信息
-  windowTopPxRaw.value = getWindowTop()
-  footerSafeRaw.value = getFooterPlaceholderHeight()
-  console.log('[CHAT-DBG]', 'footerSafe:', footerSafeRaw.value)
+  await refreshLayoutOffsets()
+  console.log('[CHAT-DBG]', 'layout:', {
+    windowTopPxRaw: windowTopPxRaw.value,
+    navBarBottomPxRaw: navBarBottomPxRaw.value
+  })
 })
 
 onShow(async () => {
   console.log('[CHAT-DBG]', 'onShow: enter, hasInitOnce =', hasInitOnce.value)
 
+  // 每次进来都刷新一次，避免机型/旋转/安全区变化导致遮挡
+  await refreshLayoutOffsets()
+
   if (!hasInitOnce.value) {
-    // 先拉基本信息
     await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
 
-    // 建立 WS 连接
     connectIM()
     if (offIM) { offIM = null }
     offIM = onIMEvent(handleIMEvent)
 
-    // 创建/获取会话
     const token = uni.getStorageSync('token')
     try {
       const res = await uni.request({
@@ -379,7 +413,6 @@ onShow(async () => {
     const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
     if (key) setActiveSession(key)
 
-    // numericSid 已经就绪后，再触发 z-paging 首屏加载
     nextTick(() => {
       console.log('[CHAT-DBG]', 'call paging.reload()')
       if (pagingRef.value && typeof pagingRef.value.reload === 'function') {
@@ -389,7 +422,6 @@ onShow(async () => {
     return
   }
 
-  // 再次进入页面：只恢复 WS 和 active session，列表不重载
   connectIM()
   if (offIM) { offIM = null }
   offIM = onIMEvent(handleIMEvent)
@@ -411,14 +443,10 @@ onUnload(() => {
     offIM()
     offIM = null
   }
-
   if (clickAudio) {
-    try {
-      clickAudio.destroy()
-    } catch (e) {}
+    try { clickAudio.destroy() } catch (e) {}
     clickAudio = null
   }
-
   leaveActiveSession()
 })
 
@@ -474,7 +502,6 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
       return
     }
 
-    // 等待 WS ready
     let socket = getWS()
     if (!socket || socket.readyState !== 1) {
       if (isFirstPage) {
@@ -496,14 +523,11 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
       }
     }
 
-    // ===== 计算 before_pts / after_pts =====
     let beforePTS = 0
     let afterPTS = 0
     if (messages.value.length === 0) {
-      // 首屏：after_pts=0 拉最近一页
       afterPTS = 0
     } else {
-      // 上翻历史：以当前最早一条的 pts 为边界
       beforePTS = Math.min(...messages.value.map((m) => Number(m.pts || 0)))
     }
 
@@ -539,14 +563,11 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
       return
     }
 
-    // 1) WS 消息 -> UI 结构
     const rawArr = (resp.data?.messages || []).map(wsToUiMessage)
 
-    // 2) 去重（按 id）
     const existIds = new Set(messages.value.map((m) => m.id))
     const dedupArr = rawArr.filter((m) => !existIds.has(m.id))
 
-    // 3) 当前实现：按 pts/id 降序（新消息在前），交给 z-paging chat 模式 & scaleY 组合处理
     const segmentDesc = dedupArr.sort((a, b) => {
       const pa = Number(a.pts || 0)
       const pb = Number(b.pts || 0)
@@ -564,7 +585,6 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
       }
     }
 
-    // 同步对方已读进度
     const peerPtsFromSync = Number(
       resp?.data?.peer_read_pts ??
       resp?.data?.peerReadPts ??
@@ -575,15 +595,11 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
 
     await nextTick()
     if (isFirstPage) {
-      // 首屏加载完成：滚到底部 + 标记已读
       scrollToBottomSoon()
       markReadToBottom()
     }
   } catch (e) {
     console.error('[CHAT] loadHistory error', e)
-    if (isFirstPage) {
-      uni.showToast({ title: '加载聊天记录异常', icon: 'none' })
-    }
     if (pagingRef.value && typeof pagingRef.value.complete === 'function') {
       pagingRef.value.complete(false)
     }
@@ -599,13 +615,11 @@ function sendText () {
   sendPayload({ kind: 'text', text })
 }
 
-/** 输入框聚焦：收起贴纸面板 + 滚到底部 */
 function handleInputFocus () {
   showStickerPanel.value = false
   scrollToBottomSoon()
 }
 
-/** 贴纸面板相关 */
 async function loadStickers () {
   if (stickerLoading.value || stickers.value.length > 0) return
   stickerLoading.value = true
@@ -641,7 +655,6 @@ function toggleStickerPanel () {
   }
 }
 
-/** 点击贴纸：用完整图片 URL 发送 image 消息 */
 function sendSticker (s) {
   if (!s || !s.image_url) return
   showStickerPanel.value = false
@@ -651,15 +664,12 @@ function sendSticker (s) {
   })
 }
 
-/** 选择并发送图片：只允许 1 张 */
 async function pickAndSendImage () {
   try {
-    // 1. 选择本地图片
     const chooseRes = await uni.chooseImage({ count: 1, sizeType: ['compressed'] })
     if (!chooseRes || !chooseRes.tempFilePaths || !chooseRes.tempFilePaths.length) return
     const filePath = chooseRes.tempFilePaths[0]
 
-    // 2. 向后端请求七牛上传凭证
     const tkRes = await uni.request({
       url: `${websiteUrl.value}/with-state/qiniu-token`,
       method: 'POST',
@@ -671,12 +681,9 @@ async function pickAndSendImage () {
     }
 
     const data = tkRes.data.data || {}
-    // 后端现在返回的是 { path, token }
     const token = data.token
-    const key = data.key || data.path      // 七牛对象 key：优先 key，没有就用 path
-    // 七牛上传地址：和你工具方法保持一致
+    const key = data.key || data.path
     const uploadUrl = data.upload_url || 'https://up-cn-east-2.qiniup.com'
-    // 图片访问域名：接口没给的话，就用 image1Url
     const domain = data.domain || image1Url
 
     if (!token || !key) {
@@ -684,7 +691,6 @@ async function pickAndSendImage () {
       return
     }
 
-    // 3. 上传到七牛
     const upRes = await uni.uploadFile({
       url: uploadUrl,
       filePath,
@@ -700,10 +706,7 @@ async function pickAndSendImage () {
       body = JSON.parse(upRes.data || '{}')
     } catch (_) {}
 
-    // 七牛返回通常也会带一个 key，优先用返回值
     const finalKey = body.key || key
-
-    // 拼接最终访问 URL
     const prefix = domain ? String(domain).replace(/\/$/, '') + '/' : ''
     const url = prefix + finalKey
 
@@ -712,7 +715,6 @@ async function pickAndSendImage () {
       return
     }
 
-    // 4. 作为图片消息发送
     sendPayload({ kind: 'image', url })
   } catch (e) {
     console.warn('[CHAT-DBG]', 'pickAndSendImage error=', e)
@@ -720,26 +722,14 @@ async function pickAndSendImage () {
   }
 }
 
-
-/** 示例的 other 消息（保留调试用，不再挂在按钮上） */
-function sendSampleOther () {
-  sendPayload({
-    kind: 'other',
-    sub_type: 'order',
-    payload: { order_id: 'D1234567', price: 199.0, title: '示例订单' }
-  })
-}
-
 /** 将一条“新消息”（本地 or 实时推送）追加到底部 */
 function appendNewMessage (uiMsg) {
   if (pagingRef.value && typeof pagingRef.value.addChatRecordData === 'function') {
     pagingRef.value.addChatRecordData([uiMsg])
   } else {
-    // 兜底：不通过 z-paging 方法时，手动替换数组引用，保证刷新
     messages.value = [...messages.value, uiMsg]
   }
-    // 发送消息 / 收到消息时播放提示音
-    playClickSound()
+  playClickSound()
 }
 
 /** 发送统一实现 —— ACK 通过 local_key 更新数组，并强制替换 messages 引用 */
@@ -753,7 +743,6 @@ function sendPayload (msgPart) {
   const client_mid = genClientMID()
   const local = buildLocalMsg({ ...msgPart, client_mid })
 
-  // 本地先插入一条“sending”消息
   appendNewMessage(local)
   scrollToBottomSoon()
 
@@ -773,14 +762,12 @@ function sendPayload (msgPart) {
   })
     .then((resp) => {
       if (!resp || resp.status !== 'success') {
-        // 发送失败：本地对象标记为 failed
         setMessageStatusByLocalKey(local.local_key, 'failed')
         return
       }
 
       const d = resp.data || {}
 
-      // 使用 local_key + 替换数组引用的方式更新
       updateMessageByLocalKey(local.local_key, (old) => ({
         ...old,
         id: Number(d.message_id || old.id || 0),
@@ -798,12 +785,10 @@ function sendPayload (msgPart) {
       if (peerPtsFromAck > 0) applyPeerReadPts(peerPtsFromAck)
     })
     .catch(() => {
-      // 超时 / 异常：同样要把状态改为 failed
       setMessageStatusByLocalKey(local.local_key, 'failed')
     })
 }
 
-/** 用 local_key 替换某条消息 —— 关键点：生成一个新的数组引用 */
 function updateMessageByLocalKey (localKey, updater) {
   const list = messages.value
   const idx = list.findIndex((x) => x.local_key === localKey)
@@ -896,7 +881,6 @@ function handleIMEvent (payload) {
       }
     }
 
-    // 对方发来的新消息，直接追加到底部
     appendNewMessage(ui)
     scrollToBottomSoon()
     markReadToBottom()
@@ -947,7 +931,6 @@ function toWsContent (part) {
   if (part.kind === 'text') {
     return { type: 'text', text: part.text }
   }
-  // 贴纸和普通图片统一走 image
   if (part.kind === 'image') {
     return { type: 'image', images: [{ url: part.url }] }
   }
@@ -963,7 +946,6 @@ function toWsContent (part) {
   return { type: 'text', text: '[未知类型]' }
 }
 
-/** 构建消息唯一签名（保留 emoji 分支以兼容历史消息） */
 function buildSig (m) {
   const kind = m.kind || (m.content?.type) || ''
   if (kind === 'text') return `t|${(m.text || '').slice(0, 200)}`
@@ -976,7 +958,6 @@ function buildSig (m) {
   return 'u|'
 }
 
-/** 本地临时消息 */
 function buildLocalMsg (part) {
   const now = Date.now()
   const base = {
@@ -1010,31 +991,6 @@ function buildLocalMsg (part) {
   return ui
 }
 
-/** HTTP -> UI 消息结构（目前历史全走 WS，留下备用） */
-function httpToUiMessage (n) {
-  const payload = n.payload || {}
-  const ui = {
-    id: Number(n.id || 0),
-    pts: Number(n.pts || 0),
-    session_id: sessionKey.value,
-    from_uid: Number(n.from_uid || 0),
-    to_uid: Number(n.to_uid || 0),
-    kind: n.kind || 'text',
-    text: n.text,
-    emoji: n.emoji,
-    url: n.url,
-    sub_type: n.sub_type,
-    payload,
-    card: payload.card || null,
-    ts: Number(n.ts || Math.floor(Date.now() / 1000)),
-    status: 'sent',
-    client_mid: n.client_mid
-  }
-  ui.sig = buildSig(ui)
-  return ui
-}
-
-/** WS 消息 -> UI 消息结构 */
 function wsToUiMessage (m) {
   const base = {
     id: Number(m.id || 0),
@@ -1083,7 +1039,7 @@ function wsToUiMessage (m) {
   return ui
 }
 
-/** 发送状态文案（保留你修过的逻辑） */
+/** 发送状态文案 */
 function statusText (m) {
   if (!m || m.from_uid !== selfUid.value) return ''
 
@@ -1091,22 +1047,11 @@ function statusText (m) {
   const peerPts = Number(peerReadPts.value || 0)
 
   if (m.status === 'failed') return '发送失败'
-
-  // 一旦有后端分配的 pts，说明已经成功发出，优先判断“已读”
-  if (pts > 0 && peerPts >= pts) {
-    return '已读'
-  }
-
-  // 只有在还没有 pts（本地临时消息）且状态为 sending 时，才显示“发送中…”
-  if (pts === 0 && m.status === 'sending') {
-    return '发送中…'
-  }
-
-  // 其余情况都视为“已发送”
+  if (pts > 0 && peerPts >= pts) return '已读'
+  if (pts === 0 && m.status === 'sending') return '发送中…'
   return '已发送'
 }
 
-/** 时间格式：HH:mm */
 function fmtTime (ts) {
   const d = new Date(Number(ts) * 1000)
   const hh = String(d.getHours()).padStart(2, '0')
@@ -1114,7 +1059,6 @@ function fmtTime (ts) {
   return `${hh}:${m}`
 }
 
-/** 旧版 other 消息的简要描述 */
 function briefOther (m) {
   try {
     const card = m.card || m.payload?.card
@@ -1126,21 +1070,10 @@ function briefOther (m) {
       }
       return '[卡片消息]'
     }
-
-    if (m.sub_type === 'order') {
-      return `订单：${m.payload?.title || ''} ￥${m.payload?.price ?? ''}`
-    }
-    if (m.sub_type === 'transfer') {
-      return `转账：￥${m.payload?.amount ?? ''}`
-    }
-    if (m.sub_type === 'goods') {
-      return `商品：${m.payload?.name || ''} ￥${m.payload?.price ?? ''}`
-    }
   } catch (_) {}
   return '[点击查看]'
 }
 
-/** 文本安全显示 */
 function safeText (t) {
   return (t || '').replace(/\n/g, '<br/>')
 }
@@ -1158,7 +1091,6 @@ function goBack () {
   uni.navigateBack()
 }
 
-/** 鉴权头 + client_msg_id 工具 */
 function authHeader () {
   const token = uni.getStorageSync('token') || ''
   return token ? { Authorization: token } : {}
@@ -1173,7 +1105,6 @@ function genClientMID () {
 }
 
 /* ===================== 消息卡片相关工具 ===================== */
-
 function mapCardTypeLabel (cardType) {
   switch (cardType) {
     case 'artist_order_step_request':
@@ -1186,16 +1117,15 @@ function mapCardTypeLabel (cardType) {
       return '价格调整'
     case 'artist_order_change_item':
       return '投递内容更新'
+    case 'artist_order_submission_create':
+      return '投递创建'
     default:
       return '系统通知'
   }
 }
-
-/** 取卡片对象 */
 function pickCard (m) {
   return m?.card || m?.payload?.card || null
 }
-
 function cardTag (m) {
   const card = pickCard(m) || {}
   return mapCardTypeLabel(card.card_type || '')
@@ -1208,7 +1138,6 @@ function cardDescription (m) {
   const card = pickCard(m) || {}
   return card.description || ''
 }
-/** 取卡片图片 URL */
 function cardImage (m) {
   const card = pickCard(m) || {}
   const url = card.image_url || card.imageUrl || card.img_url || ''
@@ -1219,16 +1148,64 @@ function cardActionText (m) {
   return card.action_text || '查看详情'
 }
 
+/** 从 card.app_page 中按当前 uid 选出正确跳转 URL（兼容旧 string） */
+function pickCardAppPageUrl (card, uid) {
+  if (!card) return ''
+
+  const ap =
+    card.app_page ??
+    card.appPage ??
+    card.app_pages ??
+    card.appPages ??
+    null
+
+  if (typeof ap === 'string') return ap
+
+  if (Array.isArray(ap)) {
+    const myUid = Number(uid || 0)
+    const hit = ap.find((x) => Number(x?.uid || 0) === myUid && typeof x?.url === 'string' && x.url)
+    if (hit && hit.url) return hit.url
+
+    const first = ap.find((x) => x && typeof x.url === 'string' && x.url)
+    if (first && first.url) return first.url
+  }
+
+  if (ap && typeof ap === 'object' && typeof ap.url === 'string') {
+    return ap.url
+  }
+
+  return ''
+}
+
+/** 跳转 */
+function goToCardUrl (url) {
+  if (!url) return
+
+  uni.navigateTo({
+    url,
+    fail: (err) => {
+      // #ifdef H5
+      try {
+        window.location.href = url
+        return
+      } catch (_) {}
+      // #endif
+
+      console.warn('[CHAT] navigateTo failed:', err, 'url=', url)
+      uni.showToast({ title: '跳转失败', icon: 'none' })
+    }
+  })
+}
+
 /** 点击消息卡片 */
 function handleCardClick (m) {
   const card = pickCard(m)
   if (!card) return
 
-  if (card.app_page) {
-    try {
-      uni.navigateTo({ url: card.app_page })
-      return
-    } catch (e) {}
+  const url = pickCardAppPageUrl(card, selfUid.value)
+  if (url) {
+    goToCardUrl(url)
+    return
   }
 
   if (card.h5_url) {
@@ -1259,7 +1236,12 @@ function handleCardClick (m) {
   background: #ffffff;
 }
 
-/* 顶部返回的小胶囊 */
+/* nav 外层只是用于测量，不改变 zhouWei-navBar 的 fixed 行为 */
+.nav-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
 .nav-back-pill {
   height: 56rpx;
   padding: 0 18rpx;
@@ -1294,7 +1276,6 @@ function handleCardClick (m) {
   margin-top: 4rpx;
 }
 
-/* 中间 z-paging 区域：固定在 自定义导航条 以下 */
 .chat-body {
   position: fixed;
   left: 0;
@@ -1306,7 +1287,6 @@ function handleCardClick (m) {
   background: #f5f5f5;
 }
 
-/* 列表与气泡布局 */
 .msg-item {
   display: flex;
   align-items: flex-start;
@@ -1323,7 +1303,6 @@ function handleCardClick (m) {
   background: #eee;
 }
 
-/* 垂直内容：气泡 + meta */
 .content {
   max-width: 78%;
   display: flex;
@@ -1334,7 +1313,6 @@ function handleCardClick (m) {
   align-items: flex-end;
 }
 
-/* 气泡 */
 .bubble {
   position: relative;
   max-width: 100%;
@@ -1350,7 +1328,6 @@ function handleCardClick (m) {
   border-top-left-radius: 18rpx;
 }
 
-/* 氣泡小三角 */
 .bubble::after {
   content: '';
   position: absolute;
@@ -1368,7 +1345,6 @@ function handleCardClick (m) {
   right: -8rpx;
 }
 
-/* 文本/图片/卡片细节 */
 .bubble .emoji {
   font-size: 40rpx;
   line-height: 1.2;
@@ -1378,7 +1354,6 @@ function handleCardClick (m) {
   border-radius: 12rpx;
 }
 
-/* 旧版其它消息块 */
 .bubble .other-card {
   min-width: 300rpx;
   background: #f7fafc;
@@ -1397,7 +1372,6 @@ function handleCardClick (m) {
   }
 }
 
-/* ===== 消息卡片样式 ===== */
 .msg-card {
   min-width: 320rpx;
   max-width: 520rpx;
@@ -1425,7 +1399,6 @@ function handleCardClick (m) {
   color: #111827;
 }
 
-/* 卡片图片区域 */
 .msg-card-image-wrap {
   margin-bottom: 12rpx;
   border-radius: 12rpx;
@@ -1437,7 +1410,6 @@ function handleCardClick (m) {
   display: block;
 }
 
-/* 卡片描述 & 底部 */
 .msg-card-body {
   margin-bottom: 12rpx;
 }
@@ -1455,7 +1427,6 @@ function handleCardClick (m) {
   color: #a2b7c0;
 }
 
-/* meta 在气泡下方 + 灰色 + 小字号 */
 .meta {
   display: flex;
   align-items: center;
@@ -1472,43 +1443,67 @@ function handleCardClick (m) {
   font-size: 20rpx;
 }
 
-/* 底部输入条（放在 z-paging bottom 插槽内） */
+/* ====== 输入条与贴纸面板（仅样式调整，JS 不变） ====== */
 .chat-inputbar {
   position: relative;
-  background: #e0f0fb;
-  padding: 18rpx 16rpx 30rpx;
-  display: grid;
-  grid-template-columns: 140rpx 1fr;
-  gap: 22rpx;
-  .tools {
-    display: flex;
-    align-items: center;
-    gap: 18rpx;
-    padding-left: 8rpx;
-  }
-  .text-input {
-    height: 68rpx;
-    background: #fff;
-    border-radius: 34rpx;
-    padding: 0 22rpx;
-    font-size: 26rpx;
-  }
+  background: transparent;
+  padding-top: 14rpx;
+  padding-bottom: calc(14rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(14rpx + constant(safe-area-inset-bottom));
 }
 
-/* 贴纸面板：绝对定位在输入框上方 */
+/* 输入条主体：圆角浮层 */
+.inputbar-wrap {
+  position: relative;
+  margin: 0 12rpx;
+  padding: 12rpx 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10rpx 26rpx rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.inputbar-wrap .tools {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding-left: 6rpx;
+  flex-shrink: 0;
+}
+
+.inputbar-wrap .text-input {
+  flex: 1;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+/* 贴纸面板：锚定在输入条上方，避免与输入框重叠 */
 .sticker-panel {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 104rpx;
+  bottom: calc(100% + 14rpx);
   background: #ffffff;
-  border-top: 1rpx solid #eee;
-  padding: 12rpx 0;
-  box-shadow: 0 -6rpx 12rpx rgba(0, 0, 0, 0.03);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  border-radius: 24rpx;
+  padding: 14rpx 0 8rpx;
+  box-shadow: 0 18rpx 40rpx rgba(0, 0, 0, 0.10);
+  z-index: 30;
+  overflow: hidden;
 }
 
 .sticker-scroll {
-  max-height: 420rpx;
+  max-height: 520rpx;
+  max-height: 56vh;
 }
 
 .sticker-grid {
@@ -1521,8 +1516,9 @@ function handleCardClick (m) {
 .sticker-item {
   width: 110rpx;
   height: 110rpx;
-  border-radius: 12rpx;
-  background: #f5f5f5;
+  border-radius: 14rpx;
+  background: #f3f4f6;
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1534,7 +1530,6 @@ function handleCardClick (m) {
   height: 100%;
 }
 
-/* 隐藏滚动条 */
 ::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;

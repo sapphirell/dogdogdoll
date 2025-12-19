@@ -330,7 +330,7 @@ onShow(() => {
 	 
 	 .unified-floating-button {
 	 		position: fixed;
-	 		bottom: 120rpx;
+	 		bottom: 160rpx;
 	 		left: 50%;
 	 		transform: translateX(-50%);
 	 		width: 100rpx;

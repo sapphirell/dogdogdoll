@@ -73,7 +73,8 @@
             <text class="last-time">{{ lastLoginText }}</text>
           </view>
 
-          <view class="row-2">
+          <!-- 未入驻：不展示接单统计 -->
+          <view v-if="isSettled" class="row-2">
             <view class="stat">
               <text class="label font-title">完成单数</text>
               <text class="val">{{ info.artist_stats?.finished_count ?? 0 }}</text>
@@ -85,6 +86,19 @@
             <view class="stat">
               <text class="label font-title">准时率</text>
               <text class="val">{{ punctualityRateText }}</text>
+            </view>
+          </view>
+
+          <!-- 社媒/店铺链接：Tag（图标+文案）点击复制 -->
+          <view v-if="linkTags.length" class="link-tags">
+            <view
+              v-for="t in linkTags"
+              :key="t.key"
+              class="link-tag"
+              @click="copyText(t.url)"
+            >
+              <image class="link-tag-icon" :src="t.icon" mode="aspectFit" />
+              <text class="link-tag-text font-title">{{ t.label }}</text>
             </view>
           </view>
 
@@ -111,19 +125,36 @@
       </view>
     </view>
 
-    <!-- 其它身份 -->
+    <!-- 其它身份（置灰 + 禁点 + 同路由规则） -->
     <view class="identity-card">
       <view class="id-title font-title">其它身份</view>
       <view class="id-row">
-        <view class="id-pill" @click="goRole('shop')">
+        <!-- 贩售主页 -->
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_brand }"
+          @click="identity.is_brand && goRole('shop')"
+        >
           <image class="id-img" src="/static/artist/iconify-uil_shop.png"></image>
-          <text class="font-title">贩售</text>
+          <text class="font-title">贩售主页</text>
         </view>
-        <view class="id-pill" @click="goRole('hair')">
+
+        <!-- 毛娘（当前页） -->
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_bjd_hairstylist }"
+          @click="identity.is_bjd_hairstylist && goRole('hair')"
+        >
           <image class="id-img" src="/static/artist/wig.png"></image>
-          <text class="font-title">手改毛</text>
+          <text class="font-title">毛娘</text>
         </view>
-        <view class="id-pill" @click="goRole('artist')">
+
+        <!-- 妆师 -->
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_bjd_artist }"
+          @click="identity.is_bjd_artist && goRole('artist')"
+        >
           <image class="id-img" src="/static/artist/pen.png"></image>
           <text class="font-title">妆师</text>
         </view>
@@ -203,8 +234,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { onLoad, onReachBottom, onPageScroll } from '@dcloudio/uni-app'
+import { ref, reactive, computed } from 'vue'
+import { onLoad, onReachBottom, onPageScroll, onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 import { useCrossShare } from '@/common/share.js'
 
@@ -215,18 +246,15 @@ onPageScroll(e => (scrollTop.value = e.scrollTop || 0))
 const goBack = () => uni.navigateBack({ delta: 1 })
 
 /** 分享相关（简单沿用现有逻辑，文案改为手改毛） */
-const pageId = ref('1')
 const detail = ref({
   title: '超好看的作品',
   images: ['https://images1.fantuanpu.com/artist/demo-cover.jpg']
 })
-
 const { setupMpShare, shareBtnVisible, shareClick } = useCrossShare(() => ({
   title: `手改毛 · ${detail.value.title || '精选'}`,
   summary: '看看这个手改毛作品～',
   imageUrl: detail.value.images?.[0],
-  // 这里路径按你实际的毛娘作品详情页来改
-  path: `/pages/custom_wig/detail?id=${pageId.value}`
+  path: `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${brandId.value}`
 }))
 setupMpShare()
 
@@ -241,6 +269,9 @@ const info = reactive({
 })
 const defaultAvatar = 'https://images1.fantuanpu.com/brand-avatar/default'
 
+/** 未入驻判定：last_login_time=0 */
+const isSettled = computed(() => Number(info.last_login_time || 0) > 0)
+
 const lastLoginText = computed(() => {
   const ts = Number(info.last_login_time || 0)
   if (!ts) return '未入驻'
@@ -253,6 +284,56 @@ const avgCycleDaysText = computed(() => {
 const punctualityRateText = computed(() => {
   const r = Number(info.artist_stats?.punctuality_rate || 0)
   return `${Math.round(r * 100)}%`
+})
+
+/** 链接信息（来自 info.brand） */
+const brandLinks = reactive({
+  website_url: '',
+  rednote_url: '',
+  tb_url: '',
+  vd_url: '',
+  weibo_url: '',
+  x_url: ''
+})
+
+const LINK_ICON = {
+  rednote: '/static/app-icon/xhs.png',
+  tb: '/static/app-icon/tb.png',
+  vd: '/static/app-icon/vd.png',
+  weibo: '/static/app-icon/wb.png',
+  website: '/static/app-icon/website.png'
+}
+
+/**
+ * 社媒/店铺链接（Tag 点击复制）
+ * 仅展示：小红书/淘宝/微店/微博/官网（按你的图标路径要求）
+ */
+const linkTags = computed(() => {
+  const tags = []
+  if (brandLinks.rednote_url) tags.push({ key: 'rednote', label: '小红书', url: brandLinks.rednote_url, icon: LINK_ICON.rednote })
+  if (brandLinks.tb_url) tags.push({ key: 'tb', label: '淘宝', url: brandLinks.tb_url, icon: LINK_ICON.tb })
+  if (brandLinks.vd_url) tags.push({ key: 'vd', label: '微店', url: brandLinks.vd_url, icon: LINK_ICON.vd })
+  if (brandLinks.weibo_url) tags.push({ key: 'weibo', label: '微博', url: brandLinks.weibo_url, icon: LINK_ICON.weibo })
+  if (brandLinks.website_url) tags.push({ key: 'website', label: '官网', url: brandLinks.website_url, icon: LINK_ICON.website })
+  return tags
+})
+
+function copyText(text) {
+  const v = String(text || '').trim()
+  if (!v) return
+  uni.setClipboardData({
+    data: v,
+    success() {
+      uni.showToast({ title: '已复制', icon: 'none' })
+    }
+  })
+}
+
+/** 身份标记：用于置灰/禁点 */
+const identity = reactive({
+  is_brand: 0,
+  is_bjd_artist: 0,
+  is_bjd_hairstylist: 0
 })
 
 /** 列表 Tab（图片 / 订单） */
@@ -278,9 +359,7 @@ function mapWigs(list = []) {
         it.cover_image ||
         (it.custom_wig_images && it.custom_wig_images[0]) ||
         ''
-      return first
-        ? { id: it.id, previewUrl: first }
-        : null
+      return first ? { id: it.id, previewUrl: first } : null
     })
     .filter(Boolean)
 }
@@ -295,16 +374,12 @@ async function fetchWigs() {
       brand_id: brandId.value,
       page: page.value,
       size: size.value
-      // 如需筛选，可以在此补充 material / color / tags
     }
   })
   loadingMore.value = false
 
   if (String(res.data?.status).toLowerCase() !== 'success') {
-    uni.showToast({
-      title: res.data?.msg || '加载失败',
-      icon: 'none'
-    })
+    uni.showToast({ title: res.data?.msg || '加载失败', icon: 'none' })
     return
   }
 
@@ -317,7 +392,7 @@ async function fetchWigs() {
 }
 
 /** 档期（月度忙碌天数） */
-const monthBusyList = ref([]) // [{key,label,isCurrent,busy_days,total_days}]
+const monthBusyList = ref([])
 const MONTH_NAMES = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
 
 /** 工具 */
@@ -357,17 +432,13 @@ async function fetchInfo() {
   const res = await uni.request({
     url: `${websiteUrl.value}/brand-artist/info`,
     method: 'GET',
-    data: {
-      brand_id: brandId.value
-    }
+    data: { brand_id: brandId.value }
   })
   if (String(res.data?.status).toLowerCase() !== 'success') {
-    uni.showToast({
-      title: res.data?.msg || '加载失败',
-      icon: 'none'
-    })
+    uni.showToast({ title: res.data?.msg || '加载失败', icon: 'none' })
     return
   }
+
   const d = res.data.data || {}
   info.brand_id = d.brand_id || 0
   info.brand_name = d.brand_name || ''
@@ -375,6 +446,18 @@ async function fetchInfo() {
   info.logo_image = d.logo_image || ''
   info.last_login_time = Number(d.last_login_time || 0)
   info.artist_stats = d.artist_stats || null
+
+  const b = d.brand || {}
+  identity.is_brand = Number(b.is_brand || 0)
+  identity.is_bjd_artist = Number(b.is_bjd_artist || 0)
+  identity.is_bjd_hairstylist = Number(b.is_bjd_hairstylist || 0)
+
+  brandLinks.website_url = b.website_url || ''
+  brandLinks.rednote_url = b.rednote_url || ''
+  brandLinks.tb_url = b.tb_url || ''
+  brandLinks.vd_url = b.vd_url || ''
+  brandLinks.weibo_url = b.weibo_url || ''
+  brandLinks.x_url = b.x_url || ''
 }
 
 /** 档期接口（横向数据） */
@@ -446,9 +529,7 @@ function statusClass(p) {
 }
 
 function tierRange(p) {
-  const prices = (p.tiers || [])
-    .map(t => Number(t.price || 0))
-    .filter(n => !Number.isNaN(n))
+  const prices = (p.tiers || []).map(t => Number(t.price || 0)).filter(n => !Number.isNaN(n))
   if (!prices.length) return '未设置档位'
   const min = Math.min(...prices)
   const max = Math.max(...prices)
@@ -463,19 +544,18 @@ async function fetchOrderPlans() {
     method: 'GET',
     data: {
       brand_id: brandId.value,
-      artist_type: 2, // ✅ 毛娘
+      artist_type: 2,
       page: orderPage.value,
       size: orderSize.value
     }
   })
   orderLoadingMore.value = false
+
   if (String(res.data?.status).toLowerCase() !== 'success') {
-    uni.showToast({
-      title: res.data?.msg || '加载失败',
-      icon: 'none'
-    })
+    uni.showToast({ title: res.data?.msg || '加载失败', icon: 'none' })
     return
   }
+
   const list = res.data?.data || []
   orderPlans.value = [...orderPlans.value, ...list]
 
@@ -487,64 +567,91 @@ async function fetchOrderPlans() {
       (p.open_time > now && p.open_time - now <= soon)
   )
 
-  if (list.length < orderSize.value) {
-    orderHasMore.value = false
-  } else {
-    orderPage.value += 1
-  }
+  if (list.length < orderSize.value) orderHasMore.value = false
+  else orderPage.value += 1
 }
 
 function openOrder(id) {
-  uni.navigateTo({
-    url: `/pkg-creator/creator_order/plan_detail/plan_detail?id=${id}`
-  })
-}
-
-/** 图片预览（如需要） */
-function preview(url) {
-  const urls = wigs.value.map(i => i.previewUrl)
-  const current = urls.indexOf(url)
-  uni.previewImage({
-    urls,
-    current: current >= 0 ? current : 0
-  })
+  uni.navigateTo({ url: `/pkg-creator/creator_order/plan_detail/plan_detail?id=${id}` })
 }
 
 /** 跳转到手改毛详情 */
 const navigateToWig = (id) => {
-  uni.navigateTo({
-    // 这里路径按你新建的手改毛详情页来改
-    url: `/pkg-creator/creator_base/custom_wig/custom_wig?id=${id}`
-  })
+  uni.navigateTo({ url: `/pkg-creator/creator_base/custom_wig/custom_wig?id=${id}` })
 }
 
-/** 其它身份跳转 */
+/** 其它身份跳转（与妆师主页一致：按 brand_id 跳指定页面） */
 function goRole(type) {
-  const map = {
-    shop: '/pages/shop/index',
-    hair: '/pages/hair/index',
-    artist: '/pages/artist/index'
+  const bid = Number(info.brand_id || brandId.value || 0)
+  if (!bid) return
+
+  const urlMap = {
+    shop: `/pages/brand/brand?brand_id=${bid}`,
+    hair: `/pages/artist_info/custom_wig_artist?brand_id=${bid}`,
+    artist: `/pages/artist_info/bjd_faceup_artist?brand_id=${bid}`
   }
-  uni.navigateTo({
-    url: map[type] || '/'
-  })
+  const url = urlMap[type]
+  if (!url) return
+
+  // 当前已在毛娘页：点“毛娘”不重复跳转
+  if (type === 'hair') return
+
+  uni.navigateTo({ url })
 }
 
-/** 生命周期 */
-onLoad(query => {
+/** 解析当前 URL 的 brand_id（H5 下防 query 滞后） */
+function parseBrandIdFromRoute() {
+  try {
+    let fullPath = ''
+    if (typeof getCurrentPages === 'function') {
+      const pages = getCurrentPages()
+      const cur = pages && pages.length ? pages[pages.length - 1] : null
+      fullPath = cur?.$page?.fullPath || ''
+    }
+    if (!fullPath && typeof window !== 'undefined') {
+      fullPath = window.location.hash || window.location.href || ''
+    }
+    const m = String(fullPath).match(/[?&]brand_id=(\d+)/)
+    return m ? Number(m[1]) : 0
+  } catch (e) {
+    return 0
+  }
+}
+
+/** 列表状态重置：每次刷新前清空分页数据 */
+function resetLists() {
+  wigs.value = []
+  page.value = 1
+  hasMore.value = true
+  loadingMore.value = false
+
+  orderPlans.value = []
+  orderPage.value = 1
+  orderHasMore.value = true
+  orderLoadingMore.value = false
+  hasOrderDot.value = false
+}
+
+/** 生命周期：首次进页读取 brand_id；每次 onShow 都刷新 */
+onLoad((query) => {
   const bid = Number(query?.brand_id || 0)
   if (!bid) {
-    uni.showToast({
-      title: '缺少 brand_id',
-      icon: 'none'
-    })
+    uni.showToast({ title: '缺少 brand_id', icon: 'none' })
     return
   }
   brandId.value = bid
 })
 
-onMounted(async () => {
+onShow(async () => {
+  // H5 下如果 URL brand_id 变化，优先以 URL 为准
+  const bidFromRoute = parseBrandIdFromRoute()
+  if (bidFromRoute && bidFromRoute !== brandId.value) {
+    brandId.value = bidFromRoute
+  }
+
   if (!brandId.value) return
+  resetLists()
+
   uni.showLoading({ title: '加载中...' })
   try {
     await fetchInfo()
@@ -668,6 +775,31 @@ onReachBottom(() => {
   line-height: 1.7;
 }
 
+/* 链接 Tag（图标+文案） */
+.link-tags {
+  margin-top: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.link-tag {
+  padding: 10rpx 18rpx;
+  border-radius: 9999rpx;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.link-tag-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+.link-tag-text {
+  font-size: 22rpx;
+  color: #333;
+}
+
 /* 身份 */
 .identity-card {
   margin: 20rpx 24rpx 0;
@@ -697,6 +829,11 @@ onReachBottom(() => {
   color: #333;
 }
 
+/* 置灰态 */
+.id-pill--disabled {
+  opacity: 0.4;
+}
+
 .id-img {
   width: 34rpx;
   height: 34rpx;
@@ -709,6 +846,7 @@ onReachBottom(() => {
   pointer-events: none;
 }
 
+/* 档期（横向滚动） */
 .calendar-card {
   margin: 20rpx 24rpx 0;
   border-radius: 15rpx;
@@ -940,9 +1078,5 @@ onReachBottom(() => {
   font-size: 28rpx;
   font-weight: 700;
   color: #111;
-}
-
-.nav-share-pill {
-  margin: 30rpx;
 }
 </style>

@@ -61,7 +61,8 @@
 						<text class="last-time">{{ lastLoginText }}</text>
 					</view>
 
-					<view class="row-2">
+					<!-- 1) 未入驻：不显示接单统计 -->
+					<view v-if="isSettled" class="row-2">
 						<view class="stat">
 							<text class="label font-title">完成单数</text>
 							<text class="val">{{ info.artist_stats?.finished_count ?? 0 }}</text>
@@ -73,6 +74,18 @@
 						<view class="stat">
 							<text class="label font-title">准时率</text>
 							<text class="val">{{ punctualityRateText }}</text>
+						</view>
+					</view>
+
+					<!-- 2) 店铺/社媒链接：图标按钮（有值才显示），点击复制 -->
+					<view v-if="linkIcons.length" class="link-icons">
+						<view
+							v-for="t in linkIcons"
+							:key="t.key"
+							class="link-icon-btn"
+							@click="copyText(t.url, t.label)"
+						>
+							<image class="link-icon-img" :src="t.icon" mode="aspectFit" />
 						</view>
 					</view>
 
@@ -199,7 +212,6 @@ onPageScroll(e => (scrollTop.value = e.scrollTop || 0))
 const goBack = () => uni.navigateBack({ delta: 1 })
 
 // 分享逻辑
-const pageId = ref('1')
 const detail = ref({
   title: '超好看的作品',
   images: ['https://images1.fantuanpu.com/artist/demo-cover.jpg']
@@ -210,7 +222,7 @@ const { setupMpShare, shareBtnVisible, shareClick } = useCrossShare(() => ({
   title: `BJD妆师 · ${detail.value.title || '精选'}`,
   summary: '看看这个作品，超好看～',
   imageUrl: detail.value.images?.[0],
-  path: `/pages/faceup/detail?id=${pageId.value}`,
+  path: `/pages/artist_info/bjd_faceup_artist?brand_id=${brandId.value}`,
 }))
 setupMpShare()
 
@@ -223,6 +235,40 @@ const info = reactive({
   last_login_time: 0,
   artist_stats: null
 })
+
+/** 1) 未入驻判定：last_login_time=0 */
+const isSettled = computed(() => Number(info.last_login_time || 0) > 0)
+
+/** 链接信息（来自 info.brand） */
+const brandLinks = reactive({
+  website_url: '',
+  rednote_url: '',
+  tb_url: '',
+  vd_url: '',
+  weibo_url: ''
+})
+
+/** 图标按钮：按你给的路径映射（有 url 才展示） */
+const linkIcons = computed(() => {
+  const list = []
+  if (brandLinks.tb_url) list.push({ key: 'tb', label: '淘宝', url: brandLinks.tb_url, icon: '/static/app-icon/tb.png' })
+  if (brandLinks.vd_url) list.push({ key: 'vd', label: '微店', url: brandLinks.vd_url, icon: '/static/app-icon/vd.png' })
+  if (brandLinks.rednote_url) list.push({ key: 'xhs', label: '小红书', url: brandLinks.rednote_url, icon: '/static/app-icon/xhs.png' })
+  if (brandLinks.weibo_url) list.push({ key: 'wb', label: '微博', url: brandLinks.weibo_url, icon: '/static/app-icon/wb.png' })
+  if (brandLinks.website_url) list.push({ key: 'website', label: '官网', url: brandLinks.website_url, icon: '/static/app-icon/website.png' })
+  return list
+})
+
+function copyText(text, label = '') {
+  const v = String(text || '').trim()
+  if (!v) return
+  uni.setClipboardData({
+    data: v,
+    success() {
+      uni.showToast({ title: label ? `已复制${label}链接` : '已复制', icon: 'none' })
+    }
+  })
+}
 
 /** 身份标记（与毛娘页同步） */
 const identity = reactive({
@@ -328,10 +374,18 @@ async function fetchInfo() {
   info.last_login_time = Number(d.last_login_time || 0)
   info.artist_stats = d.artist_stats || null
 
-  // 与毛娘页一致：优先顶层字段，没有则 fallback 到 brand 内部
+  // 其它身份
   identity.is_brand = Number(d.is_brand ?? d.brand?.is_brand ?? 0)
   identity.is_bjd_artist = Number(d.is_bjd_artist ?? d.brand?.is_bjd_artist ?? 0)
   identity.is_bjd_hairstylist = Number(d.is_bjd_hairstylist ?? d.brand?.is_bjd_hairstylist ?? 0)
+
+  // 链接（来自 brand）
+  const b = d.brand || {}
+  brandLinks.website_url = b.website_url || ''
+  brandLinks.rednote_url = b.rednote_url || ''
+  brandLinks.tb_url = b.tb_url || ''
+  brandLinks.vd_url = b.vd_url || ''
+  brandLinks.weibo_url = b.weibo_url || ''
 }
 
 async function fetchFaceups() {
@@ -480,7 +534,6 @@ function goRole(type) {
   if (!bid) return
 
   const urlMap = {
-    // 与毛娘页一致
     shop: `/pages/brand/brand?brand_id=${bid}`,
     hair: `/pages/artist_info/custom_wig_artist?brand_id=${bid}`,
     artist: `/pages/artist_info/bjd_faceup_artist?brand_id=${bid}`
@@ -488,7 +541,7 @@ function goRole(type) {
   const url = urlMap[type]
   if (!url) return
 
-  // 当前已在妆师页：点“妆师”不重复跳转（与毛娘页逻辑对齐）
+  // 当前已在妆师页：点“妆师”不重复跳转
   if (type === 'artist') return
 
   uni.navigateTo({ url })
@@ -641,6 +694,29 @@ onReachBottom(() => {
 		font-size: 20rpx;
 		color: #333;
 		font-weight: 600;
+	}
+
+	/* 链接图标按钮区 */
+	.link-icons {
+		margin-top: 16rpx;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12rpx;
+	}
+
+	.link-icon-btn {
+		width: 64rpx;
+		height: 64rpx;
+		border-radius: 9999rpx;
+		background: #f5f5f5;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.link-icon-img {
+		width: 40rpx;
+		height: 40rpx;
 	}
 
 	.desc {
