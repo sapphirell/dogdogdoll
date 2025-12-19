@@ -271,7 +271,7 @@ const resetFilters = () => {
 const navigateToArtistDetail = (artist) => {
   if (roleType.value === 'artist') {
     uni.navigateTo({
-      url: '/pages/artist_info/bjd_faceup_artist?brand_id=' + artist.brand_id,
+      url: '/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=' + artist.brand_id,
     })
   } else {
     uni.navigateTo({

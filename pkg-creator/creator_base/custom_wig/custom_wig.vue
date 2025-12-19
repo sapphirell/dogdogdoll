@@ -360,7 +360,7 @@ const handleError = msg => {
 const navigateToBrand = brandId => {
   if (!brandId) return
   uni.navigateTo({
-    url: `/pages/artist_info/bjd_faceup_artist?brand_id=${brandId}`,
+    url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${brandId}`,
   })
 }
 

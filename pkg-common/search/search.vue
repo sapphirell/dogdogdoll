@@ -1,4 +1,4 @@
-<!-- pages/search/search.vue -->
+<!-- pkg-common/search/search.vue -->
 <template>
   <!-- 顶部：淡紫色固定导航（中间 Tabs，左侧 uni-icons 返回） -->
   <uni-nav-bar
@@ -319,7 +319,7 @@ function choose(item) {
       })
     } else if (activeType.value === 'artist') {
       // 妆师：跳妆师主页
-      const url = `/pages/artist_info/bjd_faceup_artist?brand_id=${item.id}`
+      const url = `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${item.id}`
 	   uni.navigateTo({
 		 url: url,
 	   })

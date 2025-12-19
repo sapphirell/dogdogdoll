@@ -492,7 +492,7 @@ function getBrandGoods(isLoadMore = false, brandId = currentBrandId.value) {
 }
 
 const jumpToArtistPage = () => {
-  uni.navigateTo({ url: `/pages/artist_info/bjd_faceup_artist?brand_id=${currentBrandId.value}` })
+  uni.navigateTo({ url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${currentBrandId.value}` })
 }
 
 const likeBrand = async () => {
@@ -549,7 +549,7 @@ function jumpGoods(id) {
 }
 
 function jump2saleNews(item) {
-  uni.navigateTo({ url: `/pages/sale_news/sale_news?id=${item.id}&brand_id=${item.brand_id}` })
+  uni.navigateTo({ url: `/pkg-common/sale_news/sale_news?id=${item.id}&brand_id=${item.brand_id}` })
 }
 
 /** ====== 生命周期 ====== */

@@ -102,7 +102,7 @@ function goToPermissions() {
 
 function jump2register() {
   uni.navigateTo({
-    url: '/pages/register/register'
+    url: '/pkg-common/register/register'
   })
 }
 

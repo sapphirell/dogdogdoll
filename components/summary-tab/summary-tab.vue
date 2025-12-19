@@ -983,7 +983,7 @@ function goSearchPage () {
   const tabs = '1,2,3,4'
   const mode = 'jump'
   uni.navigateTo({
-    url: `/pages/search/search?mode=${mode}&tabs=${tabs}`
+    url: `/pkg-common/search/search?mode=${mode}&tabs=${tabs}`
   })
 }
 

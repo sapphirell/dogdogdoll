@@ -102,22 +102,11 @@
       "style": { "navigationBarTitleText": "" }
     },
     {
-      "path": "pages/register/register",
-      "style": { "navigationBarTitleText": "" }
-    },
-    {
       "path": "pages/user_like/user_like",
       "style": { "navigationBarTitleText": "" }
     },
     {
       "path": "pages/collocation_square/collocation_square",
-      "style": {
-        "navigationBarTitleText": "",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/sale_news/sale_news",
       "style": {
         "navigationBarTitleText": "",
         "navigationStyle": "custom"
@@ -168,31 +157,9 @@
       "style": { "navigationBarTitleText": "" }
     },
     {
-      "path": "pages/artist_info/artist_info",
-      "style": { "navigationBarTitleText": "" }
-    },
-    {
-      "path": "pages/artwork/artwork",
-      "style": { "navigationBarTitleText": "","navigationStyle": "custom" }
-    },
-    {
       "path": "pages/recent-feed/recent-feed",
       "style": { "navigationBarTitleText": "" }
     },
-    {
-      "path": "pages/search/search",
-      "style": {
-        "navigationBarTitleText": "",
-        "navigationStyle": "custom"
-      }
-    },
-	{
-	  "path": "pages/artist_info/bjd_faceup_artist",
-	  "style": {
-	    "navigationBarTitleText": "",
-	    "navigationStyle": "custom"
-	  }
-	},
 	{
 		"path" : "pkg-im/message_list/message_list",
 		"style" : 
@@ -286,6 +253,13 @@
 			"style": {
 				"navigationStyle": "custom" 
 			}
+		},
+		{
+		  "path": "creator_base/bjd_faceup_artist/bjd_faceup_artist",
+		  "style": {
+		    "navigationBarTitleText": "",
+		    "navigationStyle": "custom"
+		  }
 		}
       ]
     },
@@ -293,7 +267,29 @@
       "root": "pkg-common",
       "pages": [
         { "path": "brand-pick/brand-pick", "style": { "navigationBarTitleText": "请选择品牌" } },
-        { "path": "goods-pick/goods-pick", "style": { "navigationBarTitleText": "请选择商品" } }
+        { "path": "goods-pick/goods-pick", "style": { "navigationBarTitleText": "请选择商品" } },
+		{
+		  "path": "search/search",
+		  "style": {
+		    "navigationBarTitleText": "",
+		    "navigationStyle": "custom"
+		  }
+		},
+		{
+		  "path": "register/register",
+		  "style": { "navigationBarTitleText": "" }
+		},
+		{
+		  "path": "sale_news/sale_news",
+		  "style": {
+		    "navigationBarTitleText": "",
+		    "navigationStyle": "custom"
+		  }
+		},
+		{
+		  "path": "artwork/artwork",
+		  "style": { "navigationBarTitleText": "","navigationStyle": "custom" }
+		}
       ]
     }
   ],
