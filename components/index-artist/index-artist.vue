@@ -85,7 +85,7 @@
     </view>
 
     <!-- 帮助声明弹窗 -->
-    <common-modal :visible="helpModalVisible" @update:visible="helpModalVisible = $event" top="15vh">
+    <common-modal :visible="helpModalVisible" width="80vw" @update:visible="helpModalVisible = $event" top="15vh">
       <scroll-view scroll-y="true" class="help-modal-content">
         <view class="modal-title">妆师/毛娘信息说明</view>
         <view class="modal-text">
@@ -642,8 +642,7 @@ const statusClass = (status) => {
 
 /* 帮助弹窗样式 */
 .help-modal-content {
-  padding: 30rpx;
-  width: 580rpx;
+  width: calc(80vw - 70rpx);
 
   .modal-title {
     font-size: 32rpx;
