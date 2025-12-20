@@ -51,7 +51,7 @@
     </view>
 
     <!-- 退出确认弹窗 -->
-    <common-modal v-model:visible="showLogoutConfirm" top="32%" width="80vw">
+    <common-modal v-model:visible="showLogoutConfirm" top="26vh" width="80vw">
       <view class="logout-modal font-alimamashuhei">
         <view class="logout-title">确认退出账号？</view>
         <view class="logout-desc">
