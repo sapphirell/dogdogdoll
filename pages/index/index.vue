@@ -369,13 +369,34 @@
 </template>
 
 <script setup>
-import { onLoad, onReady } from '@dcloudio/uni-app'
+import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
 import {
   websiteUrl,
   getUserInfo,
   global,
 } from '../../common/config.js'
+
+const buildIndexSharePath = () => {
+  // 注意：把 /pages/index/index 替换成你实际 index 页路径
+  const tab = encodeURIComponent(activeTab.value || 'news')
+  return `/pages/index/index?tab=${tab}`
+}
+
+onShareAppMessage(() => {
+  return {
+    title: 'DogDogDoll｜娃圈信息与开单',
+    path: buildIndexSharePath(),
+  }
+})
+
+onShareTimeline(() => {
+  const tab = encodeURIComponent(activeTab.value || 'news')
+  return {
+    title: 'DogDogDoll｜娃圈信息与开单',
+    query: `tab=${tab}`,
+  }
+})
 
 // 品牌卡片组件 & 妆师毛娘组件
 import indexBrand from '@/components/index-brand/index-brand.vue'

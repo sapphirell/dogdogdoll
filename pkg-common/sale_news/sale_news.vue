@@ -160,7 +160,8 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onLoad, onPageScroll } from '@dcloudio/uni-app'
+import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+
 import {
   websiteUrl,
   global,
@@ -222,11 +223,39 @@ function jump2brand(id) {
   uni.navigateTo({ url: '/pages/brand/brand?brand_id=' + id })
 }
 
-const onShareAppMessage = () => ({
-  title: 'BJD娃圈你想知道的这里都有~',
-  path: '/pages/news/news',
-  success(res){}, fail(err){}, mp:{ wxpath:'/pages/index/index.html' }
+const shareTitle = () => {
+  const brandName = brand.value?.brand_name || ''
+  const t = detailData.value?.title || ''
+  if (brandName && t) return `【${brandName}】${t}`
+  return t || 'DogDogDoll 图透详情'
+}
+
+const sharePath = () => {
+  const id = pageId.value
+  // brandId 可能在接口返回后才有；因此保留 query 传入的 brand_id 作为兜底
+  const bid = brandId.value || 0
+  let path = `/pkg-common/sale_news/sale_news?id=${id}`
+  if (bid) path += `&brand_id=${bid}`
+  return path
+}
+
+onShareAppMessage(() => ({
+  title: shareTitle(),
+  path: sharePath(),
+  imageUrl: (detailData.value?.image_list || [])[0] || ''
+}))
+
+onShareTimeline(() => {
+  const path = sharePath()
+  const query = path.includes('?') ? path.split('?')[1] : ''
+  return {
+    title: shareTitle(),
+    query,
+    imageUrl: (detailData.value?.image_list || [])[0] || ''
+  }
+  
 })
+
 
 const jump2user = (uid) => {
   uni.navigateTo({ url: '/pages/user_page/user_page?uid=' + uid })
@@ -477,6 +506,7 @@ function handleError(msg) {
 onLoad((options) => {
   if (!options.id) { handleError('缺少必要参数'); return }
   pageId.value = options.id
+  if (options.brand_id) brandId.value = parseInt(options.brand_id) || 0
   fetchNewsDetail(options.id)
   asyncGetUserInfo().then(getHasLikeBrand)
 })
