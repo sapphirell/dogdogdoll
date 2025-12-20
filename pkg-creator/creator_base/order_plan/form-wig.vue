@@ -1,4 +1,5 @@
 <template>
+  <view-logs />
   <view class="order-plan-form">
     <!-- 顶部表单（分组列表外观） -->
     <view class="top-panel">

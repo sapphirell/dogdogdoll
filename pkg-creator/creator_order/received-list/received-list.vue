@@ -1,5 +1,6 @@
 <!-- pkg-creator/creator_order/received-list/received-list.vue -->
 <template>
+  <view-logs />
   <view class="booking-page received-page">
     <!-- 整个可滚区域交给 z-paging 管 -->
     <z-paging

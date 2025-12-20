@@ -1,4 +1,5 @@
 <template>
+  <view-logs />
   <view class="my-sub-page">
     <!-- 未登录提示 -->
     <view v-if="!isLogin && !loading" class="empty-wrap">

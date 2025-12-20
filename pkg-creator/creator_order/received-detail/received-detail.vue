@@ -1,5 +1,6 @@
 <!-- received-detail -->
 <template>
+  <view-logs />
   <view class="submission-page">
 
 

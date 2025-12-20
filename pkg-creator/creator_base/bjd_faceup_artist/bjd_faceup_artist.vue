@@ -1,4 +1,5 @@
 <template>
+	<view-logs />
 	<view class="artist-page">
 		<view class="head-container">
 			<zhouWei-navBar type="transparentFixed" :backState="2000" :homeState="2000" :scrollTop="scrollTop"

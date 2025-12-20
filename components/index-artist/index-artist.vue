@@ -1,5 +1,6 @@
 <!-- components/index-artist/index-artist.vue -->
 <template>
+  <view-logs />
   <view class="artist-list-container">
     <!-- 顶部操作栏 -->
     <view class="top-actions">

@@ -1,4 +1,5 @@
 <template>
+  <view-logs />
   <view class="artist-page">
     <view class="head-container">
       <zhouWei-navBar

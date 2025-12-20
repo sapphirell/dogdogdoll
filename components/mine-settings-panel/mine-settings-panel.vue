@@ -1,5 +1,6 @@
 <!-- components/mine-settings-panel/mine-settings-panel.vue -->
 <template>
+  <view-logs />
   <view class="settings-panel font-alimamashuhei">
     <view
       v-for="(item, index) in items"

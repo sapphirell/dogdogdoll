@@ -1,4 +1,5 @@
 <template>
+  <view-logs />
   <view class="submission-page">
     <!-- 主体滚动区 -->
     <scroll-view class="scroll-body" scroll-y :show-scrollbar="false">

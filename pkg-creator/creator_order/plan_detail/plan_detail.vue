@@ -1,4 +1,5 @@
 <template>
+  <view-logs />
   <view class="booking-page">
     <!-- 1. 吸顶导航栏 (白色背景) -->
     <view
