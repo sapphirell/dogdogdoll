@@ -14,7 +14,7 @@
         <image class="st-logo" :src="avatarUrl" mode="aspectFill" />
         <text class="st-name">{{ artistName }}</text>
       </view>
-      <view class="st-right">
+      <view class="st-right" v-if="showShare">
         <!-- 修改：移除了收藏按钮，只保留分享 -->
         <view class="icon-btn" @click="shareClick">
            <uni-icons type="redo" size="24" color="#000"></uni-icons>
@@ -39,7 +39,7 @@
         </view>
       </template>
       <template #right>
-        <view class="nav-right-icon" style="padding-right: 40rpx; display: flex; align-items: center;">
+        <view v-if="showShare" class="nav-right-icon" style="padding-right: 40rpx; display: flex; align-items: center;">
             <!-- 修改：移除了收藏按钮，只保留分享 -->
             <view @click="shareClick">
                 <uni-icons type="redo" size="24" :color="scrollTop > 100 ? '#000' : '#fff'"></uni-icons>
@@ -485,16 +485,28 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad, onPageScroll, onShow } from '@dcloudio/uni-app'
-import { websiteUrl, global } from '@/common/config.js'
+import { websiteUrl, global, getScene } from '@/common/config.js'
 import { useCrossShare } from '@/common/share.js'
+import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
+onShareAppMessage(() => ({
+  title: '快来看看这个开单！',
+  path: `/pkg-creator/creator_order/plan_detail/plan_detail?id=${planId.value}`,
+  imageUrl: coverUrl.value || ''
+}))
+
+onShareTimeline(() => ({
+  title: '快来看看这个开单！',
+  query: `id=${planId.value}`, // 朋友圈通常用 query
+  imageUrl: coverUrl.value || ''
+}))
 /** ====== 滚动 & 吸顶标题栏 ====== */
 const scrollTop = ref(0)
 const safeTop = ref(0)
 onPageScroll(e => { scrollTop.value = e?.scrollTop || 0 })
 const stickyShowThreshold = 140
 const showStickyTitle = computed(() => scrollTop.value > stickyShowThreshold)
-
+const showShare = ref(true)
 /** ====== 路由参数 ====== */
 const planId = ref(0)
 
@@ -1181,6 +1193,10 @@ onMounted(async () => {
 })
 
 onShow(async () => {
+	if (getScene() == 4) {
+		showShare.value = false
+	}
+	
   try {
     await fetchPlan()
     if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()

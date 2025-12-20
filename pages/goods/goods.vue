@@ -22,9 +22,10 @@
       </text>
     </template>
 
-    <!-- 顶部透明态：右侧关注（like） -->
+    <!-- 顶部透明态：右侧（根据场景区分） -->
     <template #transparentFixedRight>
-      <view class="nav-right-like" @tap="likeFn">
+      <!-- 非小程序：显示点赞；小程序：不显示 -->
+      <view v-if="!isMpWeixin" class="nav-right-like" @tap="likeFn">
         <uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
         <text class="nav-like-text">{{ formatNumber(goods.goods_like_count || 0) }}</text>
       </view>
@@ -37,27 +38,42 @@
       </view>
     </template>
 
-    <!-- 滚动出现的实底态：中间显示品牌图片（蓝底），点击跳品牌详情 -->
+    <!-- 滚动出现的实底态：中间内容（根据场景区分） -->
     <template #default>
+      <!-- 场景1：微信小程序 -> 显示点赞按钮 -->
       <view
-        v-if="goods.goods_brand_name_image"
-        class="nav-brand-wrap"
-        @tap="jumpBrand(goods.brand_id)"
+        v-if="isMpWeixin"
+        class="nav-right-like"
+        @tap="likeFn"
+        style="margin-right: 0;"
       >
-        <image
-          :src="goods.goods_brand_name_image"
-          mode="heightFix"
-          class="nav-brand-img"
-        />
+        <uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
+        <text class="nav-like-text">{{ formatNumber(goods.goods_like_count || 0) }}</text>
       </view>
-      <text v-else class="nav-brand-name" @tap="jumpBrand(goods.brand_id)">
-        {{ goods.brand_name || '品牌' }}
-      </text>
+
+      <!-- 场景2：非小程序 -> 显示品牌信息（恢复原逻辑） -->
+      <block v-else>
+        <view
+          v-if="goods.goods_brand_name_image"
+          class="nav-brand-wrap"
+          @tap="jumpBrand(goods.brand_id)"
+        >
+          <image
+            :src="goods.goods_brand_name_image"
+            mode="heightFix"
+            class="nav-brand-img"
+          />
+        </view>
+        <text v-else class="nav-brand-name" @tap="jumpBrand(goods.brand_id)">
+          {{ goods.brand_name || '品牌' }}
+        </text>
+      </block>
     </template>
 
-    <!-- 实底态：右侧关注（like） -->
+    <!-- 实底态：右侧（根据场景区分） -->
     <template #right>
-      <view class="nav-right-like" @tap="likeFn">
+      <!-- 非小程序：显示点赞；小程序：空（因已移至中间） -->
+      <view v-if="!isMpWeixin" class="nav-right-like" @tap="likeFn">
         <uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
         <text class="nav-like-text">{{ formatNumber(goods.goods_like_count || 0) }}</text>
       </view>
@@ -394,7 +410,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { onPageScroll, onLoad, onShow } from '@dcloudio/uni-app'
+import { onPageScroll, onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import {
   asyncGetUserInfo,
   websiteUrl,
@@ -405,6 +421,9 @@ import {
 
 const props = defineProps(['goods_id'])
 
+/* ===== 环境判断 ===== */
+const isMpWeixin = process.env.UNI_PLATFORM === 'mp-weixin'
+
 /* ===== 透明导航：滚动联动 & 返回 ===== */
 const scrollTop = ref(0)
 onPageScroll(e => { scrollTop.value = e?.scrollTop || 0 })
@@ -414,11 +433,16 @@ function goBack () {
   else uni.switchTab({ url: '/pages/index/index' })
 }
 
-/* ===== 顶部安全占位高度（导航 100rpx + 安全区） ===== */
+/* ===== 顶部安全占位高度修正 ===== */
 const NAV_HEIGHT_RPX = 100
-const navHeightPx = uni.upx2px(NAV_HEIGHT_RPX) // 100rpx -> px
-// getWindowTop()：config 中的“状态栏 + 原生导航”估算，我们只要安全顶部高度感知
-const topSafeSpacePx = ref(toPx(getWindowTop() + navHeightPx))
+const topSafeSpacePx = computed(() => {
+  // 微信小程序：config.js 中的 getWindowTop 已包含状态栏+胶囊高度，直接使用
+  if (isMpWeixin) {
+    return toPx(getWindowTop())
+  }
+  // 其他端：getWindowTop 仅为状态栏高度，需加上自定义导航栏高度 (100rpx)
+  return toPx(getWindowTop() + uni.upx2px(NAV_HEIGHT_RPX))
+})
 
 /* ===== 数据区 ===== */
 const loading = ref(false)
@@ -480,6 +504,23 @@ function reloadById (id, reason = 'unknown') {
   asyncGetUserInfo().then(() => { getHasLike(newId) })
   getWishInfo(newId)
 }
+
+/* ===== 小程序分享逻辑 ===== */
+onShareAppMessage(() => {
+  return {
+    title: goods.value.name || goods.value.goods_name || '商品详情',
+    path: `/pages/goods/goods?goods_id=${currentId.value}`,
+    imageUrl: goods.value.goods_images?.[0] || ''
+  }
+})
+
+onShareTimeline(() => {
+  return {
+    title: goods.value.name || goods.value.goods_name || '商品详情',
+    query: `goods_id=${currentId.value}`,
+    imageUrl: goods.value.goods_images?.[0] || ''
+  }
+})
 
 /* ===== 请求函数（全部支持传入 id） ===== */
 function getGoods (id = currentId.value) {

@@ -156,7 +156,7 @@
 <script setup>
 import { ref, computed, onActivated, onDeactivated } from 'vue'
 import { websiteUrl, getUserInfo, global } from '../../common/config.js'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
 const props = defineProps(['brand_id'])
 
@@ -177,6 +177,51 @@ function parseBrandIdFromRoute() {
   }
   return ''
 }
+
+/** ====== 小程序分享（方法1：右上角胶囊） ====== */
+// #ifdef MP-WEIXIN
+function ensureShareMenu() {
+  try {
+    uni.showShareMenu?.({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline']
+    })
+  } catch {}
+}
+
+const buildBrandShareTitle = () => {
+  const name = brand.value?.brand_name || ''
+  if (name) return `快来看看品牌：${name}`
+  return '快来看看这个品牌'
+}
+
+const buildBrandSharePath = () => {
+  const bid = encodeURIComponent(currentBrandId.value || '')
+  return `/pages/brand/brand?brand_id=${bid}`
+}
+
+const buildBrandShareImage = () => {
+  // 优先 logo，其次品牌名图片
+  return brand.value?.logo_image || brand.value?.brand_name_image || ''
+}
+
+onShareAppMessage(() => {
+  return {
+    title: buildBrandShareTitle(),
+    path: buildBrandSharePath(),
+    imageUrl: buildBrandShareImage()
+  }
+})
+
+onShareTimeline(() => {
+  const bid = encodeURIComponent(currentBrandId.value || '')
+  return {
+    title: buildBrandShareTitle(),
+    query: `brand_id=${bid}`,
+    imageUrl: buildBrandShareImage()
+  }
+})
+// #endif
 
 /** ====== Tab（带 key，避免动态插入导致 index 混乱） ====== */
 const activeTab = ref(0)
@@ -554,6 +599,10 @@ function jump2saleNews(item) {
 
 /** ====== 生命周期 ====== */
 onShow(async () => {
+  // #ifdef MP-WEIXIN
+  ensureShareMenu()
+  // #endif
+
   getUserInfo()
   const idFromRoute = parseBrandIdFromRoute()
   const newId = String(idFromRoute || currentBrandId.value || '')
@@ -751,7 +800,6 @@ onShow(async () => {
   font-size: 22rpx;
   color: #ffffff;
   background: rgba(0, 0, 0, 0.55);
-  /* 轻微描边，提升不同图片上的可读性 */
   border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
@@ -800,7 +848,6 @@ onShow(async () => {
 .news-meta {
   padding: 14rpx 12rpx 16rpx 12rpx;
 }
-/* 标题只显示一行 */
 .news-title {
   display: block;
   font-size: 28rpx;
