@@ -1,3 +1,4 @@
+<!-- App.vue -->
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 

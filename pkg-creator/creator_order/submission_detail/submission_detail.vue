@@ -230,8 +230,9 @@
     <!-- 底部按钮：仅“确认订单 / 去付款”两种 -->
     <view class="bottom-bar" v-if="isLogin && submission.submission_id && bottomAction">
       <button class="pay-btn" type="default" @click="handleBottomAction">
-        <text v-if="totalPrice > 0" class="pay-amount">合计 ¥{{ totalPrice }} ·</text>
-        <text class="pay-text">{{ bottomActionText }}</text>
+		  
+        <text v-if="totalPrice > 0" class="pay-amount font-title">合计 ¥{{ totalPrice }} ·</text>
+        <text class="pay-text font-title">{{ bottomActionText }}</text>
       </button>
     </view>
   </view>

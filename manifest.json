@@ -2,8 +2,8 @@
     "name" : "娃圈狗狗助手",
     "appid" : "__UNI__5D7AAEE",
     "description" : "一个关于BJD娃娃的应用",
-    "versionName" : "1.2.1",
-    "versionCode" : 1201,
+    "versionName" : "1.2.2",
+    "versionCode" : 1202,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
@@ -71,8 +71,7 @@
                 "share" : {},
                 "push" : {
                     "unipush" : {
-                        "version" : "2",
-                        "offline" : true,
+                        "offline" : false,
                         "icons" : {
                             "small" : {
                                 "ldpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/18x18.png",

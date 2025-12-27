@@ -108,10 +108,6 @@
       </view>
     </view>
 
-    <!-- 平台公告横幅 -->
-    <view class="platform-announcement" @click="jumpToAnnouncement">
-      <text class="announcement-text">平台公告</text>
-    </view>
   </view>
 </template>
 
@@ -694,31 +690,7 @@ onReachBottom(() => {
 .footer-loading { display: flex; justify-content: center; align-items: center; }
 .footer-text { font-size: 22rpx; color: #a1a9b3; }
 
-/* 平台公告横幅 */
-.platform-announcement {
-  width: 650rpx;
-  height: 180rpx;
-  margin: 30rpx auto 0;
-  background-image: url('https://images1.fantuanpu.com/box/admin/c73541842fb9d9d2e1a6bef376ef784c');
-  background-size: contain;
-  background-position: center;
-  border-radius: 20rpx;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 25rpx;
-  position: relative;
-  overflow: hidden;
-}
-.platform-announcement::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  z-index: 1;
-}
+
 .announcement-text {
   font-size: 34rpx;
   font-weight: 900;

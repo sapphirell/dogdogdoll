@@ -67,23 +67,31 @@
 
                 <!-- 图片（包括普通图片 + 贴纸） -->
                 <template v-else-if="item.kind === 'image'">
-                  <image
-                    class="img-msg"
-                    :src="item.url"
-                    mode="widthFix"
-                    @click="previewImage(item.url)"
-                  />
+                 <image
+                   class="img-msg"
+                   :class="{ 'is-sticker': isStickerUrl(item.url) }" 
+                   :src="item.url"
+                   mode="widthFix"
+                   @click="previewImage(item.url)"
+                 />
                 </template>
 
                 <!-- ===== 带 MessageCard 的 other 消息 ===== -->
                 <template v-else-if="item.kind === 'other' && (item.card || (item.payload && item.payload.card))">
                   <view class="msg-card" @click="handleCardClick(item)">
                     <view class="msg-card-header">
-                      <text class="msg-card-tag">{{ cardTag(item) }}</text>
+                      <text class="msg-card-tag" :class="getCardTagClass(item)">{{ cardTag(item) }}</text>
                       <text class="msg-card-title">{{ cardTitle(item) }}</text>
                     </view>
-
-                    <!-- 卡片封面图 -->
+                
+                    <view v-if="hasAmount(item)" class="msg-card-price-box">
+                      <text class="price-label">{{ getPriceLabel(item) }}</text>
+                      <view class="price-val">
+                        <text class="currency">¥</text>
+                        <text class="amount font-alimamashuhei">{{ formatAmount(item) }}</text>
+                      </view>
+                    </view>
+                
                     <view v-if="cardImage(item)" class="msg-card-image-wrap">
                       <image
                         class="msg-card-image"
@@ -92,13 +100,14 @@
                         @click.stop="previewImage(cardImage(item))"
                       />
                     </view>
-
+                
                     <view class="msg-card-body" v-if="cardDescription(item)">
                       <text class="msg-card-desc">{{ cardDescription(item) }}</text>
                     </view>
-
+                
                     <view class="msg-card-footer">
                       <text class="msg-card-action font-alimamashuhei">{{ cardActionText(item) }}</text>
+                      <uni-icons type="right" size="12" color="#a2b7c0" />
                     </view>
                   </view>
                 </template>
@@ -327,6 +336,74 @@ function measureNavBar () {
       })
       .exec()
   })
+}
+// [辅助] 智能获取金额数值 (核心修复)
+function getSafeAmount(m) {
+  const p = m.payload || {};
+  
+  // 1. 第一优先级：优先读 payload.amount (后端直传字段)
+  if (p.amount !== undefined && p.amount !== null) {
+    return Number(p.amount);
+  }
+  
+  // 2. 第二优先级：从 extra 中深挖 (适配 JSON 数据结构)
+  // 你的 JSON 示例显示数据在: extra.submission_item.price_total
+  const extra = p.card?.extra || {};
+  
+  if (extra.submission_item && extra.submission_item.price_total !== undefined) {
+    return Number(extra.submission_item.price_total);
+  }
+  
+  // 如果未来有 submission.price_total 这种结构，也可以加在这里
+  if (extra.submission && extra.submission.price_total !== undefined) {
+    return Number(extra.submission.price_total);
+  }
+
+  return null; // 没找到金额
+}
+// 判断是否显示金额框
+function hasAmount(m) {
+  const p = m.payload || {};
+  const cardType = p.card?.card_type || '';
+  
+  // 1. 扩充允许显示的卡片类型
+  const allowedTypes = [
+    'artist_order_change_price',       // 改价
+    'artist_order_submission_create',  // 创建订单
+    'artist_order_buyer_confirm',      // 确认订单
+    'artist_order_change_item'         // [新增] 投递内容变更 (对应消息ID 293)
+  ];
+  
+  if (!allowedTypes.includes(cardType)) return false;
+  
+  // 2. 检查能不能取到有效数值
+  const val = getSafeAmount(m);
+  return val !== null && val >= 0;
+}
+
+//获取金额显示的标签文案
+function getPriceLabel(m) {
+  const type = m.payload?.card?.card_type || '';
+  if (type === 'artist_order_change_price') return '调整后价格';
+  if (type === 'artist_order_submission_create') return '订单金额';
+  if (type === 'artist_order_change_item') return '当前总价'; // [新增]
+  return '涉及金额';
+}
+
+// 格式化金额
+function formatAmount(m) {
+  const val = Number(m.payload?.amount || 0);
+  return val.toFixed(2); // 保留两位小数
+}
+// [优化] 根据卡片类型返回不同的 Tag 样式类（可选）
+function getCardTagClass(m) {
+  const type = m.payload?.card?.card_type || '';
+  // 涉及金额变动或订单状态流转的，用醒目的橙色
+  if (['artist_order_change_price', 'artist_order_change_item', 'artist_order_submission_create'].includes(type)) {
+    return 'tag-orange';
+  }
+  if (type === 'artist_order_step_request') return 'tag-blue';
+  return 'tag-default';
 }
 
 /** 刷新布局参数（首屏 & 返回页面都做一次） */
@@ -825,6 +902,13 @@ function markReadToBottom () {
     data: { session_id: Number(numericSid.value), read_pts: Number(myReadPts.value) }
   }
   socket.send(JSON.stringify(pkt))
+}
+
+function isStickerUrl(url) {
+  if (!url) return false;
+  // 示例：如果你的贴纸 URL 里包含 'stickers' 关键字，或者特定的域名
+  // 你也可以在发送贴纸时，在消息体里加一个 extra: { is_sticker: true } 字段来判断，那样更准确
+  return url.includes('box/admin'); 
 }
 
 /** 事件处理 */
@@ -1350,8 +1434,15 @@ function handleCardClick (m) {
   line-height: 1.2;
 }
 .bubble .img-msg {
-  max-width: 500rpx;
+/* 原来是 500rpx，改为 280rpx 左右会让表情看起来更精致 */
+  max-width: 280rpx; 
+  /* 可选：如果你希望图片不要太长，也可以限制最大高度 */
+  max-height: 350rpx; 
   border-radius: 12rpx;
+  
+  &.is-sticker {
+      max-width:160rpx;
+    }
 }
 
 .bubble .other-card {
@@ -1391,6 +1482,9 @@ function handleCardClick (m) {
   color: #4a92af;
   background: #99f2ff;
   margin-right: 10rpx;
+  &.tag-orange { background: #FFF3E0; color: #EF6C00; }
+    &.tag-blue { background: #E3F2FD; color: #1565C0; }
+    &.tag-default { background: #E0F2F1; color: #00695C; }
 }
 .msg-card-title {
   flex: 1;
@@ -1398,7 +1492,37 @@ function handleCardClick (m) {
   font-weight: 600;
   color: #111827;
 }
+/* [新增] 价格区域样式 */
+.msg-card-price-box {
+  margin: 16rpx 0;
+  padding: 20rpx;
+  background: #F9FAFB;
+  border-radius: 12rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
+  .price-label {
+    font-size: 24rpx;
+    color: #6B7280;
+  }
+
+  .price-val {
+    color: #EF4444; /* 价格用红色 */
+    font-weight: bold;
+    display: flex;
+    align-items: baseline;
+
+    .currency {
+      font-size: 24rpx;
+      margin-right: 2rpx;
+    }
+    .amount {
+      font-size: 36rpx;
+      font-family: DIN, -apple-system, Helvetica, sans-serif; /* 推荐用数字字体 */
+    }
+  }
+}
 .msg-card-image-wrap {
   margin-bottom: 12rpx;
   border-radius: 12rpx;
