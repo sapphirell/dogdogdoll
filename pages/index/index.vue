@@ -5,13 +5,12 @@
     <privacy-permission-modal></privacy-permission-modal>
     <loading-toast :show="showLoadding"></loading-toast>
     <view-logs></view-logs>
-   <version-check
+    <version-check
       ref="versionCheckRef"
       :show-up-to-date-toast="true"
     />
 
     <view class="body">
-      <!-- 整个可滚区域交给 z-paging 管 -->
       <z-paging
         ref="paging"
         v-model="pagingList"
@@ -24,7 +23,6 @@
         @query="queryPaging"
         @scroll="handlePagingScroll"
       >
-        <!-- 头部（跟着列表滚动，因为不在 slot="top" 里） -->
         <view class="index_header">
           <view class="header-placeholders"></view>
 
@@ -38,7 +36,6 @@
               <server-selector @server-change="handleServerChange"></server-selector>
             </view>
 
-            <!-- 假搜索框 -->
             <view
               class="fake-search"
               @tap="goSearch"
@@ -49,7 +46,6 @@
             </view>
           </view>
 
-          <!-- 四个 Tab 按钮 -->
           <view
             style="margin: 20rpx 0rpx 0rpx 0rpx; padding: 5px 10px 0px 10px;border-radius: 20px 20px 0 0;"
           >
@@ -96,20 +92,16 @@
             </view>
           </view>
         </view>
-		
+        
 
-        <!-- 白色圆角容器 + 列表（列表“物理上”就在 body_container 里） -->
         <view class="body_container">
           <view style="height: 40rpx;"></view>
 
-          <!-- 列表主体：每次切 tab 都会做一次淡入动画 -->
           <view class="body_list fade-list">
-            <!-- tab = 新情报 -->
             <view
               v-if="activeTab === 'news'"
               class="news-box"
             >
-              <!-- 轮播图（可以按需开启） -->
               <view
                 style="position: relative;height: 250rpx;margin-bottom: 20rpx; display: none;"
               >
@@ -126,10 +118,11 @@
                     class="banner_swiper_item"
                   >
                     <view class="swiper-item">
-                      <image
+                      <common-image
                         :src="item.banner"
-                        mode="aspectFill"
-                        style="width: 100%;height: 250rpx;"
+                        width="100%"
+                        height="250"
+                        radius="0"
                         @click="handleBannerClick(item)"
                       />
                     </view>
@@ -137,10 +130,11 @@
 
                   <swiper-item v-if="bannerList.length === 0">
                     <view class="empty-banner">
-                      <image
+                      <common-image
                         src="/static/default-banner.jpg"
-                        mode="aspectFill"
-                        style="width: 100%;height: 250rpx;"
+                        width="100%"
+                        height="250"
+                        radius="0"
                       />
                     </view>
                   </swiper-item>
@@ -157,7 +151,7 @@
                   <swiper
                     v-if="item.image_list && item.image_list.length > 0"
                     class="image-swiper"
-                    :autoplay="item.imagesLoaded"
+                    :autoplay="true" 
                     :circular="true"
                   >
                     <swiper-item
@@ -165,25 +159,13 @@
                       :key="idx"
                     >
                       <view class="image-container">
-                        <image
+                        <common-image
                           :src="img"
+                          width="100%"
+                          height="100%"
+                          radius="15"
                           mode="aspectFill"
-                          class="swiper-image"
-                          :class="{ loaded: item.imagesLoaded }"
-                          @load="handleNewsImageLoad(item)"
-                          @error="handleNewsImageError(item, idx)"
                         />
-                        <view
-                          v-if="!item.imagesLoaded"
-                          class="loading-overlay"
-                        >
-                          <uni-icons
-                            type="loop"
-                            size="28"
-                            color="rgb(185 185 185)"
-                            class="loading-icon"
-                          ></uni-icons>
-                        </view>
                       </view>
                     </swiper-item>
                   </swiper>
@@ -191,7 +173,7 @@
 
                 <view class="news-content">
                   <text class="news-title">{{ item.title }}</text>
-                  <text class="news-desc">{{ item.content }}</text>
+                  <text class="news-desc common-text">{{ item.content }}</text>
                   <view class="news-footer">
                     <text class="brand-tag">{{ item.brand_name }}</text>
                     <text class="news-time">{{ formatTime(item.created_at) }}</text>
@@ -200,7 +182,6 @@
               </view>
             </view>
 
-            <!-- tab = 娃物图鉴（品牌列表） -->
             <view
               v-else-if="activeTab === 'brands'"
               class="brand_box"
@@ -217,7 +198,7 @@
                 </view>
               </view>
 
-              <view class="brand_type_description" style="display: block;">
+<!--              <view class="brand_type_description" style="display: block;">
                 <text v-if="activeSearchType === 1">
                   中国公司制作的BJD在打磨、分模线等工艺的处理上比较优秀，价格也比外社低很多。
                 </text>
@@ -228,7 +209,7 @@
                   国外娃社起步较早，风格设计也比较多样化。
                 </text>
                 <text v-else>全部品牌</text>
-              </view>
+              </view> -->
 
               <view
                 v-for="(item, index) in brandsList"
@@ -238,7 +219,6 @@
               </view>
             </view>
 
-            <!-- tab = 妆师毛娘：与 z-paging 联动 -->
             <view
               v-else-if="activeTab === 'hot'"
               class="hot-box"
@@ -250,12 +230,10 @@
               />
             </view>
 
-            <!-- tab = 匿名树洞 -->
             <view
               v-else-if="activeTab === 'second'"
               class="treehole-box"
             >
-              <!-- 发布按钮 -->
               <view class="publish-btn" @click="handlePublish">
                 <uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
               </view>
@@ -263,18 +241,20 @@
               <view
                 v-for="item in treeholeList"
                 :key="item.id"
-                class="treehole-item"
+                class="treehole-item common-text"
                 @tap="jump2treeholeDetail(item)"
               >
                 <view
                   class="user-info"
                   @tap.stop="jump2userWhenNotAnonymous(item)"
                 >
-                  <image
+                  <common-image
                     v-if="item.avatar !== ''"
                     :src="item.avatar"
+                    width="60"
+                    height="60"
+                    radius="30"
                     class="avatar"
-                    mode="aspectFill"
                   />
                   <image
                     v-else
@@ -285,7 +265,7 @@
                   <text class="username">
                     {{ item.is_anonymous ? '匿名用户' : item.author_name }}
                   </text>
-                  <text class="time">{{ formatTime(item.created_at) }}</text>
+                  <text class="time font-title">{{ formatTime(item.created_at) }}</text>
                   <text class="cid"></text>
                 </view>
 
@@ -297,7 +277,7 @@
                 >
                   <swiper
                     class="image-swiper"
-                    :autoplay="item.imagesLoaded"
+                    :autoplay="true"
                     :circular="true"
                     :indicator-dots="item.images.length > 1"
                     :duration="300"
@@ -307,26 +287,14 @@
                       :key="idx"
                     >
                       <view class="image-container">
-                        <image
+                        <common-image
                           :src="img"
+                          width="100%"
+                          height="100%"
+                          radius="0"
                           mode="aspectFill"
-                          class="swiper-image"
-                          :class="{ loaded: item.imagesLoaded }"
-                          @tap.stop="previewImage(item.images, idx)"
-                          @load="handleImageLoad(item)"
-                          @error="handleImageError(item, idx)"
+                          @click="previewImage(item.images, idx)"
                         />
-                        <view
-                          v-if="!item.imagesLoaded"
-                          class="loading-overlay"
-                        >
-                          <uni-icons
-                            type="spinner-cycle"
-                            size="28"
-                            color="#4cbbd0"
-                            class="loading-icon"
-                          ></uni-icons>
-                        </view>
                       </view>
                     </swiper-item>
                   </swiper>
@@ -356,7 +324,6 @@
         </view>
       </z-paging>
 
-      <!-- 回到顶部按钮：向下滚动超过一屏高度时显示 -->
       <view
         v-if="showBackTop"
         class="back-top-btn"
@@ -378,7 +345,6 @@ import {
 } from '../../common/config.js'
 
 const buildIndexSharePath = () => {
-  // 注意：把 /pages/index/index 替换成你实际 index 页路径
   const tab = encodeURIComponent(activeTab.value || 'news')
   return `/pages/index/index?tab=${tab}`
 }
@@ -613,21 +579,13 @@ const fetchNews = (pageNo, pageSize) => {
         return {
           ...item,
           image_list: imgs,
-          imagesLoaded: imgs.length === 0, // 没有图片直接认为加载完成
-          loadCount: 0,
+          // 【修改点 3】删除了 loadCount 等用于判断加载状态的字段，交给组件内部处理
         }
       })
 
       const total = data.total
       console.log('total:', total)
       paging.value && paging.value.complete(list, total)
-
-      // 兜底：3 秒后还没加载完的图片，强制结束 loading
-      setTimeout(() => {
-        newsList.value.forEach((it) => {
-          if (!it.imagesLoaded) it.imagesLoaded = true
-        })
-      }, 3000)
     },
     fail: (err) => {
       console.error(err)
@@ -643,27 +601,7 @@ const fetchNews = (pageNo, pageSize) => {
   })
 }
 
-const handleNewsImageLoad = (item) => {
-  if (!item.image_list || item.image_list.length === 0) {
-    item.imagesLoaded = true
-    return
-  }
-  item.loadCount = (item.loadCount || 0) + 1
-  if (item.loadCount >= item.image_list.length) {
-    item.imagesLoaded = true
-  }
-}
-
-const handleNewsImageError = (item, idx) => {
-  console.error(
-    '新闻图片加载失败:',
-    item.image_list && item.image_list[idx]
-  )
-  item.loadCount = (item.loadCount || 0) + 1
-  if (!item.image_list || item.loadCount >= item.image_list.length) {
-    item.imagesLoaded = true
-  }
-}
+// 【修改点 4】删除了 handleNewsImageLoad 和 handleNewsImageError
 
 // ==================== 品牌列表（cursor + z-paging） ====================
 const cursor = ref('')
@@ -800,19 +738,12 @@ const fetchTreehole = (pageNo, pageSize) => {
       const list = raw.map((item) => ({
         ...item,
         images: item.images || [],
-        imagesLoaded: (item.images || []).length === 0,
-        loadCount: 0,
+        // 【修改点 5】删除了 loadCount 等用于判断加载状态的字段
       }))
 
       // 这里接口没给 total，就按「有无下一页」策略来：如果这一页 < pageSize，则认为没有更多
       const total = pageNo * pageSize + (list.length < pageSize ? 0 : 1)
       paging.value && paging.value.complete(list, total)
-
-      setTimeout(() => {
-        treeholeList.value.forEach((it) => {
-          if (!it.imagesLoaded) it.imagesLoaded = true
-        })
-      }, 3000)
     },
     fail: (err) => {
       console.error(err)
@@ -834,24 +765,7 @@ const jump2treeholeDetail = (item) => {
   })
 }
 
-const handleImageLoad = (item) => {
-  if (!item.images || item.images.length === 0) {
-    item.imagesLoaded = true
-    return
-  }
-  item.loadCount = (item.loadCount || 0) + 1
-  if (item.loadCount >= item.images.length) {
-    item.imagesLoaded = true
-  }
-}
-
-const handleImageError = (item, idx) => {
-  console.error('树洞图片加载失败', item.images && item.images[idx])
-  item.loadCount = (item.loadCount || 0) + 1
-  if (!item.images || item.loadCount >= item.images.length) {
-    item.imagesLoaded = true
-  }
-}
+// 【修改点 6】删除了 handleImageLoad 和 handleImageError
 
 const previewImage = (images, index) => {
   uni.previewImage({
@@ -1130,11 +1044,7 @@ onReady(() => {
     .image-swiper {
       width: 200rpx;
 
-      .swiper-image {
-        width: 100%;
-        height: 100%;
-        border-radius: 15rpx;
-      }
+      /* 【修改点 5】删除了 .swiper-image 样式，因为现在交给 common-image 处理 */
     }
 
     .news-content {
@@ -1155,7 +1065,7 @@ onReady(() => {
       }
 
       .news-desc {
-        font-size: 23rpx;
+        font-size: 25rpx;
         color: #666;
         line-height: 1.6;
         display: -webkit-box;
@@ -1207,13 +1117,17 @@ onReady(() => {
   margin: 0 20rpx 30rpx;
   padding: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+ text {
+   font-size: 26rpx;
+ }
 }
 
 .user-info {
   display: flex;
   align-items: center;
   margin-bottom: 20rpx;
-
+  justify-content: space-around;
+  
   .avatar {
     width: 60rpx;
     height: 60rpx;
@@ -1263,10 +1177,7 @@ onReady(() => {
     border-radius: 12rpx;
     overflow: hidden;
 
-    .swiper-image {
-      width: 100%;
-      height: 100%;
-    }
+    /* 【修改点 6】删除 .swiper-image 样式 */
   }
 }
 
@@ -1327,40 +1238,7 @@ onReady(() => {
   height: 100%;
 }
 
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-.loading-icon {
-  animation: rotate 1s linear infinite;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.swiper-image {
-  opacity: 0;
-  transition: opacity 0.5s ease;
-
-  &.loaded {
-    opacity: 1;
-  }
-}
+/* 【修改点 7】删除了 .loading-overlay, .loading-icon, @keyframes rotate, .swiper-image 相关样式 */
 
 /* 假搜索框 */
 .fake-search {

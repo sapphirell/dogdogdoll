@@ -1,10 +1,8 @@
-<!-- /components/comment-input.vue -->
 <template>
-	<!-- 蒙版层 -->
-	<view class="mask" v-show="displayMask" @tap="handleMaskTap"></view>
+	<view class="mask" v-show="displayMask" @tap="handleMaskTap" @touchmove.stop.prevent="() => {}"></view>
 
-	<!-- 评论框 -->
-	<view class="bottom_tab" :adjust-position="false" :style="{ paddingBottom: footerBottomHeight }">
+	<view class="bottom_tab" @touchmove.stop.prevent="() => {}" :adjust-position="false"
+		:style="{ paddingBottom: footerBottomHeight }">
 		<view class="about_info">
 			<view v-if="selectedAssociation" class="association-container">
 				<view class="association-item">
@@ -24,13 +22,11 @@
 			</view>
 		</view>
 		<view class="bottom_input">
-			<!-- 输入框 -->
 			<textarea :disable-default-padding="true" :focus="isFocused" class="comment_input unified-textarea"
 				:class="{ expanded: isFocused }" ref="inputRef" v-model="commentText" @focus="handleFocus"
 				@blur="handleBlur" :adjust-position="false"
 				:placeholder="replyInfo.username ? '回复@' + replyInfo.username + ' ' : '写评论...'"></textarea>
 
-			<!-- 按钮 -->
 			<button @click="handleSubmit">写评论</button>
 		</view>
 
@@ -48,19 +44,13 @@
 				<uni-icons type="image" size="22" color="#696a6c"></uni-icons>
 			</view>
 
-			<!-- 操作栏 ： 1是否匿名发帖，点击后变为高亮蓝色，且发帖传匿名参数 -->
-			<!-- 加号：内容选择区域出现多个按钮，1：关联 ,点击后从底部弹窗，-->
-			<!-- 键盘按钮，点击关闭下方菜单，并聚焦输入框 -->
-		</view>
+			</view>
 
 
 		<view>
-			<!-- 内容选择区域，在输入框下方，会把输入框顶起来 -->
-		</view>
+			</view>
 
-		<!-- 底部弹窗组件 -->
 		<bottom-popup :show="showPopup" @close="showPopup = false">
-			<!-- 关联商品或是品牌，点击后获取商品id和名称，关闭弹窗组件，并在输入框下方显示刚刚选择的品牌或商品，提交的时候需要携带这些信息 -->
 			<switch-search :target-id="props.targetId" :reply-info="props.replyInfo" mode="fill"
 				@submit="handleSearchSelect" v-if="showPopup"></switch-search>
 			<view style="height: 900rpx;"></view>
@@ -133,13 +123,21 @@
 
 	const keyboardHeight = ref(0)
 	const systemInfo = uni.getSystemInfoSync()
-	const footerBottomHeight = computed(() => {
-		let safeBottomVar = systemInfo.safeAreaInsets?.bottom || 10
-		console.log("底部安全距离1:", systemInfo.safeAreaInsets?.bottom, "=>", safeBottomVar)
 
-		let safeBottom = safeBottomVar + keyboardHeight.value
-		console.log("底部最终距离2:", safeBottom)
-		return `${safeBottom}px`
+	// [修改] 优化高度计算逻辑，解决抬起过高问题
+	const footerBottomHeight = computed(() => {
+		// 获取底部安全距离，默认为10
+		let safeBottomVar = systemInfo.safeAreaInsets?.bottom || 10
+		
+		// 如果键盘高度大于0（键盘弹起）
+		if (keyboardHeight.value > 0) {
+			// 直接使用键盘高度支撑，不再叠加安全距离
+			// 因为键盘高度通常是从屏幕底部计算的，已经包含了安全区域
+			return `${keyboardHeight.value}px`
+		}
+		
+		// 键盘未弹起时，仅使用安全距离
+		return `${safeBottomVar}px`
 	})
 
 	const keyboardHeightChangeHandler = (res) => {
@@ -277,7 +275,7 @@
 			image_url: uploadedImageUrl.value || "",
 			association_id: selectedAssociation.value ? selectedAssociation.value.id : 0,
 			association_type: selectedAssociation.value ? selectedAssociation.value.type : 0,
-			is_anonymous: isAnonymous.value ? 1 : 0  // 1表示匿名，0表示正常
+			is_anonymous: isAnonymous.value ? 1 : 0  // 1表示匿名，0表示正常
 		}
 		
 		emit('submit', submitData)
@@ -286,7 +284,7 @@
 		commentText.value = ''
 		uploadedImageUrl.value = ''
 		selectedAssociation.value = null
-		isAnonymous.value = false 
+		isAnonymous.value = false 
 		emit('update:replyInfo', {})
 		
 		// 关闭蒙版和键盘

@@ -1084,9 +1084,12 @@ onBeforeUnmount(() => {
   .top-tabs{
     display: flex; gap: 40rpx; align-items: flex-end; padding: 8rpx 4rpx 4rpx;margin-bottom:20rpx;margin-left: 10rpx;
     .t-tab{
-      position: relative; padding: 8rpx 6rpx 14rpx; font-size: 34rpx; font-weight: 800; color:#8a8f9a;
+      position: relative; padding: 8rpx 6rpx 14rpx; 
+	  text {
+		  font-size: 36rpx; font-weight: 800; color:#8a8f9a;
+	  }
       .underline{ display:none; position:absolute; left:0; right:0; bottom:0; height:6rpx; border-radius:6rpx; background: var(--g-primary); }
-      &.active{ color:#333; .underline{ display:block; } }
+      &.active{ text {color:#333;} .underline{ display:block; } }
       &:active{ opacity:.9; }
     }
   }

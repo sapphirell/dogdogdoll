@@ -1,4 +1,3 @@
-<!-- components/mine-settings-panel/mine-settings-panel.vue -->
 <template>
   <view-logs />
   <view class="settings-panel font-alimamashuhei">
@@ -18,7 +17,6 @@
       />
     </view>
 
-    <!-- 底部居中：文章轮播（紧凑：icon + 标题） -->
     <view
       v-if="articleList.length > 0"
       class="article-ticker"
@@ -51,7 +49,6 @@
       </view>
     </view>
 
-    <!-- 退出确认弹窗 -->
     <common-modal v-model:visible="showLogoutConfirm" top="26vh" width="80vw">
       <view class="logout-modal font-alimamashuhei">
         <view class="logout-title">确认退出账号？</view>
@@ -80,15 +77,23 @@ const emit = defineEmits(['action'])
 
 const items = [
   { key: 'profile', label: '基本信息设置' },
-  { key: 'address', label: '地址设置' },
+  { key: 'deal', label: '交易信息设置' }, // 改名：地址设置 -> 交易信息设置， key 保持 deal 或自定义
   { key: 'logout', label: '退出账号' }
 ]
 
 const showLogoutConfirm = ref(false)
 
 function handleClick (key) {
-  if (key === 'logout') showLogoutConfirm.value = true
-  else emit('action', key)
+  if (key === 'logout') {
+    showLogoutConfirm.value = true
+  } else if (key === 'deal') {
+    // 处理跳转逻辑
+    uni.navigateTo({
+      url: '/pkg-common/deal-setting/deal-setting'
+    })
+  } else {
+    emit('action', key)
+  }
 }
 
 function onConfirmLogout () {

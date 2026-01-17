@@ -30,6 +30,12 @@ export const dogdogdollVersion = "1.2.2"
 export let global = reactive({
 	isLogin: false,
 	userInfo: {},
+	
+	// --- 新增：记录最后一次自动刷新的请求信息 ---
+	lastRefresh: {
+	    url: '',  // 记录请求的唯一标识（如 URL + 参数）
+	    time: 0   // 记录时间戳
+	}
 });
 
 

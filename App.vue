@@ -92,11 +92,24 @@ function loadFonts() {
 	}
 	
 	.font-title {
-		font-family: "title-font";
+		font-family: "title-font"!important;
+	}
+	
+	.font-doll {
+		font-family: "RenOuFangSong 16";
 	}
 
 	.font-cute {
 		font-family: "cutefont";
+	}
+	
+	.common-text {
+		font-size: 32rpx;
+		color: #333;
+		line-height: 1.7; 
+		margin-bottom: 24rpx;
+		letter-spacing: 0.5rpx;
+		word-break: break-all;
 	}
 
 	.icon_image {

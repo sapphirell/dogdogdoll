@@ -622,7 +622,7 @@ const loadMore = async comment => {
 
 <style lang="less">
 .comment-container {
-  padding: 20rpx;
+  // padding: 20rpx;
 
   .comment-count {
     padding: 20rpx 24rpx;

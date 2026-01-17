@@ -1,7 +1,7 @@
 <template>
   <!-- 触发按钮 - 只显示延迟时间 -->
   <view class="server-selector-trigger" @click="showModal = true">
-    <uni-icons type="paperplane" size="24" color="#5db7ff"></uni-icons>
+    <!-- <uni-icons type="paperplane" size="24" color="#5db7ff"></uni-icons> -->
     <text>{{ currentPing >= 0 ? currentPing + 'ms' : '9999ms' }}</text>
   </view>
   

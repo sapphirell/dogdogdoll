@@ -588,7 +588,7 @@ function goRole(type) {
 
   const urlMap = {
     shop: `/pages/brand/brand?brand_id=${bid}`,
-    hair: `/pages/artist_info/custom_wig_artist?brand_id=${bid}`,
+    hair: `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${bid}`,
     artist: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${bid}`
   }
   const url = urlMap[type]

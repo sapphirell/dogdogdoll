@@ -66,7 +66,7 @@
     <view class="content-box">
       <view><text class="title">{{ detailData.title }}</text></view>
       <view style="margin: 20rpx 0rpx;">
-        <text class="content">{{ detailData.content }}</text>
+        <text class="content common-text">{{ detailData.content }}</text>
       </view>
     </view>
 
@@ -542,7 +542,7 @@ onLoad((options) => {
 /* 图文内容 */
 .content-box{ padding:30rpx;
   .title{ font-size:28rpx; font-weight:bold; margin-bottom:20rpx; }
-  .content{ font-size:24rpx; color:#666; line-height:1.6; }
+  .content{ font-size:28rpx; }
 }
 
 /* 品牌贩售信息卡片区域（正文下方） */

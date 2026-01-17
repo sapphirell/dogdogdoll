@@ -325,7 +325,7 @@ function choose(item) {
 	   })
     } else if (activeType.value === 'hair') {
       // 毛娘：跳毛娘主页
-      const url = `/pages/artist_info/custom_wig_artist?brand_id=${item.id}`
+      const url = `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${item.id}`
       uni.navigateTo({ url })
     }
   } else {

@@ -177,6 +177,12 @@
 			 	"bounce": "none"
 			 }
 		}
+	},
+	{
+		"path": "components/common-image/common-image",
+		"style": {
+			"navigationBarTitleText": ""
+		}
 	}
   ],
 
@@ -222,7 +228,8 @@
 		{
 			"path": "creator_order/submission_detail/submission_detail",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom" 
 			}
 		},
 		{
@@ -289,6 +296,25 @@
 		{
 		  "path": "artwork/artwork",
 		  "style": { "navigationBarTitleText": "","navigationStyle": "custom" }
+		},
+		{
+			"path": "deal-setting/deal-setting",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "deal-setting/trade-password/trade-password",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "deal-setting/payment-code/payment-code",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
 		}
       ]
     }
