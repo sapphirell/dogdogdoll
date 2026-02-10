@@ -216,9 +216,12 @@ const stickerLoading = ref(false)
 const isBlocked = ref(false)
 const myReadPts = ref(0)
 const peerReadPts = ref(0)
+const pendingReadPts = ref(0)
 
 let offIM = null
 const hasInitOnce = ref(false)
+let readFlushTask = null
+let readRepairTimer = null
 
 // Layout
 const windowTopPxRaw = ref(0)
@@ -265,6 +268,33 @@ function waitWsReady (timeout = 5000) {
     }
     check()
   })
+}
+
+async function scheduleMarkReadWhenReady () {
+  if (readFlushTask) return readFlushTask
+  if (numericSid.value <= 0) return
+  readFlushTask = (async () => {
+    const socket = await waitWsReady(5000)
+    if (!socket || socket.readyState !== 1) return
+    markReadToBottom(true)
+  })().finally(() => {
+    readFlushTask = null
+  })
+  return readFlushTask
+}
+
+function startReadRepairTimer () {
+  stopReadRepairTimer()
+  readRepairTimer = setInterval(() => {
+    markReadToBottom()
+  }, 1500)
+}
+
+function stopReadRepairTimer () {
+  if (readRepairTimer) {
+    clearInterval(readRepairTimer)
+    readRepairTimer = null
+  }
 }
 
 function initSelfUidFromStorage () {
@@ -322,6 +352,7 @@ onLoad(async (query) => {
 })
 
 onShow(async () => {
+  startReadRepairTimer()
   await refreshLayoutOffsets()
   if (!hasInitOnce.value) {
     await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
@@ -363,6 +394,7 @@ onShow(async () => {
         pagingRef.value.reload()
       }
     })
+    scheduleMarkReadWhenReady()
     return
   }
   
@@ -373,12 +405,15 @@ onShow(async () => {
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) setActiveSession(key)
   markReadToBottom()
+  scheduleMarkReadWhenReady()
 })
 
 onHide(() => {
+  stopReadRepairTimer()
   if (offIM) { offIM(); offIM = null }
 })
 onUnload(() => {
+  stopReadRepairTimer()
   if (offIM) { offIM(); offIM = null }
   if (clickAudio) { try { clickAudio.destroy() } catch (e) {} }
   leaveActiveSession()
@@ -452,7 +487,9 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
       return
     }
 
-    const rawArr = (resp.data?.messages || []).map(wsToUiMessage)
+    const syncMessagesRaw = Array.isArray(resp.data?.messages) ? resp.data.messages : []
+    const syncMaxPts = syncMessagesRaw.reduce((mx, m) => Math.max(mx, Number(m?.pts || 0)), 0)
+    const rawArr = syncMessagesRaw.map(wsToUiMessage)
     const existIds = new Set(messages.value.map((m) => m.id))
     const dedupArr = rawArr.filter((m) => !existIds.has(m.id))
     const segmentDesc = dedupArr.sort((a, b) => {
@@ -474,8 +511,8 @@ async function onPagingQuery (pageNo, sizeFromPaging) {
     await nextTick()
     if (isFirstPage) {
       scrollToBottomSoon()
-      markReadToBottom()
     }
+    markReadToBottom(false, syncMaxPts)
   } catch (e) {
     if (pagingRef.value) pagingRef.value.complete(false)
   }
@@ -610,19 +647,45 @@ function updateMessageByLocalKey (localKey, updater) {
 function setMessageStatusByLocalKey (localKey, status) {
   updateMessageByLocalKey(localKey, (old) => ({ ...old, status }))
 }
-function markReadToBottom () {
+function markReadToBottom (force = false, externalMaxPts = 0) {
   if (numericSid.value <= 0) return
-  const maxPts = messages.value.reduce((mx, m) => Math.max(mx, Number(m.pts || 0)), 0)
-  if (maxPts <= myReadPts.value) return
-  myReadPts.value = maxPts
+  const maxPtsInList = messages.value.reduce((mx, m) => Math.max(mx, Number(m.pts || 0)), 0)
+  const maxPts = Math.max(Number(externalMaxPts || 0), Number(maxPtsInList || 0))
+  const targetPts = Math.max(Number(maxPts || 0), Number(pendingReadPts.value || 0))
+  if (!force && targetPts <= myReadPts.value) return
+
   const socket = getWS()
-  if (!socket || socket.readyState !== 1) return
+  if (!socket || socket.readyState !== 1) {
+    pendingReadPts.value = Math.max(Number(pendingReadPts.value || 0), Number(maxPts || 0))
+    scheduleMarkReadWhenReady()
+    return
+  }
+
+  if (targetPts <= myReadPts.value) {
+    pendingReadPts.value = 0
+    return
+  }
+
+  const sendPts = Number(targetPts)
   const reqId = 'read_' + Date.now()
   const pkt = {
     type: 'im.req', action: 'read_ack', req_id: reqId,
-    data: { session_id: Number(numericSid.value), read_pts: Number(myReadPts.value) }
+    data: { session_id: Number(numericSid.value), read_pts: sendPts }
   }
-  socket.send(JSON.stringify(pkt))
+  console.log('[CHAT-READ] send read_ack', { session_id: Number(numericSid.value), read_pts: sendPts, req_id: reqId })
+  waitWsResponseOnce(socket, 'read_ack', reqId, 5000, () => {
+    socket.send(JSON.stringify(pkt))
+  }).then((resp) => {
+    console.log('[CHAT-READ] read_ack response', resp)
+    if (resp && resp.status === 'success') {
+      myReadPts.value = Math.max(Number(myReadPts.value || 0), sendPts)
+      pendingReadPts.value = 0
+      return
+    }
+    pendingReadPts.value = Math.max(Number(pendingReadPts.value || 0), sendPts)
+  }).catch(() => {
+    pendingReadPts.value = Math.max(Number(pendingReadPts.value || 0), sendPts)
+  })
 }
 function isStickerUrl(url) {
   if (!url) return false
