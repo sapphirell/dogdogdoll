@@ -205,12 +205,13 @@ function upsertSession (s) {
   const sid = (s.session_id === undefined || s.session_id === null) ? '' : String(s.session_id)
   if (!sid && !s.peer_id) return
 
+  const rawPreview = s.last_msg_preview || s.preview || s.last_msg || ''
   const norm = {
     session_id: sid || String(s.id || ''), // 统一存字符串
     peer_id: Number(s.peer_id || 0),
     name: s.name || s.peer_name || s.username || '用户',
     avatar: s.avatar || s.peer_avatar || '',
-    last_msg_preview: s.last_msg_preview || s.preview || s.last_msg || '',
+    last_msg_preview: normalizeSessionPreview(rawPreview),
     last_msg_time: Number(s.last_msg_time || 0),
     unread: Number(s.unread || s.unread_count || 0)
   }
@@ -293,13 +294,67 @@ async function handleIMEvent (evt) {
 function previewFromContent (content) {
   if (!content || !content.type) return ''
   const t = content.type
-  if (t === 'text') return content.text || ''
+  if (t === 'text') return String(content.text || '')
   if (t === 'emoji') return '[表情]'
   if (t === 'image') return '[图片]'
   if (t === 'other') {
-    return content?.other?.biz ? `[${content.other.biz}]` : '[其它]'
+    const other = content?.other || {}
+    const card = other?.card || {}
+    const title = String(card.title || other.title || '').trim()
+    if (title) return title
+
+    const biz = String(other.biz || '').trim()
+    const mapped = mapBizToPreview(biz)
+    if (mapped) return mapped
+    if (biz) return `[${biz}]`
+    return '[系统通知]'
   }
   return ''
+}
+
+function normalizeBizKey (biz) {
+  return String(biz || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s\-:]+/g, '_')
+}
+
+function mapBizToPreview (biz) {
+  const key = normalizeBizKey(biz)
+  const map = {
+    artist_order_submission_create: '我拍下了你的开单',
+    artist_order_change_item: '投递内容已更新',
+    artist_order_adjust_request: '订单价格调整申请',
+    artist_order_change_price: '子订单金额调整',
+    artist_order_step_request: '节点确认请求',
+    artist_order_step_confirm: '节点已确认',
+    artist_order_step_approve: '节点已确认',
+    artist_order_step_reject: '节点已驳回',
+    artist_order_buyer_confirm: '买家已确认订单内容',
+    artist_order_operate: '订单状态更新'
+  }
+  if (map[key]) return map[key]
+  if (key.startsWith('artist_order_')) return '订单消息'
+  return ''
+}
+
+function normalizeSessionPreview (rawPreview) {
+  const text = String(rawPreview || '').trim()
+  if (!text) return ''
+
+  // 形如 [artist-order:submission-create]
+  const m = text.match(/^\[([^\]]+)\]$/)
+  if (m && m[1]) {
+    const mapped = mapBizToPreview(m[1])
+    if (mapped) return mapped
+    return text
+  }
+
+  // 形如 artist_order_submission_create
+  const mapped = mapBizToPreview(text)
+  if (mapped) return mapped
+
+  return text
 }
 
 /** 时间显示：今天显示 HH:mm，非今天显示 MM-DD */

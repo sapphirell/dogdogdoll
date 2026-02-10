@@ -33,7 +33,6 @@
       use-virtual-list
       cell-height-mode="dynamic"
       safe-area-inset-bottom
-      bottom-bg-color="#e0f0fb"
       :default-page-size="pageSize"
       :auto-show-system-loading="false"
       @query="onPagingQuery"
@@ -1039,7 +1038,7 @@ function handleCardClick (m) {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 20rpx;
+  padding: 0 20rpx 20rpx;
   box-sizing: border-box;
   background: #f5f5f5;
 }
