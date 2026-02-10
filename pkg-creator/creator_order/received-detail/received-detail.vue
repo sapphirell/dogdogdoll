@@ -145,7 +145,9 @@
               </button>
               <button
                 class="btn-mini outline"
-                @tap="goStepEditor(item)"
+                :class="{ disabled: !canSubmitStep(item) }"
+                :disabled="!canSubmitStep(item)"
+                @tap="handleSubmitStep(item)"
               >
                 提交节点状态
               </button>
@@ -184,7 +186,7 @@
       </view>
     </scroll-view>
 
-    <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: footerPadding }">
+    <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: bottomBarPadding }">
       <view class="bottom-actions-row">
         <view class="left-text-actions">
             <view class="text-btn-item" @tap="handleAuditSubmission('cancel_order')">
@@ -314,11 +316,49 @@ const isBuyer = computed(() => {
   return Number(uid) === Number(currentUid.value)
 })
 
+const SUBMISSION_STATUS_BUYER_CONFIRMED = 2
+const SUBMISSION_STATUS_SELECTED_PAY = 3
+const SUBMISSION_STATUS_PAID = 4
+const PAYMENT_METHOD_PLATFORM = 1
+
+const stepConfigs = computed(() => {
+  const q = queueInfo.value || {}
+  let raw = []
+
+  if (Array.isArray(q.step_configs)) {
+    raw = q.step_configs
+  } else if (Array.isArray(q.stepConfig)) {
+    raw = q.stepConfig
+  } else {
+    const txt = String(q.step_config_json || q.stepConfigJSON || '').trim()
+    if (txt) {
+      try {
+        const parsed = JSON.parse(txt)
+        if (Array.isArray(parsed)) raw = parsed
+      } catch (_) {}
+    }
+  }
+
+  const list = raw.map((s, idx) => {
+    const n = Number(s?.id || s?.ID || idx + 1)
+    const id = Number.isFinite(n) && n > 0 ? n : (idx + 1)
+    const name = String(s?.name || s?.Name || '').trim() || `节点${id}`
+    return { id, name }
+  })
+
+  return list
+    .filter((x, idx) => x.id > 0 && list.findIndex((y) => y.id === x.id) === idx)
+    .sort((a, b) => a.id - b.id)
+})
+
 const footerPlaceholderHeight = computed(() => {
   return toPx(getFooterPlaceholderHeight())
 })
 const footerPadding = computed(() => {
   return toPx(getSafeBottom())
+})
+const bottomBarPadding = computed(() => {
+  return toPx(getSafeBottom() + 14)
 })
 
 const pricePopupRef = ref(null)
@@ -702,11 +742,109 @@ function onModalConfirm() {
   }
 }
 
-function goStepEditor(item) {
-  const itemId = item.id || item.ID
-  if (!itemId) return
-  uni.navigateTo({
-    url: `/pages/artist-order/step-editor?item_id=${itemId}`,
+function getStepDisabledReason(item) {
+  if (!queueInfo.value) return '订单信息加载中'
+
+  const status = Number(queueInfo.value.status || 0)
+  if (status === SUBMISSION_STATUS_BUYER_CONFIRMED) {
+    return '买家已确认，待卖家确认阶段不可提交节点'
+  }
+  if (status !== SUBMISSION_STATUS_SELECTED_PAY && status !== SUBMISSION_STATUS_PAID) {
+    return '当前订单状态不支持提交节点'
+  }
+
+  if (!stepConfigs.value.length) {
+    return '当前订单未配置创作节点'
+  }
+
+  const payMethod = Number(queueInfo.value.payment_method || queueInfo.value.paymentMethod || 0)
+  if (payMethod !== PAYMENT_METHOD_PLATFORM) {
+    return '收款码收款订单不支持提交节点'
+  }
+
+  const itemId = Number(item?.id || item?.ID || 0)
+  if (!itemId) return '缺少子项ID'
+  return ''
+}
+
+function canSubmitStep(item) {
+  return !getStepDisabledReason(item)
+}
+
+function buildStepCandidates(item) {
+  const all = stepConfigs.value
+  if (!all.length) return []
+
+  const currentStepId = Number(item?.current_step_id || item?.currentStepID || 0)
+  if (!Number.isFinite(currentStepId) || currentStepId <= 0) return all
+
+  const next = all.filter((s) => s.id > currentStepId)
+  return next.length ? next : all
+}
+
+function submitStepRequest(itemId, step) {
+  ensureLogin().then((ok) => {
+    if (!ok) return
+    const token = uni.getStorageSync('token') || ''
+    uni.showLoading({ title: '提交中' })
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/step/request`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: {
+        item_id: itemId,
+        step_id: step.id,
+        images: [],
+      },
+      success: (res) => {
+        if (res.data?.status === 'success') {
+          uni.showToast({ title: '节点提交成功', icon: 'success' })
+          fetchQueueInfo()
+        } else {
+          uni.showToast({ title: res.data?.msg || '提交失败', icon: 'none' })
+        }
+      },
+      fail: () => {
+        uni.showToast({ title: '网络请求失败', icon: 'none' })
+      },
+      complete: () => {
+        uni.hideLoading()
+      }
+    })
+  })
+}
+
+function handleSubmitStep(item) {
+  const reason = getStepDisabledReason(item)
+  if (reason) {
+    uni.showToast({ title: reason, icon: 'none' })
+    return
+  }
+
+  const itemId = Number(item?.id || item?.ID || 0)
+  if (!itemId) {
+    uni.showToast({ title: '缺少子项ID', icon: 'none' })
+    return
+  }
+
+  const steps = buildStepCandidates(item)
+  if (!steps.length) {
+    uni.showToast({ title: '当前订单未配置创作节点', icon: 'none' })
+    return
+  }
+
+  if (steps.length === 1) {
+    submitStepRequest(itemId, steps[0])
+    return
+  }
+
+  uni.showActionSheet({
+    itemList: steps.map((s) => `${s.id}. ${s.name}`),
+    success: (res) => {
+      const step = steps[res.tapIndex]
+      if (!step) return
+      submitStepRequest(itemId, step)
+    }
   })
 }
 
@@ -729,7 +867,7 @@ onLoad((options) => {
 <style lang="scss" scoped>
 .submission-page {
   min-height: 100vh;
-  background-color: #f6f6f8;
+  background: linear-gradient(180deg, #f7f9fc 0%, #f3f5f9 48%, #f6f7fb 100%);
   display: flex;
   flex-direction: column;
 }
@@ -737,101 +875,119 @@ onLoad((options) => {
 /* 滚动主体 */
 .scroll-body {
   flex: 1;
+  min-height: 0;
+}
+
+.content {
+  padding: 8rpx 0 24rpx;
 }
 
 /* 通用卡片 */
 .card {
-  margin: 24rpx;
+  margin: 18rpx 20rpx 0;
   padding: 24rpx;
-  border-radius: 24rpx;
+  border-radius: 22rpx;
   background-color: #ffffff;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+  border: 1rpx solid #edf1f6;
+  box-shadow: 0 8rpx 24rpx rgba(16, 30, 54, 0.04);
+}
+
+.status-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
 }
 
 /* 状态卡片 */
 .status-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  /* 修改点1：间距加长 */
-  margin-top: 24rpx;
+  justify-content: space-between;
+  padding: 8rpx 0;
 }
-.status-row:first-child {
-  margin-top: 0;
+.status-row + .status-row {
+  margin-top: 8rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx dashed #edf1f6;
 }
 .status-left-group {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 .status-label {
+  width: 132rpx;
+  flex-shrink: 0;
   font-size: 24rpx;
-  color: #888;
+  color: #8692a6;
 }
 
 /* 通用大字体标题样式 */
 .font-title {
-    font-size: 40rpx;
-    font-weight: bold;
-    color: #333;
-    line-height: 1.2;
-    font-family: DIN, 'Helvetica Neue', Helvetica, sans-serif; /* 尝试使用数字字体 */
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #273043;
+  line-height: 1.2;
+  font-family: DIN, 'Helvetica Neue', Helvetica, sans-serif;
 }
 
 .status-value-group {
-    display: flex;
-    align-items: baseline;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  min-width: 0;
 }
 .status-unit {
-    font-size: 24rpx;
-    color: #888;
-    margin-left: 4rpx;
+  font-size: 24rpx;
+  color: #98a1b2;
+  margin-left: 4rpx;
 }
 .status-normal-text {
-    font-size: 26rpx;
-    color: #666;
+  font-size: 26rpx;
+  color: #5f6775;
 }
 
 
 .status-chip {
-  padding: 6rpx 16rpx;
+  padding: 7rpx 18rpx;
   border-radius: 999rpx;
-  background-color: #f0f0f0;
+  background-color: #f2f4f8;
+  border: 1rpx solid #e7ebf2;
 }
 .status-text {
   font-size: 24rpx;
+  font-weight: 600;
+  color: #4f5a6b;
 }
 
 /* 钞单标签样式 */
 .tag-premium {
-    background: linear-gradient(135deg, #FFD700, #FDB931);
-    padding: 4rpx 12rpx;
-    border-radius: 8rpx;
-    box-shadow: 0 2rpx 4rpx rgba(218, 165, 32, 0.3);
+  background: linear-gradient(135deg, #ffd667, #f7ad2f);
+  padding: 5rpx 12rpx;
+  border-radius: 10rpx;
+  box-shadow: 0 4rpx 10rpx rgba(231, 177, 58, 0.32);
 }
 .tag-text {
-    font-size: 20rpx;
-    color: #fff;
-    font-weight: bold;
-    text-shadow: 0 1rpx 2rpx rgba(0,0,0,0.1);
+  font-size: 20rpx;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
 }
 
 /* 状态 Chip 颜色 */
-.status-chip.s-0 { background: rgba(145, 213, 255, 0.16); border: 1rpx solid rgba(63, 169, 245, 0.6); }
+.status-chip.s-0 { background: rgba(145, 213, 255, 0.14); border: 1rpx solid rgba(63, 169, 245, 0.5); }
 .status-chip.s-0 .status-text { color: #3fa9f5; }
 
 /* s-2 状态特殊处理 */
 .status-chip.s-2 { 
-    background: transparent; 
-    border: none; 
-    padding: 0;
+  background: transparent; 
+  border: none; 
+  padding: 0;
 }
 .status-chip.s-2 .status-text { color: #333; } 
 .status-chip.font-title .status-text {
-    /* 继承全局 font-title 或单独定义 */
-    font-size: 40rpx;
-    font-weight: bold;
-    color: #333;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #273043;
 }
 
 .status-chip.s-3 { background: rgba(140, 235, 195, 0.16); border: 1rpx solid rgba(64, 192, 135, 0.65); }
@@ -846,82 +1002,93 @@ onLoad((options) => {
 .status-chip.s-7 .status-text { color: #c25b5b; }
 
 .status-actions {
-  margin-top: 32rpx; /* 稍微加大间距 */
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx dashed #edf1f6;
   display: flex;
-  /* 修改点4：两端对齐 */
-  justify-content: space-between; 
+  justify-content: space-between;
   align-items: center;
+  gap: 16rpx;
 }
 
 /* 用户信息组样式 */
 .user-info-group {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    background-color: #f9f9fb;
-    padding: 8rpx 20rpx 8rpx 8rpx;
-    border-radius: 999rpx;
+  flex: 1;
+  min-width: 0;
+  max-width: 65%;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background-color: #f7f9fd;
+  padding: 8rpx 20rpx 8rpx 8rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #ebeff6;
 }
 .user-info-group:active {
-    opacity: 0.7;
+  opacity: 0.72;
 }
 .user-avatar {
-    width: 56rpx;
-    height: 56rpx;
-    border-radius: 50%;
-    background-color: #eee;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background-color: #eceff5;
 }
 .user-name {
-    font-size: 26rpx;
-    color: #333;
-    font-weight: 500;
-    max-width: 200rpx;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  font-size: 26rpx;
+  color: #2d3442;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .user-info-placeholder {
-    flex: 1; /* 占位，如果没有用户信息，保持chat按钮在右侧（如果需要chat按钮单独居左可去除）*/
+  flex: 1;
 }
 
 
 .btn-chat-inline {
-    height: 64rpx;
-    line-height: 64rpx;
-    padding: 0 32rpx;
-    border-radius: 999rpx;
-    background-color: #f5f5f7;
-    color: #4a3131;
-    font-size: 26rpx;
-    font-weight: 500;
-    border: none;
-    display: flex;
-    align-items: center;
-    margin: 0; /* 清除默认 margin */
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 30rpx;
+  border-radius: 999rpx;
+  background-color: #ffffff;
+  color: #455064;
+  font-size: 26rpx;
+  font-weight: 600;
+  border: none;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  white-space: nowrap;
 }
 .btn-chat-inline::after { border: none; }
 
 
 /* items 卡片 */
 .card-header {
-  margin-bottom: 8rpx;
+  margin-bottom: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .card-title {
-  font-size: 30rpx;
+  font-size: 31rpx;
   font-weight: 600;
-  color: #222;
+  color: #20293a;
 }
 
 /* item 行 */
 .item-row {
-  margin-top: 20rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid #f1f1f3;
+  margin-top: 14rpx;
+  padding: 20rpx;
+  border-radius: 18rpx;
+  border: 1rpx solid #eef2f8;
+  background: #fafbff;
 }
 .item-row:first-of-type {
-  margin-top: 12rpx;
-  padding-top: 8rpx;
-  border-top: none;
+  margin-top: 10rpx;
 }
 
 .item-main {
@@ -930,12 +1097,13 @@ onLoad((options) => {
 }
 
 .item-cover-wrap {
-  width: 120rpx;
-  height: 120rpx;
-  margin-right: 16rpx;
+  width: 132rpx;
+  height: 132rpx;
+  margin-right: 18rpx;
   border-radius: 16rpx;
   overflow: hidden;
-  background-color: #f6f6f8;
+  background-color: #eef2f8;
+  flex-shrink: 0;
 }
 .item-cover {
   width: 100%;
@@ -944,6 +1112,7 @@ onLoad((options) => {
 
 .item-body {
   flex: 1;
+  min-width: 0;
 }
 .item-title-row {
   display: flex;
@@ -952,76 +1121,102 @@ onLoad((options) => {
 }
 .item-title {
   flex: 1;
-  margin-right: 16rpx;
-  font-size: 28rpx;
-  color: #222;
-  font-weight: 500;
+  margin-right: 12rpx;
+  font-size: 29rpx;
+  color: #1f2735;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .item-meta-row {
-  margin-top: 4rpx;
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
 }
 .item-meta {
-  margin-right: 16rpx;
+  margin-right: 12rpx;
+  margin-bottom: 8rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: #f0f3f9;
   font-size: 22rpx;
-  color: #777;
+  color: #5e6a7d;
+  line-height: 1.6;
 }
 .item-meta.adjust {
-  color: #c46b3d;
+  color: #b66232;
+  background: #fff2e9;
 }
 
 /* item 操作按钮 */
 .item-actions {
-  margin-top: 12rpx;
+  margin-top: 14rpx;
   display: flex;
   justify-content: flex-end;
-  gap: 12rpx;
 }
 .btn-mini {
-  min-width: 160rpx;
-  height: 60rpx;
-  line-height: 60rpx;
-  padding: 0 20rpx;
+  flex: 1;
+  min-width: 0;
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 18rpx;
   border-radius: 999rpx;
-  background-color: #ffe4c4;
-  color: #5b3c1b;
-  font-size: 24rpx;
+  background-color: #ffe9cf;
+  color: #6a4622;
+  font-size: 23rpx;
+  font-weight: 600;
   border: none;
+  margin: 0;
 }
+.btn-mini + .btn-mini { margin-left: 12rpx; }
 .btn-mini::after { border: none; }
 .btn-mini.outline {
   background-color: #ffffff;
-  border: 1rpx solid #d6d6e0;
-  color: #555;
+  border: none;
+  color: #4f5c70;
+}
+.btn-mini.disabled {
+  background-color: #e9edf3 !important;
+  color: #a2acbb !important;
+  box-shadow: none;
 }
 
 /* 草稿 */
 .draft-item {
-  opacity: 0.9;
+  opacity: 1;
+  border-style: dashed;
+  background: #f7f9fc;
 }
 
 /* 通用状态展示 */
 .state-box {
-  margin: 80rpx 24rpx 0;
+  margin: 72rpx 20rpx 0;
   padding: 24rpx;
   border-radius: 24rpx;
   background-color: #ffffff;
   text-align: center;
+  border: 1rpx solid #edf1f6;
 }
 .state-box.state-error {
-  border: 1rpx solid #ffd0d0;
+  border-color: #ffd8d8;
+  background: #fffdfd;
 }
 .state-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #222;
-  display:block;
+  color: #20293a;
+  display: block;
 }
 .state-desc {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #777;
+  color: #768193;
 }
 .btn-retry {
   margin-top: 20rpx;
@@ -1030,9 +1225,10 @@ onLoad((options) => {
   padding: 0 40rpx;
   border-radius: 999rpx;
   border: none;
-  background-color: #ffe1b3;
-  color: #5b3c1b;
+  background-color: #ffe7c8;
+  color: #63411d;
   font-size: 26rpx;
+  font-weight: 600;
 }
 .btn-retry::after { border: none; }
 
@@ -1042,48 +1238,49 @@ onLoad((options) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: none;
-  border-top: 1rpx solid #eeeeee;
+  background: rgba(255, 255, 255, 0.93);
+  backdrop-filter: blur(12rpx);
+  border-top: 1rpx solid #e9edf4;
   z-index: 100;
-  padding-top: 16rpx;
+  padding: 14rpx 20rpx 0;
 }
 .bottom-actions-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32rpx; 
-    height: 100rpx;
-    gap: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  min-height: 96rpx;
+  gap: 22rpx;
 }
 
 .left-text-actions {
-    display: flex;
-    gap: 32rpx; 
-    flex-shrink: 0;
+  display: flex;
+  gap: 26rpx;
+  flex-shrink: 0;
 }
 
 .text-btn-item {
-    font-size: 28rpx;
-    color: #666;
-    padding: 20rpx 0;
+  font-size: 27rpx;
+  color: #7a6670;
+  padding: 18rpx 0;
+  font-weight: 500;
 }
 .text-btn-item:active {
-    opacity: 0.6;
+  opacity: 0.6;
 }
 
 .action-btn-large {
-    flex: 1; 
-    height: 80rpx;
-    line-height: 80rpx;
-    border-radius: 999rpx;
-    font-size: 30rpx;
-    font-weight: 600;
-    margin: 0;
-    border: none;
-    background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
-    color: #4a3131;
-    box-shadow: 0 4rpx 12rpx rgba(255, 225, 179, 0.4);
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  margin: 0;
+  border: none;
+  background: linear-gradient(135deg, #ffd8e8, #ffe3bd);
+  color: #4a3131;
+  box-shadow: 0 6rpx 14rpx rgba(253, 212, 170, 0.35);
 }
 .action-btn-large::after { border: none; }
 
@@ -1091,33 +1288,38 @@ onLoad((options) => {
 /* 修改金额弹层 */
 .price-sheet {
   background-color: #ffffff;
-  border-top-left-radius: 24rpx;
-  border-top-right-radius: 24rpx;
-  padding: 16rpx 24rpx 24rpx;
+  border-top-left-radius: 28rpx;
+  border-top-right-radius: 28rpx;
+  padding: 18rpx 24rpx 24rpx;
+  box-shadow: 0 -8rpx 28rpx rgba(20, 33, 52, 0.12);
 }
 .price-header {
-  height: 80rpx;
+  height: 84rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  border-bottom: 1rpx solid #f0f0f2;
+  border-bottom: 1rpx solid #edf1f6;
 }
 .price-title {
-  font-size: 30rpx;
+  font-size: 31rpx;
   font-weight: 600;
+  color: #1f2735;
 }
 .price-close {
   position: absolute;
-  right: 8rpx;
+  right: 6rpx;
   font-size: 26rpx;
-  color: #999;
+  color: #8d97aa;
 }
 .price-body {
-  padding-top: 12rpx;
+  padding-top: 14rpx;
 }
 .price-row {
   margin-top: 12rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 14rpx;
+  background: #f6f8fc;
   display: flex;
   align-items: center;
 }
@@ -1128,13 +1330,18 @@ onLoad((options) => {
 }
 .price-label {
   font-size: 26rpx;
-  color: #555;
-  min-width: 160rpx;
+  color: #5f6778;
+  min-width: 150rpx;
 }
 .price-value {
   flex: 1;
   font-size: 26rpx;
-  color: #333;
+  color: #253044;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .price-input {
   flex: 1;
@@ -1142,14 +1349,16 @@ onLoad((options) => {
   line-height: 72rpx;
   padding: 0 16rpx;
   border-radius: 16rpx;
-  background-color: #f6f6f8;
+  background-color: #ffffff;
+  border: 1rpx solid #e4eaf4;
   font-size: 26rpx;
 }
 .price-textarea {
   margin-top: 8rpx;
   padding: 12rpx 16rpx;
   border-radius: 16rpx;
-  background-color: #f6f6f8;
+  background-color: #ffffff;
+  border: 1rpx solid #e4eaf4;
   font-size: 24rpx;
   min-height: 120rpx;
 }
@@ -1161,9 +1370,9 @@ onLoad((options) => {
   height: 80rpx;
   line-height: 80rpx;
   border-radius: 999rpx;
-  background: #4df0ff;
-  color: #090a0f;
-  font-size: 30rpx;
+  background: linear-gradient(135deg, #8fe8ff, #72d8ff);
+  color: #143043;
+  font-size: 29rpx;
   font-weight: 700;
   border: none;
 }
@@ -1178,15 +1387,15 @@ onLoad((options) => {
 }
 
 .custom-modal-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 600;
-  color: #333;
+  color: #1f2735;
   margin-bottom: 24rpx;
 }
 
 .custom-modal-desc {
   font-size: 28rpx;
-  color: #666;
+  color: #5f6878;
   text-align: center;
   line-height: 1.5;
   margin-bottom: 40rpx;
@@ -1212,13 +1421,39 @@ onLoad((options) => {
 .custom-modal-btn::after { border: none; }
 
 .custom-modal-btn.cancel {
-  background-color: #f5f5f5;
-  color: #666;
+  background-color: #f4f6fa;
+  color: #6d7484;
 }
 
 .custom-modal-btn.confirm {
-  background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
+  background: linear-gradient(135deg, #ffd9e9, #ffe8c6);
   color: #4a3131;
   font-weight: 600;
+}
+
+@media screen and (max-width: 370px) {
+  .status-actions {
+    flex-wrap: wrap;
+  }
+  .user-info-group {
+    max-width: 100%;
+    width: 100%;
+  }
+  .btn-chat-inline {
+    width: 100%;
+    justify-content: center;
+  }
+  .bottom-actions-row {
+    flex-wrap: wrap;
+    gap: 12rpx;
+  }
+  .left-text-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .action-btn-large {
+    width: 100%;
+    flex: none;
+  }
 }
 </style>

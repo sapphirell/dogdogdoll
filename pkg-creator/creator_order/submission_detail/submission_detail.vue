@@ -201,7 +201,7 @@
       <view class="safe-area-bottom"></view>
     </view>
 
-    <view class="fixed-bottom-bar" v-if="isLogin && submission.submission_id && bottomAction">
+    <view class="fixed-bottom-bar" v-if="isLogin && submission.submission_id && bottomAction && !payPopupVisible && !payCodeModalVisible">
        <button 
          class="action-btn" 
          :class="{ 'disabled': !isContentReady }"
@@ -215,18 +215,165 @@
          </view>
        </button>
     </view>
+
+    <uni-popup
+      ref="payPopupRef"
+      type="bottom"
+      :mask-click="true"
+      @change="onPayPopupChange"
+    >
+      <view class="pay-sheet" @tap.stop @click.stop>
+        <view class="pay-sheet-header">
+          <text class="pay-sheet-title">选择付款方式</text>
+          <text class="pay-sheet-close" @tap="closePayPopup">关闭</text>
+        </view>
+
+        <view class="pay-method-list">
+          <view
+            v-for="method in popupPaymentMethods"
+            :key="method.id"
+            class="pay-method-item"
+            :class="{ active: Number(selectedPayMethodId) === Number(method.id) }"
+            @tap="selectPayMethod(method.id)"
+          >
+            <view class="pay-method-main">
+              <text class="pay-method-name">{{ formatPaymentMethodName(method) }}</text>
+              <text class="pay-method-desc">{{ method.description_2_user || '' }}</text>
+            </view>
+            <text class="pay-method-check">{{ Number(selectedPayMethodId) === Number(method.id) ? '已选' : '选择' }}</text>
+          </view>
+        </view>
+
+        <view class="pay-method-tip">
+          <text v-if="selectedMethodIsQRCode">已选择扫码转账，点击“去付款”后查看并保存收款码。</text>
+          <text v-else>已选择支付宝，点击“去付款”继续。</text>
+        </view>
+
+        <view class="pay-action-row">
+          <view
+            class="pay-go-btn"
+            :class="{ disabled: !canSubmitPayFromPopup }"
+            @tap.stop.prevent="onPayGoButtonTap('tap')"
+            @click.stop.prevent="onPayGoButtonTap('click')"
+          >
+            去付款
+          </view>
+        </view>
+      </view>
+    </uni-popup>
+
+    <common-modal v-model:visible="payCodeModalVisible" width="640rpx" top="16vh">
+      <view class="pay-code-modal">
+        <view class="pay-code-modal-title">{{ selectedMethodIsQRCode ? '扫码转账' : '支付宝支付' }}</view>
+        <view class="pay-uid-tip">转账时请备注您在APP内的UID：{{ currentUserUIDText }}</view>
+
+        <view v-if="selectedMethodCodeOptions.length > 1" class="pay-code-tabs">
+          <view
+            v-for="code in selectedMethodCodeOptions"
+            :key="code.channel"
+            class="pay-code-tab"
+            :class="{ active: selectedPayCodeChannel === code.channel }"
+            @tap="selectPayCodeChannel(code.channel)"
+          >
+            {{ code.name || code.channel }}
+          </view>
+        </view>
+
+        <view v-if="selectedMethodIsQRCode" class="pay-code-image-card">
+          <view class="pay-code-image-box">
+            <image
+              v-if="selectedPayCodeUrl"
+              class="pay-code-image"
+              :src="selectedPayCodeUrl"
+              mode="aspectFit"
+            />
+            <text v-else class="pay-code-empty">当前付款方式暂无可用二维码</text>
+          </view>
+        </view>
+        <view v-else class="pay-online-tip">
+          请先在支付宝完成转账，再上传转账截图并填写留言。
+        </view>
+
+        <view class="pay-proof-card">
+          <view class="pay-proof-label-row">
+            <text class="pay-proof-label">转账截图</text>
+            <text class="pay-proof-required">*</text>
+          </view>
+          <view class="pay-proof-list">
+            <view
+              v-for="(img, idx) in payProofImages"
+              :key="`${img}-${idx}`"
+              class="pay-proof-item"
+            >
+              <image class="pay-proof-image" :src="img" mode="aspectFill" @tap="previewPayProof(idx)" />
+              <view class="pay-proof-remove" @tap.stop="removePayProof(idx)">×</view>
+            </view>
+            <view
+              v-if="payProofImages.length < 3 && !payProofUploading"
+              class="pay-proof-add"
+              @tap="choosePayProofImages"
+            >
+              <text class="pay-proof-add-icon">+</text>
+              <text class="pay-proof-add-text">上传截图</text>
+            </view>
+          </view>
+          <text class="pay-proof-help">最多3张，至少1张</text>
+          <text v-if="payProofUploading" class="pay-proof-uploading">{{ payProofUploadText }}</text>
+        </view>
+
+        <view class="pay-message-card">
+          <view class="pay-proof-label-row">
+            <text class="pay-proof-label">付款留言</text>
+            <text class="pay-proof-required">*</text>
+          </view>
+          <textarea
+            v-model.trim="payMessage"
+            class="pay-message-input"
+            maxlength="200"
+            placeholder="请填写转账说明（至少2个字）"
+          />
+          <text class="pay-message-count">{{ payMessageLength }}/200</text>
+        </view>
+
+        <view class="pay-code-modal-actions" :class="{ single: !selectedMethodIsQRCode }">
+          <button
+            v-if="selectedMethodIsQRCode"
+            class="pay-modal-save-btn"
+            :disabled="!selectedPayCodeUrl"
+            @tap.stop.prevent="onPayCodeSaveTap('tap')"
+            @click.stop.prevent="onPayCodeSaveTap('click')"
+          >
+            保存二维码
+          </button>
+          <button
+            class="pay-modal-done-btn"
+            :disabled="!canSubmitPayFromCodeModal"
+            @tap.stop.prevent="onPayCodeDoneTap('tap')"
+            @click.stop.prevent="onPayCodeDoneTap('click')"
+          >
+            我已付款
+          </button>
+        </view>
+
+        <view class="pay-code-bottom-gap"></view>
+      </view>
+    </common-modal>
   </view>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, nextTick, watch } from 'vue'
 import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
-import { websiteUrl, global } from '@/common/config.js'
+import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
+import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
+import CommonModal from '@/components/common-modal/common-modal.vue'
 
 // ====== 常量 ======
 const SubmissionStatusQueued = 0
 const SubmissionStatusSelectedConfirm = 1
 const SubmissionStatusSelectedPay = 3
+const PlanPaymentMethodQRCode = 1
+const PlanPaymentMethodAlipay = 2
 
 // ====== 状态数据 ======
 const submissionId = ref(0)
@@ -258,6 +405,28 @@ const plan = reactive({
   images: '',
   order_type: 0
 })
+
+const payPopupRef = ref(null)
+const payPopupData = ref(null)
+const selectedPayMethodId = ref(0)
+const selectedPayCodeChannel = ref('')
+const payCodeModalVisible = ref(false)
+const payPopupVisible = ref(false)
+const openingPayCodeModal = ref(false)
+const payGoLastTriggerTs = ref(0)
+const payCodeActionLastTriggerTs = ref(0)
+const currentUserUID = ref(Number(global.userInfo?.id || uni.getStorageSync('userInfo')?.id || 0))
+const payProofImages = ref([])
+const payMessage = ref('')
+const payProofUploading = ref(false)
+const payProofUploadText = ref('')
+
+const PAY_DEBUG_TAG = '[submission-pay]'
+function payDebug(step, payload = {}) {
+  try {
+    console.log(PAY_DEBUG_TAG, step, payload)
+  } catch (_) {}
+}
 
 // ====== Computed ======
 const isLogin = computed(() => !!(uni.getStorageSync('token') || global.isLogin))
@@ -358,6 +527,62 @@ const isContentReady = computed(() => {
   }
   
   return false
+})
+
+const popupPaymentMethods = computed(() => {
+  const list = payPopupData.value?.payment_methods
+  return Array.isArray(list) ? list : []
+})
+
+const selectedPayMethod = computed(() => {
+  const target = Number(selectedPayMethodId.value || 0)
+  return popupPaymentMethods.value.find(item => Number(item.id || 0) === target) || null
+})
+
+const selectedMethodIsQRCode = computed(() => {
+  return Number(selectedPayMethod.value?.id || 0) === PlanPaymentMethodQRCode
+})
+
+const selectedMethodCodeOptions = computed(() => {
+  const list = selectedPayMethod.value?.code_options
+  return Array.isArray(list) ? list : []
+})
+
+const selectedPayCode = computed(() => {
+  if (!selectedMethodIsQRCode.value) return null
+  const channel = String(selectedPayCodeChannel.value || '').toLowerCase()
+  return selectedMethodCodeOptions.value.find(item => String(item.channel || '').toLowerCase() === channel) || null
+})
+
+const selectedPayCodeUrl = computed(() => {
+  return selectedPayCode.value?.url || ''
+})
+
+const currentUserUIDText = computed(() => {
+  const uid = Number(currentUserUID.value || 0)
+  return uid > 0 ? String(uid) : '-'
+})
+
+const payMessageLength = computed(() => {
+  return Array.from(String(payMessage.value || '')).length
+})
+
+const canSubmitPayFromPopup = computed(() => {
+  const methodID = Number(selectedPayMethodId.value || 0)
+  if (!methodID) return false
+  if (methodID === PlanPaymentMethodQRCode) {
+    return selectedMethodCodeOptions.value.length > 0
+  }
+  return true
+})
+
+const canSubmitPayFromCodeModal = computed(() => {
+  const methodID = Number(selectedPayMethodId.value || 0)
+  if (!methodID) return false
+  if (selectedMethodIsQRCode.value && !selectedPayCodeUrl.value) return false
+  if (payProofUploading.value) return false
+  if (!payProofImages.value.length) return false
+  return payMessageLength.value >= 2
 })
 
 // ====== Methods ======
@@ -553,9 +778,13 @@ async function handleBottomAction() {
     return
   }
 
+  if (bottomAction.value === 'pay') {
+    await handlePayAction()
+    return
+  }
+
   const urlMap = {
-    'confirm': `${websiteUrl.value}/with-state/artist-order/submission/confirm-content`,
-    'pay': `${websiteUrl.value}/with-state/artist-order/pay`
+    'confirm': `${websiteUrl.value}/with-state/artist-order/submission/confirm-content`
   }
   if (!urlMap[bottomAction.value]) return
    
@@ -577,6 +806,513 @@ async function handleBottomAction() {
     uni.hideLoading()
   }
 }
+
+async function fetchSubmissionPayOptions() {
+  payDebug('fetchSubmissionPayOptions:request', {
+    submission_id: submission.submission_id
+  })
+  const res = await uni.request({
+    url: `${websiteUrl.value}/with-state/artist-order/submission/pay-options`,
+    method: 'GET',
+    header: { Authorization: uni.getStorageSync('token') },
+    data: { submission_id: submission.submission_id }
+  })
+  const body = res.data || {}
+  payDebug('fetchSubmissionPayOptions:response', {
+    status: body.status,
+    msg: body.msg,
+    selected_payment_method_id: body?.data?.selected_payment_method_id,
+    payment_methods_count: Array.isArray(body?.data?.payment_methods) ? body.data.payment_methods.length : 0,
+    raw: body
+  })
+  if (String(body.status).toLowerCase() !== 'success') {
+    payDebug('fetchSubmissionPayOptions:failed', body)
+    throw new Error(body.msg || '获取付款方式失败')
+  }
+  return body.data || {}
+}
+
+function openPayPopup() {
+  const opener = payPopupRef.value?.open
+  payDebug('openPayPopup:try', {
+    hasRef: !!payPopupRef.value,
+    openerType: typeof opener
+  })
+  if (typeof opener !== 'function') {
+    uni.showToast({ title: '付款弹窗初始化失败', icon: 'none' })
+    payDebug('openPayPopup:blocked_no_open_method')
+    return
+  }
+  try {
+    opener.call(payPopupRef.value)
+    payDebug('openPayPopup:opened')
+  } catch (_) {
+    uni.showToast({ title: '付款弹窗打开失败', icon: 'none' })
+    payDebug('openPayPopup:open_error')
+  }
+}
+
+function closePayPopup() {
+  payDebug('closePayPopup:try')
+  try {
+    payPopupRef.value?.close?.()
+    payDebug('closePayPopup:closed')
+  } catch (_) {}
+}
+
+function onPayPopupChange(e) {
+  payPopupVisible.value = !!e?.show
+  payDebug('onPayPopupChange', {
+    show: !!e?.show,
+    payPopupVisible: payPopupVisible.value,
+    payCodeModalVisible: payCodeModalVisible.value,
+    openingPayCodeModal: openingPayCodeModal.value
+  })
+  if (e?.show) return
+  if (payCodeModalVisible.value || openingPayCodeModal.value) return
+  resetPayState()
+}
+
+function syncSelectedPayCodeChannel() {
+  if (!selectedMethodIsQRCode.value) {
+    selectedPayCodeChannel.value = ''
+    payDebug('syncSelectedPayCodeChannel:clear_not_qrcode')
+    return
+  }
+  const codes = selectedMethodCodeOptions.value
+  if (!codes.length) {
+    selectedPayCodeChannel.value = ''
+    payDebug('syncSelectedPayCodeChannel:clear_no_codes')
+    return
+  }
+  const current = String(selectedPayCodeChannel.value || '').toLowerCase()
+  const exists = codes.some(item => String(item.channel || '').toLowerCase() === current)
+  if (!exists) {
+    selectedPayCodeChannel.value = String(codes[0].channel || '').toLowerCase()
+    payDebug('syncSelectedPayCodeChannel:auto_select_first', {
+      channel: selectedPayCodeChannel.value
+    })
+  }
+}
+
+function applyPayPopupDefaultSelection() {
+  const methods = popupPaymentMethods.value
+  payDebug('applyPayPopupDefaultSelection:before', {
+    methods_count: methods.length,
+    selected_payment_method_id: payPopupData.value?.selected_payment_method_id
+  })
+  if (!methods.length) {
+    selectedPayMethodId.value = 0
+    selectedPayCodeChannel.value = ''
+    payDebug('applyPayPopupDefaultSelection:empty')
+    return
+  }
+
+  const recommendedID = Number(payPopupData.value?.selected_payment_method_id || 0)
+  const hasRecommended = methods.some(item => Number(item.id || 0) === recommendedID)
+  selectedPayMethodId.value = hasRecommended ? recommendedID : Number(methods[0].id || 0)
+  syncSelectedPayCodeChannel()
+  payDebug('applyPayPopupDefaultSelection:after', {
+    selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayCodeChannel: selectedPayCodeChannel.value
+  })
+}
+
+function selectPayMethod(methodID) {
+  selectedPayMethodId.value = Number(methodID || 0)
+  syncSelectedPayCodeChannel()
+  payDebug('selectPayMethod', {
+    methodID: selectedPayMethodId.value,
+    selectedMethodIsQRCode: selectedMethodIsQRCode.value,
+    code_options_count: selectedMethodCodeOptions.value.length,
+    selectedPayCodeChannel: selectedPayCodeChannel.value,
+    selectedPayCodeUrl: selectedPayCodeUrl.value
+  })
+}
+
+function selectPayCodeChannel(channel) {
+  selectedPayCodeChannel.value = String(channel || '').toLowerCase()
+  syncSelectedPayCodeChannel()
+  payDebug('selectPayCodeChannel', {
+    channel: selectedPayCodeChannel.value,
+    selectedPayCodeUrl: selectedPayCodeUrl.value
+  })
+}
+
+function formatPaymentMethodName(method) {
+  const id = Number(method?.id || 0)
+  if (id === PlanPaymentMethodAlipay) return '支付宝'
+  if (id === PlanPaymentMethodQRCode) return '扫码转账'
+  const name = String(method?.name || '').trim()
+  if (!name) return `方式${id || ''}`
+  return name
+    .replace(/支付宝收款/g, '支付宝')
+    .replace(/收款码收款/g, '扫码转账')
+}
+
+async function ensureCurrentUserUID() {
+  const uid = Number(currentUserUID.value || global.userInfo?.id || uni.getStorageSync('userInfo')?.id || 0)
+  if (uid > 0) {
+    currentUserUID.value = uid
+    return uid
+  }
+  const user = await asyncGetUserInfo()
+  const fetchedUID = Number(user?.id || 0)
+  if (fetchedUID > 0) {
+    currentUserUID.value = fetchedUID
+  }
+  return fetchedUID
+}
+
+function resetPayProofForm() {
+  payProofImages.value = []
+  payMessage.value = ''
+  payProofUploading.value = false
+  payProofUploadText.value = ''
+}
+
+function previewPayProof(index) {
+  const list = payProofImages.value
+  if (!Array.isArray(list) || !list.length) return
+  uni.previewImage({
+    current: list[index] || list[0],
+    urls: list
+  })
+}
+
+function removePayProof(index) {
+  const list = payProofImages.value.slice()
+  if (index < 0 || index >= list.length) return
+  list.splice(index, 1)
+  payProofImages.value = list
+}
+
+async function choosePayProofImages() {
+  const remain = 3 - payProofImages.value.length
+  if (remain <= 0) {
+    uni.showToast({ title: '最多上传3张截图', icon: 'none' })
+    return
+  }
+  try {
+    const files = await chooseImageList(remain)
+    if (!Array.isArray(files) || !files.length) return
+    payProofUploading.value = true
+    payProofUploadText.value = '准备上传...'
+    for (let i = 0; i < files.length; i++) {
+      payProofUploadText.value = `上传中 (${i + 1}/${files.length})`
+      const tk = await getQiniuToken()
+      if (!tk?.token || !tk?.path) {
+        throw new Error('获取上传凭证失败')
+      }
+      const ret = await uploadImageToQiniu(files[i], tk.token, tk.path)
+      const url = ret?.imageUrl || ''
+      if (!url) {
+        throw new Error('上传失败，请重试')
+      }
+      payProofImages.value.push(url)
+      if (payProofImages.value.length >= 3) break
+    }
+    payProofUploadText.value = ''
+  } catch (e) {
+    uni.showToast({ title: e?.message || '上传失败', icon: 'none' })
+  } finally {
+    payProofUploading.value = false
+  }
+}
+
+function resetPayState() {
+  payDebug('resetPayState:before', {
+    selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayCodeChannel: selectedPayCodeChannel.value,
+    payPopupVisible: payPopupVisible.value,
+    payCodeModalVisible: payCodeModalVisible.value,
+    openingPayCodeModal: openingPayCodeModal.value
+  })
+  payPopupData.value = null
+  selectedPayMethodId.value = 0
+  selectedPayCodeChannel.value = ''
+  payPopupVisible.value = false
+  openingPayCodeModal.value = false
+  payCodeModalVisible.value = false
+  resetPayProofForm()
+  payDebug('resetPayState:after')
+}
+
+function saveCurrentPayCode() {
+  const url = selectedPayCodeUrl.value
+  if (!url) {
+    uni.showToast({ title: '暂无可保存的二维码', icon: 'none' })
+    return
+  }
+
+  // #ifdef H5
+  window.open(url, '_blank')
+  uni.showToast({ title: '已打开二维码图片', icon: 'none' })
+  return
+  // #endif
+
+  uni.showLoading({ title: '保存中' })
+  uni.getImageInfo({
+    src: url,
+    success: (info) => {
+      uni.saveImageToPhotosAlbum({
+        filePath: info.path,
+        success: () => {
+          uni.showToast({ title: '已保存到相册', icon: 'success' })
+        },
+        fail: () => {
+          uni.showToast({ title: '保存失败，请检查相册权限', icon: 'none' })
+        },
+        complete: () => {
+          uni.hideLoading()
+        }
+      })
+    },
+    fail: () => {
+      uni.hideLoading()
+      uni.showToast({ title: '二维码下载失败', icon: 'none' })
+    }
+  })
+}
+
+async function submitPayRequest(paymentMethod, paymentCodeChannel = '') {
+  const proofImages = payProofImages.value.slice()
+  const paymentMessage = String(payMessage.value || '').trim()
+  payDebug('submitPayRequest:start', {
+    submission_id: submission.submission_id,
+    payment_method: Number(paymentMethod || 0),
+    payment_code_channel: paymentCodeChannel || '',
+    payment_proof_images_count: proofImages.length,
+    payment_message_length: Array.from(paymentMessage).length
+  })
+  uni.showLoading({ title: '支付处理中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/pay`,
+      method: 'POST',
+      header: { Authorization: uni.getStorageSync('token') },
+      data: {
+        submission_id: submission.submission_id,
+        payment_method: Number(paymentMethod || 0),
+        payment_code_channel: paymentCodeChannel || '',
+        payment_proof_images: proofImages,
+        payment_message: paymentMessage
+      }
+    })
+    const body = res.data || {}
+    payDebug('submitPayRequest:response', body)
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '支付失败', icon: 'none' })
+      payDebug('submitPayRequest:failed', body)
+      return
+    }
+    closePayPopup()
+    payCodeModalVisible.value = false
+    uni.showToast({ title: '支付成功', icon: 'success' })
+    if (global.lastRefresh) {
+      global.lastRefresh.time = 0
+    }
+    fetchDetail()
+    resetPayState()
+  } catch (e) {
+    payDebug('submitPayRequest:error', {
+      message: e?.message || String(e)
+    })
+    uni.showToast({ title: '支付请求失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+function onPayGoButtonTap(source = 'tap') {
+  const now = Date.now()
+  if (now - payGoLastTriggerTs.value < 350) {
+    payDebug('onPayGoButtonTap:dedupe', { source })
+    return
+  }
+  payGoLastTriggerTs.value = now
+  payDebug('onPayGoButtonTap', {
+    source,
+    payPopupVisible: payPopupVisible.value,
+    disabled: !canSubmitPayFromPopup.value,
+    selectedPayMethodId: selectedPayMethodId.value
+  })
+  confirmPayFromPopup()
+}
+
+function onPayCodeSaveTap(source = 'tap') {
+  const now = Date.now()
+  if (now - payCodeActionLastTriggerTs.value < 350) {
+    payDebug('onPayCodeSaveTap:dedupe', { source })
+    return
+  }
+  payCodeActionLastTriggerTs.value = now
+  payDebug('onPayCodeSaveTap', {
+    source,
+    selectedPayCodeUrl: selectedPayCodeUrl.value
+  })
+  saveCurrentPayCode()
+}
+
+function onPayCodeDoneTap(source = 'tap') {
+  const now = Date.now()
+  if (now - payCodeActionLastTriggerTs.value < 350) {
+    payDebug('onPayCodeDoneTap:dedupe', { source })
+    return
+  }
+  payCodeActionLastTriggerTs.value = now
+  payDebug('onPayCodeDoneTap', {
+    source,
+    selectedPayCodeChannel: selectedPayCodeChannel.value,
+    selectedPayCodeUrl: selectedPayCodeUrl.value
+  })
+  confirmPayFromCodeModal()
+}
+
+async function confirmPayFromPopup() {
+  payDebug('confirmPayFromPopup:clicked', {
+    canSubmitPayFromPopup: canSubmitPayFromPopup.value,
+    selectedPayMethodId: selectedPayMethodId.value,
+    selectedMethodIsQRCode: selectedMethodIsQRCode.value,
+    code_options_count: selectedMethodCodeOptions.value.length,
+    selectedPayCodeChannel: selectedPayCodeChannel.value,
+    selectedPayCodeUrl: selectedPayCodeUrl.value
+  })
+  if (!canSubmitPayFromPopup.value) {
+    uni.showToast({ title: '请先完成付款方式选择', icon: 'none' })
+    payDebug('confirmPayFromPopup:blocked_not_ready')
+    return
+  }
+
+  if (selectedMethodIsQRCode.value) {
+    if (!selectedMethodCodeOptions.value.length) {
+      uni.showToast({ title: '当前付款方式暂无可用二维码', icon: 'none' })
+      payDebug('confirmPayFromPopup:blocked_no_codes')
+      return
+    }
+    resetPayProofForm()
+    openingPayCodeModal.value = true
+    payDebug('confirmPayFromPopup:qr_flow_start')
+    closePayPopup()
+    await new Promise(resolve => setTimeout(resolve, 180))
+    syncSelectedPayCodeChannel()
+    if (!selectedMethodCodeOptions.value.length) {
+      openingPayCodeModal.value = false
+      uni.showToast({ title: '当前付款方式暂无可用二维码', icon: 'none' })
+      payDebug('confirmPayFromPopup:blocked_after_close_no_codes')
+      return
+    }
+    payCodeModalVisible.value = true
+    openingPayCodeModal.value = false
+    payDebug('confirmPayFromPopup:qr_modal_opened', {
+      selectedPayCodeChannel: selectedPayCodeChannel.value,
+      selectedPayCodeUrl: selectedPayCodeUrl.value
+    })
+    return
+  }
+
+  resetPayProofForm()
+  openingPayCodeModal.value = true
+  payDebug('confirmPayFromPopup:online_flow_start')
+  closePayPopup()
+  await new Promise(resolve => setTimeout(resolve, 180))
+  payCodeModalVisible.value = true
+  openingPayCodeModal.value = false
+  payDebug('confirmPayFromPopup:online_modal_opened')
+}
+
+async function confirmPayFromCodeModal() {
+  syncSelectedPayCodeChannel()
+  payDebug('confirmPayFromCodeModal:clicked', {
+    selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayCodeChannel: selectedPayCodeChannel.value,
+    selectedPayCodeUrl: selectedPayCodeUrl.value,
+    payProofImagesCount: payProofImages.value.length,
+    payMessageLength: payMessageLength.value
+  })
+
+  if (selectedMethodIsQRCode.value && !selectedPayCodeUrl.value) {
+    uni.showToast({ title: '当前二维码不可用', icon: 'none' })
+    payDebug('confirmPayFromCodeModal:blocked_no_url')
+    return
+  }
+  if (!payProofImages.value.length) {
+    uni.showToast({ title: '请上传转账截图（至少1张）', icon: 'none' })
+    payDebug('confirmPayFromCodeModal:blocked_no_proof')
+    return
+  }
+  if (payMessageLength.value < 2) {
+    uni.showToast({ title: '请填写付款留言（至少2个字）', icon: 'none' })
+    payDebug('confirmPayFromCodeModal:blocked_short_message')
+    return
+  }
+  await submitPayRequest(
+    Number(selectedPayMethodId.value || 0),
+    String(selectedPayCodeChannel.value || '')
+  )
+}
+
+async function handlePayAction() {
+  payDebug('handlePayAction:start', {
+    submission_id: submission.submission_id,
+    status: submission.status,
+    status_text: submission.status_text
+  })
+  uni.showLoading({ title: '加载付款方式' })
+  try {
+    await ensureCurrentUserUID()
+    const payOptions = await fetchSubmissionPayOptions()
+    const methods = Array.isArray(payOptions.payment_methods) ? payOptions.payment_methods : []
+    payDebug('handlePayAction:methods_loaded', {
+      methods_count: methods.length,
+      methods: methods.map(item => ({
+        id: item.id,
+        name: item.name,
+        code_options_count: Array.isArray(item.code_options) ? item.code_options.length : 0
+      }))
+    })
+    if (!methods.length) {
+      uni.showToast({ title: '卖家暂未配置可用付款方式', icon: 'none' })
+      payDebug('handlePayAction:blocked_empty_methods')
+      return
+    }
+
+    payPopupData.value = payOptions
+    payCodeModalVisible.value = false
+    resetPayProofForm()
+    applyPayPopupDefaultSelection()
+    await nextTick()
+    openPayPopup()
+  } catch (e) {
+    payDebug('handlePayAction:error', {
+      message: e?.message || String(e)
+    })
+    uni.showToast({ title: e?.message || '获取付款方式失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+    payDebug('handlePayAction:end')
+  }
+}
+
+watch(payCodeModalVisible, (val) => {
+  payDebug('watch:payCodeModalVisible', { value: val })
+})
+
+watch(payPopupVisible, (val) => {
+  payDebug('watch:payPopupVisible', { value: val })
+})
+
+watch(selectedPayMethodId, (val) => {
+  payDebug('watch:selectedPayMethodId', { value: val })
+})
+
+watch(selectedPayCodeChannel, (val) => {
+  payDebug('watch:selectedPayCodeChannel', { value: val })
+})
+
+watch(canSubmitPayFromPopup, (val) => {
+  payDebug('watch:canSubmitPayFromPopup', { value: val })
+})
 
 // 修改点：优化轮询逻辑
 function startPolling() {
@@ -603,6 +1339,7 @@ onLoad((opt) => {
 })
 onShow(() => {
   if (isLogin.value && submissionId.value) {
+    ensureCurrentUserUID()
     startPolling()
   }
 })
@@ -1134,6 +1871,367 @@ $spacing-page: 30rpx;
   box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
   z-index: 100;
 }
+
+.pay-sheet {
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  padding: 28rpx 28rpx calc(28rpx + env(safe-area-inset-bottom));
+}
+
+.pay-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.pay-sheet-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #2b2b2b;
+}
+
+.pay-sheet-close {
+  font-size: 24rpx;
+  color: #8a8a8a;
+  padding: 8rpx 0 8rpx 12rpx;
+}
+
+.pay-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.pay-method-item {
+  border-radius: 18rpx;
+  border: 2rpx solid #ececec;
+  padding: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pay-method-item.active {
+  border-color: #84f6ff;
+  background: #f5feff;
+}
+
+.pay-method-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.pay-method-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2f2f2f;
+}
+
+.pay-method-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #858585;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.pay-method-check {
+  margin-left: 18rpx;
+  font-size: 22rpx;
+  color: #39b8c4;
+}
+
+.pay-code-tabs {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+  flex-wrap: wrap;
+}
+
+.pay-code-tab {
+  min-width: 120rpx;
+  text-align: center;
+  padding: 10rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: #6e6e6e;
+  background: #eceff1;
+}
+
+.pay-code-tab.active {
+  background: #d6fcff;
+  color: #2b2b2b;
+  font-weight: 600;
+}
+
+.pay-code-image-card {
+  border: 2rpx solid #e8edf1;
+  border-radius: 20rpx;
+  background: #f9fbfc;
+  padding: 24rpx;
+}
+
+.pay-code-image-box {
+  width: 100%;
+  min-height: 400rpx;
+  border-radius: 14rpx;
+  background: #fff;
+  border: 2rpx solid #e6ecf1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.pay-code-image {
+  width: 340rpx;
+  height: 340rpx;
+}
+
+.pay-code-empty {
+  color: #9b9b9b;
+  font-size: 24rpx;
+}
+
+.pay-method-tip {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #f8fbfc;
+  color: #666;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.pay-action-row {
+  margin-top: 24rpx;
+}
+
+.pay-go-btn {
+  width: 100%;
+  border-radius: 999rpx;
+  height: 84rpx;
+  line-height: 84rpx;
+  font-size: 28rpx;
+  border: none;
+  background: #2b2b2b;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pay-go-btn::after {
+  border: none;
+}
+
+.pay-go-btn.disabled {
+  opacity: 0.5;
+}
+
+.pay-code-modal {
+  width: 100%;
+  padding-top: 4rpx;
+  padding-bottom: 12rpx;
+}
+
+.pay-code-modal-title {
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #2b2b2b;
+  margin-bottom: 12rpx;
+}
+
+.pay-uid-tip {
+  text-align: center;
+  font-size: 24rpx;
+  color: #65727a;
+  margin-bottom: 24rpx;
+}
+
+.pay-online-tip {
+  border-radius: 14rpx;
+  background: #f5f8fa;
+  color: #5f6870;
+  font-size: 24rpx;
+  line-height: 1.6;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.pay-code-modal-actions {
+  margin-top: 32rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.pay-code-modal-actions.single .pay-modal-done-btn {
+  width: 100%;
+}
+
+.pay-modal-save-btn,
+.pay-modal-done-btn {
+  flex: 1;
+  border-radius: 999rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  font-size: 30rpx;
+  border: none;
+}
+
+.pay-modal-save-btn::after,
+.pay-modal-done-btn::after {
+  border: none;
+}
+
+.pay-modal-save-btn {
+  background: #eef6f8;
+  color: #3f646d;
+}
+
+.pay-modal-save-btn[disabled] {
+  opacity: 0.45;
+  color: #8d9aa0;
+}
+
+.pay-modal-done-btn {
+  background: #2b2b2b;
+  color: #fff;
+}
+
+.pay-modal-done-btn[disabled] {
+  opacity: 0.5;
+}
+
+.pay-code-bottom-gap {
+  height: calc(32rpx + env(safe-area-inset-bottom));
+}
+
+.pay-proof-card,
+.pay-message-card {
+  margin-top: 20rpx;
+  border-radius: 18rpx;
+  border: 2rpx solid #e8edf1;
+  background: #f9fbfc;
+  padding: 20rpx;
+}
+
+.pay-proof-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  margin-bottom: 14rpx;
+}
+
+.pay-proof-label {
+  font-size: 24rpx;
+  color: #2e3940;
+  font-weight: 600;
+}
+
+.pay-proof-required {
+  color: #d06262;
+  font-size: 24rpx;
+}
+
+.pay-proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.pay-proof-item,
+.pay-proof-add {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.pay-proof-item {
+  border: 2rpx solid #e2e9ef;
+  background: #fff;
+}
+
+.pay-proof-image {
+  width: 100%;
+  height: 100%;
+}
+
+.pay-proof-remove {
+  position: absolute;
+  right: 6rpx;
+  top: 6rpx;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  text-align: center;
+  line-height: 30rpx;
+  font-size: 24rpx;
+}
+
+.pay-proof-add {
+  border: 2rpx dashed #c7d4df;
+  background: #f4f8fb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pay-proof-add-icon {
+  font-size: 34rpx;
+  line-height: 1;
+  color: #5f7a8d;
+}
+
+.pay-proof-add-text {
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: #6d808f;
+}
+
+.pay-proof-help {
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  color: #8a959d;
+}
+
+.pay-proof-uploading {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #4d6676;
+}
+
+.pay-message-input {
+  width: 100%;
+  min-height: 130rpx;
+  background: #fff;
+  border: 2rpx solid #e2e9ef;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #2d2d2d;
+  line-height: 1.6;
+  padding: 16rpx;
+  box-sizing: border-box;
+}
+
+.pay-message-count {
+  margin-top: 8rpx;
+  display: block;
+  text-align: right;
+  font-size: 20rpx;
+  color: #8a959d;
+}
+
 .action-btn {
   background: $color-dark;
   /* 1. 正常状态下显式定义文字颜色为白色 */

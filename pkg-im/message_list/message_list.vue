@@ -331,6 +331,7 @@ function mapBizToPreview (biz) {
     artist_order_step_approve: '节点已确认',
     artist_order_step_reject: '节点已驳回',
     artist_order_buyer_confirm: '买家已确认订单内容',
+    artist_order_seller_confirm: '卖家已确认，请付款',
     artist_order_operate: '订单状态更新'
   }
   if (map[key]) return map[key]
