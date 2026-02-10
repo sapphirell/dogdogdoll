@@ -234,7 +234,7 @@ function jumpSetting () { uni.navigateTo({ url: '/pages/setting/setting' }) }
 function jumpToSetName () { uni.navigateTo({ url: '/pages/setting/username/username' }) }
 function handleSettingsAction (type) {
   if (type === 'profile') jumpSetting()
-  else if (type === 'address') uni.showToast({ title: '地址设置开发中', icon: 'none' })
+  else if (type === 'address') uni.navigateTo({ url: '/pkg-common/address/address-list' })
 }
 function handleLoginSuccess () { asyncGetUserInfo() }
 
