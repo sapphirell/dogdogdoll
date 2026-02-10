@@ -202,7 +202,12 @@
     </view>
 
     <view class="fixed-bottom-bar" v-if="isLogin && submission.submission_id && bottomAction">
-       <button class="action-btn" hover-class="btn-hover" @click="handleBottomAction">
+       <button 
+         class="action-btn" 
+         :class="{ 'disabled': !isContentReady }"
+         :hover-class="isContentReady ? 'btn-hover' : ''"
+         @click="handleBottomAction"
+       >
          <view class="btn-content">
            <text class="btn-price font-din">¥ {{ Number(totalPrice) }}</text>
            <view class="btn-divider"></view>
@@ -340,6 +345,19 @@ const bottomActionText = computed(() => {
   if (bottomAction.value === 'confirm') return '确认订单'
   if (bottomAction.value === 'pay') return '去付款'
   return ''
+})
+
+// 修改点：新增判断内容是否准备就绪
+const isContentReady = computed(() => {
+  // 如果是去付款阶段，意味着订单已经生成，内容已锁定，直接视为Ready
+  if (bottomAction.value === 'pay') return true
+  
+  // 如果是确认订单阶段，必须保证用户填写了至少一项内容
+  if (bottomAction.value === 'confirm') {
+    return submission.items && submission.items.length > 0
+  }
+  
+  return false
 })
 
 // ====== Methods ======
@@ -530,6 +548,11 @@ async function useDraft(draft) {
 }
 
 async function handleBottomAction() {
+  // 修改点：如果内容没准备好，直接拦截点击
+  if (!isContentReady.value) {
+    return
+  }
+
   const urlMap = {
     'confirm': `${websiteUrl.value}/with-state/artist-order/submission/confirm-content`,
     'pay': `${websiteUrl.value}/with-state/artist-order/pay`
@@ -1113,14 +1136,32 @@ $spacing-page: 30rpx;
 }
 .action-btn {
   background: $color-dark;
-  color: #fff;
+  /* 1. 正常状态下显式定义文字颜色为白色 */
+  color: #fff; 
   border-radius: 99rpx;
   height: 96rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0;
-   
+  transition: all 0.3s;
+  
+  /* 2. 核心修复：强制内部的特定类名继承父级颜色 */
+  /* 这样无论父级是白色还是灰色，它们都会跟随 */
+  .btn-price, .btn-label, .font-din {
+    color: inherit !important;
+  }
+
+  /* 禁用状态样式 */
+  &.disabled {
+    background: #E0E0E0; /* 灰色背景 */
+    /* 3. 禁用状态下显式定义文字颜色为灰色 */
+    color: #999 !important; 
+    box-shadow: none;
+    
+    /* 移除点击态效果 */
+    &::after { display: none; }
+  }
 }
 .btn-content {
   display: flex;

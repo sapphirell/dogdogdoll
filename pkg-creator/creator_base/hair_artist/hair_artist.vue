@@ -600,24 +600,6 @@ function goRole(type) {
   uni.navigateTo({ url })
 }
 
-/** 解析当前 URL 的 brand_id（H5 下防 query 滞后） */
-function parseBrandIdFromRoute() {
-  try {
-    let fullPath = ''
-    if (typeof getCurrentPages === 'function') {
-      const pages = getCurrentPages()
-      const cur = pages && pages.length ? pages[pages.length - 1] : null
-      fullPath = cur?.$page?.fullPath || ''
-    }
-    if (!fullPath && typeof window !== 'undefined') {
-      fullPath = window.location.hash || window.location.href || ''
-    }
-    const m = String(fullPath).match(/[?&]brand_id=(\d+)/)
-    return m ? Number(m[1]) : 0
-  } catch (e) {
-    return 0
-  }
-}
 
 /** 列表状态重置：每次刷新前清空分页数据 */
 function resetLists() {
@@ -633,32 +615,36 @@ function resetLists() {
   hasOrderDot.value = false
 }
 
-/** 生命周期：首次进页读取 brand_id；每次 onShow 都刷新 */
-onLoad((query) => {
-  const bid = Number(query?.brand_id || 0)
-  if (!bid) {
-    uni.showToast({ title: '缺少 brand_id', icon: 'none' })
-    return
-  }
-  brandId.value = bid
-})
-
 onShow(async () => {
-  // H5 下如果 URL brand_id 变化，优先以 URL 为准
-  const bidFromRoute = parseBrandIdFromRoute()
-  if (bidFromRoute && bidFromRoute !== brandId.value) {
-    brandId.value = bidFromRoute
+  // 1. 获取当前页面栈
+  const pages = getCurrentPages()
+  const curPage = pages[pages.length - 1]
+
+  // 2. 获取参数 (H5用 $route.query, 小程序用 options)
+  const opts = curPage.$route?.query || curPage.options || {}
+  const newId = Number(opts.brand_id || 0)
+
+  // 3. 关键判断：如果 URL 里的 ID 变了，强制更新本地 ID 并重置列表
+  if (newId && newId !== brandId.value) {
+    console.log('检测到 ID 变更:', brandId.value, '->', newId)
+    brandId.value = newId
+    resetLists()
   }
 
+  // 4. 安全检查
   if (!brandId.value) return
-  resetLists()
 
-  uni.showLoading({ title: '加载中...' })
-  try {
-    await fetchInfo()
-    await Promise.all([fetchMonthlyBusy(), fetchWigs(), fetchOrderPlans()])
-  } finally {
-    uni.hideLoading()
+  // 5. 请求数据
+  // 优化：只有当列表为空（说明刚 reset 过）或者当前展示的信息不属于这个 ID 时才请求
+  // 这样既修复了 BUG，又避免了普通切后台时的重复刷新
+  if (wigs.value.length === 0 || info.brand_id !== brandId.value) {
+    uni.showLoading({ title: '加载中...' })
+    try {
+      await fetchInfo()
+      await Promise.all([fetchMonthlyBusy(), fetchWigs(), fetchOrderPlans()])
+    } finally {
+      uni.hideLoading()
+    }
   }
 })
 

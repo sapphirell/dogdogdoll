@@ -1,94 +1,84 @@
-<!-- received-detail -->
 <template>
   <view-logs />
   <view class="submission-page">
 
-
-    <!-- 主体内容 -->
     <scroll-view
       class="scroll-body"
       scroll-y
       :show-scrollbar="false"
     >
-      <!-- 加载中 -->
       <view v-if="loading" class="state-box">
         <text class="state-title">加载中…</text>
         <text class="state-desc">正在获取投递详情</text>
       </view>
 
-      <!-- 加载失败或无数据 -->
-      <view v-else-if="!queueInfo">
-        <view class="state-box state-error">
-          <text class="state-title">获取失败</text>
-          <text class="state-desc">{{ errorMsg || '暂时无法获取投递信息' }}</text>
-          <button class="btn-retry" @tap="reload">重试</button>
-        </view>
+      <view v-else-if="!queueInfo" class="state-box state-error">
+        <text class="state-title">获取失败</text>
+        <text class="state-desc">{{ errorMsg || '暂时无法获取投递信息' }}</text>
+        <button class="btn-retry" @tap="reload">重试</button>
       </view>
 
-      <!-- 正常展示 -->
       <view v-else class="content">
-        <!-- 顶部状态卡片 -->
         <view class="card status-card">
           <view class="status-row">
-            <view class="status-chip" :class="'s-' + queueInfo.status">
-              <text class="status-text">{{ queueInfo.status_text || '未知状态' }}</text>
+            <view class="status-left-group">
+                <view 
+                  class="status-chip" 
+                  :class="['s-' + queueInfo.status, { 'font-title': queueInfo.status === 2 }]"
+                >
+                  <text class="status-text">{{ queueInfo.status_text || '未知状态' }}</text>
+                </view>
+                <view v-if="queueInfo.premium_queue_status === 1" class="tag-premium">
+                    <text class="tag-text">钞能力</text>
+                </view>
             </view>
-            <text class="status-mode" v-if="queueInfo.mode === 1">模式：普通队列</text>
-            <text class="status-mode" v-else-if="queueInfo.mode === 2">模式：手速队列</text>
           </view>
 
           <view class="status-row">
             <text class="status-label">排队位置</text>
-            <text class="status-value">
-              <!-- ahead_count 是“前面还有几人”，如果你后端未来返回 index 可以改用 index -->
-              <text v-if="queueInfo.ahead_count > 0">
-                前面还有 {{ queueInfo.ahead_count }} 位投递
+            <view class="status-value-group">
+              <text v-if="queueInfo.ahead_count > 0" class="font-title">
+                {{ queueInfo.ahead_count }}
               </text>
-              <text v-else-if="queueInfo.status === 0">当前在首位 / 未统计</text>
-              <text v-else>当前不在排队队列</text>
-            </text>
+              <text v-else-if="queueInfo.status === 0" class="font-title">0</text>
+              <text v-else class="status-normal-text">不在队列中</text>
+              <text v-if="queueInfo.ahead_count > 0" class="status-unit">位</text>
+            </view>
           </view>
 
           <view class="status-row">
-            <text class="status-label">本次投递 ID</text>
-            <text class="status-value">#{{ queueInfo.submission_id }}</text>
+            <text class="status-label">ID</text>
+            <text class="font-title">#{{ queueInfo.submission_id }}</text>
           </view>
-
-          <view class="status-row">
-            <text class="status-label">接单计划 ID</text>
-            <text class="status-value">#{{ queueInfo.plan_id }}</text>
-          </view>
-
-          <view class="status-row" v-if="queueInfo.premium_queue_status">
-            <text class="status-label">钞队列</text>
-            <text class="status-value">
-              {{ queueInfo.premium_queue_status === 1 ? '已开启' : '未开启' }}
-            </text>
-          </view>
-
-          <!-- 顶部操作：与卖家发起会话 / 确认订单 -->
+          
           <view class="status-actions">
+            <view 
+              class="user-info-group" 
+              v-if="targetUserInfo"
+              @tap="goUserPage"
+            >
+              <image 
+                class="user-avatar" 
+                :src="targetUserInfo.avatar || 'https://images1.fantuanpu.com/home/default_avatar.jpg'" 
+                mode="aspectFill"
+              />
+              <text class="user-name">{{ targetUserInfo.user_name || '未知用户' }}</text>
+            </view>
+            <view v-else class="user-info-placeholder"></view>
+
             <button
-              class="btn-primary"
+              class="btn-chat-inline"
               @tap="handleChatWithSeller"
             >
-              {{ isBuyer ? '与卖家发起会话' : '与买家发起会话' }}
-            </button>
-
-            <button
-              v-if="queueInfo.status === 2"
-              class="btn-secondary"
-              @tap="handleConfirmSubmission"
-            >
-              确认订单（状态 2 → 3）
+              <uni-icons type="chatbubble" size="16" color="#4a3131" style="margin-right: 4rpx;"/>
+              {{ isBuyer ? '联系卖家' : '联系买家' }}
             </button>
           </view>
         </view>
 
-        <!-- 子项列表 -->
         <view class="card items-card">
           <view class="card-header">
-            <text class="card-title">作品列表（{{ items.length }}）</text>
+            <text class="card-title">投递内容（{{ items.length }}）</text>
           </view>
 
           <view
@@ -106,7 +96,6 @@
             class="item-row"
           >
             <view class="item-main">
-              <!-- 左侧封面 -->
               <view class="item-cover-wrap" v-if="getFirstImage(item)">
                 <image
                   class="item-cover"
@@ -132,7 +121,7 @@
 
                 <view class="item-meta-row">
                   <text class="item-meta">
-                    子单状态：{{ formatItemStatus(item.status) }}
+                    订单状态：{{ formatItemStatus(item.status) }}
                   </text>
                 </view>
 
@@ -147,7 +136,6 @@
               </view>
             </view>
 
-            <!-- 子项操作按钮 -->
             <view class="item-actions">
               <button
                 class="btn-mini"
@@ -165,7 +153,6 @@
           </view>
         </view>
 
-        <!-- 草稿子项（如果有） -->
         <view
           v-if="draftItems.length"
           class="card draft-card"
@@ -193,19 +180,27 @@
           </view>
         </view>
 
-        <!-- 底部安全区占位 -->
-        <view :style="{ height: footerPlaceholderHeight }"></view>
+        <view v-if="showBottomBar" :style="{ height: footerPlaceholderHeight }"></view>
       </view>
     </scroll-view>
 
-    <!-- 底部固定操作区（可选） -->
-    <view class="bottom-bar" :style="{ paddingBottom: footerPadding }">
-      <button class="bottom-btn" @tap="handleChatWithSeller">
-        {{ isBuyer ? '与卖家发起会话' : '与买家发起会话' }}
-      </button>
+    <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: footerPadding }">
+      <view class="bottom-actions-row">
+        <view class="left-text-actions">
+            <view class="text-btn-item" @tap="handleAuditSubmission('cancel_order')">
+                取消订单
+            </view>
+            <view class="text-btn-item" @tap="handleAuditSubmission('return_pending')">
+                退回修改
+            </view>
+        </view>
+        
+        <button class="action-btn-large" @tap="handleConfirmSubmission">
+            确认订单
+        </button>
+      </view>
     </view>
 
-    <!-- 修改金额弹层 -->
     <uni-popup
       ref="pricePopupRef"
       type="bottom"
@@ -262,12 +257,25 @@
         </view>
       </view>
     </uni-popup>
+
+    <common-modal v-model:visible="auditModalVisible" width="600rpx">
+      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+        <text class="custom-modal-title">{{ auditModalTitle }}</text>
+        <text class="custom-modal-desc">{{ auditModalDesc }}</text>
+        <view class="custom-modal-actions">
+          <button class="custom-modal-btn cancel" @tap="auditModalVisible = false">取消</button>
+          <button class="custom-modal-btn confirm" @tap="onModalConfirm">确定</button>
+        </view>
+      </view>
+    </common-modal>
+
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import CommonModal from '@/components/common-modal/common-modal.vue' 
 import {
   websiteUrl,
   global,
@@ -283,19 +291,21 @@ const loading = ref(true)
 const errorMsg = ref('')
 
 const submissionId = ref(0)
-const queueInfo = ref(null) // 后端返回的 data
+const queueInfo = ref(null) 
+const targetUserInfo = ref(null) // 新增：投递者用户信息
+
 const items = computed(() => (queueInfo.value?.items || []))
 const draftItems = computed(() => (queueInfo.value?.draft_items || []))
 
-// 当前登录用户 ID（从 config.global 中取）
+const showBottomBar = computed(() => {
+    return queueInfo.value && queueInfo.value.status === 2
+})
+
 const currentUid = computed(() => {
   const u = global.userInfo || {}
   return u.id || u.Id || 0
 })
 
-// 推测当前视角（非常粗暴的推断）
-// 若第一个 item 的 user_id == 当前 uid，则认为是“买家视角”
-// 否则认为是“卖家视角”
 const isBuyer = computed(() => {
   const list = items.value
   if (!list.length || !currentUid.value) return true
@@ -304,7 +314,6 @@ const isBuyer = computed(() => {
   return Number(uid) === Number(currentUid.value)
 })
 
-// 底部安全区
 const footerPlaceholderHeight = computed(() => {
   return toPx(getFooterPlaceholderHeight())
 })
@@ -312,19 +321,18 @@ const footerPadding = computed(() => {
   return toPx(getSafeBottom())
 })
 
-// 修改金额弹层
 const pricePopupRef = ref(null)
 const editingItem = ref(null)
 const priceInput = ref('')
 const reasonInput = ref('')
 
-// ================== 工具函数 ==================
+// ================== 确认/审核弹窗状态 ==================
+const auditModalVisible = ref(false)
+const auditModalTitle = ref('')
+const auditModalDesc = ref('')
+const currentActionType = ref('')
 
-function handleBack() {
-  uni.navigateBack({
-    delta: 1,
-  })
-}
+// ================== 工具函数 ==================
 
 function getFirstImage(item) {
   const src = item.ref_images || item.refImages
@@ -361,14 +369,7 @@ function getAddonsTitles(item) {
 function calcItemTotal(item) {
   const base = Number(item.price_total || 0)
   const adjust = Number(item.adjust_price || 0)
-  const addonsPrice = Number(item.addons_price || 0)
-  const surchargePrice = Number(item.surcharge_price || 0)
-  const b = Number.isFinite(base) ? base : 0
-  const a = Number.isFinite(adjust) ? adjust : 0
-  const ad = Number.isFinite(addonsPrice) ? addonsPrice : 0
-  const s = Number.isFinite(surchargePrice) ? surchargePrice : 0
-  // 这里假定 price_total 已经包含 addons + surcharge，如果后端设计不同可调整
-  return b + a
+  return base + adjust
 }
 
 function formatPrice(v) {
@@ -380,24 +381,15 @@ function formatPrice(v) {
 function formatItemStatus(st) {
   const s = Number(st)
   switch (s) {
-    case 0:
-      return '待处理/排队中'
-    case 1:
-      return '已抢到，待确认'
-    case 2:
-      return '等待妆师/毛娘确认'
-    case 3:
-      return '待付款'
-    case 4:
-      return '已下单/进行中'
-    case 5:
-      return '未中选'
-    case 6:
-      return '已放弃/取消'
-    case 7:
-      return '保留过期'
-    default:
-      return '未知'
+    case 0: return '待处理/排队中'
+    case 1: return '已抢到，待确认'
+    case 2: return '等待妆师/毛娘确认'
+    case 3: return '待付款'
+    case 4: return '已下单/进行中'
+    case 5: return '未中选'
+    case 6: return '已放弃/取消'
+    case 7: return '保留过期'
+    default: return '未知'
   }
 }
 
@@ -407,10 +399,7 @@ async function ensureLogin() {
   await initLoginState()
   const token = uni.getStorageSync('token')
   if (!token) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none',
-    })
+    uni.showToast({ title: '请先登录', icon: 'none' })
     return false
   }
   return true
@@ -434,24 +423,12 @@ async function fetchQueueInfo() {
   loading.value = true
   errorMsg.value = ''
 
-  console.log(
-    '[submission-queue] 请求排队信息',
-    `${websiteUrl.value}/with-state/artist-order/submission/queue-info`,
-    'submission_id=',
-    submissionId.value
-  )
-
   uni.request({
     url: `${websiteUrl.value}/with-state/artist-order/submission/queue-info`,
     method: 'GET',
-    header: {
-      Authorization: token,
-    },
-    data: {
-      submission_id: submissionId.value,
-    },
+    header: { Authorization: token },
+    data: { submission_id: submissionId.value },
     success: (res) => {
-      console.log('[submission-queue] 接口返回', res.data)
       const body = res.data || {}
       if (body.status !== 'success') {
         errorMsg.value = body.msg || '获取排队信息失败'
@@ -459,9 +436,16 @@ async function fetchQueueInfo() {
         return
       }
       queueInfo.value = body.data || null
+      // 获取成功后，如果有关联的 User，解析用户信息
+      if (queueInfo.value && queueInfo.value.items && queueInfo.value.items.length > 0) {
+          const first = queueInfo.value.items[0]
+          const uid = first.user_id || first.userId || 0
+          if (uid) {
+              fetchTargetUserInfo(uid)
+          }
+      }
     },
     fail: (err) => {
-      console.error('[submission-queue] 请求失败', err)
       errorMsg.value = '网络错误，请稍后重试'
       queueInfo.value = null
     },
@@ -471,80 +455,84 @@ async function fetchQueueInfo() {
   })
 }
 
+// 新增：获取用户信息接口
+function fetchTargetUserInfo(uid) {
+    // 接口文档给的是完整地址，这里为了保险起见，如果 websiteUrl 已经是域名则拼接，或者直接使用全路径
+    // 假设 websiteUrl 是 https://api.fantuanpu.com
+    uni.request({
+        url: `${websiteUrl.value}/user-info`, 
+        method: 'GET',
+        data: { uid: uid },
+        success: (res) => {
+            const body = res.data || {}
+            if (body.status === 'success') {
+                targetUserInfo.value = body.data
+            }
+        }
+    })
+}
+
+// 新增：跳转用户主页
+function goUserPage() {
+    if (!queueInfo.value || !queueInfo.value.items || !queueInfo.value.items.length) return
+    const first = queueInfo.value.items[0]
+    const uid = first.user_id || first.userId || 0
+    if (uid) {
+        // H5 或 uni-app 页面跳转
+        uni.navigateTo({
+            url: `/pages/user_page/user_page?uid=${uid}`
+        })
+    }
+}
+
 function reload() {
   fetchQueueInfo()
 }
 
-// ================== 功能 1：与卖家发起会话 ==================
+// ================== 业务逻辑 ==================
 
-/**
- * 获取聊天对方的 UID
- * - 若当前是买家视角：对方为品牌/创作者（通过 brand-info 拿 owner uid，假设字段为 user_id）
- * - 若当前是卖家视角：对方为买家（取 item.user_id）
- */
-function resolvePeerId() {
+async function resolvePeerId() {
   const list = items.value
   if (!list.length) {
-    uni.showToast({
-      title: '暂无作品，无法发起会话',
-      icon: 'none',
-    })
+    uni.showToast({ title: '暂无作品，无法发起会话', icon: 'none' })
     return null
   }
   const first = list[0]
   const buyerUid = first.user_id || first.userId || 0
   const brandId = first.brand_id || first.brandId || 0
 
-  // 卖家视角：对方是买家
   if (!isBuyer.value) {
+    // 如果我是卖家/妆师，我要找买家
     if (!buyerUid) {
-      uni.showToast({
-        title: '找不到买家ID',
-        icon: 'none',
-      })
+      uni.showToast({ title: '找不到买家ID', icon: 'none' })
       return null
     }
     return buyerUid
   }
 
-  // 买家视角：对方是卖家（品牌 owner）
+  // 如果我是买家，我要找品牌/妆师
   if (!brandId) {
-    uni.showToast({
-      title: '缺少品牌信息，暂无法发起对话',
-      icon: 'none',
-    })
+    uni.showToast({ title: '缺少品牌信息', icon: 'none' })
     return null
   }
 
-  // 通过 /brand-info 拿 owner uid（此处假设后端返回 data.user_id）
   return new Promise((resolve) => {
     uni.request({
       url: `${websiteUrl.value}/brand-info`,
       method: 'GET',
-      data: {
-        id: brandId,
-      },
+      data: { id: brandId },
       success: (res) => {
-        console.log('[submission-queue] /brand-info 返回', res.data)
         const body = res.data || {}
-        const data = body.data || {}
-        const ownerUid = data.user_id || data.userId || 0
+        const ownerUid = body.data?.user_id || body.data?.userId || 0
         if (!ownerUid) {
-          uni.showToast({
-            title: '未配置品牌账号，暂无法发起对话',
-            icon: 'none',
-          })
+          uni.showToast({ title: '品牌未绑定账号', icon: 'none' })
           resolve(null)
         } else {
           resolve(ownerUid)
         }
       },
-      fail: (err) => {
-        console.error('[submission-queue] /brand-info 请求失败', err)
-        uni.showToast({
-          title: '获取品牌信息失败',
-          icon: 'none',
-        })
+      fail: () => {
+        uni.showToast({ title: '获取品牌信息失败', icon: 'none' })
         resolve(null)
       },
     })
@@ -552,61 +540,39 @@ function resolvePeerId() {
 }
 
 async function handleChatWithSeller() {
-  if (!queueInfo.value) {
-    uni.showToast({
-      title: '还未加载完成',
-      icon: 'none',
-    })
-    return
-  }
-
+  if (!queueInfo.value) return
   const ok = await ensureLogin()
   if (!ok) return
-
   const peer = await resolvePeerId()
   if (!peer) return
-
-  console.log('[submission-queue] 发起会话 peer_id =', peer)
-
-  // 直接跳转 IM 聊天页面，内部会调用 /with-state/im/start-session
   uni.navigateTo({
     url: `/pkg-im/chat/chat?peer_id=${peer}`,
   })
 }
 
-// ================== 功能 2：修改金额（针对 item） ==================
-
 function openChangePricePanel(item) {
   editingItem.value = item
-  // 默认填入当前金额
   priceInput.value = String(calcItemTotal(item))
   reasonInput.value = ''
   nextTickOpenPricePopup()
 }
 
 function nextTickOpenPricePopup() {
-  // uni-popup 有时需要 nextTick，这里直接 try 一下
   setTimeout(() => {
     try {
       pricePopupRef.value?.open?.()
-    } catch (e) {
-      console.warn('[submission-queue] 打开 price popup 异常', e)
-    }
+    } catch (e) {}
   }, 0)
 }
 
 function closePricePanel() {
   try {
     pricePopupRef.value?.close?.()
-  } catch (e) {
-    console.warn('[submission-queue] 关闭 price popup 异常', e)
-  }
+  } catch (e) {}
 }
 
 function onPricePopupChange(e) {
-  console.log('[submission-queue] price popup change', e)
   if (!e.show) {
-    // 关闭时清理上下文
     editingItem.value = null
     priceInput.value = ''
     reasonInput.value = ''
@@ -614,21 +580,11 @@ function onPricePopupChange(e) {
 }
 
 function submitChangePrice() {
-  if (!editingItem.value) {
-    uni.showToast({
-      title: '未选择作品',
-      icon: 'none',
-    })
-    return
-  }
-
+  if (!editingItem.value) return
   const raw = priceInput.value.trim()
   const n = Number(raw)
   if (!raw || Number.isNaN(n) || n <= 0) {
-    uni.showToast({
-      title: '请填写正确的金额',
-      icon: 'none',
-    })
+    uni.showToast({ title: '请填写正确的金额', icon: 'none' })
     return
   }
 
@@ -641,149 +597,131 @@ function submitChangePrice() {
       reason: reasonInput.value.trim(),
     }
 
-    console.log('[submission-queue] 修改金额请求体', payload)
-
     uni.request({
       url: `${websiteUrl.value}/with-state/artist-order/item/change-price`,
       method: 'POST',
-      header: {
-        Authorization: token,
-        'Content-Type': 'application/json',
-      },
+      header: { Authorization: token, 'Content-Type': 'application/json' },
       data: payload,
       success: (res) => {
-        console.log('[submission-queue] 修改金额返回', res.data)
         const body = res.data || {}
         if (body.status !== 'success') {
-          uni.showToast({
-            title: body.msg || '修改金额失败',
-            icon: 'none',
-          })
+          uni.showToast({ title: body.msg || '失败', icon: 'none' })
           return
         }
-        uni.showToast({
-          title: '修改金额成功',
-          icon: 'success',
-        })
+        uni.showToast({ title: '成功', icon: 'success' })
         closePricePanel()
-        // 重新拉一次详情，保证金额一致
         fetchQueueInfo()
       },
-      fail: (err) => {
-        console.error('[submission-queue] 修改金额请求失败', err)
-        uni.showToast({
-          title: '网络错误，请稍后重试',
-          icon: 'none',
-        })
-      },
     })
   })
 }
-
-// ================== 功能 3：确认订单（状态 2 → 3） ==================
 
 function handleConfirmSubmission() {
-  if (!queueInfo.value) return
-  if (queueInfo.value.status !== 2) {
-    uni.showToast({
-      title: '当前状态不需要确认',
-      icon: 'none',
-    })
-    return
-  }
-
-  uni.showModal({
-    title: '确认订单',
-    content: '确认后将进入待付款状态，是否继续？',
-    confirmText: '确认订单',
-    cancelText: '再想想',
-    success: (res) => {
-      if (!res.confirm) return
-      doConfirmSubmission()
-    },
-  })
+  if (!queueInfo.value || queueInfo.value.status !== 2) return
+  currentActionType.value = 'confirm'
+  auditModalTitle.value = '确认订单'
+  auditModalDesc.value = '确认后将进入待付款状态，是否继续？'
+  auditModalVisible.value = true
 }
 
-// 这里假设后端会实现：POST /with-state/artist-order/submission/confirm
-// Body: { submission_id: xxx }
 function doConfirmSubmission() {
   ensureLogin().then((ok) => {
     if (!ok) return
     const token = uni.getStorageSync('token') || ''
-    const payload = {
-      submission_id: submissionId.value,
-    }
-
-    console.log('[submission-queue] 确认订单请求', payload)
-
     uni.request({
       url: `${websiteUrl.value}/with-state/artist-order/submission/confirm`,
       method: 'POST',
-      header: {
-        Authorization: token,
-        'Content-Type': 'application/json',
-      },
-      data: payload,
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: { submission_id: submissionId.value },
       success: (res) => {
-        console.log('[submission-queue] 确认订单返回', res.data)
-        const body = res.data || {}
-        if (body.status !== 'success') {
-          uni.showToast({
-            title: body.msg || '确认订单失败',
-            icon: 'none',
-          })
-          return
+        if (res.data?.status === 'success') {
+          uni.showToast({ title: '已确认', icon: 'success' })
+          fetchQueueInfo()
+        } else {
+          uni.showToast({ title: res.data?.msg || '失败', icon: 'none' })
         }
-        uni.showToast({
-          title: '订单已确认',
-          icon: 'success',
-        })
-        fetchQueueInfo()
-      },
-      fail: (err) => {
-        console.error('[submission-queue] 确认订单请求失败', err)
-        uni.showToast({
-          title: '网络错误，请稍后重试',
-          icon: 'none',
-        })
       },
     })
   })
 }
 
-// ================== 功能 4：提交节点状态 ==================
+function handleAuditSubmission(action) {
+  if (!queueInfo.value) return
+  currentActionType.value = action
+  if (action === 'return_pending') {
+      auditModalTitle.value = '退回待确认'
+      auditModalDesc.value = '确定要将此订单退回至“待确认”状态吗？买家需要重新确认。'
+  } else if (action === 'cancel_order') {
+      auditModalTitle.value = '取消订单'
+      auditModalDesc.value = '确定要取消此订单吗？操作不可撤销。'
+  } else {
+      return
+  }
+  auditModalVisible.value = true
+}
+
+function doAuditSubmission(action) {
+    ensureLogin().then((ok) => {
+      if (!ok) return
+      const token = uni.getStorageSync('token') || ''
+      const url = `${websiteUrl.value}/with-state/artist-order/submission/operate`
+      const payload = {
+          submission_id: submissionId.value,
+          action: action 
+      }
+      uni.showLoading({ title: '处理中' })
+      uni.request({
+        url: url,
+        method: 'POST',
+        header: { Authorization: token, 'Content-Type': 'application/json' },
+        data: payload,
+        success: (res) => {
+          if (res.data?.status === 'success') {
+            uni.showToast({ title: '操作成功', icon: 'success' })
+            fetchQueueInfo()
+          } else {
+            uni.showToast({ title: res.data?.msg || '操作失败', icon: 'none' })
+          }
+        },
+        fail: () => {
+              uni.showToast({ title: '网络请求失败', icon: 'none' })
+        },
+        complete: () => {
+            uni.hideLoading()
+        }
+      })
+    })
+}
+
+function onModalConfirm() {
+  auditModalVisible.value = false
+  if (currentActionType.value === 'confirm') {
+    doConfirmSubmission()
+  } else if (['return_pending', 'cancel_order'].includes(currentActionType.value)) {
+    doAuditSubmission(currentActionType.value)
+  }
+}
 
 function goStepEditor(item) {
   const itemId = item.id || item.ID
-  if (!itemId) {
-    uni.showToast({
-      title: '缺少子项ID',
-      icon: 'none',
-    })
-    return
-  }
-  // 这里跳到你准备做节点编辑的页面路由
-  // 例如：/pages/artist-order/step-editor?item_id=xxx
+  if (!itemId) return
   uni.navigateTo({
     url: `/pages/artist-order/step-editor?item_id=${itemId}`,
   })
 }
 
-// ================== 生命周期 ==================
-
 onLoad((options) => {
-  console.log('[submission-queue] onLoad options=', options)
+  uni.setNavigationBarTitle({ title: '投递订单详情' })
+  
   const sid = Number(options?.submission_id || options?.submissionId || 0)
   if (!Number.isNaN(sid) && sid > 0) {
     submissionId.value = sid
   }
-
   if (!submissionId.value) {
     loading.value = false
     errorMsg.value = '缺少 submission_id 参数'
     return
   }
-
   fetchQueueInfo()
 })
 </script>
@@ -794,36 +732,6 @@ onLoad((options) => {
   background-color: #f6f6f8;
   display: flex;
   flex-direction: column;
-}
-
-/* 顶部导航 */
-.nav-bar {
-  height: 88rpx;
-  padding: 0 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #ffffff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-  z-index: 10;
-}
-.nav-left {
-  display: flex;
-  align-items: center;
-}
-.nav-back-icon {
-  font-size: 40rpx;
-  margin-right: 4rpx;
-}
-.nav-back-text {
-  font-size: 28rpx;
-}
-.nav-title {
-  font-size: 30rpx;
-  font-weight: 600;
-}
-.nav-right {
-  width: 64rpx;
 }
 
 /* 滚动主体 */
@@ -841,25 +749,50 @@ onLoad((options) => {
 }
 
 /* 状态卡片 */
-.status-card {
-}
 .status-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8rpx;
+  /* 修改点1：间距加长 */
+  margin-top: 24rpx;
 }
 .status-row:first-child {
   margin-top: 0;
+}
+.status-left-group {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
 }
 .status-label {
   font-size: 24rpx;
   color: #888;
 }
-.status-value {
-  font-size: 24rpx;
-  color: #333;
+
+/* 通用大字体标题样式 */
+.font-title {
+    font-size: 40rpx;
+    font-weight: bold;
+    color: #333;
+    line-height: 1.2;
+    font-family: DIN, 'Helvetica Neue', Helvetica, sans-serif; /* 尝试使用数字字体 */
 }
+
+.status-value-group {
+    display: flex;
+    align-items: baseline;
+}
+.status-unit {
+    font-size: 24rpx;
+    color: #888;
+    margin-left: 4rpx;
+}
+.status-normal-text {
+    font-size: 26rpx;
+    color: #666;
+}
+
+
 .status-chip {
   padding: 6rpx 16rpx;
   border-radius: 999rpx;
@@ -868,117 +801,108 @@ onLoad((options) => {
 .status-text {
   font-size: 24rpx;
 }
-.status-mode {
-  font-size: 24rpx;
-  color: #666;
+
+/* 钞单标签样式 */
+.tag-premium {
+    background: linear-gradient(135deg, #FFD700, #FDB931);
+    padding: 4rpx 12rpx;
+    border-radius: 8rpx;
+    box-shadow: 0 2rpx 4rpx rgba(218, 165, 32, 0.3);
+}
+.tag-text {
+    font-size: 20rpx;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 1rpx 2rpx rgba(0,0,0,0.1);
 }
 
-/* 可以根据不同状态再细分颜色 */
-.status-chip.s-0 {
-  background: rgba(145, 213, 255, 0.16);
-  border: 1rpx solid rgba(63, 169, 245, 0.6);
+/* 状态 Chip 颜色 */
+.status-chip.s-0 { background: rgba(145, 213, 255, 0.16); border: 1rpx solid rgba(63, 169, 245, 0.6); }
+.status-chip.s-0 .status-text { color: #3fa9f5; }
+
+/* s-2 状态特殊处理 */
+.status-chip.s-2 { 
+    background: transparent; 
+    border: none; 
+    padding: 0;
 }
-.status-chip.s-0 .status-text {
-  color: #3fa9f5;
+.status-chip.s-2 .status-text { color: #333; } 
+.status-chip.font-title .status-text {
+    /* 继承全局 font-title 或单独定义 */
+    font-size: 40rpx;
+    font-weight: bold;
+    color: #333;
 }
-.status-chip.s-2 {
-  background: rgba(189, 214, 255, 0.16);
-  border: 1rpx solid rgba(95, 149, 255, 0.65);
-}
-.status-chip.s-2 .status-text {
-  color: #5f95ff;
-}
-.status-chip.s-3 {
-  background: rgba(140, 235, 195, 0.16);
-  border: 1rpx solid rgba(64, 192, 135, 0.65);
-}
-.status-chip.s-3 .status-text {
-  color: #36b67a;
-}
-.status-chip.s-4 {
-  background: rgba(110, 218, 151, 0.16);
-  border: 1rpx solid rgba(27, 176, 102, 0.65);
-}
-.status-chip.s-4 .status-text {
-  color: #1bb066;
-}
-.status-chip.s-5 {
-  background: rgba(230, 170, 170, 0.16);
-  border: 1rpx solid rgba(210, 110, 110, 0.7);
-}
-.status-chip.s-5 .status-text {
-  color: #d46b6b;
-}
-.status-chip.s-6 {
-  background: rgba(210, 210, 210, 0.18);
-  border: 1rpx solid rgba(170, 170, 170, 0.78);
-}
-.status-chip.s-6 .status-text {
-  color: #999;
-}
-.status-chip.s-7 {
-  background: rgba(220, 200, 200, 0.18);
-  border: 1rpx solid rgba(190, 140, 140, 0.8);
-}
-.status-chip.s-7 .status-text {
-  color: #c25b5b;
-}
+
+.status-chip.s-3 { background: rgba(140, 235, 195, 0.16); border: 1rpx solid rgba(64, 192, 135, 0.65); }
+.status-chip.s-3 .status-text { color: #36b67a; }
+.status-chip.s-4 { background: rgba(110, 218, 151, 0.16); border: 1rpx solid rgba(27, 176, 102, 0.65); }
+.status-chip.s-4 .status-text { color: #1bb066; }
+.status-chip.s-5 { background: rgba(230, 170, 170, 0.16); border: 1rpx solid rgba(210, 110, 110, 0.7); }
+.status-chip.s-5 .status-text { color: #d46b6b; }
+.status-chip.s-6 { background: rgba(210, 210, 210, 0.18); border: 1rpx solid rgba(170, 170, 170, 0.78); }
+.status-chip.s-6 .status-text { color: #999; }
+.status-chip.s-7 { background: rgba(220, 200, 200, 0.18); border: 1rpx solid rgba(190, 140, 140, 0.8); }
+.status-chip.s-7 .status-text { color: #c25b5b; }
 
 .status-actions {
-  margin-top: 20rpx;
+  margin-top: 32rpx; /* 稍微加大间距 */
   display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-.btn-primary {
-  flex: 1;
-  min-width: 240rpx;
-  height: 72rpx;
-  line-height: 72rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
-  color: #4a3131;
-  font-size: 26rpx;
-  font-weight: 600;
-  border: none;
-}
-.btn-primary::after {
-  border: none;
-}
-.btn-secondary {
-  flex: 1;
-  min-width: 240rpx;
-  height: 72rpx;
-  line-height: 72rpx;
-  border-radius: 999rpx;
-  background: #ffffff;
-  border: 1rpx solid #ffb36a;
-  color: #c16a1f;
-  font-size: 26rpx;
-}
-.btn-secondary::after {
-  border: none;
+  /* 修改点4：两端对齐 */
+  justify-content: space-between; 
+  align-items: center;
 }
 
-/* 调试块 */
-.debug-block {
-  margin-top: 20rpx;
-  padding: 12rpx 16rpx;
-  border-radius: 16rpx;
-  background-color: #f8f9fb;
+/* 用户信息组样式 */
+.user-info-group {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    background-color: #f9f9fb;
+    padding: 8rpx 20rpx 8rpx 8rpx;
+    border-radius: 999rpx;
 }
-.debug-title {
-  font-size: 22rpx;
-  color: #999;
+.user-info-group:active {
+    opacity: 0.7;
 }
-.debug-line {
-  font-size: 22rpx;
-  color: #666;
+.user-avatar {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 50%;
+    background-color: #eee;
 }
+.user-name {
+    font-size: 26rpx;
+    color: #333;
+    font-weight: 500;
+    max-width: 200rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.user-info-placeholder {
+    flex: 1; /* 占位，如果没有用户信息，保持chat按钮在右侧（如果需要chat按钮单独居左可去除）*/
+}
+
+
+.btn-chat-inline {
+    height: 64rpx;
+    line-height: 64rpx;
+    padding: 0 32rpx;
+    border-radius: 999rpx;
+    background-color: #f5f5f7;
+    color: #4a3131;
+    font-size: 26rpx;
+    font-weight: 500;
+    border: none;
+    display: flex;
+    align-items: center;
+    margin: 0; /* 清除默认 margin */
+}
+.btn-chat-inline::after { border: none; }
+
 
 /* items 卡片 */
-.items-card {
-}
 .card-header {
   margin-bottom: 8rpx;
 }
@@ -1065,9 +989,7 @@ onLoad((options) => {
   font-size: 24rpx;
   border: none;
 }
-.btn-mini::after {
-  border: none;
-}
+.btn-mini::after { border: none; }
 .btn-mini.outline {
   background-color: #ffffff;
   border: 1rpx solid #d6d6e0;
@@ -1075,8 +997,6 @@ onLoad((options) => {
 }
 
 /* 草稿 */
-.draft-card {
-}
 .draft-item {
   opacity: 0.9;
 }
@@ -1114,9 +1034,7 @@ onLoad((options) => {
   color: #5b3c1b;
   font-size: 26rpx;
 }
-.btn-retry::after {
-  border: none;
-}
+.btn-retry::after { border: none; }
 
 /* 底部操作条 */
 .bottom-bar {
@@ -1124,24 +1042,51 @@ onLoad((options) => {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 8rpx 24rpx 0;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: none;
+  border-top: 1rpx solid #eeeeee;
+  z-index: 100;
+  padding-top: 16rpx;
 }
-.bottom-btn {
-  width: 100%;
-  height: 80rpx;
-  line-height: 80rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
-  color: #4a3131;
-  font-size: 28rpx;
-  font-weight: 600;
-  border: none;
+.bottom-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32rpx; 
+    height: 100rpx;
+    gap: 32rpx;
 }
-.bottom-btn::after {
-  border: none;
+
+.left-text-actions {
+    display: flex;
+    gap: 32rpx; 
+    flex-shrink: 0;
 }
+
+.text-btn-item {
+    font-size: 28rpx;
+    color: #666;
+    padding: 20rpx 0;
+}
+.text-btn-item:active {
+    opacity: 0.6;
+}
+
+.action-btn-large {
+    flex: 1; 
+    height: 80rpx;
+    line-height: 80rpx;
+    border-radius: 999rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    margin: 0;
+    border: none;
+    background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
+    color: #4a3131;
+    box-shadow: 0 4rpx 12rpx rgba(255, 225, 179, 0.4);
+}
+.action-btn-large::after { border: none; }
+
 
 /* 修改金额弹层 */
 .price-sheet {
@@ -1222,7 +1167,58 @@ onLoad((options) => {
   font-weight: 700;
   border: none;
 }
-.price-btn::after {
+.price-btn::after { border: none; }
+
+/* ================= Custom Modal Styles ================= */
+.custom-modal-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.custom-modal-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.custom-modal-desc {
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 40rpx;
+  padding: 0 20rpx;
+}
+
+.custom-modal-actions {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.custom-modal-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  text-align: center;
   border: none;
+}
+.custom-modal-btn::after { border: none; }
+
+.custom-modal-btn.cancel {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.custom-modal-btn.confirm {
+  background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
+  color: #4a3131;
+  font-weight: 600;
 }
 </style>

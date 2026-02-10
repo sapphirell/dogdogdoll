@@ -1,15 +1,55 @@
 <template>
   <view-logs />
   <view class="order-plan-form">
-    <!-- 顶部表单（分组列表外观） -->
     <view class="top-panel">
-      <!-- 计划名称 -->
       <view class="form-item">
         <text class="label">计划名称</text>
         <input class="input" v-model="form.artist_name" placeholder="请输入计划名称" />
       </view>
 
-      <!-- 接单方式 -->
+      <view class="form-item">
+        <text class="label">接单场所</text>
+        <view class="inline-control inline-control--between">
+          <view class="inline-left">
+            <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
+            <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
+          </view>
+
+          <text class="inline-warn font-alimamashuhei" v-if="showPlatformRealnameHint">
+            需要先完成实名认证或受到邀请
+          </text>
+        </view>
+        <view class="tip" v-if="isEditMode && !canEditServiceScene">
+          已开始的本平台计划不能切换为其它平台。
+        </view>
+      </view>
+	  
+	  <view class="form-item" v-if="form.service_scene === 2">
+	    <text class="label">收款方式</text>
+	    
+	    <view 
+	        class="picker" 
+	        v-if="isVerifiedArtist && hasPaymentCodeConfigured" 
+	        @click="showPaymentPopup = true"
+	    >
+	      {{ selectedPaymentNames || '请选择收款方式（多选）' }}
+	    </view>
+	  
+	    <view 
+	        class="picker warning-picker" 
+	        v-else-if="isVerifiedArtist && !hasPaymentCodeConfigured" 
+	        @click="goToPaymentSettings"
+	    >
+	      <uni-icons type="info-filled" size="18" color="#ff4d4f" style="margin-right: 8rpx;"></uni-icons>
+	      请先设置收款码，点击跳转设置
+	    </view>
+	  
+	    <view class="picker disabled-picker" v-else>
+	       请先进行实名认证
+	    </view>
+	  
+	  </view>
+
       <view class="form-item">
         <text class="label">接单方式</text>
         <picker
@@ -21,14 +61,12 @@
         >
           <view class="picker">{{ currentOrderTypeText }}</view>
         </picker>
-        <!-- 多行提示 -->
         <view class="tip">
           长期接单和非长期接单是互斥选项，如果存在长期接单计划，将无法创建其它计划。如果存在其它未结束的接单计划，也无法创建长期接单计划。
         </view>
         <view class="tip" v-if="form.order_type === 1">
           长期接单的选项将会常驻在日历中推送。
         </view>
-        <!-- 手速两种模式：判断合并，仅文案不同 -->
         <view class="tip" v-else-if="isSpeedOrder">
           {{ speedOrderDesc }}
         </view>
@@ -40,26 +78,6 @@
         </view>
       </view>
 
-      <!-- 接单场所：switch -->
-      <view class="form-item">
-        <text class="label">接单场所</text>
-        <view class="inline-control inline-control--between">
-          <view class="inline-left">
-            <switch :checked="form.service_scene === 2" @change="onServiceSceneSwitch" />
-            <text class="inline-tip">{{ form.service_scene === 2 ? '本平台' : '其它平台' }}</text>
-          </view>
-
-          <!-- ✅ role < 2 且 本平台 时，右侧灰字提示 -->
-          <text class="inline-warn font-alimamashuhei" v-if="showPlatformRealnameHint">
-            需要先完成实名认证或受到邀请
-          </text>
-        </view>
-        <view class="tip" v-if="isEditMode && !canEditServiceScene">
-          已开始的本平台计划不能切换为其它平台。
-        </view>
-      </view>
-
-      <!-- 本平台：是否要求填写社交账号 -->
       <view class="form-item" v-if="form.service_scene === 2">
         <text class="label">是否要求填写社交账号</text>
         <view class="inline-control">
@@ -71,7 +89,6 @@
         </view>
       </view>
 
-      <!-- 手速专属：仅在 本平台 且 接单方式=任一手速模式 时显示 -->
       <view class="form-item" v-if="form.service_scene === 2 && isSpeedOrder">
         <text class="label">手速有效作答窗口(秒)</text>
         <uni-number-box v-model="form.queue_window_sec" :min="10" :max="600" />
@@ -89,7 +106,6 @@
         </picker>
       </view>
 
-      <!-- 抽选专属：仅在 本平台 且 接单方式=抽选 时显示 -->
       <view class="form-item" v-if="form.service_scene === 2 && form.order_type === 3">
         <text class="label">展示柜/私养做门槛</text>
         <view class="inline-control">
@@ -101,7 +117,6 @@
         </view>
       </view>
 
-      <!-- 最大参与人数（创建可编辑 / 编辑只读） -->
       <view class="form-item" v-if="form.order_type !== 1 && !isEditMode">
         <text class="label">最大参与人数</text>
         <uni-number-box v-model="form.max_participants" :min="0" :max="100000" />
@@ -113,13 +128,11 @@
         <view class="tip">编辑时不能修改最大排单人数。</view>
       </view>
 
-      <!-- 每人最大投递数 -->
       <view class="form-item" v-if="form.order_type !== 1">
         <text class="label">每人最大投递数</text>
         <uni-number-box v-model="form.max_submissions_per_user" :min="1" :max="10" />
       </view>
 
-      <!-- 创建：本平台加价排队配置 -->
       <view class="form-item" v-if="form.service_scene === 2 && !isEditMode && form.order_type !== 1">
         <text class="label">可钞吗？</text>
         <view class="inline-control">
@@ -138,7 +151,6 @@
           <uni-number-box v-model="form.premium_queue_limit" :min="1" :max="100000" />
         </view>
 
-        <!-- ⭐ 钞倍率输入（支持一位小数） -->
         <view class="mt-8" v-if="premiumQueueEnabled">
           <text class="label-small">钞倍率</text>
           <input
@@ -155,7 +167,6 @@
         </view>
       </view>
 
-      <!-- 编辑：库存 / 加价库存 增量（只在本平台显示） -->
       <view class="form-item" v-if="isEditMode && form.service_scene === 2">
         <text class="label">库存管理</text>
         <view class="inventory-row">
@@ -181,7 +192,6 @@
         </view>
       </view>
 
-      <!-- 开始时间：日期 + 时间 并排 -->
       <view class="form-item">
         <text class="label">开始时间</text>
         <view class="datetime-row">
@@ -199,7 +209,6 @@
         </view>
       </view>
 
-      <!-- 结束时间：日期 + 时间 并排 -->
       <view class="form-item">
         <text class="label">结束时间</text>
         <view class="datetime-row">
@@ -216,10 +225,10 @@
           已开始的本平台计划不能将结束时间提前，只能维持或延后。
         </view>
       </view>
+	  
 
-      <!-- 平台扩展（工期/尺寸/毛坯；手改毛不再展示寄送相关字段） -->
+
       <block v-if="form.service_scene === 2">
-        <!-- 每顶手改毛工期（非自由排单使用） -->
         <view class="form-item" v-if="form.order_type !== 5">
           <text class="label">每顶手改毛工期（天）</text>
           <uni-number-box
@@ -229,7 +238,6 @@
           />
         </view>
 
-        <!-- 自由排单总工期（仅自由排单使用） -->
         <view class="form-item" v-if="form.order_type === 5">
           <text class="label">总工期（天）</text>
           <uni-number-box
@@ -242,7 +250,6 @@
           </view>
         </view>
 
-        <!-- 毛坯选择方式（可多选） -->
         <view class="form-item">
           <text class="label">可支持的毛坯选择方式</text>
           <view class="size-row">
@@ -273,9 +280,6 @@
           </view>
         </view>
 
-        <!-- 手改毛表单：不再展示“寄送约定 / 统一寄送截止日 / 开始前 N 天发出” -->
-
-        <!-- 接毛尺寸 -->
         <view class="form-item">
           <text class="label">接毛尺寸</text>
           <view class="size-row">
@@ -294,7 +298,6 @@
           </view>
         </view>
 
-        <!-- 尺寸加价列表 -->
         <view class="size-price-list" v-if="form.order_config.extra.size_surcharges.length">
           <view
             class="size-price-item"
@@ -314,7 +317,6 @@
         </view>
       </block>
 
-      <!-- 图片 -->
       <view class="form-item">
         <text class="label">毛则图片</text>
         <view class="images">
@@ -334,9 +336,9 @@
           </view>
         </view>
       </view>
+
     </view>
 
-    <!-- 档位配置 -->
     <view class="form-item">
       <view class="label-row">
         <text class="label">档位配置</text>
@@ -373,7 +375,6 @@
       </view>
     </view>
 
-    <!-- 加购配置 -->
     <view class="form-item">
       <view class="label-row">
         <text class="label">加购配置</text>
@@ -410,13 +411,20 @@
       </view>
     </view>
 
-    <!-- 节点配置（仅本平台） -->
-    <view class="form-item" v-if="form.service_scene === 2">
+    <view 
+      class="form-item" 
+      v-if="form.service_scene === 2"
+      :class="{ 'disabled-section': !hasAlipay }"
+    >
       <view class="label-row">
         <text class="label">节点配置</text>
         <picker :range="stepOptions" range-key="label" @change="onStepPickerChange" :disabled="!canEditStepConfig">
           <button class="btn-mini">+ 添加节点</button>
         </picker>
+      </view>
+
+      <view v-if="!hasAlipay" class="tip" style="color: #ff4d4f; margin-bottom: 12rpx;">
+          需要勾选「支付宝收款」方式才可以使用节点功能（平台代收才能自动分配节点违约金）。
       </view>
 
       <view v-if="!form.step_config_json.length" class="tip">
@@ -433,7 +441,6 @@
           />
         </view>
 
-        <!-- 违约金比例输入（百分比形式） -->
         <view class="row">
           <text class="label-small">违约金比例(%)</text>
           <input
@@ -463,20 +470,56 @@
       </view>
     </view>
 
-    <!-- 提交 -->
     <view class="submit-box">
       <button class="btn-submit" :disabled="submitting" @click="submitPlan">
         {{ submitting ? '提交中...' : isEditMode ? '保存修改' : '提交新计划' }}
       </button>
     </view>
 
-    <!-- 弹层组件 -->
     <common-date-picker v-model:show="dummyShow" />
+
+    <uni-popup ref="paymentPopupRef" type="bottom" @change="e => (showPaymentPopup = e.show)">
+      <view class="payment-popup">
+        <view class="popup-header">
+          <text class="popup-title">选择收款方式</text>
+          <text class="popup-close" @click="$refs.paymentPopupRef.close()">关闭</text>
+        </view>
+        <view class="popup-desc-box">
+            您可以多选收款方式，用户在投递的时候可以在预设的收款方式中选择其一支付。
+        </view>
+        <scroll-view scroll-y class="popup-content">
+          <view v-for="item in paymentList" :key="item.id" 
+                class="payment-item" 
+                :class="{ 'disabled-item': !isVerifiedArtist }"
+                @click="togglePayment(item.id)">
+            <view class="payment-header">
+              <view class="payment-left">
+                 <uni-icons 
+                    :type="form.order_config.payment_methods.includes(item.id) ? 'checkbox-filled' : 'circle'" 
+                    size="24" 
+                    :color="form.order_config.payment_methods.includes(item.id) ? '#007aff' : '#ccc'" 
+                  />
+                 <text class="payment-name">{{ item.name }}</text>
+              </view>
+            </view>
+            <view class="payment-desc">
+               {{ item.description_2_artist }}
+            </view>
+          </view>
+          
+          <view v-if="!isVerifiedArtist" class="lock-tip">
+             <uni-icons type="locked" size="16" color="#ff4d4f"></uni-icons>
+             <text>只有实名认证艺术家才可选择收款方式</text>
+          </view>
+        </scroll-view>
+      </view>
+    </uni-popup>
+
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { websiteUrl, asyncGetUserInfo } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
@@ -485,72 +528,28 @@ import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/ima
 
 // 默认接单方式（接口失败时兜底）
 const defaultOrderTypes = [
-  {
-    value: 1,
-    text: '长期接单',
-    keyword: 'StatusLongTerm'
-  },
-  {
-    value: 2,
-    text: '限时手速投递-手速排单',
-    keyword: 'StatusSpeedDelivery'
-  },
-  {
-    value: 5,
-    text: '限时手速投递-自由排单',
-    keyword: 'StatusSpeedDeliveryFree'
-  },
-  {
-    value: 3,
-    text: '限时抽选投递',
-    keyword: 'StatusLotteryDelivery'
-  },
-  {
-    value: 4,
-    text: '限时黑箱卡投递',
-    keyword: 'StatusBlackCard'
-  },
-  {
-    value: 9,
-    text: '关闭投递',
-    keyword: 'StatusClosed'
-  }
+  { value: 1, text: '长期接单', keyword: 'StatusLongTerm' },
+  { value: 2, text: '限时手速投递-手速排单', keyword: 'StatusSpeedDelivery' },
+  { value: 5, text: '限时手速投递-自由排单', keyword: 'StatusSpeedDeliveryFree' },
+  { value: 3, text: '限时抽选投递', keyword: 'StatusLotteryDelivery' },
+  { value: 4, text: '限时黑箱卡投递', keyword: 'StatusBlackCard' },
+  { value: 9, text: '关闭投递', keyword: 'StatusClosed' }
 ]
 
 // 动态接单方式选项（从接口获取）
 const orderTypes = ref([...defaultOrderTypes])
 
-const challengeTypes = [
-  {
-    value: 1,
-    text: '四则运算'
-  }
-]
+const challengeTypes = [{ value: 1, text: '四则运算' }]
 
 const finishingMethods = [
-  {
-    value: 'oil',
-    text: '油性消光'
-  },
-  {
-    value: 'varnish',
-    text: '罩光剂'
-  },
-  {
-    value: 'water',
-    text: '水性消光'
-  }
+  { value: 'oil', text: '油性消光' },
+  { value: 'varnish', text: '罩光剂' },
+  { value: 'water', text: '水性消光' }
 ]
 
 const shippingOptions = [
-  {
-    value: 'unified',
-    text: '统一寄送'
-  },
-  {
-    value: 'separate',
-    text: '分别寄送'
-  }
+  { value: 'unified', text: '统一寄送' },
+  { value: 'separate', text: '分别寄送' }
 ]
 
 const allSizes = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分']
@@ -563,6 +562,23 @@ const identityLoaded = ref(false)
 // role: null=未拉取；number=接口返回
 const brandArtistRole = ref(null)
 const brandArtistInfo = ref(null)
+
+const showPlatformRealnameHint = computed(() => {
+  const r = brandArtistRole.value
+  return form.value.service_scene === 2 && typeof r === 'number' && r < 2
+})
+
+// ✅ 计算属性：是否为实名认证艺术家
+const isVerifiedArtist = computed(() => {
+    return brandArtistRole.value === 2
+})
+
+// ✅ 计算属性：是否配置了收款码
+const hasPaymentCodeConfigured = computed(() => {
+    const info = brandArtistInfo.value
+    if (!info) return false
+    return !!(info.wechat_payment_code || info.alipay_payment_code)
+})
 
 function extractBrandIdFromQuery(q) {
   const v = q?.brand_id ?? q?.brandId ?? q?.brandID ?? q?.bid
@@ -609,7 +625,7 @@ function parseQueryFromPath(path) {
   return obj
 }
 
-// ✅ 避免依赖 getCurrentPages().options：优先 fullPath / H5 hash 解析 query
+// 避免依赖 getCurrentPages().options：优先 fullPath / H5 hash 解析 query
 function getCurrentQuerySafe() {
   try {
     const pages = getCurrentPages()
@@ -629,14 +645,16 @@ function getCurrentQuerySafe() {
   return {}
 }
 
+// ✅ 核心修改：请求地址改为 brand-manager/get-artist-info
 async function fetchBrandArtistInfo(bid) {
   const id = Number(bid || 0)
   if (!id) return
 
   try {
     const res = await uni.request({
-      url: `${websiteUrl.value}/brand-artist/info?brand_id=${id}`,
+      url: `${websiteUrl.value}/brand-manager/get-artist-info`,
       method: 'GET',
+      data: { brand_id: id },
       header: {
         Authorization: getAuthorization()
       }
@@ -648,7 +666,6 @@ async function fetchBrandArtistInfo(bid) {
       const roleNum = typeof roleRaw === 'number' ? roleRaw : Number(roleRaw)
       brandArtistRole.value = Number.isNaN(roleNum) ? 0 : roleNum
     } else {
-      // 不强行给默认值，避免误报；仅记录日志
       console.error('获取 brand-artist/info 失败：', res.data)
       brandArtistInfo.value = null
       brandArtistRole.value = null
@@ -658,6 +675,13 @@ async function fetchBrandArtistInfo(bid) {
     brandArtistInfo.value = null
     brandArtistRole.value = null
   }
+}
+
+// ✅ 跳转收款码设置页面
+function goToPaymentSettings() {
+    uni.navigateTo({
+        url: '/pkg-common/deal-setting/payment-code/payment-code'
+    })
 }
 
 /* ====== 表单 ====== */
@@ -695,6 +719,8 @@ const form = ref({
   order_config: {
     tiers: [],
     addons: [],
+    // ✅ 收款方式ID列表
+    payment_methods: [],
     extra: {
       per_head_cycle_days: 0,
       // 自由排单使用的总工期（天）
@@ -725,12 +751,60 @@ const originalPlan = ref({
   premium_inventory: 0 // 这里用于展示“当前加价库存”
 })
 
-/* ====== 选择器索引 / 计算属性 ====== */
+/* ====== 收款方式逻辑 ====== */
+const paymentList = ref([])
+const showPaymentPopup = ref(false)
+const paymentPopupRef = ref(null)
 
-const showPlatformRealnameHint = computed(() => {
-  const r = brandArtistRole.value
-  return form.value.service_scene === 2 && typeof r === 'number' && r < 2
+// 监控 showPaymentPopup 变化来控制 uni-popup
+watch(showPaymentPopup, (val) => {
+    if (val) {
+        paymentPopupRef.value.open()
+    } else {
+        paymentPopupRef.value.close()
+    }
 })
+
+// ✅ 计算属性：是否选择了支付宝 (ID=2)
+const hasAlipay = computed(() => {
+    return form.value.order_config.payment_methods.includes(2)
+})
+
+async function fetchPaymentList() {
+    try {
+        const res = await uni.request({
+            url: `${websiteUrl.value}/payment-list`, 
+            method: 'GET'
+        })
+        if (String(res.data?.status).toLowerCase() === 'success') {
+            paymentList.value = res.data.data || []
+        }
+    } catch (e) {
+        console.error('Fetch payment list failed', e)
+    }
+}
+
+function togglePayment(id) {
+    if (!isVerifiedArtist.value) return 
+
+    const idx = form.value.order_config.payment_methods.indexOf(id)
+    if (idx > -1) {
+        form.value.order_config.payment_methods.splice(idx, 1)
+    } else {
+        form.value.order_config.payment_methods.push(id)
+    }
+}
+
+const selectedPaymentNames = computed(() => {
+    if (!form.value.order_config.payment_methods.length) return ''
+    const names = form.value.order_config.payment_methods.map(id => {
+        const item = paymentList.value.find(p => p.id === id)
+        return item ? item.name : ''
+    }).filter(Boolean)
+    return names.join('、')
+})
+
+/* ====== 选择器索引 / 计算属性 ====== */
 
 const orderTypeIndex = computed(() => {
   const list = orderTypes.value || []
@@ -1003,6 +1077,10 @@ function onServiceSceneSwitch(e) {
   }
 
   form.value.service_scene = targetScene
+  
+  if (targetScene === 2 && brandId.value && brandArtistRole.value === null) {
+    fetchBrandArtistInfo(brandId.value)
+  }
 }
 
 function onShippingChange(e) {
@@ -1378,6 +1456,16 @@ async function loadDetail(id) {
     originalPlan.value.inventory = p.inventory || 0
     originalPlan.value.premium_inventory = p.premium_inventory || 0
 
+    // ✅ 若详情里带 brand_id，则同步并拉取 role
+    const bid = Number(p.brand_id || p.brandId || 0)
+    if (bid && bid !== brandId.value) {
+      brandId.value = bid
+      brandArtistRole.value = null
+      fetchBrandArtistInfo(bid)
+    } else if (bid && brandArtistRole.value === null) {
+      fetchBrandArtistInfo(bid)
+    }
+
     // 钞倍率：优先读取 premium_rate，兼容旧字段 premium_queue_multiplier
     let rate = 0
     if (typeof p.premium_rate === 'number') {
@@ -1454,6 +1542,12 @@ async function loadDetail(id) {
             description: ''
           }
         ]
+    
+    // ✅ 恢复 payment_methods
+    form.value.order_config.payment_methods = Array.isArray(cfg.payment_methods) 
+        ? cfg.payment_methods.map(id => Number(id)) 
+        : []
+
     form.value.order_config.extra = Object.assign(
       {
         per_head_cycle_days: 0,
@@ -1583,8 +1677,11 @@ async function submitPlan() {
     return
   }
 
+  // ✅ 如果没有勾选支付宝，清空提交的节点配置
+  const safeStepConfig = hasAlipay.value ? (form.value.step_config_json || []) : []
+
   const stepConfigToSend = isPlatform
-    ? (form.value.step_config_json || [])
+    ? safeStepConfig
         .map(x => ({
           name: String(x.name || ''),
           breach_compensation_rate: Number(x.breach_compensation_rate || 0)
@@ -1648,10 +1745,11 @@ async function submitPlan() {
         price: toFixed2(a.price || 0),
         description: a.description || ''
       })),
+      // ✅ 传递收款方式ID
+      payment_methods: form.value.order_config.payment_methods || [],
       extra: {
         per_head_cycle_days: perHeadCycle,
         total_cycle_days: totalCycle,
-        // finishing_* 对毛娘业务不敏感，这里保留字段以兼容后端 JSON 结构
         finishing_method: form.value.order_config.extra.finishing_method,
         finishing_desc: form.value.order_config.extra.finishing_desc || '',
         // 手改毛前端不展示寄送配置，这里用固定默认值占位，方便后端解包
@@ -1739,6 +1837,8 @@ async function submitPlan() {
 onLoad(query => {
   // 拉取接单方式（接口版）
   fetchOrderTypes()
+  // ✅ 拉取收款方式列表
+  fetchPaymentList()
 
   // ✅ 同步 brand_id -> 拉取 role
   const bid = extractBrandIdFromQuery(query || {})
@@ -1831,8 +1931,11 @@ onMounted(() => {
 }
 
 .inline-warn {
+  flex: 1;
+  text-align: right;
   color: #696969;
-  font-size: 24rpx;
+  font-size: 22rpx;
+  line-height: 1.4;
 }
 
 .inline-tip {
@@ -1843,6 +1946,12 @@ onMounted(() => {
 /* 通用 */
 .form-item {
   margin-bottom: 24rpx;
+}
+
+/* ✅ 禁用节点配置区域样式 */
+.disabled-section {
+    opacity: 0.6;
+    pointer-events: none; /* 禁止内部一切点击 */
 }
 
 .label {
@@ -1882,6 +1991,17 @@ onMounted(() => {
   padding: 20rpx;
   font-size: 28rpx;
   color: #333;
+}
+
+/* 红色警告样式选择器 */
+.warning-picker {
+    color: #ff4d4f;
+    display: flex;
+    align-items: center;
+}
+
+.disabled-picker {
+    color: #999;
 }
 
 .tip {
@@ -2126,5 +2246,103 @@ onMounted(() => {
 
 .btn-submit::after {
   border: none;
+}
+
+/* ✅ 弹窗样式 */
+.payment-popup {
+    background-color: #fff;
+    border-top-left-radius: 24rpx;
+    border-top-right-radius: 24rpx;
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx 32rpx;
+    border-bottom: 1rpx solid #eee;
+}
+
+.popup-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+.popup-close {
+    font-size: 28rpx;
+    color: #999;
+}
+
+.popup-desc-box {
+    padding: 16rpx 24rpx;
+    background-color: #f2faff;
+    color: #007aff;
+    font-size: 24rpx;
+    line-height: 1.5;
+    border-bottom: 1rpx solid #eef0f2;
+}
+
+.popup-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24rpx;
+}
+
+.payment-item {
+    background: #f9f9f9;
+    padding: 20rpx;
+    border-radius: 12rpx;
+    margin-bottom: 20rpx;
+    border: 2rpx solid transparent;
+}
+
+.payment-item:active {
+    background: #f0f0f0;
+}
+
+.payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12rpx;
+}
+
+.payment-left {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+}
+
+.payment-name {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #333;
+}
+
+.payment-desc {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.6;
+    white-space: pre-wrap; 
+}
+
+/* 禁用态样式 */
+.disabled-item {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.lock-tip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    margin-top: 40rpx;
+    color: #ff4d4f;
+    font-size: 26rpx;
 }
 </style>

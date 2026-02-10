@@ -127,7 +127,7 @@
                 "androidStyle" : "default",
                 "iosStyle" : "storyboard",
                 "ios" : {
-                    "storyboard" : "/Users/sapphirell/Desktop/sc2/storyboard.zip"
+                    "storyboard" : "/Users/sapphirell/Desktop/工作文档/sc2/storyboard.zip"
                 },
                 "android" : {
                     "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",

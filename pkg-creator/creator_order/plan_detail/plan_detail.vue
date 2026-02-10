@@ -1,7 +1,6 @@
 <template>
   <view-logs />
   <view class="booking-page">
-    <!-- 1. 吸顶导航栏 (白色背景) -->
     <view
       class="sticky-titlebar"
       v-show="showStickyTitle"
@@ -16,14 +15,12 @@
         <text class="st-name">{{ artistName }}</text>
       </view>
       <view class="st-right" v-if="showShare">
-        <!-- 修改：移除了收藏按钮，只保留分享 -->
         <view class="icon-btn" @click="shareClick">
            <uni-icons type="redo" size="24" color="#000"></uni-icons>
         </view>
       </view>
     </view>
 
-    <!-- 2. 透明/渐变导航栏 -->
     <zhouWei-navBar
       type="transparentFixed"
       :backState="2000"
@@ -41,7 +38,6 @@
       </template>
       <template #right>
         <view v-if="showShare" class="nav-right-icon" style="padding-right: 40rpx; display: flex; align-items: center;">
-            <!-- 修改：移除了收藏按钮，只保留分享 -->
             <view @click="shareClick">
                 <uni-icons type="redo" size="24" :color="scrollTop > 100 ? '#000' : '#fff'"></uni-icons>
             </view>
@@ -55,7 +51,6 @@
       </template>
     </zhouWei-navBar>
 
-    <!-- Hero 区域 -->
     <view class="hero">
       <image class="hero-img" :src="coverUrl" mode="aspectFill" />
       <view class="hero-mask"></view>
@@ -65,16 +60,13 @@
           <text class="brand-name font-title" @click="goArtistHome">{{ artistName }}</text>
           <text class="plan-title font-alimamashuhei">开单</text>
         </view>
-        <!-- 修改：收藏按钮放在这里，位于 Hero Title 右边 -->
         <view class="hero-follow" @click.stop="toggleFollow">
-           <!-- 未关注显示白色，已关注显示红色 -->
-		   <image src="/static/new-icon/like.png" v-if="!hasLikeBrand" mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
-		   <image src="/static/new-icon/like-fill.png" v-else mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+           <image src="/static/new-icon/like.png" v-if="!hasLikeBrand" mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+           <image src="/static/new-icon/like-fill.png" v-else mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
         </view>
       </view>
     </view>
 
-    <!-- 高光图 -->
     <scroll-view v-if="highlightImages.length" class="hl-strip" scroll-x :show-scrollbar="false">
       <view class="hl-row">
         <image
@@ -88,7 +80,6 @@
       </view>
     </scroll-view>
 
-    <!-- 基础信息卡片 -->
     <view class="card">
       <view class="row" @click="openModeDescModal">
         <text class="label font-title">投递方式</text>
@@ -178,9 +169,17 @@
         <text class="label font-title">钞倍数</text>
         <text class="val"><text class="font-title">{{ plan.extra?.premium_price_multiple || 0 }}</text> 倍</text>
       </view>
+      
+      <view class="row" v-if="supportedPaymentMethods.length > 0" @click="paymentModalVisible = true">
+          <text class="label font-title">付款方式</text>
+          <view class="val">
+              <text class="payment-val-text">{{ paymentMethodsText }}</text>
+              <uni-icons type="info" size="18" color="#1677ff" style="margin-left: 6rpx;" />
+          </view>
+      </view>
+
     </view>
 
-    <!-- 档位卡片 -->
     <view class="card oc-card">
       <view class="oc-grid">
         <view class="oc-label"><text class="font-title">档位</text></view>
@@ -247,7 +246,6 @@
       </view>
     </view>
 
-    <!-- 说明卡片 -->
     <view v-if="descText" class="desc-card">
       <view class="desc-row">
         <text class="desc-title font-title">说明</text>
@@ -255,7 +253,6 @@
       </view>
     </view>
 
-    <!-- 待投递卡片 -->
     <view v-if="isLocalPlan" class="card draft-card">
       <view class="draft-header">
         <text class="draft-title font-title">我的待投递</text>
@@ -270,14 +267,19 @@
           v-for="item in draftItems"
           :key="item.id"
         >
+          <view v-if="item.ref_images" class="draft-bg">
+             <image class="draft-bg-img" :src="item.ref_images" mode="aspectFill"></image>
+             <view class="draft-bg-mask"></view>
+          </view>
+          
           <view class="draft-main" @click="goEditDraft(item)">
             <text class="draft-subject">
               {{ item.work_subject || '未填写主体' }}
             </text>
             <view class="draft-meta">
+              <text class="draft-price font-title">¥{{ Number(item.price_total || 0) }}</text>
               <text v-if="item.size" class="draft-meta-chip">{{ item.size }}</text>
               <text v-if="item.tier_title" class="draft-meta-chip">{{ item.tier_title }}</text>
-              <text class="draft-price">¥{{ Number(item.price_total || 0) }}</text>
             </view>
           </view>
           <view class="draft-actions">
@@ -301,10 +303,8 @@
       </view>
     </view>
 
-    <!-- 7. 底部购买栏 -->
     <view class="buybar" :class="{ safe: safeArea }">
       <view class="buy-left">
-        <!-- 排钞开关：仅在支持排钞时显示 -->
         <view v-if="supportsPremiumQueue" class="premium-switch-box">
            <switch 
               :checked="usePremiumQueue === 1" 
@@ -328,7 +328,6 @@
               <text class="cta-text font-alimamashuhei">不在本平台开单·不可投递</text>
         </template>
         <template v-else>
-            <!-- 名额信息 -->
             <text class="stock-text font-alimamashuhei">{{ commonStockInfo }}</text>
             
             <template v-if="premiumStockInfo">
@@ -344,7 +343,23 @@
 
     <view style="height: 160rpx;"></view>
 
-    <!-- 弹窗组件 -->
+    <common-modal
+      :visible="paymentModalVisible"
+      @update:visible="v => paymentModalVisible = v"
+      top="200rpx"
+      width="calc(80vw)"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">付款方式说明</view>
+        <view class="cm-body">
+            <view v-for="pay in supportedPaymentMethods" :key="pay.id" style="margin-bottom: 24rpx;">
+                <text class="cm-desc-title">{{ pay.name }}</text>
+                <text class="cm-desc-text">{{ pay.description_2_user }}</text>
+            </view>
+        </view>
+      </view>
+    </common-modal>
+
     <common-modal
       :visible="finishingVisible"
       @update:visible="v => finishingVisible = v"
@@ -490,6 +505,20 @@ import { websiteUrl, global, getScene } from '@/common/config.js'
 import { useCrossShare } from '@/common/share.js'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
+// --- 付款方式字典 ---
+const PAYMENT_DICT = [
+    {
+        id: 1, 
+        name: "收款码收款", 
+        description_2_user: "您下单成功时，可以看到接单者预设的收款码，转账后请与接单者核对。\n 此收款模式下无交易手续费。 \n 此模式下平台不介入交易纠纷 "
+    },
+    {
+        id: 2, 
+        name: "支付宝收款", 
+        description_2_user: "下单时需要支付全款,如果交易中途终止，您可以获得已完成创作节点规定的退款。在您确认收货之时，托管在平台的资金会支付给作者。"
+    }
+]
+
 onShareAppMessage(() => ({
   title: '快来看看这个开单！',
   path: `/pkg-creator/creator_order/plan_detail/plan_detail?id=${planId.value}`,
@@ -541,7 +570,8 @@ const plan = reactive({
   premium_queue_limit: 0,
   premium_inventory: 0,
   premium_rate: 1,
-  brand_admin_id: 0 // 新增：作者ID用于判断是否入驻
+  brand_admin_id: 0, // 新增：作者ID用于判断是否入驻
+  payment_methods: [] // 新增：付款方式ID列表
 })
 
 /** 状态：是否接受排钞 (0=不接受, 1=接受) */
@@ -619,11 +649,13 @@ async function fetchPlan() {
       plan.tiers = Array.isArray(cfg?.tiers) ? cfg.tiers : []
       plan.addons = Array.isArray(cfg?.addons) ? cfg.addons : []
       plan.extra = cfg?.extra || {}
+      // 解析付款方式
+      plan.payment_methods = Array.isArray(cfg?.payment_methods) ? cfg.payment_methods : []
     } else {
-      plan.tiers = []; plan.addons = []; plan.extra = {}
+      plan.tiers = []; plan.addons = []; plan.extra = {}; plan.payment_methods = []
     }
   } catch (e) {
-    plan.tiers = []; plan.addons = []; plan.extra = {}
+    plan.tiers = []; plan.addons = []; plan.extra = {}; plan.payment_methods = []
   }
 }
 
@@ -775,6 +807,19 @@ const premiumTipVisible = ref(false)
 function openPremiumTip() {
   premiumTipVisible.value = true
 }
+
+// 付款方式相关逻辑
+const supportedPaymentMethods = computed(() => {
+    if(!plan.payment_methods || !plan.payment_methods.length) return [];
+    // 过滤出当前开单支持的方式
+    return PAYMENT_DICT.filter(item => plan.payment_methods.includes(item.id));
+})
+
+const paymentMethodsText = computed(() => {
+    return supportedPaymentMethods.value.map(item => item.name).join(' / ') || '未设置'
+})
+const paymentModalVisible = ref(false)
+
 
 const finishingMap = { oil: '油性消光', water: '水性消光', gloss: '罩光剂' }
 const finishingMethodText = computed(() => {
@@ -1437,18 +1482,46 @@ const descText = computed(() => {
 }
 .draft-item {
   padding: 16rpx 0;
+  padding-left: 20rpx;
   border-bottom: 1rpx solid #f2f2f2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12rpx;
+  position: relative; /* 为了背景绝对定位 */
+  overflow: hidden; /* 防止背景溢出 */
 }
+
+/* 新增背景相关样式 */
+.draft-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 20%;
+    z-index: 0;
+}
+.draft-bg-img {
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+}
+.draft-bg-mask {
+    position: absolute;
+    inset: 0;
+    /* 使用白色渐变遮罩模拟图片透明度从左到右 0.8 -> 0 的效果 */
+    /* 左侧全透明(显示图片)，右侧全白(遮挡图片) */
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+}
+
 .draft-item:last-child {
   border-bottom: none;
 }
 .draft-main {
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1; /* 确保内容在背景图之上 */
 }
 .draft-subject {
   font-size: 26rpx;
@@ -1470,15 +1543,18 @@ const descText = computed(() => {
   background: #f5f5f5;
 }
 .draft-price {
-  margin-left: auto;
-  font-size: 24rpx;
+  /* 移除 margin-left: auto */
+  margin-right: 12rpx;
   color: #333;
+  font-size: 32rpx; /* 字体加大 */
 }
 .draft-actions {
   display: flex;
   align-items: center;
   gap: 10rpx;
   padding-left: 8rpx;
+  position: relative;
+  z-index: 1;
 }
 .draft-empty {
   margin-top: 8rpx;
@@ -1490,6 +1566,7 @@ const descText = computed(() => {
 
 /* 底部 buybar 与按钮 */
 .buybar {
+  z-index: 2;
   position: fixed; left: 0; right: 0; bottom: 0;
   background: #ffffff;
   border-top: 1rpx solid #eee;

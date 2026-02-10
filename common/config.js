@@ -3,8 +3,8 @@ import {
 } from 'vue';
 
 // 网站域名
-// export const websiteUrl = ref('https://api.fantuanpu.com');
-export const websiteUrl = ref('http://localhost:8080');
+export const websiteUrl = ref('https://api.fantuanpu.com');
+// export const websiteUrl = ref('http://localhost:8080');
 // 测试环境
 export const devUrl = 'http://localhost:8080';
 // 中国服务器API
