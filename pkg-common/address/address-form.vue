@@ -29,6 +29,13 @@
             @input="clearFieldError('receiver_phone')"
           />
         </view>
+        <view
+          v-if="showPhoneQuickFill"
+          class="quick-fill-phone"
+          @click="fillReceiverPhoneFromProfile"
+        >
+          <text class="quick-fill-text">使用账号手机号 {{ profilePhoneMasked }}</text>
+        </view>
         <text v-if="errorFields.receiver_phone" class="field-error">{{ errorFields.receiver_phone }}</text>
       </view>
 
@@ -136,7 +143,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { websiteUrl } from '@/common/config.js'
+import { websiteUrl, asyncGetUserInfo, global } from '@/common/config.js'
 
 const isEdit = ref(false)
 const pageLoading = ref(false)
@@ -161,6 +168,7 @@ const provinceName = ref('')
 const cityName = ref('')
 const districtName = ref('')
 const DETAIL_MIN_LENGTH = 4
+const profilePhone = ref('')
 
 const errorFields = ref({
   receiver_name: '',
@@ -193,6 +201,41 @@ function clearFieldError (field) {
   if (!field) return
   errorFields.value[field] = ''
   refreshSubmitErrorMessage()
+}
+
+function maskPhone (phone) {
+  const txt = String(phone || '')
+  if (txt.length < 7) return txt
+  return txt.replace(/^(\d{3})\d{4}(\d+)$/, '$1****$2')
+}
+
+const profilePhoneMasked = computed(() => maskPhone(profilePhone.value))
+const showPhoneQuickFill = computed(() => {
+  return !isEdit.value && !!profilePhone.value
+})
+
+function fillReceiverPhoneFromProfile () {
+  if (!profilePhone.value) return
+  form.value.receiver_phone = profilePhone.value
+  clearFieldError('receiver_phone')
+  uni.showToast({ title: '已填入账号手机号', icon: 'none' })
+}
+
+async function initProfilePhoneSuggestion () {
+  if (isEdit.value) return
+  if (!getToken()) return
+
+  let phone = (global.userInfo?.tel_phone || '').toString().trim()
+  if (!/^\d{11}$/.test(phone)) {
+    const user = await asyncGetUserInfo()
+    phone = (user?.tel_phone || global.userInfo?.tel_phone || '').toString().trim()
+  }
+
+  if (/^\d{11}$/.test(phone)) {
+    profilePhone.value = phone
+  } else {
+    profilePhone.value = ''
+  }
 }
 
 const provincePickerIndex = computed(() => {
@@ -448,6 +491,7 @@ onLoad(async (options) => {
     if (isEdit.value) {
       await fillFormById(id)
     }
+    await initProfilePhoneSuggestion()
   } catch (e) {
     uni.showToast({ title: '页面初始化失败', icon: 'none' })
   } finally {
@@ -508,6 +552,21 @@ onLoad(async (options) => {
   height: 84rpx;
   font-size: 28rpx;
   color: #273138;
+}
+
+.quick-fill-phone {
+  display: inline-flex;
+  margin-top: 10rpx;
+  margin-left: 150rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: #f1f9fc;
+  border: 1px solid #cbe9f1;
+}
+
+.quick-fill-text {
+  font-size: 24rpx;
+  color: #4b9cb1;
 }
 
 .picker-item {

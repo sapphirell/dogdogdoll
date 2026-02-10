@@ -8,7 +8,22 @@
       :style="itemStyle(index)"
       @click="handleClick(item.key)"
     >
-      <text class="settings-label">{{ item.label }}</text>
+      <view class="settings-label-wrap">
+        <text class="settings-label">{{ item.label }}</text>
+        <view
+          v-if="item.key === 'deal' && shouldShowDealNew"
+          class="deal-new-wrap"
+        >
+          <text
+            v-for="(ch, idx) in dealNewChars"
+            :key="`${ch}-${idx}`"
+            class="deal-new-char"
+            :style="{ animationDelay: `${idx * 200}ms` }"
+          >
+            {{ ch }}
+          </text>
+        </view>
+      </view>
       <uni-icons
         class="settings-arrow-icon"
         type="arrow-right"
@@ -70,7 +85,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { websiteUrl, global } from '@/common/config.js'
 
 const emit = defineEmits(['action'])
@@ -82,6 +98,7 @@ const items = [
 ]
 
 const showLogoutConfirm = ref(false)
+const hasAddress = ref(null)
 
 function handleClick (key) {
   if (key === 'logout') {
@@ -101,6 +118,7 @@ function onConfirmLogout () {
   uni.removeStorageSync('token')
   global.isLogin = false
   global.userInfo = {}
+  hasAddress.value = null
   uni.showToast({ title: '已退出', icon: 'none' })
 }
 
@@ -119,6 +137,18 @@ const baseURL = computed(() => {
   if (websiteUrl && typeof websiteUrl === 'object' && 'value' in websiteUrl) return websiteUrl.value
   return ''
 })
+
+const hasTradePassword = computed(() => {
+  return !!(global.userInfo && global.userInfo.trade_password)
+})
+
+const shouldShowDealNew = computed(() => {
+  if (!global.isLogin) return false
+  const noTradePassword = !hasTradePassword.value
+  const noAddress = hasAddress.value === false
+  return noTradePassword || noAddress
+})
+const dealNewChars = ['N', 'e', 'w']
 
 const articleList = ref([]) // [{id,title}]
 const tickerIndex = ref(0)
@@ -209,6 +239,36 @@ async function fetchArticlesCategory1 () {
   startTicker()
 }
 
+async function fetchAddressStatus () {
+  if (!global.isLogin || !baseURL.value) {
+    hasAddress.value = null
+    return
+  }
+
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    hasAddress.value = null
+    return
+  }
+
+  try {
+    const res = await uni.request({
+      url: `${baseURL.value}/with-state/address/list`,
+      method: 'GET',
+      header: { Authorization: token },
+      timeout: 15000
+    })
+    const resp = res?.data || {}
+    if (resp.status === 'success' && Array.isArray(resp.data)) {
+      hasAddress.value = resp.data.length > 0
+      return
+    }
+    hasAddress.value = null
+  } catch (e) {
+    hasAddress.value = null
+  }
+}
+
 function gotoCurrentArticle () {
   const a = currentArticle.value
   if (!a || !a.id) return
@@ -219,6 +279,19 @@ function gotoCurrentArticle () {
 
 onMounted(() => {
   fetchArticlesCategory1()
+  fetchAddressStatus()
+})
+
+onShow(() => {
+  fetchAddressStatus()
+})
+
+watch(() => global.isLogin, (isLogin) => {
+  if (!isLogin) {
+    hasAddress.value = null
+    return
+  }
+  fetchAddressStatus()
 })
 
 onUnmounted(() => {
@@ -264,6 +337,37 @@ onUnmounted(() => {
 }
 
 .settings-label { font-size: 28rpx; }
+
+.settings-label-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rpx;
+}
+
+@keyframes dealNewJump {
+  0% { transform: translateY(0); opacity: 0.86; }
+  50% { transform: translateY(-4rpx); opacity: 0.96; }
+  100% { transform: translateY(0); opacity: 0.86; }
+}
+
+.deal-new-wrap {
+  display: inline-flex;
+  align-items: flex-end;
+  transform: translateY(1rpx);
+}
+
+.deal-new-char {
+  font-size: 20rpx;
+  line-height: 1;
+  color: #d18b8b;
+  letter-spacing: 0.5rpx;
+  animation-name: dealNewJump;
+  animation-duration: 1.1s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
 
 .settings-arrow-icon {
   margin-left: 12rpx;
