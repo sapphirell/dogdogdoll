@@ -21,7 +21,7 @@
     </zhouWei-navBar>
 
     <view v-if="loading && !hasFirstLoaded" class="loading-mask">
-      <view class="loading-spinner"></view>
+      <loading-toast :show="true" />
     </view>
 
     <view v-else class="main-body">
@@ -275,87 +275,44 @@
       top="50%"
       :center="true"
     >
-      <view class="overview-modal">
+      <view class="overview-modal" @tap.stop @touchmove.stop>
         <view class="overview-modal-header">
           <text class="overview-modal-title">前方订单动态</text>
           <text class="overview-modal-refresh" @tap="reloadProgressOverview">刷新</text>
         </view>
 
-        <scroll-view class="overview-modal-scroll" scroll-y>
-          <view v-if="progressOverviewLoading" class="overview-state-text">加载中...</view>
+        <scroll-view class="overview-modal-scroll" scroll-y @touchmove.stop>
+          <view v-if="progressOverviewLoading" class="overview-loading-wrap">
+            <loading-jump-text />
+          </view>
           <view v-else-if="progressOverviewError" class="overview-error-box">
             <text class="overview-state-text">{{ progressOverviewError }}</text>
             <view class="overview-retry-btn" @tap="reloadProgressOverview">重试</view>
           </view>
           <view v-else class="overview-sections">
-            <view class="overview-section">
-              <text class="overview-section-title">这次接单计划</text>
-              <view v-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
-              <view
-                v-for="entry in overviewCurrentPlanItems"
-                :key="`plan-${overviewEntryKey(entry)}`"
-                class="overview-item-row"
-                @tap="goOverviewSubmission(entry)"
-              >
-                <view class="overview-item-main">
-                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
-                  <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
-                  <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
-                    {{ overviewEntryProgress(entry) }}
-                  </text>
-                </view>
-                <view class="overview-item-side">
-                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
-                  <uni-icons type="right" size="14" color="#b5b5b5" />
+            <view v-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
+            <view
+              v-for="(entry, idx) in overviewCurrentPlanItems"
+              :key="`plan-${overviewEntryKey(entry)}`"
+              class="overview-item-row"
+            >
+              <view class="overview-item-main">
+                <text class="overview-item-order-id">顺序ID {{ overviewEntrySequence(entry, idx) }}</text>
+                <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
+                <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
+                <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
+                  {{ overviewEntryProgress(entry) }}
+                </text>
+              </view>
+              <view class="overview-item-side">
+                <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
+                <view v-if="isOverviewCurrentSubmission(entry)" class="overview-current-marker">
+                  <text class="overview-current-label">您的位置</text>
+                  <text class="overview-current-arrow">→</text>
                 </view>
               </view>
             </view>
-
-            <view class="overview-section">
-              <text class="overview-section-title">我的历史进展</text>
-              <view v-if="!overviewHistoryItems.length" class="overview-empty-row">暂无记录</view>
-              <view
-                v-for="entry in overviewHistoryItems"
-                :key="`history-${overviewEntryKey(entry)}`"
-                class="overview-item-row"
-                @tap="goOverviewSubmission(entry)"
-              >
-                <view class="overview-item-main">
-                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
-                  <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
-                  <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
-                    {{ overviewEntryProgress(entry) }}
-                  </text>
-                </view>
-                <view class="overview-item-side">
-                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
-                  <uni-icons type="right" size="14" color="#b5b5b5" />
-                </view>
-              </view>
-            </view>
-
-            <view class="overview-section">
-              <text class="overview-section-title">该妆师订单进展</text>
-              <view v-if="!overviewArtistItems.length" class="overview-empty-row">暂无记录</view>
-              <view
-                v-for="entry in overviewArtistItems"
-                :key="`artist-${overviewEntryKey(entry)}`"
-                class="overview-item-row"
-                @tap="goOverviewSubmission(entry)"
-              >
-                <view class="overview-item-main">
-                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
-                  <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
-                  <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
-                    {{ overviewEntryProgress(entry) }}
-                  </text>
-                </view>
-                <view class="overview-item-side">
-                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
-                  <uni-icons type="right" size="14" color="#b5b5b5" />
-                </view>
-              </view>
-            </view>
+            <view class="overview-tail-tip">您后方的不展示</view>
           </view>
         </scroll-view>
       </view>
@@ -536,6 +493,7 @@ import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 import CommonModal from '@/components/common-modal/common-modal.vue'
 import ScrollHint from '@/components/scroll-hint/scroll-hint.vue'
+import LoadingJumpText from '@/components/loading-jump-text/loading-jump-text.vue'
 
 // ====== 常量 ======
 const SubmissionStatusQueued = 0
@@ -597,9 +555,15 @@ const progressOverviewLoading = ref(false)
 const progressOverviewLoaded = ref(false)
 const progressOverviewError = ref('')
 const overviewCurrentPlanItems = ref([])
-const overviewHistoryItems = ref([])
-const overviewArtistItems = ref([])
 const lastRouteKey = ref('')
+
+let h5ScrollLockApplied = false
+let h5BodyOverflowBackup = ''
+let h5HtmlOverflowBackup = ''
+let h5BodyPositionBackup = ''
+let h5BodyTopBackup = ''
+let h5BodyWidthBackup = ''
+let h5ScrollTopBackup = 0
 
 const PAY_DEBUG_TAG = '[submission-pay]'
 function payDebug(step, payload = {}) {
@@ -1003,6 +967,44 @@ function unbindH5HashChangeListener() {
   // #endif
 }
 
+function setH5PageScrollLock(locked) {
+  // #ifdef H5
+  try {
+    if (typeof document === 'undefined') return
+    const body = document.body
+    const html = document.documentElement
+    if (!body || !html) return
+
+    if (locked) {
+      if (h5ScrollLockApplied) return
+      h5ScrollLockApplied = true
+      h5ScrollTopBackup = window.pageYOffset || html.scrollTop || body.scrollTop || 0
+      h5BodyOverflowBackup = body.style.overflow || ''
+      h5HtmlOverflowBackup = html.style.overflow || ''
+      h5BodyPositionBackup = body.style.position || ''
+      h5BodyTopBackup = body.style.top || ''
+      h5BodyWidthBackup = body.style.width || ''
+
+      html.style.overflow = 'hidden'
+      body.style.overflow = 'hidden'
+      body.style.position = 'fixed'
+      body.style.top = `-${h5ScrollTopBackup}px`
+      body.style.width = '100%'
+      return
+    }
+
+    if (!h5ScrollLockApplied) return
+    h5ScrollLockApplied = false
+    html.style.overflow = h5HtmlOverflowBackup
+    body.style.overflow = h5BodyOverflowBackup
+    body.style.position = h5BodyPositionBackup
+    body.style.top = h5BodyTopBackup
+    body.style.width = h5BodyWidthBackup
+    window.scrollTo(0, h5ScrollTopBackup)
+  } catch (_) {}
+  // #endif
+}
+
 function formatTimelineTime(ts) {
   const t = Number(ts || 0)
   if (!t) return '--'
@@ -1050,12 +1052,22 @@ function overviewEntryTime(entry) {
   return '--'
 }
 
+function isOverviewCurrentSubmission(entry) {
+  const entrySubmissionID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  const currentSubmissionID = Number(submission.submission_id || submissionId.value || 0)
+  return entrySubmissionID > 0 && currentSubmissionID > 0 && entrySubmissionID === currentSubmissionID
+}
+
+function overviewEntrySequence(entry, idx) {
+  const queueNo = Number(entry?.item?.queue_no || 0)
+  const orderNo = queueNo > 0 ? queueNo : (Number(idx) + 1)
+  return `No.${String(orderNo).padStart(3, '0')}`
+}
+
 function resetProgressOverviewState() {
   progressOverviewError.value = ''
   progressOverviewLoaded.value = false
   overviewCurrentPlanItems.value = []
-  overviewHistoryItems.value = []
-  overviewArtistItems.value = []
 }
 
 async function fetchProgressOverview(force = false) {
@@ -1070,6 +1082,10 @@ async function fetchProgressOverview(force = false) {
   progressOverviewError.value = ''
   try {
     const token = uni.getStorageSync('token') || ''
+    const currentSubmissionID = Number(submission.submission_id || submissionId.value || 0)
+    if (!currentSubmissionID) {
+      throw new Error('投递ID无效，请稍后重试')
+    }
     const planID = Number(submission.plan_id || plan.id || 0)
     if (!planID) {
       throw new Error('投递详情仍在加载，请稍后重试')
@@ -1081,6 +1097,7 @@ async function fetchProgressOverview(force = false) {
       method: 'GET',
       header: { Authorization: token },
       data: {
+        submission_id: currentSubmissionID,
         plan_id: planID,
         brand_id: brandID,
         size: 20
@@ -1091,9 +1108,21 @@ async function fetchProgressOverview(force = false) {
       throw new Error(body.msg || '加载订单动态失败')
     }
     const d = body.data || {}
-    overviewCurrentPlanItems.value = Array.isArray(d.current_plan_items) ? d.current_plan_items : []
-    overviewHistoryItems.value = Array.isArray(d.my_history_items) ? d.my_history_items : []
-    overviewArtistItems.value = Array.isArray(d.artist_items) ? d.artist_items : []
+    const rows = Array.isArray(d.current_plan_items) ? d.current_plan_items.slice() : []
+    const currentQueueNo = Number(submission.ahead_count || 0) + 1
+    const filteredRows = rows.filter((row) => {
+      const queueNo = Number(row?.item?.queue_no || 0)
+      if (queueNo <= 0) return true
+      if (currentQueueNo <= 0) return true
+      return queueNo <= currentQueueNo
+    })
+    filteredRows.sort((a, b) => {
+      const qa = Number(a?.item?.queue_no || 0)
+      const qb = Number(b?.item?.queue_no || 0)
+      if (qa > 0 && qb > 0 && qa !== qb) return qa - qb
+      return Number(b?.item?.updated_at || 0) - Number(a?.item?.updated_at || 0)
+    })
+    overviewCurrentPlanItems.value = filteredRows
     progressOverviewLoaded.value = true
   } catch (e) {
     progressOverviewError.value = e?.message || '加载订单动态失败'
@@ -1109,26 +1138,6 @@ async function openProgressOverview() {
 
 function reloadProgressOverview() {
   fetchProgressOverview(true)
-}
-
-function jumpToSubmissionDetailByID(sid) {
-  const targetID = Number(sid || 0)
-  if (!targetID) return
-  const url = `/pkg-creator/creator_order/submission_detail/submission_detail?submission_id=${targetID}`
-  // #ifdef H5
-  window.location.hash = url
-  // #endif
-  // #ifndef H5
-  uni.navigateTo({ url })
-  // #endif
-}
-
-function goOverviewSubmission(entry) {
-  const sid = Number(entry?.submission?.id || entry?.submission?.ID || 0)
-  if (!sid) return
-  progressOverviewVisible.value = false
-  if (sid === submissionId.value) return
-  jumpToSubmissionDetailByID(sid)
 }
 
 function timelineTitle(row) {
@@ -1984,6 +1993,14 @@ watch(canSubmitPayFromPopup, (val) => {
   payDebug('watch:canSubmitPayFromPopup', { value: val })
 })
 
+watch(
+  () => progressOverviewVisible.value || payCodeModalVisible.value || payPopupVisible.value,
+  (visible) => {
+    setH5PageScrollLock(!!visible)
+  },
+  { immediate: true }
+)
+
 // 修改点：优化轮询逻辑
 function startPolling(forceFirst = false) {
   fetchDetail(forceFirst)
@@ -2035,10 +2052,12 @@ onShow(() => {
 })
 onHide(() => {
   unbindH5HashChangeListener()
+  setH5PageScrollLock(false)
   stopPolling()
 })
 onUnload(() => {
   unbindH5HashChangeListener()
+  setH5PageScrollLock(false)
   stopPolling()
 })
 </script>
@@ -2689,6 +2708,7 @@ $spacing-page: 30rpx;
   flex-direction: column;
   padding: 30rpx 28rpx 28rpx;
   box-sizing: border-box;
+  overscroll-behavior: contain;
 }
 
 .overview-modal-header {
@@ -2712,6 +2732,13 @@ $spacing-page: 30rpx;
 
 .overview-modal-scroll {
   max-height: 62vh;
+  overscroll-behavior: contain;
+}
+
+.overview-loading-wrap {
+  padding: 40rpx 0;
+  display: flex;
+  justify-content: center;
 }
 
 .overview-state-text {
@@ -2742,23 +2769,8 @@ $spacing-page: 30rpx;
 .overview-sections {
   display: flex;
   flex-direction: column;
-  gap: 22rpx;
+  gap: 10rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
-
-.overview-section {
-  border-radius: 18rpx;
-  border: 2rpx solid #edf1f4;
-  background: #f9fbfc;
-  padding: 18rpx;
-}
-
-.overview-section-title {
-  display: block;
-  font-size: 24rpx;
-  color: #505961;
-  font-weight: 600;
-  margin-bottom: 12rpx;
 }
 
 .overview-empty-row {
@@ -2772,7 +2784,7 @@ $spacing-page: 30rpx;
   align-items: center;
   justify-content: space-between;
   gap: 14rpx;
-  padding: 14rpx 0;
+  padding: 16rpx 0;
   border-top: 1rpx solid #eef2f5;
 }
 
@@ -2792,6 +2804,16 @@ $spacing-page: 30rpx;
   font-weight: 600;
 }
 
+.overview-item-order-id {
+  display: inline-block;
+  margin-bottom: 6rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  background: #eef3f5;
+  font-size: 20rpx;
+  color: #66757f;
+}
+
 .overview-item-status {
   display: block;
   margin-top: 6rpx;
@@ -2808,14 +2830,55 @@ $spacing-page: 30rpx;
 
 .overview-item-side {
   display: flex;
-  align-items: center;
-  gap: 8rpx;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6rpx;
   flex-shrink: 0;
 }
 
 .overview-item-time {
   font-size: 20rpx;
   color: #a3adb4;
+}
+
+.overview-current-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.overview-current-label {
+  font-size: 20rpx;
+  color: #7b8792;
+}
+
+.overview-current-arrow {
+  font-size: 24rpx;
+  color: #5d6b77;
+  animation: overviewArrowMove 1.1s ease-in-out infinite;
+}
+
+.overview-tail-tip {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 21rpx;
+  color: #9aa4ab;
+}
+
+@keyframes overviewArrowMove {
+  0% {
+    transform: translateX(0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateX(8rpx);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0.65;
+  }
 }
 
 .pay-sheet {

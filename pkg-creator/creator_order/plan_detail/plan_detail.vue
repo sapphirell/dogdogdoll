@@ -1011,7 +1011,7 @@ async function handleCTA() {
     } else if (code === 0) {
       msg = '当前不在开单时间段'
     } else if (code === 2) {
-      msg = '请勿重复投递'
+      msg = '1分钟内请勿重复投递'
     } else if (code === 3) {
       msg = '排队人数已满，投递未成功'
     } else {
