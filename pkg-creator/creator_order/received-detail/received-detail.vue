@@ -320,6 +320,7 @@ const SUBMISSION_STATUS_BUYER_CONFIRMED = 2
 const SUBMISSION_STATUS_SELECTED_PAY = 3
 const SUBMISSION_STATUS_PAID = 4
 const PAYMENT_METHOD_PLATFORM = 1
+const PAYMENT_METHOD_QRCODE = 2
 
 const stepConfigs = computed(() => {
   const q = queueInfo.value || {}
@@ -758,8 +759,11 @@ function getStepDisabledReason(item) {
   }
 
   const payMethod = Number(queueInfo.value.payment_method || queueInfo.value.paymentMethod || 0)
-  if (payMethod !== PAYMENT_METHOD_PLATFORM) {
+  if (payMethod === PAYMENT_METHOD_QRCODE) {
     return '收款码收款订单不支持提交节点'
+  }
+  if (payMethod !== PAYMENT_METHOD_PLATFORM) {
+    return '仅在线支付并完成付款后可提交节点'
   }
 
   const itemId = Number(item?.id || item?.ID || 0)

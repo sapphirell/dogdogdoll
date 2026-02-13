@@ -1,12 +1,24 @@
 <template>
   <view class="page-container">
-    <zhouwei-navbar 
-      backState="2000" 
-      fontColor="#000000" 
-      bgColor="transparent" 
-      :title="navTitle"
-      :fixed="true"
-    ></zhouwei-navbar>
+    <zhouWei-navBar
+      type="fixed"
+      :backState="2000"
+      :homeState="2000"
+      bgColor="rgba(255,255,255,0.88)"
+      fontColor="#000000"
+      :shadow="false"
+    >
+      <template #left>
+        <view class="nav-back-pill nav-back-pill--offset" @click="goBack" aria-label="返回">
+          <uni-icons type="left" size="22" color="#000" />
+        </view>
+      </template>
+      <template #default>
+        <view class="nav-center">
+          <text class="nav-title-ellipsis">投递详情</text>
+        </view>
+      </template>
+    </zhouWei-navBar>
 
     <view v-if="loading && !hasFirstLoaded" class="loading-mask">
       <view class="loading-spinner"></view>
@@ -72,6 +84,14 @@
             <text class="info-label font-alimamashuhei">当前顺序</text>
             <text class="info-val font-title">{{ queuePositionText }}</text>
           </view>
+
+          <view class="info-row-item info-row-link" @tap="openProgressOverview">
+            <text class="info-label font-alimamashuhei">前方订单动态</text>
+            <view class="info-link-right">
+              <text class="info-link-text font-title">查看</text>
+              <uni-icons type="right" size="16" color="#969696" />
+            </view>
+          </view>
         </view>
 
         <view class="tab-header-wrapper">
@@ -96,7 +116,7 @@
             </view>
           </view>
           
-          <view class="tab-tip-text">
+          <view v-if="canEditSubmissionItems" class="tab-tip-text">
             <text class="font-title" v-if="remainingCount > 0">还可以创建 {{ remainingCount }} 个投递</text>
             <text class="font-title" v-else>数量已达上限</text>
           </view>
@@ -105,7 +125,11 @@
         <view class="tab-content-wrapper">
           
           <view v-if="currentItem" class="content-item-view anim-fade-up" :key="currentTabIndex">
-            <view class="item-detail-card" @click="goEditItem(currentItem)">
+            <view
+              class="item-detail-card"
+              :class="{ editable: canEditSubmissionItems }"
+              @click="goEditItem(currentItem)"
+            >
               <image 
                 :src="getFirstRefImage(currentItem.ref_images)" 
                 class="item-img" 
@@ -148,24 +172,51 @@
 
             <view class="timeline-area">
               <view class="timeline-header">进度详情</view>
-              <view class="timeline-placeholder-box">
-                <view class="timeline-dot active"></view>
-                <view class="timeline-line"></view>
-                <view class="timeline-text-box">
-                  <text class="t-title">正在制作...</text>
-                  <text class="t-desc">当前阶段暂无更多信息</text>
+              <view v-if="timelineEvents.length" class="timeline-list">
+                <view
+                  v-for="(event, idx) in timelineEvents"
+                  :key="event.key"
+                  class="timeline-row"
+                >
+                  <view class="timeline-dot" :class="event.dotClass"></view>
+                  <view v-if="idx < timelineEvents.length - 1" class="timeline-line"></view>
+                  <view class="timeline-text-box">
+                    <view class="timeline-title-row">
+                      <text class="t-title">{{ event.title }}</text>
+                      <text class="t-time">{{ event.timeText }}</text>
+                    </view>
+                    <text v-if="event.desc" class="t-desc">{{ event.desc }}</text>
+                    <view v-if="event.canOperate" class="timeline-action-row">
+                      <view
+                        class="timeline-action-btn reject"
+                        :class="{ disabled: stepActioningLogID === event.logId }"
+                        @tap="handleStepReject(event)"
+                      >
+                        驳回
+                      </view>
+                      <view
+                        class="timeline-action-btn approve"
+                        :class="{ disabled: stepActioningLogID === event.logId }"
+                        @tap="handleStepApprove(event)"
+                      >
+                        {{ event.confirmLabel }}
+                      </view>
+                    </view>
+                  </view>
                 </view>
               </view>
-              <view class="timeline-placeholder-box opacity-50">
-                <view class="timeline-dot"></view>
+              <view v-else class="timeline-empty-box">
+                <view class="timeline-dot active"></view>
                 <view class="timeline-text-box">
-                  <text class="t-title">等待确认...</text>
+                  <text class="t-title">暂无进度动态</text>
+                  <text class="t-desc">买家确认内容、付款与节点更新后会展示在这里</text>
                 </view>
               </view>
             </view>
           </view>
 
           <view v-else class="content-empty-view anim-fade-up" :key="'empty'">
+              <template v-if="canEditSubmissionItems">
               <view class="add-new-card" @click="goCreateItem">
                 <view class="add-icon-circle">
                   <uni-icons type="plus-filled" size="24" color="#2B2B2B" />
@@ -192,6 +243,8 @@
                   </view>
                 </scroll-view>
               </view>
+              </template>
+              <view v-else class="plain-empty-tip font-title">暂无投递内容</view>
           </view>
 
         </view>
@@ -215,6 +268,98 @@
          </view>
        </button>
     </view>
+
+    <common-modal
+      v-model:visible="progressOverviewVisible"
+      width="680rpx"
+      top="50%"
+      :center="true"
+    >
+      <view class="overview-modal">
+        <view class="overview-modal-header">
+          <text class="overview-modal-title">前方订单动态</text>
+          <text class="overview-modal-refresh" @tap="reloadProgressOverview">刷新</text>
+        </view>
+
+        <scroll-view class="overview-modal-scroll" scroll-y>
+          <view v-if="progressOverviewLoading" class="overview-state-text">加载中...</view>
+          <view v-else-if="progressOverviewError" class="overview-error-box">
+            <text class="overview-state-text">{{ progressOverviewError }}</text>
+            <view class="overview-retry-btn" @tap="reloadProgressOverview">重试</view>
+          </view>
+          <view v-else class="overview-sections">
+            <view class="overview-section">
+              <text class="overview-section-title">这次接单计划</text>
+              <view v-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
+              <view
+                v-for="entry in overviewCurrentPlanItems"
+                :key="`plan-${overviewEntryKey(entry)}`"
+                class="overview-item-row"
+                @tap="goOverviewSubmission(entry)"
+              >
+                <view class="overview-item-main">
+                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
+                  <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
+                  <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
+                    {{ overviewEntryProgress(entry) }}
+                  </text>
+                </view>
+                <view class="overview-item-side">
+                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
+                  <uni-icons type="right" size="14" color="#b5b5b5" />
+                </view>
+              </view>
+            </view>
+
+            <view class="overview-section">
+              <text class="overview-section-title">我的历史进展</text>
+              <view v-if="!overviewHistoryItems.length" class="overview-empty-row">暂无记录</view>
+              <view
+                v-for="entry in overviewHistoryItems"
+                :key="`history-${overviewEntryKey(entry)}`"
+                class="overview-item-row"
+                @tap="goOverviewSubmission(entry)"
+              >
+                <view class="overview-item-main">
+                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
+                  <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
+                  <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
+                    {{ overviewEntryProgress(entry) }}
+                  </text>
+                </view>
+                <view class="overview-item-side">
+                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
+                  <uni-icons type="right" size="14" color="#b5b5b5" />
+                </view>
+              </view>
+            </view>
+
+            <view class="overview-section">
+              <text class="overview-section-title">该妆师订单进展</text>
+              <view v-if="!overviewArtistItems.length" class="overview-empty-row">暂无记录</view>
+              <view
+                v-for="entry in overviewArtistItems"
+                :key="`artist-${overviewEntryKey(entry)}`"
+                class="overview-item-row"
+                @tap="goOverviewSubmission(entry)"
+              >
+                <view class="overview-item-main">
+                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
+                  <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
+                  <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
+                    {{ overviewEntryProgress(entry) }}
+                  </text>
+                </view>
+                <view class="overview-item-side">
+                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
+                  <uni-icons type="right" size="14" color="#b5b5b5" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </common-modal>
 
     <uni-popup
       ref="payPopupRef"
@@ -262,77 +407,100 @@
       </view>
     </uni-popup>
 
-    <common-modal v-model:visible="payCodeModalVisible" width="640rpx" top="16vh">
+    <common-modal
+      v-model:visible="payCodeModalVisible"
+      width="640rpx"
+      top="50%"
+      :center="true"
+    >
       <view class="pay-code-modal">
-        <view class="pay-code-modal-title">{{ selectedMethodIsQRCode ? '扫码转账' : '支付宝支付' }}</view>
-        <view class="pay-uid-tip">转账时请备注您在APP内的UID：{{ currentUserUIDText }}</view>
-
-        <view v-if="selectedMethodCodeOptions.length > 1" class="pay-code-tabs">
-          <view
-            v-for="code in selectedMethodCodeOptions"
-            :key="code.channel"
-            class="pay-code-tab"
-            :class="{ active: selectedPayCodeChannel === code.channel }"
-            @tap="selectPayCodeChannel(code.channel)"
-          >
-            {{ code.name || code.channel }}
-          </view>
+        <view class="pay-code-modal-header">
+          <view class="pay-code-modal-title">{{ selectedMethodIsQRCode ? '扫码转账' : '支付宝支付' }}</view>
+          <view class="pay-uid-tip">转账时请备注您在APP内的UID：{{ currentUserUIDText }}</view>
         </view>
 
-        <view v-if="selectedMethodIsQRCode" class="pay-code-image-card">
-          <view class="pay-code-image-box">
-            <image
-              v-if="selectedPayCodeUrl"
-              class="pay-code-image"
-              :src="selectedPayCodeUrl"
-              mode="aspectFit"
+        <view class="pay-code-scroll-wrap">
+          <view class="pay-scroll-hint-layer">
+            <scroll-hint
+              class="pay-scroll-hint"
+              :active="payCodeModalVisible"
+              :duration="2600"
+              :delay="220"
+              :cycle-duration="1450"
+              :size="4.6"
             />
-            <text v-else class="pay-code-empty">当前付款方式暂无可用二维码</text>
           </view>
-        </view>
-        <view v-else class="pay-online-tip">
-          请先在支付宝完成转账，再上传转账截图并填写留言。
-        </view>
+          <scroll-view class="pay-code-scroll-area" scroll-y>
+            <view class="pay-code-scroll-inner">
+              <view v-if="selectedMethodCodeOptions.length > 1" class="pay-code-tabs">
+                <view
+                  v-for="code in selectedMethodCodeOptions"
+                  :key="code.channel"
+                  class="pay-code-tab"
+                  :class="{ active: selectedPayCodeChannel === code.channel }"
+                  @tap="selectPayCodeChannel(code.channel)"
+                >
+                  {{ code.name || code.channel }}
+                </view>
+              </view>
 
-        <view class="pay-proof-card">
-          <view class="pay-proof-label-row">
-            <text class="pay-proof-label">转账截图</text>
-            <text class="pay-proof-required">*</text>
-          </view>
-          <view class="pay-proof-list">
-            <view
-              v-for="(img, idx) in payProofImages"
-              :key="`${img}-${idx}`"
-              class="pay-proof-item"
-            >
-              <image class="pay-proof-image" :src="img" mode="aspectFill" @tap="previewPayProof(idx)" />
-              <view class="pay-proof-remove" @tap.stop="removePayProof(idx)">×</view>
-            </view>
-            <view
-              v-if="payProofImages.length < 3 && !payProofUploading"
-              class="pay-proof-add"
-              @tap="choosePayProofImages"
-            >
-              <text class="pay-proof-add-icon">+</text>
-              <text class="pay-proof-add-text">上传截图</text>
-            </view>
-          </view>
-          <text class="pay-proof-help">最多3张，至少1张</text>
-          <text v-if="payProofUploading" class="pay-proof-uploading">{{ payProofUploadText }}</text>
-        </view>
+              <view v-if="selectedMethodIsQRCode" class="pay-code-image-card">
+                <view class="pay-code-image-box">
+                  <image
+                    v-if="selectedPayCodeUrl"
+                    class="pay-code-image"
+                    :src="selectedPayCodeUrl"
+                    mode="aspectFit"
+                  />
+                  <text v-else class="pay-code-empty">当前付款方式暂无可用二维码</text>
+                </view>
+              </view>
+              <view v-else class="pay-online-tip">
+                请先在支付宝完成转账，再上传转账截图并填写留言。
+              </view>
 
-        <view class="pay-message-card">
-          <view class="pay-proof-label-row">
-            <text class="pay-proof-label">付款留言</text>
-            <text class="pay-proof-required">*</text>
-          </view>
-          <textarea
-            v-model.trim="payMessage"
-            class="pay-message-input"
-            maxlength="200"
-            placeholder="请填写转账说明（至少2个字）"
-          />
-          <text class="pay-message-count">{{ payMessageLength }}/200</text>
+              <view class="pay-proof-card">
+                <view class="pay-proof-label-row">
+                  <text class="pay-proof-label">转账截图</text>
+                  <text class="pay-proof-required">*</text>
+                </view>
+                <view class="pay-proof-list">
+                  <view
+                    v-for="(img, idx) in payProofImages"
+                    :key="`${img}-${idx}`"
+                    class="pay-proof-item"
+                  >
+                    <image class="pay-proof-image" :src="img" mode="aspectFill" @tap="previewPayProof(idx)" />
+                    <view class="pay-proof-remove" @tap.stop="removePayProof(idx)">×</view>
+                  </view>
+                  <view
+                    v-if="payProofImages.length < 3 && !payProofUploading"
+                    class="pay-proof-add"
+                    @tap="choosePayProofImages"
+                  >
+                    <text class="pay-proof-add-icon">+</text>
+                    <text class="pay-proof-add-text">上传截图</text>
+                  </view>
+                </view>
+                <text class="pay-proof-help">最多3张，至少1张</text>
+                <text v-if="payProofUploading" class="pay-proof-uploading">{{ payProofUploadText }}</text>
+              </view>
+
+              <view class="pay-message-card">
+                <view class="pay-proof-label-row">
+                  <text class="pay-proof-label">付款留言</text>
+                  <text class="pay-proof-required">*</text>
+                </view>
+                <textarea
+                  v-model.trim="payMessage"
+                  class="pay-message-input"
+                  maxlength="200"
+                  placeholder="请填写转账说明（至少2个字）"
+                />
+                <text class="pay-message-count">{{ payMessageLength }}/200</text>
+              </view>
+            </view>
+          </scroll-view>
         </view>
 
         <view class="pay-code-modal-actions" :class="{ single: !selectedMethodIsQRCode }">
@@ -367,6 +535,7 @@ import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
 import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 import CommonModal from '@/components/common-modal/common-modal.vue'
+import ScrollHint from '@/components/scroll-hint/scroll-hint.vue'
 
 // ====== 常量 ======
 const SubmissionStatusQueued = 0
@@ -392,6 +561,8 @@ const submission = reactive({
   status_text: '',
   ahead_count: 0,
   artist_type: 0, // 修改点：新增 artist_type
+  step_configs: [],
+  progress_logs: [],
   items: []
 })
 const draftItems = ref([])
@@ -420,6 +591,15 @@ const payProofImages = ref([])
 const payMessage = ref('')
 const payProofUploading = ref(false)
 const payProofUploadText = ref('')
+const stepActioningLogID = ref(0)
+const progressOverviewVisible = ref(false)
+const progressOverviewLoading = ref(false)
+const progressOverviewLoaded = ref(false)
+const progressOverviewError = ref('')
+const overviewCurrentPlanItems = ref([])
+const overviewHistoryItems = ref([])
+const overviewArtistItems = ref([])
+const lastRouteKey = ref('')
 
 const PAY_DEBUG_TAG = '[submission-pay]'
 function payDebug(step, payload = {}) {
@@ -430,8 +610,6 @@ function payDebug(step, payload = {}) {
 
 // ====== Computed ======
 const isLogin = computed(() => !!(uni.getStorageSync('token') || global.isLogin))
-const navTitle = computed(() => '') 
-
 const planCoverImage = computed(() => plan.images ? plan.images.split(',')[0] : '')
 
 // 品牌信息
@@ -466,13 +644,31 @@ const statusColorClass = computed(() => {
 })
 
 // === Tab 计算逻辑 ===
+const canEditSubmissionItems = computed(() => {
+  const s = Number(submission.status || 0)
+  return s === SubmissionStatusQueued || s === SubmissionStatusSelectedConfirm
+})
+
 const tabList = computed(() => {
+  const canEdit = canEditSubmissionItems.value
+  if (!canEdit) {
+    if (!submission.items.length) {
+      return [{ label: '暂无', type: 'empty-readonly', index: 0 }]
+    }
+    return submission.items.map((item, idx) => ({
+      label: item.work_subject || `作品${idx + 1}`,
+      type: 'item',
+      index: idx
+    }))
+  }
+
   const list = []
-  const max = plan.max_submissions_per_user > 0 
-    ? plan.max_submissions_per_user 
+  const max = plan.max_submissions_per_user > 0
+    ? plan.max_submissions_per_user
     : (submission.items.length + 1)
+  const targetCount = Math.max(max, 1)
    
-  for (let i = 0; i < max; i++) {
+  for (let i = 0; i < targetCount; i++) {
     if (i < submission.items.length) {
       list.push({
         label: submission.items[i].work_subject || `作品${i+1}`,
@@ -493,7 +689,74 @@ const currentItem = computed(() => {
   return null
 })
 
+const finalStepID = computed(() => {
+  // 基于节点配置推导“最后节点ID”，用于区分普通通过与成品确认。
+  const list = Array.isArray(submission.step_configs) ? submission.step_configs : []
+  let maxID = 0
+  for (const row of list) {
+    const id = Number(row?.id || row?.ID || 0)
+    if (id > maxID) maxID = id
+  }
+  return maxID
+})
+
+function isFinalStepLog(row) {
+  // 先按 step_id 命中最后节点；兼容旧数据再按名称兜底。
+  const stepID = Number(row?.step_id || 0)
+  if (stepID > 0 && finalStepID.value > 0 && stepID === finalStepID.value) return true
+  const stepName = String(row?.step_name || '').trim()
+  return stepName.includes('成品')
+}
+
+const timelineEvents = computed(() => {
+  // 时间线只显示当前子项相关动态（全局事件 + 当前 item 事件）。
+  const logs = Array.isArray(submission.progress_logs) ? submission.progress_logs : []
+  const currentItemID = Number(currentItem.value?.id || 0)
+  const filtered = logs.filter((row) => {
+    const itemID = Number(row?.submission_item_id || 0)
+    if (currentItemID > 0) {
+      return itemID === 0 || itemID === currentItemID
+    }
+    return itemID === 0
+  })
+
+  return filtered
+    .slice()
+    .sort((a, b) => {
+      const ta = Number(a?.created_at || 0)
+      const tb = Number(b?.created_at || 0)
+      if (ta !== tb) return tb - ta
+      return Number(b?.id || 0) - Number(a?.id || 0)
+    })
+    .map((row, idx) => {
+      const logID = Number(row?.id || 0)
+      const status = Number(row?.status || 0)
+      const logType = Number(row?.log_type || 0)
+      const itemID = Number(row?.submission_item_id || 0)
+      const isFinalStep = isFinalStepLog(row)
+      let dotClass = 'done'
+      if (status === 0) dotClass = idx === 0 ? 'active' : 'pending'
+      if (status === 2) dotClass = 'rejected'
+      const canOperate = logType === 1 && status === 0 && currentItemID > 0 && itemID === currentItemID
+      return {
+        key: `${row?.id || idx}-${row?.event_code || ''}`,
+        logId: logID,
+        logType,
+        status,
+        itemID,
+        canOperate,
+        confirmLabel: isFinalStep ? '确认成品' : '通过',
+        finalStep: isFinalStep,
+        title: timelineTitle(row),
+        desc: timelineDesc(row),
+        timeText: formatTimelineTime(row?.created_at),
+        dotClass
+      }
+    })
+})
+
 const remainingCount = computed(() => {
+  if (!canEditSubmissionItems.value) return 0
   const max = plan.max_submissions_per_user || 99
   const used = submission.items.length
   return Math.max(0, max - used)
@@ -586,9 +849,408 @@ const canSubmitPayFromCodeModal = computed(() => {
 })
 
 // ====== Methods ======
+function goBack() {
+  uni.navigateBack({ delta: 1 })
+}
+
+function buildStableQueryString(opts) {
+  const row = opts || {}
+  const keys = Object.keys(row).sort()
+  return keys.map((k) => `${String(k)}=${String(row[k])}`).join('&')
+}
+
+function safeGetH5Hash() {
+  try {
+    if (typeof window !== 'undefined' && window.location) return window.location.hash || ''
+    if (typeof location !== 'undefined') return location.hash || ''
+  } catch (_) {}
+  return ''
+}
+
+function parseQueryStringToObj(qs) {
+  const out = {}
+  if (!qs) return out
+  const raw = String(qs).replace(/^\?/, '')
+  if (!raw) return out
+  raw.split('&').forEach((pair) => {
+    if (!pair) return
+    const idx = pair.indexOf('=')
+    const k = idx >= 0 ? pair.slice(0, idx) : pair
+    const v = idx >= 0 ? pair.slice(idx + 1) : ''
+    const key = decodeURIComponent((k || '').trim())
+    if (!key) return
+    out[key] = decodeURIComponent(String(v || '').replace(/\+/g, ' '))
+  })
+  return out
+}
+
+function extractQueryFromUrl(urlLike) {
+  const s = String(urlLike || '')
+  const qIdx = s.indexOf('?')
+  if (qIdx < 0) return { base: s, query: {} }
+  const base = s.slice(0, qIdx)
+  const tail = s.slice(qIdx + 1)
+  const qs = tail.split('#')[0]
+  return { base, query: parseQueryStringToObj(qs) }
+}
+
+function getCurrentPageSnapshot() {
+  let pages = []
+  try {
+    pages = getCurrentPages && getCurrentPages()
+  } catch (_) {}
+  const cur = pages && pages.length ? pages[pages.length - 1] : null
+  const rawOpts = (cur && cur.options) || (cur && cur.$page && cur.$page.options) || {}
+  const route = (cur && (cur.route || (cur.$page && cur.$page.route))) || ''
+  const fullPath = (cur && cur.$page && cur.$page.fullPath) ? cur.$page.fullPath : ''
+
+  const h5Hash = safeGetH5Hash()
+  const hashParsed = h5Hash ? extractQueryFromUrl(h5Hash) : null
+  const fullParsed = fullPath ? extractQueryFromUrl(fullPath) : null
+
+  const mergedOpts = Object.assign(
+    {},
+    rawOpts || {},
+    fullParsed?.query || {},
+    hashParsed?.query || {}
+  )
+
+  const key = h5Hash
+    ? String(h5Hash)
+    : (fullPath
+      ? String(fullPath)
+      : `${String(route)}?${buildStableQueryString(mergedOpts)}`)
+  return { opts: mergedOpts, route, fullPath, key }
+}
+
+function resetSubmissionRuntimeState() {
+  Object.assign(submission, {
+    submission_id: 0,
+    plan_id: 0,
+    status: 0,
+    status_text: '',
+    ahead_count: 0,
+    artist_type: 0,
+    step_configs: [],
+    progress_logs: [],
+    items: []
+  })
+  draftItems.value = []
+  currentTabIndex.value = 0
+  stepActioningLogID.value = 0
+  Object.assign(plan, {
+    id: 0,
+    artist_name: '',
+    brand_admin_id: 0,
+    max_submissions_per_user: 0,
+    artist_info: null,
+    brand: null,
+    images: '',
+    order_type: 0
+  })
+  resetProgressOverviewState()
+  resetPayState()
+}
+
+function applyRouteOptionsAndRefresh(opts = {}, reason = '') {
+  const nextSubmissionID = Number(opts.submission_id || 0)
+  if (!nextSubmissionID) return false
+
+  const changed = nextSubmissionID !== submissionId.value
+  if (changed) {
+    submissionId.value = nextSubmissionID
+    hasFirstLoaded.value = false
+    fetchSeq.value = 0
+    resetSubmissionRuntimeState()
+    if (global.lastRefresh) global.lastRefresh.time = 0
+  }
+
+  if (isLogin.value && submissionId.value) {
+    ensureCurrentUserUID()
+    startPolling(true)
+  }
+
+  payDebug('applyRouteOptionsAndRefresh', {
+    reason,
+    nextSubmissionID,
+    changed
+  })
+  return changed
+}
+
+function onH5HashRouteChange() {
+  const snap = getCurrentPageSnapshot()
+  const newKey = String(snap?.key || '')
+  if (newKey && newKey === lastRouteKey.value) return
+  lastRouteKey.value = newKey || lastRouteKey.value
+  applyRouteOptionsAndRefresh(snap?.opts || {}, 'h5-hashchange')
+}
+
+function bindH5HashChangeListener() {
+  // #ifdef H5
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.removeEventListener('hashchange', onH5HashRouteChange)
+    window.addEventListener('hashchange', onH5HashRouteChange)
+  }
+  // #endif
+}
+
+function unbindH5HashChangeListener() {
+  // #ifdef H5
+  if (typeof window !== 'undefined' && window.removeEventListener) {
+    window.removeEventListener('hashchange', onH5HashRouteChange)
+  }
+  // #endif
+}
+
+function formatTimelineTime(ts) {
+  const t = Number(ts || 0)
+  if (!t) return '--'
+  const d = new Date(t * 1000)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}-${dd} ${hh}:${mi}`
+}
+
+function overviewEntryKey(entry) {
+  const itemID = Number(entry?.item?.id || entry?.item?.ID || 0)
+  const subID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  return `${subID}-${itemID}`
+}
+
+function overviewEntryTitle(entry) {
+  const subject = String(entry?.item?.work_subject || '').trim()
+  if (subject) return subject
+  const subID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  return subID ? `投递 #${subID}` : '未命名投递'
+}
+
+function overviewEntryStatus(entry) {
+  const itemText = String(entry?.item_status_text || '').trim()
+  const subText = String(entry?.submission_status_text || '').trim()
+  if (itemText && subText) return `${itemText} · ${subText}`
+  return itemText || subText || '状态未知'
+}
+
+function overviewEntryProgress(entry) {
+  const latest = entry?.latest_progress
+  if (!latest) return ''
+  const stepName = String(latest?.step_name || '').trim()
+  const content = String(latest?.content || '').trim()
+  return content || stepName || ''
+}
+
+function overviewEntryTime(entry) {
+  const latestTs = Number(entry?.latest_progress?.created_at || 0)
+  if (latestTs > 0) return formatTimelineTime(latestTs)
+  const updated = Number(entry?.item?.updated_at || 0)
+  if (updated > 0) return formatTimelineTime(updated)
+  return '--'
+}
+
+function resetProgressOverviewState() {
+  progressOverviewError.value = ''
+  progressOverviewLoaded.value = false
+  overviewCurrentPlanItems.value = []
+  overviewHistoryItems.value = []
+  overviewArtistItems.value = []
+}
+
+async function fetchProgressOverview(force = false) {
+  if (progressOverviewLoading.value) return
+  if (progressOverviewLoaded.value && !force) return
+  if (!isLogin.value) {
+    progressOverviewError.value = '请先登录'
+    return
+  }
+
+  progressOverviewLoading.value = true
+  progressOverviewError.value = ''
+  try {
+    const token = uni.getStorageSync('token') || ''
+    const planID = Number(submission.plan_id || plan.id || 0)
+    if (!planID) {
+      throw new Error('投递详情仍在加载，请稍后重试')
+    }
+    const itemBrandID = Number(submission.items?.[0]?.brand_id || 0)
+    const brandID = Number(plan.brand?.id || itemBrandID || 0)
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item-progress-overview`,
+      method: 'GET',
+      header: { Authorization: token },
+      data: {
+        plan_id: planID,
+        brand_id: brandID,
+        size: 20
+      }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      throw new Error(body.msg || '加载订单动态失败')
+    }
+    const d = body.data || {}
+    overviewCurrentPlanItems.value = Array.isArray(d.current_plan_items) ? d.current_plan_items : []
+    overviewHistoryItems.value = Array.isArray(d.my_history_items) ? d.my_history_items : []
+    overviewArtistItems.value = Array.isArray(d.artist_items) ? d.artist_items : []
+    progressOverviewLoaded.value = true
+  } catch (e) {
+    progressOverviewError.value = e?.message || '加载订单动态失败'
+  } finally {
+    progressOverviewLoading.value = false
+  }
+}
+
+async function openProgressOverview() {
+  progressOverviewVisible.value = true
+  await fetchProgressOverview(false)
+}
+
+function reloadProgressOverview() {
+  fetchProgressOverview(true)
+}
+
+function jumpToSubmissionDetailByID(sid) {
+  const targetID = Number(sid || 0)
+  if (!targetID) return
+  const url = `/pkg-creator/creator_order/submission_detail/submission_detail?submission_id=${targetID}`
+  // #ifdef H5
+  window.location.hash = url
+  // #endif
+  // #ifndef H5
+  uni.navigateTo({ url })
+  // #endif
+}
+
+function goOverviewSubmission(entry) {
+  const sid = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  if (!sid) return
+  progressOverviewVisible.value = false
+  if (sid === submissionId.value) return
+  jumpToSubmissionDetailByID(sid)
+}
+
+function timelineTitle(row) {
+  const logType = Number(row?.log_type || 0)
+  const status = Number(row?.status || 0)
+  const stepName = String(row?.step_name || '').trim()
+  const eventCode = String(row?.event_code || '').trim()
+  if (eventCode === 'final_product_confirmed') return '成品确认（已通过）'
+  if (logType === 1) {
+    const name = stepName || `节点#${Number(row?.step_id || 0)}`
+    if (status === 1) return `${name}（已确认）`
+    if (status === 2) return `${name}（未通过）`
+    return `${name}（待确认）`
+  }
+  return stepName || '进度更新'
+}
+
+function timelineDesc(row) {
+  const content = String(row?.content || '').trim()
+  if (content) return content
+  const eventCode = String(row?.event_code || '').trim()
+  if (eventCode === 'submission_created') return '买家已拍下订单，等待补充投递内容。'
+  if (eventCode === 'buyer_confirm_content') return '买家已确认投递内容，等待卖家确认订单。'
+  if (eventCode === 'seller_confirm_submission') return '创作者已确认订单，订单进入待付款状态。'
+  if (eventCode === 'payment_completed') return '买家已完成付款。'
+  if (eventCode === 'step_request') return '创作者已上传节点内容，等待买家确认。'
+  if (eventCode === 'final_product_confirmed') return '买家已确认最终成品。'
+  return ''
+}
+
+async function submitStepDecision(logID, action, reason = '') {
+  // 买家节点动作统一提交入口：confirm/reject 两条接口共用同一套请求与防重逻辑。
+  const id = Number(logID || 0)
+  if (!id) return
+  if (stepActioningLogID.value === id) return
+  if (!isLogin.value) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  const token = uni.getStorageSync('token') || ''
+  const isConfirm = action === 'confirm'
+  stepActioningLogID.value = id
+  uni.showLoading({ title: isConfirm ? '确认中' : '驳回中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/step/${isConfirm ? 'confirm' : 'reject'}`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: isConfirm
+        ? { log_id: id }
+        : { log_id: id, reason: String(reason || '').trim() }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || (isConfirm ? '确认失败' : '驳回失败'), icon: 'none' })
+      return
+    }
+    uni.showToast({ title: isConfirm ? '已确认' : '已驳回', icon: 'success' })
+    if (global.lastRefresh) global.lastRefresh.time = 0
+    fetchDetail()
+  } catch (e) {
+    uni.showToast({ title: isConfirm ? '确认失败' : '驳回失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+    if (stepActioningLogID.value === id) {
+      stepActioningLogID.value = 0
+    }
+  }
+}
+
+function handleStepApprove(event) {
+  // 最终节点展示“确认成品”，其余节点展示“通过”。
+  if (!event?.canOperate || !event?.logId) return
+  const title = event.finalStep ? '确认成品' : '确认节点'
+  const content = event.finalStep ? '确认该最终成品已通过吗？' : '确认该创作节点通过吗？'
+  uni.showModal({
+    title,
+    content,
+    confirmText: event.finalStep ? '确认成品' : '通过',
+    cancelText: '取消',
+    success: ({ confirm }) => {
+      if (!confirm) return
+      submitStepDecision(event.logId, 'confirm')
+    }
+  })
+}
+
+function handleStepReject(event) {
+  // 驳回后卖家可重新上传同节点，后端会将旧待确认记录标记为覆盖/驳回。
+  if (!event?.canOperate || !event?.logId) return
+  uni.showModal({
+    title: '驳回节点',
+    content: '确认驳回该节点吗？妆师可修改后再次上传。',
+    confirmText: '确认驳回',
+    cancelText: '取消',
+    success: ({ confirm }) => {
+      if (!confirm) return
+      submitStepDecision(event.logId, 'reject')
+    }
+  })
+}
+
 function switchTab(index) {
   currentTabIndex.value = index
 }
+
+watch(
+  () => tabList.value.length,
+  (len) => {
+    const safeLen = Number(len || 0)
+    if (safeLen <= 0) {
+      currentTabIndex.value = 0
+      return
+    }
+    if (currentTabIndex.value > safeLen - 1) {
+      currentTabIndex.value = safeLen - 1
+    }
+  }
+)
 
 function getFirstRefImage(str) {
   if (!str) return ''
@@ -641,27 +1303,23 @@ function handleBrandClick() {
 
 
 // 数据请求
-async function fetchDetail() {
+async function fetchDetail(force = false) {
   const sid = submissionId.value
   if (!sid) return
 
-  // --- 新增：全局防重复刷新检查 (5秒CD) ---
-  const currentUrlKey = `submission/queue-info?submission_id=${sid}`
-  const now = Date.now()
-  
-  // 检查是否在全局变量中记录过，且时间间隔小于 5000ms
-  if (global.lastRefresh && 
-      global.lastRefresh.url === currentUrlKey && 
+  if (!force) {
+    const currentUrlKey = `submission/queue-info?submission_id=${sid}`
+    const now = Date.now()
+    if (global.lastRefresh &&
+      global.lastRefresh.url === currentUrlKey &&
       (now - global.lastRefresh.time < 3000)) {
-    console.log('[Throttle] Skip fetchDetail due to global timer constraint.')
-    return // ⚠️ 直接返回，不执行后续请求
+      console.log('[Throttle] Skip fetchDetail due to global timer constraint.')
+      return
+    }
+    if (!global.lastRefresh) global.lastRefresh = {}
+    global.lastRefresh.url = currentUrlKey
+    global.lastRefresh.time = now
   }
-
-  // 更新全局记录
-  if (!global.lastRefresh) global.lastRefresh = {}
-  global.lastRefresh.url = currentUrlKey
-  global.lastRefresh.time = now
-  // -------------------------------------
    
   const seq = ++fetchSeq.value
   if (!hasFirstLoaded.value) loading.value = true
@@ -685,6 +1343,8 @@ async function fetchDetail() {
         status_text: d.status_text,
         ahead_count: d.ahead_count,
         artist_type: d.artist_type, // 修改点：赋值 artist_type
+        step_configs: Array.isArray(d.step_configs) ? d.step_configs : [],
+        progress_logs: Array.isArray(d.progress_logs) ? d.progress_logs : [],
         items: d.items || []
       })
       draftItems.value = d.draft_items || []
@@ -735,15 +1395,25 @@ function handleStartChat() {
 }
 
 function goCreateItem() {
+  if (!canEditSubmissionItems.value) {
+    uni.showToast({ title: '当前阶段已锁定，无法新增', icon: 'none' })
+    return
+  }
   const url = `/pkg-creator/creator_order/submission_item_form/submission_item_form?submission_id=${submission.submission_id}&plan_id=${submission.plan_id}`
   uni.navigateTo({ url })
 }
 function goEditItem(item) {
+  if (!canEditSubmissionItems.value) return
+  if (!item || !item.id) return
   const url = `/pkg-creator/creator_order/submission_item_form/submission_item_form?submission_item_id=${item.id}`
   uni.navigateTo({ url })
 }
 
 async function useDraft(draft) {
+  if (!canEditSubmissionItems.value) {
+    uni.showToast({ title: '当前阶段已锁定，无法新增', icon: 'none' })
+    return
+  }
   uni.showLoading({ title: '绑定中' })
   try {
     const res = await uni.request({
@@ -1315,10 +1985,8 @@ watch(canSubmitPayFromPopup, (val) => {
 })
 
 // 修改点：优化轮询逻辑
-function startPolling() {
-  // 1. 无论定时器是否在跑，进入页面时先刷新一次数据，保证实时性
-  // 注意：fetchDetail 内部现在有全局防抖，如果刚跳进来不久，这次可能也会被防抖掉，这是符合预期的
-  fetchDetail()
+function startPolling(forceFirst = false) {
+  fetchDetail(forceFirst)
    
   // 2. 如果定时器已存在，直接返回，避免创建多个定时器
   if (pollingTimer) return
@@ -1335,16 +2003,44 @@ function stopPolling() {
 }
 
 onLoad((opt) => {
-  submissionId.value = Number(opt.submission_id || 0)
+  const snap = getCurrentPageSnapshot()
+  const merged = Object.assign({}, opt || {}, snap?.opts || {})
+  lastRouteKey.value = String(snap?.key || buildStableQueryString(merged) || '')
+  applyRouteOptionsAndRefresh(merged, 'onLoad')
 })
 onShow(() => {
+  bindH5HashChangeListener()
+  const snap = getCurrentPageSnapshot()
+  const newKey = String(snap?.key || '')
+  const snapSubmissionID = Number(snap?.opts?.submission_id || 0)
+
+  if (!lastRouteKey.value) {
+    lastRouteKey.value = newKey
+  } else if (newKey && newKey !== lastRouteKey.value) {
+    lastRouteKey.value = newKey
+    applyRouteOptionsAndRefresh(snap?.opts || {}, 'onShow-url-changed')
+    return
+  }
+
+  if (snapSubmissionID > 0 && snapSubmissionID !== submissionId.value) {
+    lastRouteKey.value = newKey || lastRouteKey.value
+    applyRouteOptionsAndRefresh(snap?.opts || {}, 'onShow-id-mismatch')
+    return
+  }
+
   if (isLogin.value && submissionId.value) {
     ensureCurrentUserUID()
-    startPolling()
+    startPolling(true)
   }
 })
-onHide(stopPolling)
-onUnload(stopPolling)
+onHide(() => {
+  unbindH5HashChangeListener()
+  stopPolling()
+})
+onUnload(() => {
+  unbindH5HashChangeListener()
+  stopPolling()
+})
 </script>
 
 <style scoped lang="scss">
@@ -1387,6 +2083,36 @@ $spacing-page: 30rpx;
 .page-container {
   min-height: 100vh;
   background-color: #fff;
+}
+
+.nav-back-pill {
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.nav-back-pill--offset {
+  margin-left: 10rpx;
+}
+
+.nav-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-title-ellipsis {
+  max-width: 360rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f1f1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ====== Header Banner (含模糊效果) ====== */
@@ -1544,6 +2270,18 @@ $spacing-page: 30rpx;
   justify-content: space-between;
   align-items: center;
 }
+.info-row-link {
+  cursor: pointer;
+}
+.info-link-right {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.info-link-text {
+  font-size: 22rpx;
+  color: #6f7f88;
+}
 
 .info-label {
   font-size: 22rpx;
@@ -1644,6 +2382,9 @@ $spacing-page: 30rpx;
   border-radius: 24rpx;
   /* 去除原来的 padding 或保持简洁，这里使用 flex gap 控制间距 */
 }
+.item-detail-card.editable {
+  cursor: pointer;
+}
 .item-img {
   width: 180rpx;
   height: 180rpx;
@@ -1732,23 +2473,37 @@ $spacing-page: 30rpx;
   margin-bottom: 30rpx; /* 增大留白 */
   color: #333;
 }
-.timeline-placeholder-box {
+.timeline-list,
+.timeline-empty-box {
   position: relative;
-  padding-left: 40rpx;
-  padding-bottom: 50rpx; /* 增大留白 */
+  padding-left: 0;
+}
+.timeline-row {
+  position: relative;
+  padding: 4rpx 0 44rpx 40rpx;
 }
 .timeline-dot {
   position: absolute;
   left: 0;
-  top: 10rpx;
+  top: 22rpx;
+  transform: translateY(-50%);
   width: 20rpx;
   height: 20rpx;
   border-radius: 50%;
-  background: #ddd;
+  background: #b7c3cc;
   z-index: 2;
   &.active {
     background: $color-accent;
     box-shadow: 0 0 0 6rpx rgba(138, 253, 255, 0.4);
+  }
+  &.pending {
+    background: #9ac7d4;
+  }
+  &.done {
+    background: #7fdbe7;
+  }
+  &.rejected {
+    background: #b9bec4;
   }
 }
 .timeline-line {
@@ -1760,22 +2515,66 @@ $spacing-page: 30rpx;
   background: #eee;
   z-index: 1;
 }
+.timeline-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-height: 40rpx;
+}
 .timeline-text-box {
   display: flex;
   flex-direction: column;
+  gap: 6rpx;
+  padding-top: 2rpx;
 }
 .t-title {
   font-size: 28rpx;
-  color: #333;
+  color: #30353a;
   font-weight: 500;
+  line-height: 1.35;
 }
 .t-desc {
   font-size: 24rpx;
-  color: #999;
-  margin-top: 8rpx;
+  color: #86909c;
+  line-height: 1.5;
 }
-.opacity-50 {
-  opacity: 0.5;
+.t-time {
+  font-size: 22rpx;
+  color: #a0a7af;
+  flex-shrink: 0;
+}
+.timeline-action-row {
+  margin-top: 14rpx;
+  display: flex;
+  gap: 14rpx;
+}
+.timeline-action-btn {
+  min-width: 120rpx;
+  height: 54rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &.reject {
+    color: #7a8790;
+    background: #f2f4f6;
+  }
+  &.approve {
+    color: #2e3338;
+    background: #dffbfe;
+  }
+  &.disabled {
+    opacity: 0.6;
+  }
+}
+.timeline-empty-box {
+  padding: 0 0 12rpx 40rpx;
+}
+.timeline-empty-box .timeline-dot {
+  top: 22rpx;
+  transform: translateY(-50%);
 }
 
 /* 新增 & 草稿 */
@@ -1803,6 +2602,18 @@ $spacing-page: 30rpx;
 .add-text {
   font-size: 26rpx;
   color: #666;
+}
+.locked-empty-tip {
+  text-align: center;
+  font-size: 26rpx;
+  color: #98a1a8;
+  padding: 80rpx 0 30rpx;
+}
+.plain-empty-tip {
+  text-align: center;
+  font-size: 26rpx;
+  color: #98a1a8;
+  padding: 80rpx 0 30rpx;
 }
 .draft-picker-area .draft-title {
   font-size: 26rpx;
@@ -1870,6 +2681,141 @@ $spacing-page: 30rpx;
   padding: 20rpx 30rpx calc(20rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
   z-index: 100;
+}
+
+.overview-modal {
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 30rpx 28rpx 28rpx;
+  box-sizing: border-box;
+}
+
+.overview-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.overview-modal-title {
+  font-size: 32rpx;
+  color: #2b2b2b;
+  font-weight: 700;
+}
+
+.overview-modal-refresh {
+  font-size: 24rpx;
+  color: #7c8a91;
+  padding: 6rpx 10rpx;
+}
+
+.overview-modal-scroll {
+  max-height: 62vh;
+}
+
+.overview-state-text {
+  font-size: 24rpx;
+  color: #87929a;
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.overview-error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.overview-retry-btn {
+  min-width: 132rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  border: 2rpx solid #d6dee4;
+  font-size: 24rpx;
+  color: #59656d;
+}
+
+.overview-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.overview-section {
+  border-radius: 18rpx;
+  border: 2rpx solid #edf1f4;
+  background: #f9fbfc;
+  padding: 18rpx;
+}
+
+.overview-section-title {
+  display: block;
+  font-size: 24rpx;
+  color: #505961;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.overview-empty-row {
+  font-size: 22rpx;
+  color: #98a1a8;
+  padding: 16rpx 0;
+}
+
+.overview-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  padding: 14rpx 0;
+  border-top: 1rpx solid #eef2f5;
+}
+
+.overview-item-row:first-of-type {
+  border-top: none;
+}
+
+.overview-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.overview-item-title {
+  display: block;
+  font-size: 24rpx;
+  color: #2f353a;
+  font-weight: 600;
+}
+
+.overview-item-status {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  color: #7d888f;
+}
+
+.overview-item-progress {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 21rpx;
+  color: #9aa4ab;
+}
+
+.overview-item-side {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.overview-item-time {
+  font-size: 20rpx;
+  color: #a3adb4;
 }
 
 .pay-sheet {
@@ -2035,8 +2981,37 @@ $spacing-page: 30rpx;
 
 .pay-code-modal {
   width: 100%;
-  padding-top: 4rpx;
-  padding-bottom: 12rpx;
+  height: 78vh;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.pay-scroll-hint-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pay-scroll-hint {
+  pointer-events: none;
+}
+
+.pay-code-modal-header {
+  flex-shrink: 0;
+}
+
+.pay-code-scroll-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin-top: 22rpx;
 }
 
 .pay-code-modal-title {
@@ -2044,14 +3019,23 @@ $spacing-page: 30rpx;
   font-size: 32rpx;
   font-weight: 700;
   color: #2b2b2b;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
 }
 
 .pay-uid-tip {
   text-align: center;
   font-size: 24rpx;
   color: #65727a;
-  margin-bottom: 24rpx;
+}
+
+.pay-code-scroll-area {
+  width: 100%;
+  height: 100%;
+}
+
+.pay-code-scroll-inner {
+  padding-right: 4rpx;
+  padding-bottom: 18rpx;
 }
 
 .pay-online-tip {
@@ -2065,7 +3049,8 @@ $spacing-page: 30rpx;
 }
 
 .pay-code-modal-actions {
-  margin-top: 32rpx;
+  flex-shrink: 0;
+  margin-top: 20rpx;
   display: flex;
   gap: 20rpx;
 }
@@ -2109,7 +3094,8 @@ $spacing-page: 30rpx;
 }
 
 .pay-code-bottom-gap {
-  height: calc(32rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+  height: calc(20rpx + env(safe-area-inset-bottom));
 }
 
 .pay-proof-card,

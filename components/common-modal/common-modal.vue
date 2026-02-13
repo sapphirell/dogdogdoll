@@ -1,9 +1,10 @@
 <template>
   <view
     class="modal-mask"
+    :class="{ 'is-center': props.center }"
     v-if="visible"
     @tap.stop="closeModal"
-    @touchmove.stop.prevent="moveHandle"
+    @touchmove.stop="moveHandle"
   >
     <uni-transition :mode-class="modeClass" :show="visible">
       <view class="modal-container safe-bottom" :style="containerStyle" @tap.stop>
@@ -33,6 +34,10 @@ const props = defineProps({
     type: [String, Number],
     default: 'auto'
   },
+  center: {
+    type: Boolean,
+    default: false
+  },
   closeable: {
     type: Boolean,
     default: true
@@ -48,8 +53,8 @@ const emit = defineEmits(['update:visible'])
  * 重点：使用 marginTop 控制垂直位置，Flex 控制水平居中 
  */
 const containerStyle = computed(() => ({
-  marginTop: formatValue(props.top),
-  width: formatValue(props.width)
+  width: formatValue(props.width),
+  marginTop: props.center ? '0' : formatValue(props.top)
 }))
 
 // 阻止遮罩层下的页面滚动
@@ -92,6 +97,12 @@ const closeModal = () => {
   justify-content: flex-start;
 }
 
+.modal-mask.is-center {
+  justify-content: center;
+  padding: 24rpx 0;
+  box-sizing: border-box;
+}
+
 .modal-container {
   position: relative;
   background-color: #fff;
@@ -104,10 +115,13 @@ const closeModal = () => {
 
   /* 限制最大宽度，保证左右留出间距，不会贴死屏幕边缘 */
   max-width: 90vw; 
+  max-height: calc(100vh - 80rpx);
   min-width: 100rpx;
   min-height: 50rpx;
   box-sizing: border-box;
-  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   
   padding: 40rpx;
   align-items: center;

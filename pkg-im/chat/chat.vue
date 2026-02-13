@@ -872,6 +872,8 @@ function computedCard(item) {
         tagText = '投递创建'; tagColor = '#EF6C00'; tagBgColor = '#FFF3E0'; break;
       case 'artist_order_seller_confirm':
         tagText = '待付款'; tagColor = '#EF6C00'; tagBgColor = '#FFF3E0'; break;
+      case 'artist_order_payment_submitted':
+        tagText = '已付款'; tagColor = '#2E7D32'; tagBgColor = '#E8F5E9'; break;
       default:
         tagText = '系统通知';
     }
@@ -888,6 +890,7 @@ function computedCard(item) {
        else if (type === 'artist_order_submission_create') priceLabel = '订单金额';
        else if (type === 'artist_order_change_item') priceLabel = '当前总价';
        else if (type === 'artist_order_seller_confirm') priceLabel = '待付金额';
+       else if (type === 'artist_order_payment_submitted') priceLabel = '付款金额';
        else priceLabel = '涉及金额';
      }
   }
