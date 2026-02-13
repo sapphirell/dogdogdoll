@@ -1,5 +1,6 @@
 <template>
-  <view class="calendar-page">
+  <view-logs />
+<view class="calendar-page">
     <!-- 顶部透明自定义导航 -->
     <zhouWei-navBar
       type="transparentFixed"

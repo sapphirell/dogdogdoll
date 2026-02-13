@@ -35,8 +35,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
-import { unreadTotal, connectIM, wsReady } from '@/common/im.js'
+import { computed, onMounted, watch, ref } from 'vue'
+import { unreadTotal, wsReady } from '@/common/im.js'
 
 // --- 核心业务逻辑 ---
 
@@ -47,7 +47,6 @@ const badge = computed(() => Number(unreadTotal.value || 0))
 const isWsReady = computed(() => {
   const token = uni.getStorageSync('token') || ''
   const ready = !!wsReady.value
-  const result = !!token && ready
   if (!token) return false
   return ready
 })
@@ -139,33 +138,9 @@ const handleFabClick = () => {
 
 // --- 生命周期管理 ---
 
-let loginListener = null
-
 onMounted(() => {
   // 1. 初始化按钮位置
   initPosition()
-
-  // 2. IM 连接逻辑
-  const token = uni.getStorageSync('token') || ''
-  if (token) {
-    connectIM()
-  }
-
-  if (typeof uni !== 'undefined' && typeof uni.$on === 'function') {
-    loginListener = (userInfo) => {
-      const t = uni.getStorageSync('token') || ''
-      if (!t) return
-      connectIM(true)
-    }
-    uni.$on('login-success', loginListener)
-  }
-})
-
-onUnmounted(() => {
-  if (loginListener && typeof uni !== 'undefined' && typeof uni.$off === 'function') {
-    uni.$off('login-success', loginListener)
-    loginListener = null
-  }
 })
 
 watch(wsReady, (v) => {

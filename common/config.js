@@ -458,9 +458,14 @@ function saveUserInfo(data) {
 }
 
 function clearUserInfo() {
+	const hadToken = !!uni.getStorageSync('token')
+	uni.removeStorageSync('token');
 	uni.removeStorageSync('userInfo');
 	global.userInfo = {};
 	global.isLogin = false;
+	if (hadToken && typeof uni !== 'undefined' && typeof uni.$emit === 'function') {
+		uni.$emit('logout-success');
+	}
 }
 
 function handleRequestError(error, message = '请求失败') {

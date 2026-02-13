@@ -4,7 +4,6 @@
   <view>
     <privacy-permission-modal></privacy-permission-modal>
     <loading-toast :show="showLoadding"></loading-toast>
-    <view-logs></view-logs>
     <version-check
       ref="versionCheckRef"
       :show-up-to-date-toast="true"

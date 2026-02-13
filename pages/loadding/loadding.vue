@@ -1,5 +1,6 @@
 <template>
-  <view class="container">
+  <view-logs />
+<view class="container">
     <comment-loadding
       ref="refresh" 
       @refresh="handleRefresh"

@@ -1,5 +1,6 @@
 <template>
-  <view class="chat-page">
+  <view-logs />
+<view class="chat-page">
     <view id="navWrapper" class="nav-wrapper">
       <zhouWei-navBar
         type="fixed"
@@ -184,11 +185,12 @@ import {
   image1Url,
 } from '@/common/config.js'
 import {
-  connectIM,
   onIMEvent,
   getWS,
   setActiveSession,
-  clearActiveSession
+  clearActiveSession,
+  setActivePeer,
+  clearActivePeer
 } from '@/common/im.js'
 
 const _ins = getCurrentInstance()
@@ -355,7 +357,6 @@ onShow(async () => {
   await refreshLayoutOffsets()
   if (!hasInitOnce.value) {
     await Promise.all([fetchPeerInfo(), fetchSelfInfo()])
-    connectIM()
     if (offIM) { offIM = null }
     offIM = onIMEvent(handleIMEvent)
     
@@ -387,6 +388,7 @@ onShow(async () => {
     hasInitOnce.value = true
     const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
     if (key) setActiveSession(key)
+    if (Number(peerId.value || 0) > 0) setActivePeer(peerId.value)
 
     nextTick(() => {
       if (pagingRef.value && typeof pagingRef.value.reload === 'function') {
@@ -398,11 +400,11 @@ onShow(async () => {
   }
   
   // Re-enter
-  connectIM()
   if (offIM) { offIM = null }
   offIM = onIMEvent(handleIMEvent)
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) setActiveSession(key)
+  if (Number(peerId.value || 0) > 0) setActivePeer(peerId.value)
   markReadToBottom()
   scheduleMarkReadWhenReady()
 })
@@ -410,17 +412,19 @@ onShow(async () => {
 onHide(() => {
   stopReadRepairTimer()
   if (offIM) { offIM(); offIM = null }
+  leaveActiveContext()
 })
 onUnload(() => {
   stopReadRepairTimer()
   if (offIM) { offIM(); offIM = null }
   if (clickAudio) { try { clickAudio.destroy() } catch (e) {} }
-  leaveActiveSession()
+  leaveActiveContext()
 })
 
-function leaveActiveSession () {
+function leaveActiveContext () {
   const key = numericSid.value > 0 ? numericSid.value : sessionKey.value
   if (key) clearActiveSession(key)
+  if (Number(peerId.value || 0) > 0) clearActivePeer(peerId.value)
 }
 
 async function fetchPeerInfo () {

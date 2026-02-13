@@ -115,10 +115,15 @@ function handleClick (key) {
 
 function onConfirmLogout () {
   showLogoutConfirm.value = false
+  const hadToken = !!uni.getStorageSync('token')
   uni.removeStorageSync('token')
+  uni.removeStorageSync('userInfo')
   global.isLogin = false
   global.userInfo = {}
   hasAddress.value = null
+  if (hadToken && typeof uni !== 'undefined' && typeof uni.$emit === 'function') {
+    uni.$emit('logout-success')
+  }
   uni.showToast({ title: '已退出', icon: 'none' })
 }
 

@@ -1,6 +1,7 @@
 <!-- pkg-common/search/search.vue -->
 <template>
-  <!-- 顶部：淡紫色固定导航（中间 Tabs，左侧 uni-icons 返回） -->
+  <view-logs />
+<!-- 顶部：淡紫色固定导航（中间 Tabs，左侧 uni-icons 返回） -->
   <uni-nav-bar
     fixed
     :statusBar="true"

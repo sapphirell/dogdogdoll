@@ -1,5 +1,6 @@
 <template>
-  <view class="page-container">
+  <view-logs />
+<view class="page-container">
     <zhouWei-navBar
       type="fixed"
       :backState="2000"

@@ -1,5 +1,6 @@
 <template>
-	<view>
+  <view-logs />
+<view>
 		<input type="text" v-model="person.name"/>
 		<text>{{person.name}}</text>
 		<footer></footer>

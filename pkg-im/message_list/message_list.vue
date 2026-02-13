@@ -1,5 +1,6 @@
 <template>
-  <view class="page">
+  <view-logs />
+<view class="page">
     <!-- 顶部占位（安全区/导航）可选 -->
     <!-- <view :style="{ height: headerPlaceholder }"></view> -->
 
@@ -53,7 +54,6 @@ import {
 } from '@/common/config.js'
 import {
   listSessions,
-  connectIM,
   onIMEvent,
   wsStatus
 } from '@/common/im.js'
@@ -388,7 +388,6 @@ let offIM = null
 /** 生命周期 */
 onMounted(() => {
   applyNavTitle()
-  connectIM()
   offIM = onIMEvent(handleIMEvent)
 })
 

@@ -1,19 +1,22 @@
-<!-- App.vue -->
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
 import { initLoginState } from '@/common/config.js'
+import { initIMGlobalLifecycle, ensureIMConnected } from '@/common/im.js'
 
 
 onLaunch(() => {
   console.log('App Launch')
   // 应用启动时恢复登录状态
   initLoginState()
+  initIMGlobalLifecycle()
+  ensureIMConnected()
   
 })
 
 onShow(() => {
   console.log('App Show')
+  ensureIMConnected()
   setTimeout(() => {
   	  console.log("开始加载字体...")
   	  loadFonts()

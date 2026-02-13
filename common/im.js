@@ -3,11 +3,15 @@ import { ref, computed } from 'vue'
 import { websiteUrl } from '@/common/config.js'
 
 let ws = null
+let wsSeq = 0
 let hbTimer = 0
 let reconnectTimer = 0
 let reconnectDelay = 2500 // 初始重连间隔
 let manualClose = false   // 区分“手动关闭”和“异常断线”
 const listeners = new Set()
+let globalLifecycleInited = false
+let loginListener = null
+let logoutListener = null
 
 // 全局未读数
 export const unreadTotal = ref(0)
@@ -27,6 +31,7 @@ export const wsStatus = ref('idle')
 export const wsReady = computed(() => wsStatus.value === 'open')
 
 const activeSessions = new Set()
+const activePeerIds = new Set()
 const SEEN_MAX = 500
 const seenMsgIds = []
 const seenSet = new Set()
@@ -44,6 +49,11 @@ function rememberSeen(id) {
 function isActiveSession(sess) {
   if (sess === undefined || sess === null) return false
   return activeSessions.has(String(sess))
+}
+function isActivePeer(uid) {
+  const n = Number(uid || 0)
+  if (!n) return false
+  return activePeerIds.has(String(n))
 }
 function getSelfId() {
   try {
@@ -254,18 +264,35 @@ export async function refreshUnread () {
 export function connectIM (force = false) {
   log('connectIM called, force =', force, ' wsStatus =', wsStatus.value, ' ws =', ws)
 
-  // 已经在连/已连且不是强制重连，则直接复用
-  if (!force && ws && (ws.readyState === 0 || ws.readyState === 1)) {
-    log('connectIM: reuse existing ws, readyState =', ws.readyState)
-    return ws
-  }
-
   const token = uni.getStorageSync('token') || ''
   log('connectIM: current token =', token ? '[NON-EMPTY]' : '[EMPTY]')
   if (!token) {
     log('connectIM: no token, skip connect')
     wsStatus.value = 'idle'
     return null
+  }
+
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = 0
+  }
+
+  // 强制重连时，先淘汰旧连接，防止出现并行多条 ws。
+  if (force && ws) {
+    try {
+      const s = ws.readyState
+      if (s === 0 || s === 1 || s === 2) {
+        manualClose = true
+        ws.close(1000, 'force reconnect')
+      }
+    } catch (_) {}
+    ws = null
+  }
+
+  // 已经在连/已连且不是强制重连，则直接复用
+  if (!force && ws && (ws.readyState === 0 || ws.readyState === 1)) {
+    log('connectIM: reuse existing ws, readyState =', ws.readyState)
+    return ws
   }
 
   const url = buildWSUrl()
@@ -282,10 +309,12 @@ export function connectIM (force = false) {
     return null
   }
   ws = socket
+  const currentSeq = ++wsSeq
 
   try { if (typeof window !== 'undefined') window.__IM_WS__ = ws } catch (_) {}
 
   ws.onopen = async () => {
+    if (currentSeq !== wsSeq) return
     log('ws.onopen')
     wsStatus.value = 'open'
     log('wsStatus => open')
@@ -295,6 +324,7 @@ export function connectIM (force = false) {
   }
 
   ws.onmessage = (evt) => {
+    if (currentSeq !== wsSeq) return
     let payload = null
     try {
       payload = JSON.parse(evt.data)
@@ -331,8 +361,19 @@ export function connectIM (force = false) {
         const mid    = Number(msg.id ?? d.message_id ?? d.id ?? 0)
         const sessId = d.session_id ?? msg.session_id ?? d.sid
         const selfId = getSelfId()
+        const fromUid = Number(
+          msg.sender_id ??
+          msg.from_uid ??
+          msg.fromUid ??
+          d.sender_id ??
+          d.from_uid ??
+          d.fromUid ??
+          d.uid ??
+          0
+        )
         const toUid  = Number(
           msg.to_uid ??
+          msg.receiver_id ??
           d.to_uid ??
           d.receiver_id ??
           d.recver_id ??
@@ -349,9 +390,14 @@ export function connectIM (force = false) {
           rememberSeen(mid)
         }
 
-        // ===== 未读数：别人给我发消息，且该会话当前不在激活集合里 => 刷新一次未读 =====
-        if (selfId && toUid && selfId === toUid && !isActiveSession(sessId)) {
-          // 用后端接口刷一遍，防止计数跑偏
+        // ===== 未读数：别人给我发消息，且当前不在该会话/对话页 =====
+        const incomingFromOther = !!(selfId && fromUid && fromUid !== selfId)
+        const incomingToSelf = !toUid || (selfId && toUid === selfId)
+        const inactiveNow = !isActiveSession(sessId) && !isActivePeer(fromUid)
+        if (incomingFromOther && incomingToSelf && inactiveNow) {
+          // 先本地 +1，保证 UI 及时；随后再拉接口矫正，防止长时间偏差。
+          unreadTotal.value = Math.max(0, Number(unreadTotal.value || 0) + 1)
+          log('unread local +1 =>', unreadTotal.value, 'fromUid =', fromUid, 'sessId =', sessId)
           refreshUnread()
         }
       } else if (ev === 'unread' || ev === 'session_unread') {
@@ -370,9 +416,11 @@ export function connectIM (force = false) {
 
 
   ws.onclose = (evt) => {
+    if (currentSeq !== wsSeq) return
     console.log(evt)
     log('close', evt.code, evt.reason)
     stopHeartbeat()
+    ws = null
 
     // 手动关闭：标记 closed，但不重连
     if (manualClose) {
@@ -386,6 +434,7 @@ export function connectIM (force = false) {
   }
 
   ws.onerror = (err) => {
+    if (currentSeq !== wsSeq) return
     log('ws.onerror', err)
     wsStatus.value = 'error'
   }
@@ -405,16 +454,56 @@ export function disconnectIM () {
 
   manualClose = true
   wsStatus.value = 'closing'
+  const old = ws
+  ws = null
+  wsSeq += 1
   try {
-    if (ws) {
-      const s = ws.readyState
-      if (s === 0 || s === 1) ws.close(1000, 'client close')
+    if (old) {
+      const s = old.readyState
+      if (s === 0 || s === 1) old.close(1000, 'client close')
     }
   } catch (_) {}
-  ws = null
   wsStatus.value = 'closed'
 }
 export function closeIM () { return disconnectIM() }
+
+export function ensureIMConnected () {
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    unreadTotal.value = 0
+    if (ws && (ws.readyState === 0 || ws.readyState === 1)) {
+      disconnectIM()
+    } else if (wsStatus.value !== 'closing') {
+      wsStatus.value = 'idle'
+    }
+    return null
+  }
+  return connectIM(false)
+}
+
+export function initIMGlobalLifecycle () {
+  if (globalLifecycleInited) return
+  globalLifecycleInited = true
+
+  if (typeof uni !== 'undefined' && typeof uni.$on === 'function') {
+    loginListener = () => {
+      ensureIMConnected()
+      refreshUnread()
+    }
+    logoutListener = () => {
+      unreadTotal.value = 0
+      activeSessions.clear()
+      activePeerIds.clear()
+      disconnectIM()
+      wsStatus.value = 'idle'
+    }
+    uni.$on('login-success', loginListener)
+    uni.$on('logout-success', logoutListener)
+  }
+
+  ensureIMConnected()
+  refreshUnread()
+}
 
 export function onceConnected (timeout = 8000) {
   if (ws && ws.readyState === 1) return Promise.resolve(true)
@@ -466,6 +555,16 @@ export function setActiveSession (sessionId) {
 export function clearActiveSession (sessionId) {
   if (sessionId === undefined || sessionId === null) return
   activeSessions.delete(String(sessionId))
+}
+export function setActivePeer (uid) {
+  const n = Number(uid || 0)
+  if (!n) return
+  activePeerIds.add(String(n))
+}
+export function clearActivePeer (uid) {
+  const n = Number(uid || 0)
+  if (!n) return
+  activePeerIds.delete(String(n))
 }
 
 /** 会话列表 HTTP 封装保持不变 **/

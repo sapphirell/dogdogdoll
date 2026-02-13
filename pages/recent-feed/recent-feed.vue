@@ -1,5 +1,6 @@
 <template>
-  <view class="page" :style="{ '--safe-top': safeTop + 'px' }">
+  <view-logs />
+<view class="page" :style="{ '--safe-top': safeTop + 'px' }">
     <meta name="theme-color" content="#f8f9ff" />
     <view class="pastel-bg"></view>
 

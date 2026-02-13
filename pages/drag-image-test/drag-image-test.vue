@@ -1,5 +1,6 @@
 <template>
-  <view style="min-height: 100vh;width: 100vw;">
+  <view-logs />
+<view style="min-height: 100vh;width: 100vw;">
     <!-- 基本使用 -->
     <shmily-drag-image v-if="list.length > 0" v-model="list" border-radius="20"></shmily-drag-image>
 

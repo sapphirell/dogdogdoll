@@ -1,5 +1,6 @@
 <script setup>
 	import { onMounted } from 'vue';
+	import ImGlobalNotice from '@/components/im-global-notice/im-global-notice.vue'
 	import {
 		getScene,
 		dogdogdollVersion,
@@ -135,5 +136,5 @@
 </script>
 
 <template>
-	<!-- 这是一个无UI组件，不需要渲染任何内容 -->
+	<ImGlobalNotice />
 </template>

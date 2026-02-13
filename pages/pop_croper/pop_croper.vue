@@ -1,5 +1,6 @@
 <template>
-	<view class="container">
+  <view-logs />
+<view class="container">
 		<!-- <image v-if="dist" :src="dist" class="dist" mode="widthFix"></image> -->
 		<uni-popup ref="pop">
 			<view class="content">
