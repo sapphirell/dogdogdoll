@@ -5,27 +5,55 @@
       <!-- 伪Tab：摘要 / 日历 -->
       <view class="top-tabs" @click.stop>
         <view class="t-tab active" @tap="onTapSummary">
-          <text>摘要</text>
+          <text class="font-title">综合</text>
           <view class="underline"></view>
         </view>
         <view class="t-tab" @tap="onTapCalendar">
-          <text>日历</text>
+          <text class="font-title">日历</text>
         </view>
       </view>
 
-      <view class="search-box">
-        <view class="fake-search" @tap="goSearchPage">
-          <image class="icon" src="/static/search.png" mode="widthFix" />
-          <text class="placeholder">搜索娃物 / 店铺 / 妆师 / 毛娘</text>
-          <view class="action">搜 索</view>
+      <view class="header-main">
+        <view class="hero-sale-card" @tap="scrollToSection('today')">
+          <view class="hero-chip font-alimamashuhei">🔥 热门Hot</view>
+          <text class="hero-main-title font-title">今日特卖</text>
+          <text class="hero-main-sub font-alimamashuhei">Daily Sales · New arrivals today</text>
+          <view class="hero-bottom">
+            <view class="hero-avatar-row">
+              <common-image
+                v-for="(thumb, idx) in heroThumbs"
+                :key="`hero-thumb-${idx}`"
+                class="hero-avatar"
+                :class="`hero-avatar-${idx}`"
+                :src="thumb"
+                width="52"
+                height="52"
+                radius="50%"
+                mode="aspectFill"
+              />
+              <view v-if="heroMoreCount > 0" class="hero-avatar-more font-alimamashuhei">+{{ heroMoreCount }}</view>
+            </view>
+            <view class="hero-action font-alimamashuhei">查看详情</view>
+          </view>
+        </view>
+
+        <view class="search-box">
+          <view class="fake-search" @tap="goSearchPage">
+            <common-image class="icon" src="/static/search.png" width="36" height="36" radius="0" mode="aspectFit" />
+            <text class="placeholder">搜索娃娃 / 妆师 / 毛娘 …</text>
+            <view class="action">搜 索</view>
+          </view>
         </view>
       </view>
     </view>
 
     <!-- 今日上新 -->
-    <view class="section s-today" :class="[{ 'is-inview': secInView.today }, { 'is-active': activeSection==='today' }]">
+      <view class="section s-today" :class="[{ 'is-inview': secInView.today }, { 'is-active': activeSection==='today' }]">
       <view class="section-hd">
-        <text class="title">今日贩售</text>
+        <view class="title-group">
+          <text class="title font-title">今日贩售</text>
+          <text class="title-en font-title">Today's Sales</text>
+        </view>
         <view class="sub sub-row">
           <text v-if="todayLoading" class="loading-mini">加载中…</text>
           <text class="link-calendar" @tap="goCalendar">查看全部</text>
@@ -33,7 +61,7 @@
       </view>
 
       <view v-if="todayList.length === 0 && !todayLoading" class="empty">
-        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
         <text>今天暂无商品开售</text>
       </view>
 
@@ -44,27 +72,30 @@
           :key="'today-' + it.goodsId + '-' + it.recordId"
           @tap="goGoods(it.goodsId, it.recordId)"
         >
-          <image :src="it.cover" mode="aspectFill"></image>
-          <text class="type-badge" v-if="it.type">{{ it.type }}</text>
-          <view class="gname ellipsis-2">{{ it.goods_name }}</view>
-          <scroll-view class="meta" scroll-y="true">
-            <text class="size" v-if="it.sizeText">{{ it.sizeText }}</text>
-          </scroll-view>
+          <common-image class="goods-cover" :src="it.cover" width="196" height="220" radius="18" mode="aspectFill" />
+          <text class="type-badge font-alimamashuhei" v-if="it.type">{{ it.type }}</text>
+          <view class="gname ellipsis-2 font-alimamashuhei">{{ it.goods_name }}</view>
+          <view class="size-tags" v-if="it.sizeChips && it.sizeChips.length">
+            <text class="size-tag-item font-alimamashuhei" v-for="(sz, i) in it.sizeChips" :key="`today-size-${i}`">{{ sz }}</text>
+          </view>
         </view>
       </scroll-view>
     </view>
 
     <!-- 【新增】今日开妆约毛 (显示在今日上新下方) -->
-    <view class="section s-artist-today" :class="[{ 'is-inview': secInView.artistToday }, { 'is-active': activeSection==='artistToday' }]">
+      <view class="section s-artist-today" :class="[{ 'is-inview': secInView.artistToday }, { 'is-active': activeSection==='artistToday' }]">
       <view class="section-hd">
-        <!-- <text class="title">今日开妆约毛</text> -->
-<!--        <view class="sub sub-row">
+        <view class="title-group">
+          <text class="title font-title">今日约妆·约毛</text>
+          <text class="title-en font-title">Today's Faceup & Wigs</text>
+        </view>
+        <view class="sub sub-row">
           <text v-if="artistPlanLoading" class="loading-mini">加载中…</text>
-        </view> -->
+        </view>
       </view>
 
       <view v-if="faceupList.length === 0 && hairList.length === 0 && !artistPlanLoading" class="empty">
-        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
         <text>24小时内暂无妆/毛掉落</text>
       </view>
 
@@ -83,12 +114,18 @@
               @tap="goPlan(plan.id)"
             >
               <!-- 优先取作品图，没有则取Logo -->
-              <image :src="getPlanCover(plan)" mode="aspectFill"></image>
-              <text class="time-badge">{{ fmtHM(plan.open_time) }} 开投</text>
-              <view class="gname ellipsis-1">{{ plan.artist_name || plan.brand_name }}</view>
-              <view class="artist-meta ellipsis-1">
-                 <text v-if="plan.tiers && plan.tiers.length">¥{{plan.tiers[0].price}}起</text>
-                 <text v-else>无报价</text>
+              <common-image class="goods-cover" :src="getPlanCover(plan)" width="196" height="220" radius="18" mode="aspectFill" />
+              <text class="time-badge font-alimamashuhei">{{ fmtHM(plan.open_time) }} 开投</text>
+              <view class="gname ellipsis-1 font-alimamashuhei">{{ plan.artist_name || plan.brand_name }}</view>
+              <view class="artist-meta ellipsis-1" v-if="plan.tiers && plan.tiers.length">
+                 <text class="artist-price font-title">
+                   <text class="price-sign">¥</text>
+                   <text class="price-value">{{ formatPrice(plan.tiers[0].price) }}</text>
+                   <text class="price-tail font-alimamashuhei">起</text>
+                 </text>
+              </view>
+              <view class="artist-meta ellipsis-1" v-else>
+                 <text class="artist-price-empty font-alimamashuhei">无报价</text>
               </view>
             </view>
           </scroll-view>
@@ -107,12 +144,18 @@
               :key="'hair-' + plan.id"
               @tap="goPlan(plan.id)"
             >
-              <image :src="getPlanCover(plan)" mode="aspectFill"></image>
-              <text class="time-badge wig-bg">{{ fmtHM(plan.open_time) }} 开投</text>
-              <view class="gname ellipsis-1">{{ plan.artist_name || plan.brand_name }}</view>
-              <view class="artist-meta ellipsis-1">
-                 <text v-if="plan.tiers && plan.tiers.length">¥{{plan.tiers[0].price}}起</text>
-                 <text v-else>无报价</text>
+              <common-image class="goods-cover" :src="getPlanCover(plan)" width="196" height="220" radius="18" mode="aspectFill" />
+              <text class="time-badge wig-bg font-alimamashuhei">{{ fmtHM(plan.open_time) }} 开投</text>
+              <view class="gname ellipsis-1 font-alimamashuhei">{{ plan.artist_name || plan.brand_name }}</view>
+              <view class="artist-meta ellipsis-1" v-if="plan.tiers && plan.tiers.length">
+                 <text class="artist-price font-title">
+                   <text class="price-sign">¥</text>
+                   <text class="price-value">{{ formatPrice(plan.tiers[0].price) }}</text>
+                   <text class="price-tail font-alimamashuhei">起</text>
+                 </text>
+              </view>
+              <view class="artist-meta ellipsis-1" v-else>
+                 <text class="artist-price-empty font-alimamashuhei">无报价</text>
               </view>
             </view>
           </scroll-view>
@@ -121,40 +164,46 @@
     </view>
     
     <!-- 等待贩售 -->
-    <view class="section s-waiting" :class="[{ 'is-inview': secInView.waiting }, { 'is-active': activeSection==='waiting' }]">
+      <view class="section s-waiting" :class="[{ 'is-inview': secInView.waiting }, { 'is-active': activeSection==='waiting' }]">
       <view class="section-hd">
-        <text class="title">蹲开售</text>
+        <view class="title-group">
+          <text class="title font-title">蹲开售</text>
+          <text class="title-en font-title">Waiting List</text>
+        </view>
         <view class="sub sub-row">
           <text v-if="waitingLoading" class="loading-mini">加载中…</text>
         </view>
       </view>
     
       <view v-if="waitingList.length === 0 && !waitingLoading" class="empty">
-        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
         <text>暂无等待贩售的商品</text>
       </view>
     
-      <scroll-view v-else scroll-x class="theme-scroll" :show-scrollbar="false">
+      <view v-else class="waiting-grid">
         <view
-          class="goods-mini"
-          v-for="it in waitingList"
+          class="waiting-card"
+          v-for="it in waitingList.slice(0, 6)"
           :key="'wait-' + it.goodsId"
           @tap="goGoods(it.goodsId)"
         >
-          <image :src="it.cover" mode="aspectFill"></image>
-          <text class="type-badge" v-if="it.type">{{ it.type }}</text>
-          <view class="gname ellipsis-2">{{ it.goods_name }}</view>
-          <scroll-view class="meta" scroll-y="true">
-            <text class="size" v-if="it.sizeText">{{ it.sizeText }}</text>
-          </scroll-view>
+          <common-image class="waiting-cover" :src="it.cover" width="100%" height="156" radius="14" mode="aspectFill" />
+          <text class="waiting-type-badge font-alimamashuhei" v-if="it.type">{{ it.type }}</text>
+          <view class="waiting-name ellipsis-2 font-alimamashuhei">{{ it.goods_name }}</view>
+          <view class="waiting-size-tags" v-if="it.sizeChips && it.sizeChips.length">
+            <text class="waiting-size-tag-item font-alimamashuhei" v-for="(sz, i) in it.sizeChips.slice(0, 2)" :key="`wait-size-${i}`">{{ sz }}</text>
+          </view>
         </view>
-      </scroll-view>
+      </view>
     </view>
 
     <!-- 热榜：今日 / 近7日（总榜）切换 -->
-    <view class="section s-hot" :class="[{ 'is-inview': secInView.hot }, { 'is-active': activeSection==='hot' }]">
+      <view class="section s-hot" :class="[{ 'is-inview': secInView.hot }, { 'is-active': activeSection==='hot' }]">
       <view class="section-hd">
-        <text class="title">热榜</text>
+        <view class="title-group">
+          <text class="title font-title">热榜</text>
+          <text class="title-en font-title">Hot List</text>
+        </view>
         <view class="sub sub-row">
           <text
             :class="['tab-mini', { active: hotMode==='today' }]"
@@ -169,77 +218,45 @@
         </view>
       </view>
 
-      <!-- 今日热榜 -->
-      <view v-if="hotMode==='today'">
-        <view v-if="hotList.length === 0 && !hotLoading" class="empty">
-          <image src="/static/empty-box.png" mode="aspectFit"></image>
-          <text>今天还没有上榜商品</text>
-        </view>
-
-        <scroll-view v-else scroll-x class="hot-scroll" :show-scrollbar="false">
-          <view
-            class="hot-card"
-            v-for="(it, idx) in hotList"
-            :key="it.goodsId + '-' + idx"
-            @tap="goGoods(it.goodsId, it.recordId)"
-          >
-            <view class="rank" :class="'r' + (idx + 1)">{{ idx + 1 }}</view>
-            <image class="cover" :src="it.cover" mode="aspectFill"></image>
-            <view class="info">
-              <view class="brand-tag">{{ it.brand_name }}</view>
-              <view class="name ellipsis-2">{{ it.goods_name }}</view>
-              <view class="meta">
-                <view class="hotness">
-                  <uni-icons type="fire" size="22" color="#ff5a6e"></uni-icons>
-                  <text class="views" v-if="it.views">{{ formatViews(it.views) }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
+      <view v-if="activeHotList.length === 0 && !hotLoading" class="empty">
+        <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
+        <text>{{ hotMode === 'today' ? '今天还没有上榜商品' : '最近7日暂无上榜商品' }}</text>
       </view>
 
-      <!-- 近7日热榜（总榜） -->
-      <view v-else>
-        <view v-if="hot7List.length === 0 && !hotLoading" class="empty">
-          <image src="/static/empty-box.png" mode="aspectFit"></image>
-          <text>最近7日暂无上榜商品</text>
-        </view>
-
-        <scroll-view v-else scroll-x class="hot-scroll" :show-scrollbar="false">
-          <view
-            class="hot-card"
-            v-for="(it, idx) in hot7List"
-            :key="it.goodsId + '-' + idx"
-            @tap="goGoods(it.goodsId, it.recordId)"
-          >
-            <view class="rank" :class="'r' + (idx + 1)">{{ idx + 1 }}</view>
-            <image class="cover" :src="it.cover" mode="aspectFill"></image>
-            <view class="info">
-              <view class="brand-tag">{{ it.brand_name }}</view>
-              <view class="name ellipsis-2">{{ it.goods_name }}</view>
-              <view class="meta">
-                <view class="hotness">
-                  <uni-icons type="fire" size="22" color="#ff5a6e"></uni-icons>
-                  <text class="views" v-if="it.views">{{ formatViews(it.views) }}</text>
-                </view>
-              </view>
-            </view>
+      <view v-else class="hot-list-rows">
+        <view
+          v-for="(it, idx) in activeHotList"
+          :key="`${hotMode}-${it.goodsId}-${idx}`"
+          :class="['hot-row', `hot-row-${idx + 1}`, { 'hot-row-plain': idx >= 3 }]"
+          @tap="goGoods(it.goodsId, it.recordId)"
+        >
+          <view class="hot-row-rank">{{ idx + 1 }}</view>
+          <common-image class="hot-row-cover" :src="it.cover" width="74" height="74" radius="18" mode="aspectFill" />
+          <view class="hot-row-main">
+            <text class="hot-row-name ellipsis-1 font-alimamashuhei">{{ it.goods_name }}</text>
+            <text class="hot-row-brand ellipsis-1">{{ it.brand_name || '未知品牌' }}</text>
           </view>
-        </scroll-view>
+          <view class="hot-row-right">
+            <uni-icons type="fire" size="18" color="#f09a64" />
+            <text class="hot-row-views">{{ it.views ? formatViews(it.views) : '0' }}</text>
+          </view>
+        </view>
       </view>
     </view>
 
     <!-- 主题合集（按后端分组） -->
-    <view class="section s-themes" :class="[{ 'is-inview': secInView.themes }, { 'is-active': activeSection==='themes' }]">
+      <view class="section s-themes" :class="[{ 'is-inview': secInView.themes }, { 'is-active': activeSection==='themes' }]">
       <view class="section-hd">
-        <text class="title">主题合集</text>
+        <view class="title-group">
+          <text class="title font-title">在售合集</text>
+          <text class="title-en font-title">Collections</text>
+        </view>
         <scroll-view v-if="themeChips.length" scroll-x class="chips-scroll" :show-scrollbar="false">
           <view class="chips">
             <view
               v-for="c in themeChips"
               :key="c.key"
-              :class="['chip', { active: activeThemeKey === c.key }]"
+              :class="['chip', 'font-alimamashuhei', { active: activeThemeKey === c.key }]"
               @tap="activeThemeKey = c.key"
             >
               {{ c.title }}
@@ -256,12 +273,12 @@
             :key="it.key"
             @tap="goGoods(it.goodsId, it.recordId)"
           >
-            <image :src="it.cover" mode="aspectFill"></image>
-            <text class="type-badge" v-if="it.type">{{ it.type }}</text>
-            <view class="gname ellipsis-2">{{ it.goods_name }}</view>
-            <scroll-view class="meta" scroll-y="true">
-              <text class="size" v-if="it.sizeText">{{ it.sizeText }}</text>
-            </scroll-view>
+            <common-image class="goods-cover" :src="it.cover" width="196" height="220" radius="18" mode="aspectFill" />
+            <text class="type-badge font-alimamashuhei" v-if="it.type">{{ it.type }}</text>
+            <view class="gname ellipsis-2 font-alimamashuhei">{{ it.goods_name }}</view>
+            <view class="size-tags" v-if="it.sizeChips && it.sizeChips.length">
+              <text class="size-tag-item font-alimamashuhei" v-for="(sz, i) in it.sizeChips" :key="`theme-size-${i}`">{{ sz }}</text>
+            </view>
           </view>
         </scroll-view>
         <view v-else-if="!themeLoading" class="empty-slim">该主题暂无在售</view>
@@ -269,9 +286,12 @@
     </view>
 
     <!-- 最近入库（Ops Feed） -->
-    <view class="section s-ops" :class="[{ 'is-inview': secInView.ops }, { 'is-active': activeSection==='ops' }]">
+      <view class="section s-ops" :class="[{ 'is-inview': secInView.ops }, { 'is-active': activeSection==='ops' }]">
       <view class="section-hd">
-        <text class="title">最近入库</text>
+        <view class="title-group">
+          <text class="title font-title">最近收录</text>
+          <text class="title-en font-title">Database</text>
+        </view>
         <view class="sub" style="display:flex; gap: 12rpx; align-items:center;">
           <text v-if="opsLoading">加载中…</text>
           <text class="link-more" @tap="go2recentFeed">查看更多</text>
@@ -279,33 +299,36 @@
       </view>
 
       <view v-if="opsList.length === 0 && !opsLoading" class="empty">
-        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
         <text>最近暂无入库动态</text>
       </view>
 
-      <scroll-view v-else scroll-x class="hot-scroll" :show-scrollbar="false">
+      <view v-else class="ops-grid">
         <view
-          class="hot-card"
-          v-for="(op, idx) in opsList"
+          class="ops-card"
+          v-for="(op, idx) in opsList.slice(0, 6)"
           :key="op.id + '-' + idx"
           @tap="goOpsItem(op)"
         >
-          <image class="cover" :src="op.image_url" mode="aspectFill"></image>
-          <view class="info">
-            <view class="brand-tag">{{ op.brand_name }}</view>
-            <view class="name ellipsis-2">{{ op.summary }}</view>
-            <view class="meta">
-              <text style="color:#9aa4b2; font-size:22rpx;">{{ op.time_ago }}</text>
+          <common-image class="ops-cover" :src="op.image_url" width="100%" height="200" radius="18" mode="aspectFill" />
+          <view class="ops-content">
+            <text class="ops-title ellipsis-1 font-alimama">{{ op.summary || '最新收录' }}</text>
+            <view class="ops-meta">
+              <text class="ops-brand ellipsis-1">{{ op.brand_name || '匿名品牌' }}</text>
+              <text class="ops-time">{{ op.time_ago }}</text>
             </view>
           </view>
         </view>
-      </scroll-view>
+      </view>
     </view>
 
     <!-- 订阅品牌 -->
-    <view class="section s-likes" :class="[{ 'is-inview': secInView.likes }, { 'is-active': activeSection==='likes' }]">
+      <view class="section s-likes" :class="[{ 'is-inview': secInView.likes }, { 'is-active': activeSection==='likes' }]">
       <view class="section-hd">
-        <text class="title">订阅品牌</text>
+        <view class="title-group">
+          <text class="title font-title">关注的店铺</text>
+          <text class="title-en font-title">Followed Shops</text>
+        </view>
         <text class="sub" v-if="likesLoading">加载中…</text>
       </view>
 
@@ -315,7 +338,7 @@
 
       <scroll-view v-else class="brand-scroll" scroll-x :show-scrollbar="false">
         <view class="brand-item" v-for="it in likeBrands" :key="it.id" @tap="goBrand(it.brand.id)">
-          <image :src="it.brand.logo_image" mode="aspectFill" class="brand-logo"></image>
+          <common-image :src="it.brand.logo_image" width="100" height="100" radius="50%" mode="aspectFill" class="brand-logo" />
           <text class="brand-name ellipsis-1">{{ it.brand.brand_name }}</text>
         </view>
         <view v-if="likeBrands.length === 0 && !likesLoading" class="brand-empty">还没有订阅品牌~</view>
@@ -325,7 +348,10 @@
     <!-- 即将上新 时间线 -->
     <view class="section s-timeline" :class="[{ 'is-inview': secInView.timeline }, { 'is-active': activeSection==='timeline' }]">
       <view class="section-hd">
-        <text class="title">即将上新</text>
+        <view class="title-group">
+          <text class="title font-title">即将贩售</text>
+          <text class="title-en font-title">Upcoming (24h)</text>
+        </view>
         <view class="sub sub-row">
           <text v-if="timelineLoading" class="loading-mini">加载中…</text>
           <text class="link-calendar" @tap="goCalendar">查看日历</text>
@@ -333,7 +359,7 @@
       </view>
 
       <view v-if="timeline.length === 0 && !timelineLoading" class="empty">
-        <image src="/static/empty-box.png" mode="aspectFit"></image>
+        <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
         <text>暂无即将开始的上新</text>
       </view>
 
@@ -353,21 +379,21 @@
           <view class="tl-middle"><view class="dot"></view></view>
           <view class="tl-card">
             <view class="tl-card-grid">
-              <image :src="r.cover" mode="aspectFill" class="thumb" />
+              <common-image :src="r.cover" width="140" height="200" radius="16" mode="aspectFill" class="thumb" />
               <view class="tl-info">
                 <view class="row-1">
-                  <text class="brand-tag">{{ r.brand_name }}</text>
-                  <text class="gname ellipsis-1">{{ r.goods_name }}</text>
+                  <text class="brand-tag font-alimamashuhei">{{ r.brand_name }}</text>
+                  <text class="gname ellipsis-1 font-alimamashuhei">{{ r.goods_name }}</text>
                 </view>
                 <view class="row-2">
-                  <text class="type-badge" v-if="r.type">{{ r.type }}</text>
+                  <text class="type-badge font-alimamashuhei" v-if="r.type">{{ r.type }}</text>
                   <view class="hotness">
                     <uni-icons type="fire" size="22" color="#ff5a6e"></uni-icons>
                     <text class="views" v-if="r.views">{{ formatViews(r.views) }}</text>
                   </view>
                 </view>
                 <view class="sizes" v-if="r.sizeChips && r.sizeChips.length">
-                  <text class="size-chip" v-for="(s, i) in r.sizeChips" :key="i">{{ s }}</text>
+                  <text class="size-chip font-alimamashuhei" v-for="(s, i) in r.sizeChips" :key="i">{{ s }}</text>
                 </view>
               </view>
             </view>
@@ -500,7 +526,7 @@ function normalizePlainGoods (list) {
       goods_name: it.goods_name || it.name || '',
       type: it.type || '',
       views: it.views || 0,
-      sizeText: sizeText(sizes)
+      sizeChips: sizeChips(sizes)
     }
   })
 }
@@ -542,6 +568,17 @@ const lastRatios = ref({})
 const activeSection = ref('')
 let secObservers = []
 let activeSetTimer = null
+
+function scrollToSection (key) {
+  const target = sectionMap.find(item => item.key === key)
+  if (!target) return
+  activeSection.value = key
+  uni.pageScrollTo({
+    selector: target.sel,
+    duration: 280,
+    fail: () => {}
+  })
+}
 
 function pickActiveByMaxRatio () {
   let bestKey = ''
@@ -658,7 +695,7 @@ function normalizeGoodsList(list) {
       goods_name: it.goods_name || it.name || '',
       type: it.type || '',
       views: it.views || it.click_count || 0,
-      sizeText: sizeText(sizes)
+      sizeChips: sizeChips(sizes)
     }
   })
 }
@@ -789,7 +826,6 @@ function fetchTimeline() {
         goods_name: it.goods_name || it.name || '',
         type: it.type || '',
         views: it.views || it.click_count || 0,
-        sizeText: sizeText(sizes),
         sizeChips: sizeChips(sizes)
       }
     }).filter(x => x.time >= from && x.time <= to)
@@ -861,36 +897,42 @@ const filteredThemeItems = computed(() => {
       goods_name: it.goods_name || it.name || info.name || '',
       brand_name: it.brand_name || info.brand_name || '',
       type: it.type || info.type || '',
-      sizeText: sizeText(sizes)
+      sizeChips: sizeChips(sizes)
     }
   })
 })
 
+const activeHotList = computed(() => hotMode.value === 'today' ? hotList.value : hot7List.value)
+const heroThumbs = computed(() => {
+  const list = (todayList.value || []).slice(0, 3).map(it => it.cover).filter(Boolean)
+  if (list.length === 0) return ['/static/new-icon/tab1.png', '/static/new-icon/tab2.png']
+  return list
+})
+const heroMoreCount = computed(() => {
+  const count = (todayList.value || []).length - heroThumbs.value.length
+  return count > 0 ? count : 0
+})
+
 /** ----------------- helpers ----------------- */
 function onSearchSubmit() {}
-function sizeText(sizes) {
-  if (!Array.isArray(sizes) || sizes.length === 0) return ''
-  const groups = {}
-  sizes.forEach(s => { (groups[s.goods_size] ||= new Set()).add((s.size_detail || '').trim()) })
-  return Object.keys(groups).map(k => {
-    const arr = Array.from(groups[k]).filter(Boolean)
-    return arr.length ? `${k}(${arr.join('、')})` : k
-  }).join('，')
+function formatPrice(value) {
+  const n = Number(value || 0)
+  if (!Number.isFinite(n)) return '0'
+  if (Number.isInteger(n)) return String(n)
+  return n.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
 }
 function sizeChips(sizes) {
   if (!Array.isArray(sizes) || sizes.length === 0) return []
-  const groups = {}
+  const chips = []
+  const exists = new Set()
   sizes.forEach(s => {
     const key = (s.goods_size || '').trim()
-    const detail = (s.size_detail || '').trim()
     if (!key) return
-    (groups[key] ||= new Set())
-    if (detail) groups[key].add(detail)
+    if (exists.has(key)) return
+    exists.add(key)
+    chips.push(key)
   })
-  return Object.keys(groups).map(k => {
-    const arr = Array.from(groups[k])
-    return arr.length ? `${k}（${arr.join('、')}）` : k
-  })
+  return chips.slice(0, 3)
 }
 function go2recentFeed() {
   uni.navigateTo({ url: "/pages/recent-feed/recent-feed" })
@@ -1049,61 +1091,189 @@ onBeforeUnmount(() => {
    统一主题变量
    ========================================================= */
 .summary-wrap {
-  --c-primary: #63cce7;
-  --c-primary-700: #63cce7;
-  --c-primary-500: #63cce7;
+  --c-primary: #7a8fa3;
+  --c-primary-700: #6d8093;
+  --c-primary-500: #7a8fa3;
 
-  --c-grad-start: #63cce7;
-  --c-grad-end:   #63cce7;
+  --c-grad-start: #88a4ba;
+  --c-grad-end:   #88a4ba;
   --g-primary: linear-gradient(135deg, var(--c-grad-start), var(--c-grad-end));
 
-  --c-accent-start: #63cce7;
-  --c-accent-end:   #63cce7;
+  --c-accent-start: #88a4ba;
+  --c-accent-end:   #88a4ba;
   --g-accent: linear-gradient(135deg, var(--c-accent-start), var(--c-accent-end));
 
-  --c-soft-rgb: 125,195,211;
-  --c-primary-r: 99;
-  --c-primary-g: 204;
-  --c-primary-b: 231;
+  --c-soft-rgb: 163, 177, 192;
+  --c-primary-r: 122;
+  --c-primary-g: 143;
+  --c-primary-b: 163;
 
   --star-rot-speed: 3.2s;
 }
 
 .summary-wrap{
-  padding-bottom: 40rpx;
-  background-color: #f5f7fa;
+  padding-bottom: 56rpx;
+  background-color: #f0f2f5;
+}
+
+/* 统一移除摘要页所有边框线 */
+.summary-wrap,
+.summary-wrap *,
+.summary-wrap *::before,
+.summary-wrap *::after{
+  border: none !important;
 }
 
 /* 顶部渐变 + 伪Tab + 搜索 */
 .header{
-  padding: 24rpx 24rpx 10rpx;
-  background: linear-gradient(180deg, #def9ff, #e1ebf2);
-  border-radius: 0 0 20rpx 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(93, 168, 192, 0.2);
+  padding: 20rpx 24rpx 18rpx;
+  background: linear-gradient(180deg, #eef9ff 0%, #e9f3fb 42%, #edf2f7 100%);
+  border-radius: 0 0 28rpx 28rpx;
+  box-shadow: 0 10rpx 24rpx rgba(74, 112, 146, 0.10);
 
   .top-tabs{
-    display: flex; gap: 40rpx; align-items: flex-end; padding: 8rpx 4rpx 4rpx;margin-bottom:20rpx;margin-left: 10rpx;
+    display: flex;
+    gap: 36rpx;
+    align-items: flex-end;
+    padding: 8rpx 4rpx 4rpx;
+    margin-bottom: 16rpx;
+    margin-left: 10rpx;
     .t-tab{
-      position: relative; padding: 8rpx 6rpx 14rpx; 
+      position: relative; 
+      padding: 8rpx 6rpx 12rpx;
 	  text {
-		  font-size: 36rpx; font-weight: 800; color:#8a8f9a;
+		  font-size: 31rpx;
+      line-height: 1;
+      font-weight: 800;
+      color:#8a8f9a;
 	  }
-      .underline{ display:none; position:absolute; left:0; right:0; bottom:0; height:6rpx; border-radius:6rpx; background: var(--g-primary); }
+      .underline{ display:none; position:absolute; left:0; right:0; bottom:0; height:6rpx; border-radius:6rpx; background: linear-gradient(90deg, #8da5ba, #8da5ba); }
       &.active{ text {color:#333;} .underline{ display:block; } }
       &:active{ opacity:.9; }
     }
   }
 
-  .search-box{ /* 保留占位 */ }
+  .header-main{
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+  }
+
+  .search-box{
+    margin-top: 2rpx;
+  }
+}
+
+.hero-sale-card{
+  position: relative;
+  overflow: hidden;
+  min-height: 224rpx;
+  border-radius: 36rpx 52rpx 36rpx 36rpx;
+  padding: 22rpx 26rpx 22rpx;
+  background: linear-gradient(140deg, #52b4e8 0%, #4aa8de 60%, #59b8ef 100%);
+  box-shadow: 0 16rpx 34rpx rgba(58, 126, 171, 0.26);
+}
+
+.hero-sale-card::after{
+  content: '';
+  position: absolute;
+  right: -8rpx;
+  top: 0;
+  width: 120rpx;
+  height: 86rpx;
+  border-bottom-left-radius: 70rpx;
+  background: rgba(191, 234, 255, 0.42);
+}
+
+.hero-chip{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  background: rgba(255,255,255,.22);
+  color: #eaf7ff;
+}
+
+.hero-main-title{
+  display: block;
+  margin-top: 10rpx;
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #f6fdff;
+  line-height: 1.1;
+}
+
+.hero-main-sub{
+  display: block;
+  margin-top: 10rpx;
+  font-size: 19rpx;
+  color: rgba(238, 250, 255, .92);
+  line-height: 1.32;
+}
+
+.hero-bottom{
+  margin-top: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.hero-avatar-row{
+  display: flex;
+  align-items: center;
+}
+
+.hero-avatar{
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  border: 3rpx solid rgba(255, 255, 255, .9);
+  box-shadow: 0 8rpx 14rpx rgba(43, 82, 114, .2);
+  background: rgba(255,255,255,.22);
+}
+
+.hero-avatar + .hero-avatar{
+  margin-left: -12rpx;
+}
+
+.hero-avatar-more{
+  min-width: 52rpx;
+  height: 52rpx;
+  line-height: 52rpx;
+  text-align: center;
+  padding: 0 10rpx;
+  margin-left: -10rpx;
+  border-radius: 999rpx;
+  color: #2f5f79;
+  background: rgba(255,255,255,.82);
+  font-size: 18rpx;
+  font-weight: 700;
+}
+
+.hero-action{
+  height: 56rpx;
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+  line-height: 56rpx;
+  font-size: 20rpx;
+  color: #2e86ba;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(239,249,255,.95));
+  font-weight: 700;
+  box-shadow: 0 6rpx 14rpx rgba(59, 124, 165, 0.18);
 }
 
 /* 区块外框 */
 .section{
-  padding: 24rpx 24rpx 20rpx;
-  margin: 24rpx 24rpx 30rpx;
+  padding: 24rpx 24rpx 22rpx;
+  margin: 18rpx 24rpx 24rpx;
   background: #fff;
-  border-radius: 24rpx;
-  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.04);
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 24rpx rgba(54, 82, 112, 0.06);
   &:last-child { margin-bottom: 0; }
 }
 
@@ -1112,8 +1282,15 @@ onBeforeUnmount(() => {
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  margin-bottom: 24rpx;
+  margin-bottom: 30rpx;
   flex-wrap: wrap;
+
+  .title-group{
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+    gap: 10rpx;
+  }
 
   .title{
     position: relative;
@@ -1121,9 +1298,10 @@ onBeforeUnmount(() => {
     align-items: center;
     gap: 12rpx;
 
-    font-size: 32rpx;
-    font-weight: 700;
-    color:#38374c;
+    font-size: 30rpx;
+    font-weight: 800;
+    color:#1f2736;
+    line-height: 1.1;
 
     padding-left: 0;
     border-left: none;
@@ -1137,7 +1315,13 @@ onBeforeUnmount(() => {
       transform-origin: 50% 50%;
     }
   }
-  .sub{ font-size: 24rpx; color:#999; }
+  .title-en{
+    font-size: 18rpx;
+    color: #8da0b4;
+    line-height: 1;
+    opacity: .92;
+  }
+  .sub{ font-size: 20rpx; color:#999; }
 }
 
 /* 旋转动画（只给唯一激活的 section） */
@@ -1153,7 +1337,7 @@ onBeforeUnmount(() => {
 .tab-mini{
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: 20rpx;
   color:#666;
   background: rgba(var(--c-soft-rgb), .12);
   border: 1rpx solid rgba(var(--c-soft-rgb), .30);
@@ -1161,9 +1345,8 @@ onBeforeUnmount(() => {
   transition: all .2s ease;
 
   &.active{
-    background: var(--g-primary);
+    background: #384353;
     color:#fff;
-    border-color: var(--c-grad-start);
     font-weight: 600;
   }
 }
@@ -1178,131 +1361,307 @@ onBeforeUnmount(() => {
 .link-calendar{
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  font-size: 24rpx;
-  color: var(--c-primary-700);
-  background: rgba(var(--c-soft-rgb), .12);
-  border: 1rpx solid rgba(var(--c-soft-rgb), .35);
+  font-size: 20rpx;
+  color: #667488;
+  background: #f1f4f7;
   transition: all .2s ease;
 }
 .link-calendar:active{ opacity:.85; }
 
 /* 查看更多 */
 .link-more{
-  font-size: 24rpx;
-  color: var(--c-primary);
+  font-size: 20rpx;
+  color: #667488;
   padding: 6rpx 10rpx;
   border-radius: 8rpx;
-  background: rgba(var(--c-soft-rgb), .10);
+  background: #f1f4f7;
 }
 
-/* ---- 热榜：横向滚动 ---- */
-.hot-scroll{ white-space: nowrap; padding-bottom: 10rpx; }
-.hot-card{
-  display:inline-flex;
+/* ---- 热榜：纵向列表 ---- */
+.hot-list-rows{
+  display: flex;
   flex-direction: column;
-  vertical-align: top;
-  width: 300rpx;
-  height: 640rpx;
-  margin-right: 24rpx;
-  background:#fff;
-  border-radius: 24rpx;
-  overflow: hidden;
-  position:relative;
-  transition: all 0.3s ease;
+  gap: 16rpx;
+}
 
+.hot-row{
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx;
+  border-radius: 22rpx;
+  background: transparent;
+}
 
-  .rank{
-    position:absolute; top: 16rpx; left: 16rpx;
-    width: 48rpx; height: 48rpx; border-radius: 50%;
-    color:#fff; font-weight: 800; font-size: 28rpx;
-    display:flex; align-items:center; justify-content:center;
-    background:#9aa4b2; z-index: 2;
+.hot-row-1{
+  background: #f2f7fb;
+}
+.hot-row-2{
+  background: #f5f8fb;
+}
+.hot-row-3{
+  background: #f8fafc;
+}
+.hot-row-plain{
+  background: transparent !important;
+}
 
-    &.r1{ background: linear-gradient(135deg, #ff7b8a, #ff5a6e); box-shadow: 0 4rpx 8rpx rgba(255, 123, 138, 0.4); }
-    &.r2{ background: linear-gradient(135deg, #ff9e66, #ff7f40); box-shadow: 0 4rpx 8rpx rgba(255, 158, 102, 0.4); }
-    &.r3{ background: linear-gradient(135deg, #f7c948, #f5b400); color:#5b4c00; box-shadow: 0 4rpx 8rpx rgba(247, 201, 72, 0.4); }
-  }
+.hot-row-rank{
+  width: 44rpx;
+  min-width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: transparent;
+  color: #8f9caf;
+  font-size: 20rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hot-row-1 .hot-row-rank{
+  background: rgba(88, 150, 182, .86);
+  color: #fff;
+}
+.hot-row-2 .hot-row-rank{
+  background: rgba(88, 150, 182, .56);
+  color: #fff;
+}
+.hot-row-3 .hot-row-rank{
+  background: rgba(88, 150, 182, .30);
+  color: #fff;
+}
+.hot-row-plain .hot-row-rank{
+  background: transparent !important;
+  color: #9aa5b6;
+}
 
-  .cover{ width:100%; display:block; background: linear-gradient(135deg, #f0f4f8, #e2e8f0); }
+.hot-row-cover{
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 18rpx;
+  background: #ecf3f9;
+}
 
-  .info{
-    padding: 20rpx 16rpx; flex: 1; display: flex; flex-direction: column;
+.hot-row-main{
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
 
-    .brand-tag{
-      background: var(--g-accent);
-      color:#fff; font-size: 22rpx; border-radius: 8rpx; padding: 4rpx 12rpx;
-      display:inline-block; font-weight: 500; margin-bottom: 10rpx; align-self: flex-start;
-    }
-    .name{ font-size: 26rpx; color:#333; min-height: 72rpx; font-weight: 500; margin-bottom: auto; }
-    .meta{
-      display:flex; justify-content:flex-end; align-items: center;
-      font-size: 22rpx; color:#777; margin-top: 10rpx;
+.hot-row-name{
+  font-size: 24rpx;
+  color: #1f2736;
+  font-weight: 700;
+}
 
-      .hotness{ display: flex; align-items: center;
-        .views{ color:#ff5a6e; font-weight: 500; margin-left: 4rpx; }
-      }
-    }
-  }
+.hot-row-brand{
+  font-size: 19rpx;
+  color: #8da0b4;
+}
+
+.hot-row-right{
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  color: #7d8aa0;
+}
+
+.hot-row-views{
+  font-size: 20rpx;
+  font-weight: 700;
 }
 
 /* 主题合集 & 今日上新卡片复用 */
-.chips-scroll{ width: 100%; margin-top: 16rpx;
-  .chips{ display:flex; gap: 12rpx; flex-wrap: nowrap; padding-left: 14rpx; padding-bottom: 6rpx; width: max-content; }
+.chips-scroll{ width: 100%; margin-top: 24rpx;
+  .chips{ display:flex; gap: 18rpx; flex-wrap: nowrap; padding-left: 14rpx; padding-bottom: 8rpx; width: max-content; }
 }
 .chip{
-  padding: 12rpx 24rpx; font-size: 24rpx; color:#666;
-  background: rgba(var(--c-soft-rgb), .12);
-  transition: all 0.3s ease; white-space: nowrap; height: 36rpx; line-height: 32rpx; display: flex; align-items: center;
+  padding: 10rpx 22rpx; font-size: 20rpx; color:#666;
+  background: #f1f3f6;
+  transition: all 0.3s ease; white-space: nowrap; height: 34rpx; line-height: 30rpx; display: flex; align-items: center;
   &.active{
-    background: var(--c-primary);
+    background: #384353;
     color:#fff; border-color: var(--c-grad-start); border-radius:20px 0 20px 0 ; 
-    box-shadow: 0 4rpx 8rpx rgba(var(--c-primary-r), var(--c-primary-g), var(--c-primary-b), 0.30);
     font-weight: 500;
   }
 }
 .theme-scroll{ white-space: nowrap; padding-top: 10rpx; }
+
+/* 蹲开售：固定 3 列 x 2 行，不横向滚动 */
+.waiting-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14rpx;
+}
+
+.waiting-card{
+  position: relative;
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  padding: 0 8rpx 10rpx;
+}
+
+.waiting-cover{
+  display: block;
+  margin-top: 8rpx;
+  background: linear-gradient(135deg, #f0f4f8, #e2e8f0);
+}
+
+.waiting-type-badge{
+  position: absolute;
+  left: 14rpx;
+  top: 14rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  font-size: 16rpx;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0,0,0,.54);
+}
+
+.waiting-name{
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  color: #232f42;
+  min-height: 64rpx;
+}
+
+.waiting-size-tags{
+  margin-top: 8rpx;
+  display: flex;
+  gap: 6rpx;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.waiting-size-tag-item{
+  padding: 3rpx 10rpx;
+  border-radius: 999rpx;
+  font-size: 16rpx;
+  color: #667488;
+  background: #f2f4f7;
+  white-space: nowrap;
+}
+
 .goods-mini{
-  display:inline-flex; flex-direction:column; width: 220rpx; height: 400rpx;margin-bottom: 20rpx;
-  margin-right: 20rpx; background: #fff; border-radius: 20rpx; overflow: hidden;
+  display:inline-flex; flex-direction:column; width: 224rpx; min-height: 368rpx; margin-bottom: 16rpx;
+  margin-right: 18rpx; background: #fff; border-radius: 24rpx; overflow: hidden;
   transition: all 0.3s ease; position: relative;
-
-
-  image{ width: 220rpx; height: 220rpx; background: linear-gradient(135deg, #f0f4f8, #e2e8f0); }
+  &:active{ transform: translateY(1rpx) scale(.996); }
 
   .type-badge{
-    position: absolute; left: 12rpx; top: 12rpx;
-    padding: 6rpx 12rpx; border-radius: 999rpx; font-size: 20rpx; font-weight: 600;
+    position: absolute; left: 18rpx; top: 18rpx;
+    padding: 6rpx 12rpx; border-radius: 999rpx; font-size: 17rpx; font-weight: 600;
     background: rgba(0,0,0,.55); color:#fff; backdrop-filter: blur(2rpx);
   }
 
-  .gname{ font-size: 24rpx; margin: 14rpx 12rpx 0; color:#333; font-weight: 500; }
+  .goods-cover{
+    display: block;
+    margin: 12rpx auto 0;
+    background: linear-gradient(135deg, #f0f4f8, #e2e8f0);
+  }
 
-  .meta{
-    display:flex; justify-content:space-between; align-items:center; margin: 8rpx 12rpx 16rpx; height: 80rpx;
-    .size{ font-size: 22rpx; color: #949494; font-weight: 500; margin-left: 10rpx; }
+  .gname{
+    font-size: 21rpx;
+    margin: 14rpx 12rpx 0;
+    color:#232f42;
+    font-weight: 700;
+    min-height: 66rpx;
+  }
+
+  .size-tags{
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8rpx;
+    margin: 12rpx 12rpx 14rpx;
+    min-height: 34rpx;
+    overflow: hidden;
+  }
+
+  .size-tag-item{
+    padding: 4rpx 12rpx;
+    border-radius: 999rpx;
+    font-size: 17rpx;
+    color: #667488;
+    background: #f2f4f7;
+    white-space: nowrap;
   }
 }
-.empty-slim{ text-align:center; color:#999; padding: 16rpx 0; font-size: 26rpx; }
+.empty-slim{ text-align:center; color:#999; padding: 16rpx 0; font-size: 22rpx; }
 
 /* 订阅品牌 */
-.login-tip{ padding: 16rpx 0 0; color:#999; font-size: 26rpx; text-align: center; }
+.login-tip{ padding: 16rpx 0 0; color:#999; font-size: 20rpx; text-align: center; }
 .brand-scroll{ white-space: nowrap; padding: 8rpx 0; }
 .brand-item{
   display:inline-flex; width: 160rpx; flex-direction:column; align-items:center; margin-right: 24rpx;
   background: #fff; border-radius: 20rpx; padding: 20rpx 0; 
   transition: all 0.3s ease;
 
-  &:active { transform: scale(0.95); box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1); }
+  &:active { transform: scale(0.97); }
 
-  .brand-logo{ width: 100rpx; height: 100rpx; border-radius: 50%; background:#f2f2f2; box-shadow: 0 4rpx 12rpx rgba(0,0,0,.1); border: 2rpx solid #fff; }
-  .brand-name{ margin-top: 16rpx; font-size: 24rpx; color:#333; width: 100%; text-align:center; padding: 0 10rpx; font-weight: 500; }
+  .brand-logo{ width: 100rpx; height: 100rpx; border-radius: 50%; background:#f2f2f2; }
+  .brand-name{ margin-top: 16rpx; font-size: 20rpx; color:#333; width: 100%; text-align:center; padding: 0 10rpx; font-weight: 500; }
 }
-.brand-empty{ padding: 30rpx; color:#999; text-align: center; font-size: 26rpx; }
+.brand-empty{ padding: 30rpx; color:#999; text-align: center; font-size: 20rpx; }
+
+.ops-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.ops-card{
+  background: #f8fbfe;
+  border-radius: 18rpx;
+  overflow: hidden;
+}
+
+.ops-cover{
+  width: 100%;
+  height: 140rpx;
+  background: #edf2f7;
+}
+
+.ops-content{
+  padding: 10rpx 10rpx 12rpx;
+}
+
+.ops-title{
+  font-size: 19rpx;
+  font-weight: 700;
+  color: #232f42;
+}
+
+.ops-meta{
+  margin-top: 6rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6rpx;
+}
+
+.ops-brand{
+  flex: 1;
+  min-width: 0;
+  font-size: 16rpx;
+  color: #91a0b1;
+}
+
+.ops-time{
+  font-size: 15rpx;
+  color: #9fb0c4;
+  flex-shrink: 0;
+}
 
 /* ---- 空态 ---- */
 .empty{
   display:flex; flex-direction:column; align-items:center; color:#999; padding: 40rpx 0;
-  image{ width: 160rpx; height:160rpx; margin-bottom: 20rpx; opacity:.7; }
+  .empty-icon{ margin-bottom: 20rpx; opacity:.7; }
 }
 
 /* ---- 时间轴 ---- */
@@ -1337,9 +1696,9 @@ onBeforeUnmount(() => {
 }
 
 .tl-left{
-  width: 78rpx; text-align: right; padding-right: 24rpx; padding-top: 6rpx;
-  .tl-time{ font-size: 32rpx; color: var(--c-primary-700); font-weight: 700; line-height: 1.2; }
-  .tl-date{ font-size: 24rpx; color:#9aa4b2; margin-top: 6rpx; }
+  width: 82rpx; text-align: right; padding-right: 22rpx; padding-top: 6rpx;
+  .tl-time{ font-size: 26rpx; color: #6f7f92; font-weight: 700; line-height: 1.2; }
+  .tl-date{ font-size: 18rpx; color:#9aa4b2; margin-top: 6rpx; }
 }
 .tl-middle{ position: relative; width: 30rpx; height: 100%; display: flex; justify-content: center;
   .dot{
@@ -1352,8 +1711,8 @@ onBeforeUnmount(() => {
 
 .tl-card{
   flex:1; background:#fff; border-radius: 20rpx; padding: 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); transition: box-shadow .3s ease; margin-left: 10rpx; min-height: 160rpx;
-  &:active { box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1); }
+  transition: box-shadow .3s ease; margin-left: 10rpx; min-height: 160rpx;
+  &:active { opacity: .95; }
 
   .tl-card-grid{
     display: grid;
@@ -1362,7 +1721,7 @@ onBeforeUnmount(() => {
     align-items: start;
   }
 
-  .thumb{ width: 140rpx; height: 200rpx; border-radius: 16rpx; background: linear-gradient(135deg, #f0f4f8, #e2e8f0); object-fit: cover; }
+  .thumb{ width: 140rpx; height: 200rpx; border-radius: 16rpx; background: linear-gradient(135deg, #f0f4f8, #e2e8f0); }
 
   .tl-info{
     display: flex; flex-direction: column; min-width: 0;
@@ -1370,20 +1729,19 @@ onBeforeUnmount(() => {
     .row-1{
       display:flex; align-items:center; gap:12rpx; margin-bottom: 10rpx; min-width: 0;
       .brand-tag{
-        background: var(--c-primary);
-        color:#fff; padding: 4rpx 12rpx; font-size: 22rpx; border-radius: 8rpx; font-weight: 500; flex-shrink: 0;
+        background: #5f6e83;
+        color:#fff; padding: 4rpx 12rpx; font-size: 18rpx; border-radius: 8rpx; font-weight: 500; flex-shrink: 0;
       }
-      .gname{ font-size: 28rpx; color:#333; flex:1; font-weight: 500; min-width: 0; }
+      .gname{ font-size: 23rpx; color:#333; flex:1; font-weight: 500; min-width: 0; }
     }
 
     .row-2{
-      display:flex; justify-content:space-between; gap: 12rpx; align-items:center; font-size: 24rpx; color:#777; min-height: 40rpx;
+      display:flex; justify-content:space-between; gap: 12rpx; align-items:center; font-size: 20rpx; color:#777; min-height: 40rpx;
 
       .type-badge{
-        padding: 6rpx 14rpx; border-radius: 999rpx; font-size: 22rpx; font-weight: 600;
-        background: rgba(var(--c-soft-rgb), .12);
-        color: var(--c-primary-700);
-        border: 1rpx solid rgba(var(--c-soft-rgb), .35);
+        padding: 6rpx 14rpx; border-radius: 999rpx; font-size: 18rpx; font-weight: 600;
+        background: #f1f4f7;
+        color: #667488;
         max-width: 70%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
       }
       .hotness{ display: flex; align-items: center;
@@ -1395,9 +1753,8 @@ onBeforeUnmount(() => {
       display: flex; flex-wrap: wrap; gap: 8rpx 10rpx; margin-top: 12rpx; max-height: none;
       .size-chip{
         padding: 6rpx 12rpx; border-radius: 999rpx;
-        font-size: 22rpx; line-height: 1.4; color: var(--c-primary-700);
-        background: rgba(var(--c-soft-rgb), .08);
-        border: 1rpx solid rgba(var(--c-soft-rgb), .35);
+        font-size: 18rpx; line-height: 1.4; color: #667488;
+        background: #f1f4f7;
         max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
     }
@@ -1410,14 +1767,14 @@ onBeforeUnmount(() => {
 
 /* 假搜索框样式 */
 .fake-search{
-  height: 72rpx;
+  height: 76rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 0 16rpx;
-  border-radius: 36rpx;
-  background: #fff;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.06);
+  padding: 0 16rpx 0 20rpx;
+  border-radius: 38rpx;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 6rpx 14rpx rgba(72, 105, 134, 0.08);
 
   .icon{
     width: 36rpx;
@@ -1428,17 +1785,16 @@ onBeforeUnmount(() => {
 
   .placeholder{
     flex: 1;
-    color: #9aa4b2;
-    font-size: 24rpx;
+    color: #97a6b8;
+    font-size: 20rpx;
   }
 
   .action{
-    padding: 6rpx 14rpx;
+    padding: 8rpx 16rpx;
     border-radius: 999rpx;
-    font-size: 22rpx;
+    font-size: 20rpx;
     color: #fff;
-    background: linear-gradient(135deg, #63cce7, #63cce7);
-    box-shadow: 0 4rpx 10rpx rgba(99,204,231,.25);
+    background: #5f6e83;
     flex-shrink: 0;
   }
 
@@ -1465,7 +1821,7 @@ onBeforeUnmount(() => {
   &.wig { background: #a18cd1; box-shadow: 0 0 8rpx rgba(161, 140, 209, 0.6); }
 }
 .sub-label {
-  font-size: 28rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #333;
 }
@@ -1474,16 +1830,41 @@ onBeforeUnmount(() => {
   /* 复用 .goods-mini 基础样式，微调内部 */
   .time-badge {
     position: absolute; left: 12rpx; top: 12rpx;
-    padding: 6rpx 12rpx; border-radius: 8rpx; font-size: 20rpx; font-weight: 600;
+    padding: 6rpx 12rpx; border-radius: 8rpx; font-size: 17rpx; font-weight: 600;
     background: rgba(255, 111, 145, 0.9); color:#fff; backdrop-filter: blur(2rpx);
     &.wig-bg { background: rgba(132, 94, 194, 0.9); }
   }
   .artist-meta {
-    margin: 8rpx 12rpx 16rpx;
-    height: 36rpx;
+    margin: 10rpx 12rpx 14rpx;
+    min-height: 50rpx;
+    display: flex;
+    align-items: flex-end;
+    color: #2d3745;
+  }
+  .artist-price{
+    display: inline-flex;
+    align-items: flex-end;
+    line-height: 1;
+    color: #2f3c4d;
+  }
+  .price-sign{
     font-size: 24rpx;
-    color: #ff5a6e;
-    font-weight: 600;
+    margin-right: 2rpx;
+    opacity: .9;
+  }
+  .price-value{
+    font-size: 42rpx;
+    font-weight: 700;
+    letter-spacing: .4rpx;
+  }
+  .price-tail{
+    font-size: 20rpx;
+    margin-left: 2rpx;
+    color: #5f6d7f;
+  }
+  .artist-price-empty{
+    font-size: 20rpx;
+    color: #8d9aad;
   }
 }
 </style>
