@@ -8,6 +8,12 @@
   >
     <uni-transition :mode-class="modeClass" :show="visible">
       <view class="modal-container safe-bottom" :style="containerStyle" @tap.stop>
+        <!--
+          使用提示：
+          1) common-modal 只负责通用容器与滚动能力；
+          2) 业务侧请在插槽根节点自行预留下边距（建议 >= 24rpx + safe-area-inset-bottom），
+             避免底部按钮贴边或被手势区域挤压。
+        -->
         <slot></slot>
       </view>
     </uni-transition>

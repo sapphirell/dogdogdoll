@@ -143,7 +143,7 @@
               color="#fff"
               style="height: 36rpx; margin-bottom: 10rpx;"
             ></uni-icons>
-            <text>期望再贩</text>
+            <text>期望再贩 {{ formatNumber(wishCount) }}</text>
           </view>
         </button>
         <button class="action-btn add-showcase" @click="addToShowcase">
@@ -160,7 +160,7 @@
       </view>
 
       <view class="info-item">
-        <text class="label">名称</text>
+        <text class="label font-title">名称</text>
         <image
           :src="goods.goods_name_image"
           mode="heightFix"
@@ -168,37 +168,65 @@
         ></image>
       </view>
       <view class="info-item" @click="selectType(goods.type)">
-        <text class="label">类型</text>
+        <text class="label font-title">类型</text>
         <text class="value">{{ goods.type }}</text>
       </view>
 
-      <view class="info-item">
-        <text class="label">初贩定价</text>
-        <image
-          :src="goods.goods_price_image"
-          v-if="goods.goods_price_image"
-          mode="heightFix"
-          class="img_info"
-        ></image>
-        <text
-          class="value"
-          v-else-if="goods.goods_sales && goods.goods_sales.length > 0"
-        >
-          {{ goods.goods_sales[0].sub_amount + goods.goods_sales[0].fin_amount }}
-          {{ goods.goods_sales[0].currency }}
-        </text>
-        <text class="value" v-else>未知</text>
+      <view class="info-item info-item-price">
+        <text class="label font-title">初贩定价</text>
+        <view class="price-value-wrap">
+          <image
+            :src="goods.goods_price_image"
+            v-if="goods.goods_price_image && resolvedMainPrice > 0"
+            mode="heightFix"
+            class="img_info"
+          ></image>
+          <text class="value" v-else-if="resolvedMainPrice > 0">
+            {{ resolvedMainPrice }} {{ resolvedMainCurrency || goods.currency || '' }}
+          </text>
+          <view class="price-empty-wrap" v-else>
+            <text class="value price-empty-text">暂无定价</text>
+            <button class="price-supplement-btn" @click="openPriceSupplementModal">
+              求补充
+            </button>
+          </view>
+
+          <view class="price-note pending" v-if="pendingPriceSubmission">
+            <text class="price-note-text">
+              待审核补充：{{ pendingPriceSubmission.price }} {{ pendingPriceSubmission.currency || goods.currency || '' }}
+            </text>
+            <uni-icons
+              type="help-filled"
+              size="14"
+              color="#9aa8ba"
+              style="margin-left: 8rpx;"
+              @click.stop="showPendingPriceTip"
+            ></uni-icons>
+          </view>
+
+          <view class="price-note approved" v-if="approvedPriceSubmission">
+            <image
+              class="price-user-avatar"
+              :src="approvedPriceSubmission.submit_avatar || 'https://images1.fantuanpu.com/home/default_avatar.jpg'"
+              mode="aspectFill"
+            />
+            <text class="price-note-text">
+              {{ approvedPriceSubmission.submit_username || ('UID ' + approvedPriceSubmission.submit_uid) }}
+              补充：{{ approvedPriceSubmission.price }} {{ approvedPriceSubmission.currency || goods.currency || '' }}
+            </text>
+          </view>
+        </view>
       </view>
 
       <view class="info-item">
-        <text class="label">初贩时间</text>
+        <text class="label font-title">初贩时间</text>
         <text class="value">
           {{ goods.sub_time1 > 0 ? formatTimestamp(goods.sub_time1) : '未知' }}
         </text>
       </view>
 
       <view class="info-item" @click="selectSize(goods.size)">
-        <text class="label">尺寸</text>
+        <text class="label font-title">尺寸</text>
         <view class="value">
           <view v-if="goods.sizes && goods.sizes.length > 0">
             <view
@@ -220,17 +248,17 @@
         v-if="goods.type === '单体' || goods.type === '整体' || goods.type === '单头'"
         class="info-item"
       >
-        <text class="label">可选体型</text>
+        <text class="label font-title">可选体型</text>
         <text class="value">{{ goods.body_size || '未知' }}</text>
       </view>
 
       <view class="info-item">
-        <text class="label">可选颜色</text>
+        <text class="label font-title">可选颜色</text>
         <text class="value">{{ goods.skin }}</text>
       </view>
 
       <view class="info-item">
-        <text class="label">制作方</text>
+        <text class="label font-title">制作方</text>
         <image
           @click="jumpBrand(goods.brand_id)"
           :src="goods.goods_brand_name_image"
@@ -242,12 +270,12 @@
       </view>
 
       <view class="info-item">
-        <text class="label">材质</text>
+        <text class="label font-title">材质</text>
         <text class="value">{{ goods.doll_material }}</text>
       </view>
 
       <view class="info-item">
-        <text class="label">备注</text>
+        <text class="label font-title">备注</text>
         <text class="value">{{ goods.desc_content || '暂无备注信息' }}</text>
       </view>
     </view>
@@ -404,6 +432,38 @@
       @update:reply-info="(val) => (replyForItem = val)"
     />
 
+    <common-modal :visible="priceSupplementVisible" @update:visible="val => (priceSupplementVisible = val)" top="20vh">
+      <view class="price-supplement-modal">
+        <text class="price-supplement-title">补充贩售价格</text>
+        <text class="price-supplement-desc">提交后会进入后台审核，审核通过后展示在商品页。</text>
+        <input
+          v-model="priceSupplementPriceInput"
+          class="price-supplement-input"
+          type="number"
+          placeholder="请输入价格（整数）"
+          placeholder-class="price-placeholder"
+        />
+        <input
+          v-model="priceSupplementCurrencyInput"
+          class="price-supplement-input"
+          type="text"
+          maxlength="12"
+          placeholder="币种（如 CNY / USD）"
+          placeholder-class="price-placeholder"
+        />
+        <view class="price-supplement-actions">
+          <button class="price-supplement-cancel" @click="priceSupplementVisible = false">取消</button>
+          <button
+            class="price-supplement-confirm"
+            :disabled="priceSupplementSubmitting"
+            @click="submitPriceSupplement"
+          >
+            {{ priceSupplementSubmitting ? '提交中...' : '提交审核' }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
+
     <view class="bottom-placeholder"></view>
   </view>
 </template>
@@ -461,6 +521,10 @@ let collocationList = ref(false)
 let wishLoading = ref(false)
 let hasWish = ref(false)
 let wishCount = ref(0)
+const priceSupplementVisible = ref(false)
+const priceSupplementSubmitting = ref(false)
+const priceSupplementPriceInput = ref('')
+const priceSupplementCurrencyInput = ref('')
 
 const swiperHeight = ref(400)
 const imageHeights = ref([])
@@ -471,6 +535,22 @@ const faceupLoading = ref(false)
 const showFaceupSection = computed(
   () => goods.value.type === '单头' || goods.value.type === '整体'
 )
+const pendingPriceSubmission = computed(() => goods.value?.pending_price_submission || null)
+const approvedPriceSubmission = computed(() => goods.value?.approved_price_submission || null)
+const resolvedMainPrice = computed(() => {
+  const firstSale = goods.value?.goods_sales?.[0]
+  const saleAmount = Number(firstSale?.sub_amount || 0) + Number(firstSale?.fin_amount || 0)
+  if (saleAmount > 0) return saleAmount
+  const totalAmount = Number(goods.value?.total_amount || 0)
+  if (totalAmount > 0) return totalAmount
+  const approvedAmount = Number(approvedPriceSubmission.value?.price || 0)
+  if (approvedAmount > 0) return approvedAmount
+  return 0
+})
+const resolvedMainCurrency = computed(() => {
+  const firstSale = goods.value?.goods_sales?.[0]
+  return firstSale?.currency || goods.value?.currency || approvedPriceSubmission.value?.currency || ''
+})
 
 /* ===== 关键：按 ID 重新拉取 ===== */
 const currentId = ref(String(props.goods_id || ''))
@@ -737,6 +817,66 @@ function wishResale () {
     },
     fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
     complete: () => { wishLoading.value = false }
+  })
+}
+
+function openPriceSupplementModal () {
+  if (!global.isLogin) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  if (resolvedMainPrice.value > 0) {
+    uni.showToast({ title: '商品已有定价，无需补充', icon: 'none' })
+    return
+  }
+  priceSupplementPriceInput.value = ''
+  priceSupplementCurrencyInput.value = resolvedMainCurrency.value || goods.value.currency || ''
+  priceSupplementVisible.value = true
+}
+
+function showPendingPriceTip () {
+  uni.showToast({ title: '该价格由用户补充，可能不准确', icon: 'none' })
+}
+
+function submitPriceSupplement () {
+  if (priceSupplementSubmitting.value) return
+
+  const token = uni.getStorageSync('token')
+  if (!token || !global.isLogin) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+
+  const price = parseInt(priceSupplementPriceInput.value, 10)
+  if (!price || price <= 0) {
+    uni.showToast({ title: '请输入正确的整数价格', icon: 'none' })
+    return
+  }
+
+  priceSupplementSubmitting.value = true
+  uni.request({
+    url: websiteUrl.value + '/with-state/goods/price-supplement/submit',
+    method: 'POST',
+    header: {
+      Authorization: token,
+      'Content-Type': 'application/json'
+    },
+    data: {
+      goods_id: parseInt(currentId.value),
+      price,
+      currency: (priceSupplementCurrencyInput.value || '').trim()
+    },
+    success: (res) => {
+      if (res.data.status === 'success') {
+        uni.showToast({ title: '提交成功，等待审核', icon: 'success' })
+        priceSupplementVisible.value = false
+        getGoods(currentId.value)
+      } else {
+        uni.showToast({ title: res.data.msg || '提交失败', icon: 'none' })
+      }
+    },
+    fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
+    complete: () => { priceSupplementSubmitting.value = false }
   })
 }
 
@@ -1066,8 +1206,7 @@ function selectSize () {}
   .info-item {
     display: flex;
     padding: 18rpx 0;
-    border-bottom: 1rpx solid #f5f5f5;
-    &:last-child { border-bottom: none; }
+    border-bottom: none;
   }
   .label {
     width: 180rpx;
@@ -1082,6 +1221,136 @@ function selectSize () {}
     word-break: break-all;
   }
   .brand { color: #64c6dc; font-weight: bold; }
+}
+
+.info-item-price{
+  align-items: flex-start;
+}
+
+.price-value-wrap{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10rpx;
+}
+
+.price-empty-wrap{
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.price-empty-text{
+  color: #8b95a1;
+}
+
+.price-supplement-btn{
+  margin: 0;
+  padding: 0 22rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  font-size: 22rpx;
+  color: #2e3c53;
+  border-radius: 28rpx;
+  background: #e9f2ff;
+  border: 1rpx solid #d6e5ff;
+}
+.price-supplement-btn::after{
+  border: none;
+}
+
+.price-note{
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 10rpx 14rpx;
+  border-radius: 14rpx;
+  box-sizing: border-box;
+}
+.price-note.pending{
+  background: #f2f6fb;
+}
+.price-note.approved{
+  background: #eefaf7;
+  padding-right: 16rpx;
+}
+.price-note-text{
+  font-size: 22rpx;
+  color: #667487;
+  line-height: 1.45;
+}
+.price-user-avatar{
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  margin-right: 10rpx;
+  flex-shrink: 0;
+}
+
+.price-supplement-modal{
+  width: 620rpx;
+  background: #fff;
+  border-radius: 26rpx;
+  padding: 34rpx 30rpx 42rpx;
+  padding-bottom: calc(42rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(42rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.price-supplement-title{
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #243047;
+}
+.price-supplement-desc{
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #7e8795;
+  line-height: 1.5;
+}
+.price-supplement-input{
+  margin-top: 20rpx;
+  width: 100%;
+  height: 82rpx;
+  background: #f7f9fc;
+  border-radius: 16rpx;
+  border: 1rpx solid #e6ebf2;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  color: #2b3650;
+}
+.price-placeholder{
+  color: #a3adba;
+}
+.price-supplement-actions{
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+.price-supplement-cancel,
+.price-supplement-confirm{
+  flex: 1;
+  margin: 0;
+  height: 78rpx;
+  line-height: 78rpx;
+  border-radius: 39rpx;
+  font-size: 28rpx;
+}
+.price-supplement-cancel{
+  background: #f3f4f7;
+  color: #56637a;
+}
+.price-supplement-confirm{
+  background: #64c6dc;
+  color: #fff;
+}
+.price-supplement-cancel::after,
+.price-supplement-confirm::after{
+  border: none;
 }
 
 /* 贩售情报 */

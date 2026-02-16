@@ -1,9 +1,29 @@
 <template>
-	<view>
+	<view class="share-page">
+		<zhouWei-navBar type="transparentFixed" :backState="2000" :homeState="2000" :shadow="false"
+			:scrollTop="scrollTop" :bgColor="navBgColorList" :bgColorAngle="180" fontColor="#1f2937"
+			transparentFixedFontColor="#ffffff" title="搭配详情">
+			<template #left>
+				<view class="nav-back-pill" @click="goBack">
+					<uni-icons type="left" size="22" color="#1f2937" />
+				</view>
+			</template>
+			<template #transparentFixedLeft>
+				<view class="nav-back-pill nav-back-pill--transparent" @click="goBack">
+					<uni-icons type="left" size="22" color="#ffffff" />
+				</view>
+			</template>
+			<template #default>
+				<view v-if="isMpWeixin" class="nav-right-like" @tap="likeFn" style="margin-right: 0;">
+					<uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
+					<text class="nav-like-text">{{ detailData?.like_count ? formatNumber(detailData.like_count) : 0 }}</text>
+				</view>
+			</template>
+		</zhouWei-navBar>
 		<view-logs />
 		<!-- 图片轮播区域 -->
 		<view style="position: relative;">
-			<view class="heart" @click="likeFn()">
+			<view v-if="!isMpWeixin" class="heart" @click="likeFn()">
 				<!-- 				<image src="../../static/heart-w.png" v-if="!hasLike"></image>
 				<image src="../../static/heart2.png" v-else></image> -->
 				<uni-icons type="heart" size="28" color="#ff4d4f" v-if="!hasLike"></uni-icons>
@@ -30,7 +50,7 @@
 
 		<!-- 图文信息区域 -->
 		<view class="content-box">
-			<view style="display: flex;justify-content: space-between;">
+			<view class="content-head">
 				<text class="title">{{ detailData.title }}</text>
 				<view class="report-container">
 					<report-button :report-type="origin === 1 ? 2 : 1" :relation-id="parseInt(pageId)" icon-type="flag"
@@ -113,6 +133,7 @@
 		onLoad,
 		onShow,
 		onHide,
+		onPageScroll,
 	} from "@dcloudio/uni-app";
 	import {
 		websiteUrl,
@@ -167,6 +188,17 @@
 	//页面id 
 	const pageId = ref(0)
 	const origin = ref(0)
+	const isMpWeixin = process.env.UNI_PLATFORM === 'mp-weixin'
+	const scrollTop = ref(0)
+	const navBgColorList = [{
+			color: 'rgba(255,255,255,0.96)',
+			scale: '0%'
+		},
+		{
+			color: 'rgba(246,249,252,0.86)',
+			scale: '100%'
+		}
+	]
 	//是否点赞过
 	let hasLike = ref(false)
 
@@ -178,10 +210,22 @@
 	let replyForItem = ref({})
 
 
-	// 设置页面标题
-	uni.setNavigationBarTitle({
-		title: '搭配详情'
+	onPageScroll((e) => {
+		scrollTop.value = e?.scrollTop || 0
 	})
+
+	function goBack() {
+		const pages = getCurrentPages?.() || []
+		if (pages.length > 1) {
+			uni.navigateBack({
+				delta: 1
+			})
+			return
+		}
+		uni.switchTab({
+			url: '/pages/index/index'
+		})
+	}
 
 	//跳转到用户页面
 	function jump2user(uid) {
@@ -710,6 +754,46 @@
 </script>
 
 <style lang="less" scoped>
+	.share-page {
+		min-height: 100vh;
+		background: #fff;
+	}
+
+	.nav-back-pill {
+		height: 56rpx;
+		padding: 0 18rpx;
+		border-radius: 33rpx;
+		background: rgba(255, 255, 255, 0.74);
+		border: 2rpx solid rgba(0, 0, 0, 0.1);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-left: 20rpx;
+	}
+
+	.nav-back-pill--transparent {
+		background: rgba(0, 0, 0, 0.14);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.nav-right-like {
+		height: 56rpx;
+		padding: 0 20rpx;
+		border-radius: 33rpx;
+		background: rgba(255, 255, 255, 0.85);
+		border: 2rpx solid rgba(0, 0, 0, 0.06);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.nav-like-text {
+		margin-left: 8rpx;
+		font-size: 24rpx;
+		color: #ff4d4f;
+		font-weight: 600;
+	}
+
 	// .container {
 	// 	padding: 20rpx;
 	// }
@@ -726,15 +810,18 @@
 	/* 小红心 */
 	.heart {
 		position: absolute;
-		top: 10px;
-		right: 20px;
+		top: calc((var(--status-bar-height, 0px)) + 96rpx);
+		right: 24rpx;
 		z-index: 10;
-		width: 50px;
-		height: 30px;
+		min-width: 120rpx;
+		height: 56rpx;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
 
 		.uni-icons {
-			width: 30px;
-			height: 30px;
+			width: 46rpx;
+			height: 46rpx;
 		}
 
 		image {
@@ -744,11 +831,11 @@
 
 		.num {
 			color: #888;
-			font-size: 14px;
+			font-size: 24rpx;
 			display: inline-block;
 			position: relative;
 			margin: 10rpx;
-			top: -5px;
+			top: 0;
 			// left: 35px;
 			font-weight: 1000;
 			color: #ff4d4f;
@@ -760,23 +847,45 @@
 	/* 页面主体 */
 
 	.content-box {
-		padding: 30rpx 0;
+		padding: 30rpx 30rpx 0 30rpx;
+	}
+
+	.content-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 20rpx;
 	}
 
 	.title {
 		font-size: 28rpx;
 		font-weight: 800;
-		margin-bottom: 20rpx;
-		padding: 30rpx 30rpx 0rpx 30rpx;
+		margin-bottom: 0;
+		padding: 0;
+		flex: 1;
 	}
 
 	.report-container {
-		margin: 15rpx 0 0 0;
-		display: inline-block;
-		width: 140rpx;
-		background: #fff;
-		padding: 10rpx 20rpx;
-		border-radius: 10rpx;
+		margin: 2rpx 0 0 0;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		flex-shrink: 0;
+	}
+
+	.report-container :deep(.default-button) {
+		background: transparent;
+		padding: 0;
+		min-height: auto;
+	}
+
+	.report-container :deep(.button-text) {
+		font-size: 22rpx;
+		color: #99a3b5;
+	}
+
+	.report-container :deep(.uni-icons) {
+		margin-right: 6rpx;
 	}
 
 	.content {
@@ -784,7 +893,7 @@
 		font-size: 22rpx;
 		color: #666;
 		line-height: 1.6;
-		padding: 30rpx 30rpx 0rpx 30rpx;
+		padding: 20rpx 0 0 0;
 		width: 100%;
 		overflow: hidden;
 		box-sizing: border-box;

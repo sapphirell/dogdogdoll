@@ -87,7 +87,10 @@
     },
     {
       "path": "pages/collocation_share/collocation_share",
-      "style": { "navigationBarTitleText": "" }
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
     },
     {
       "path": "pages/user_page/user_page",
