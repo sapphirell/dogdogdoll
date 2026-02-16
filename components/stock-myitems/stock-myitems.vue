@@ -4,23 +4,19 @@
     <!-- 顶部：分类选择 + 管理 + 搜索按钮 -->
     <view class="type-header">
       <view class="selector-container">
-        <picker
-          class="type-picker"
-          mode="selector"
-          :value="selectedType"
-          :range="typeOptions"
-          @change="updateSelectedType"
-        >
+        <view class="type-picker" @tap="openTypeSelectPopup">
           <view class="selector-content">
-            <text class="selector-label">分类:</text>
-            <text class="selector-value">{{ typeOptions[selectedType] }}</text>
-            <uni-icons type="arrowdown" size="14" color="#747EE5" class="selector-icon" />
+            <view class="selector-main">
+              <text class="selector-label font-title">分类</text>
+              <text class="selector-value font-alimamashuhei">{{ typeOptions[selectedType] }}</text>
+            </view>
+            <uni-icons type="arrowdown" size="14" color="#6b84a3" class="selector-icon" />
           </view>
-        </picker>
+        </view>
 
-        <text class="manage-btn" @tap="openTypeManager">
-          <uni-icons type="gear" size="16" color="#fff" />
-          <text>管理分类</text>
+        <text class="manage-btn" @tap="openTypeToolsPopup">
+          <uni-icons type="more-filled" size="18" color="#4f6279" />
+          <text class="font-title">分类工具</text>
         </text>
 
         <!-- 🔎 搜索：跳转独立页面 -->
@@ -33,20 +29,20 @@
     <!-- 合计（不受搜索影响） -->
     <view class="summary-container">
       <view class="summary-content">
-        <uni-icons type="money" size="18" color="#74c9e5"></uni-icons>
-        <text class="total-text">
-          当前分类合计：
-          <text v-if="isPriceVisible">¥{{ totalPrice }}</text>
-          <text v-else>******</text>
-        </text>
-        <uni-icons
-          :type="isPriceVisible ? 'eye' : 'eye-slash'"
-          size="18"
-          color="#74c9e5"
-          class="toggle-eye"
-          @tap="isPriceVisible = !isPriceVisible"
-        />
-        <text style="position:absolute;right:30px;">长按排序</text>
+        <view class="summary-main">
+          <text class="summary-label font-alimamashuhei">当前分类合计</text>
+          <view class="summary-price-row">
+            <text class="summary-currency font-title">¥</text>
+            <text v-if="isPriceVisible" class="summary-price font-title">{{ totalPrice }}</text>
+            <text v-else class="summary-mask font-title">******</text>
+          </view>
+        </view>
+        <view class="summary-side">
+          <view class="toggle-eye" @tap="isPriceVisible = !isPriceVisible">
+            <uni-icons :type="isPriceVisible ? 'eye' : 'eye-slash'" size="18" color="#6b84a3" />
+          </view>
+          <text class="sort-tip font-title">长按排序</text>
+        </view>
       </view>
     </view>
 
@@ -54,6 +50,8 @@
     <view class="content" v-if="baseList.length > 0">
 		<shmily-drag-image
 		  v-model="props.accountBookData.account_books"
+		  :padding="0"
+		  :item-margin="10"
 		  border-radius="20"
 		  @sort-change="handleSortChange"
 		  :show-payment-tag="true"
@@ -68,6 +66,65 @@
       <text class="empty-text">空空如也～</text>
       <text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
     </view>
+
+    <!-- 分类切换弹窗 -->
+    <bottom-popup :show="showTypeSelectPopup" @close="closeTypeSelectPopup">
+      <view class="type-popup">
+        <view class="popup-head">
+          <text class="popup-title font-alimamashuhei">切换分类</text>
+          <text class="popup-close font-title" @tap="closeTypeSelectPopup">关闭</text>
+        </view>
+        <scroll-view scroll-y class="popup-scroll">
+          <view
+            v-for="(typeName, idx) in typeOptions"
+            :key="typeName + '-' + idx"
+            class="popup-item"
+            :class="{ active: selectedType === idx }"
+            @tap="selectTypeByIndex(idx)"
+          >
+            <text class="popup-item-name font-alimamashuhei">{{ typeName }}</text>
+            <uni-icons v-if="selectedType === idx" type="checkmarkempty" size="18" color="#6b84a3" />
+          </view>
+        </scroll-view>
+      </view>
+    </bottom-popup>
+
+    <!-- 分类工具弹窗 -->
+    <bottom-popup :show="showTypeToolsPopup" @close="closeTypeToolsPopup">
+      <view class="type-popup">
+        <view class="popup-head">
+          <text class="popup-title font-alimamashuhei">分类工具</text>
+          <text class="popup-close font-title" @tap="closeTypeToolsPopup">关闭</text>
+        </view>
+        <view class="popup-tools">
+          <view class="popup-item" @tap="handleTypeToolAction('manage')">
+            <view class="popup-item-texts">
+              <text class="popup-item-name font-alimamashuhei">管理分类</text>
+              <text class="popup-item-desc font-title">新增、编辑、删除分类</text>
+            </view>
+            <uni-icons type="right" size="16" color="#9aabbd" />
+          </view>
+          <view class="popup-item" @tap="handleTypeToolAction('refresh')">
+            <view class="popup-item-texts">
+              <text class="popup-item-name font-alimamashuhei">刷新分类</text>
+              <text class="popup-item-desc font-title">重新获取最新分类列表</text>
+            </view>
+            <uni-icons type="reload" size="16" color="#9aabbd" />
+          </view>
+          <view
+            class="popup-item"
+            :class="{ disabled: selectedTypeName === '全部' }"
+            @tap="handleTypeToolAction('all')"
+          >
+            <view class="popup-item-texts">
+              <text class="popup-item-name font-alimamashuhei">切换到全部</text>
+              <text class="popup-item-desc font-title">清空当前分类筛选</text>
+            </view>
+            <uni-icons type="undo" size="16" color="#9aabbd" />
+          </view>
+        </view>
+      </view>
+    </bottom-popup>
   </view>
 </template>
 
@@ -94,6 +151,8 @@ const selectedType = ref(0)
 const selectedTypeName = ref('全部')
 const SELECTED_TYPE_KEY = 'accountBookSelectedType'
 const typeOptions = computed(() => [...defaultTypes, ...customTypes.value.map(t => t.name)])
+const showTypeSelectPopup = ref(false)
+const showTypeToolsPopup = ref(false)
 
 /* ===== 列表数据（当前分类） ===== */
 const baseList = computed(() => props.accountBookData?.account_books || [])
@@ -126,12 +185,6 @@ async function getAccountTypes() {
 }
 defineExpose({ getAccountTypes })
 
-function updateSelectedType(e){
-  selectedType.value = e.detail.value
-  selectedTypeName.value = typeOptions.value[selectedType.value]
-  uni.setStorageSync(SELECTED_TYPE_KEY, selectedTypeName.value)
-  emit('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
-}
 watch([customTypes, selectedTypeName], () => {
   const list = typeOptions.value
   const want = selectedTypeName.value || '全部'
@@ -139,6 +192,53 @@ watch([customTypes, selectedTypeName], () => {
   selectedType.value = idx >= 0 ? idx : 0
 })
 function openTypeManager(){ emit('open-type-manager') }
+function closeTypeSelectPopup() { showTypeSelectPopup.value = false }
+function openTypeSelectPopup() {
+  closeTypeToolsPopup()
+  showTypeSelectPopup.value = true
+}
+function closeTypeToolsPopup() { showTypeToolsPopup.value = false }
+function openTypeToolsPopup() {
+  closeTypeSelectPopup()
+  showTypeToolsPopup.value = true
+}
+function selectTypeByIndex(idx) {
+  if (idx < 0 || idx >= typeOptions.value.length) return
+  selectedType.value = idx
+  selectedTypeName.value = typeOptions.value[idx]
+  uni.setStorageSync(SELECTED_TYPE_KEY, selectedTypeName.value)
+  emit('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
+  closeTypeSelectPopup()
+}
+function switchTypeToAll(showToast = false) {
+  selectedTypeName.value = '全部'
+  selectedType.value = 0
+  uni.setStorageSync(SELECTED_TYPE_KEY, selectedTypeName.value)
+  emit('update-type', '')
+  if (showToast) uni.showToast({ title: '已切换到全部', icon: 'none' })
+}
+async function refreshTypeOptions(showToast = true) {
+  await getAccountTypes()
+  if (showToast) uni.showToast({ title: '分类已刷新', icon: 'none' })
+}
+async function handleTypeToolAction(action) {
+  if (action === 'all' && selectedTypeName.value === '全部') {
+    uni.showToast({ title: '当前已是全部', icon: 'none' })
+    return
+  }
+  closeTypeToolsPopup()
+  if (action === 'manage') {
+    openTypeManager()
+    return
+  }
+  if (action === 'refresh') {
+    await refreshTypeOptions(true)
+    return
+  }
+  if (action === 'all') {
+    switchTypeToAll(true)
+  }
+}
 
 /* ===== 排序保存 ===== */
 function handleSortChange(sortedIds){
@@ -177,6 +277,8 @@ const safeTop = ref(0)
 
 /* 生命周期 */
 onShow(async ()=>{
+  closeTypeSelectPopup()
+  closeTypeToolsPopup()
   const saved = uni.getStorageSync(PRICE_VISIBLE_KEY)
   if (saved !== '') isPriceVisible.value = (saved === 'true')
 
@@ -193,60 +295,289 @@ onShow(async ()=>{
 
 <style lang="scss" scoped>
 :root { --safe-top: 0px; }
-.content { padding: 0 20rpx; }
+.tab_body_1st {
+  width: 100%;
+}
+
+.content {
+  padding: 12rpx 0 calc(148rpx + constant(safe-area-inset-bottom));
+  padding: 12rpx 0 calc(148rpx + env(safe-area-inset-bottom));
+}
 
 /* 顶部选择与按钮 */
 .type-header {
-  padding: 15rpx 30rpx;
-  background: linear-gradient(135deg, #f8f9ff, #eef2ff);
-  border-radius: 16rpx;
-  margin: 20rpx 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(116, 126, 229, 0.15);
+  padding: 20rpx 20rpx 14rpx;
+  background: transparent;
+  margin: 0;
+  border-bottom: none;
 }
-.selector-container { display: flex; align-items: center; gap: 16rpx; }
+
+.selector-container {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .type-picker { flex: 1; }
 .selector-content {
-  display: flex; align-items: center;
-  height: 76rpx;
-  padding: 0 25rpx; background: #fff; border-radius: 12rpx;
-  box-shadow: 0 2rpx 10rpx rgba(116, 126, 229, 0.1); transition: all .3s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80rpx;
+  padding: 0 22rpx;
+  background: #ffffff;
+  border: 1rpx solid #dde7f3;
+  border-radius: 14rpx;
+  box-shadow: 0 4rpx 12rpx rgba(84, 108, 132, 0.08);
+  transition: all .25s;
 }
-.selector-content:active { transform: translateY(2rpx); box-shadow: 0 1rpx 5rpx rgba(116,126,229,.15); }
-.selector-label { font-size: 26rpx; color: #747EE5; font-weight: 600; margin-right: 15rpx; }
-.selector-value { font-size: 28rpx; color: #464646; font-weight: 600; flex: 1; }
-.selector-icon { margin-left: 10rpx; }
+.selector-content:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(84, 108, 132, 0.12);
+}
+
+.selector-main {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10rpx;
+}
+
+.selector-label {
+  font-size: 21rpx;
+  color: #8ea0b6;
+  letter-spacing: 0.6rpx;
+}
+
+.selector-value {
+  max-width: 300rpx;
+  font-size: 28rpx;
+  color: #35485f;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selector-icon {
+  margin-left: 10rpx;
+}
 
 .manage-btn {
-  display: inline-flex; align-items: center; justify-content:center; gap: 8rpx;
-  height: 76rpx; padding: 0 30rpx;
-  font-size: 26rpx; color: #fff; border-radius: 12rpx;
-  background: linear-gradient(135deg, #97e7f7, #d5acd6);
-  box-shadow: 0 2rpx 10rpx rgba(116,126,229,.15); white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 80rpx;
+  padding: 0 16rpx;
+  font-size: 22rpx;
+  color: #4f6279;
+  border-radius: 14rpx;
+  border: 1rpx solid #dbe7f4;
+  background: #f8fbff;
+  box-shadow: 0 4rpx 10rpx rgba(84, 108, 132, 0.07);
+  white-space: nowrap;
+  transition: all .25s;
   text {
-	  color: #fff;
+	  color: #4f6279;
+    letter-spacing: 0.4rpx;
+  }
+
+  &:active {
+    transform: translateY(1rpx);
+    box-shadow: 0 2rpx 6rpx rgba(84, 108, 132, 0.1);
   }
 }
 
 /* 🔎 放大镜按钮 */
 .search-icon-btn {
-  margin: 0; padding: 0 26rpx; height: 76rpx; line-height: 76rpx;
-  border: none; border-radius: 12rpx;
-  background: linear-gradient(135deg, #74c9e5, #86a7ff);
-  color: #fff; display: inline-flex; align-items: center; justify-content: center;
-  box-shadow: 0 2rpx 10rpx rgba(116,126,229,.15);
+  margin: 0;
+  padding: 0 24rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  border: none;
+  border-radius: 14rpx;
+  background: linear-gradient(135deg, #8bb2d7, #7f9fc7);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 10rpx rgba(84, 108, 132, 0.18);
+  transition: all .25s;
+
+  &:active {
+    transform: translateY(1rpx);
+    box-shadow: 0 2rpx 6rpx rgba(84, 108, 132, 0.22);
+  }
 }
 .search-icon-btn::after { border: none; }
 
 /* 合计卡片 */
-.summary-container { margin: 0 30rpx 20rpx; }
-.summary-content {
-  position: relative; display: flex; align-items: center;
-  padding: 20rpx 25rpx; background: linear-gradient(135deg, #f0f9ff, #e6f7ff);
-  border-radius: 12rpx; box-shadow: 0 2rpx 10rpx rgba(116, 202, 229, 0.15);
+.summary-container {
+  margin: 0;
+  padding: 0 20rpx 20rpx;
+  background: transparent;
 }
-.total-text { font-size: 28rpx; color: #74c9e5; font-weight: bold; margin-left: 12rpx; display:flex; align-items:center; gap:8rpx; }
-.toggle-eye { margin-left: 15rpx; padding: 8rpx; border-radius: 50%; background-color: rgba(116,201,229,.1); }
-.toggle-eye:active { transform: scale(.9); background-color: rgba(116,201,229,.2); }
+
+.summary-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 20rpx 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #dde8f4;
+  border-radius: 16rpx;
+  box-shadow: 0 6rpx 14rpx rgba(84, 108, 132, 0.08);
+}
+
+.summary-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.summary-label {
+  font-size: 24rpx;
+  color: #6d8097;
+  line-height: 1.3;
+}
+
+.summary-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+  color: #35485f;
+}
+
+.summary-currency {
+  font-size: 24rpx;
+  color: #6b84a3;
+}
+
+.summary-price {
+  font-size: 46rpx;
+  line-height: 1;
+  color: #2f435c;
+  letter-spacing: 0.2rpx;
+}
+
+.summary-mask {
+  font-size: 36rpx;
+  line-height: 1;
+  color: #8ea0b6;
+  letter-spacing: 1rpx;
+}
+
+.summary-side {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.toggle-eye {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f2f7fc;
+  border: 1rpx solid #dce7f3;
+}
+
+.toggle-eye:active {
+  transform: scale(.94);
+  background-color: #e9f1f9;
+}
+
+.sort-tip {
+  font-size: 20rpx;
+  color: #95a5b8;
+  letter-spacing: 0.4rpx;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* 底部 popup：分类切换 / 分类工具 */
+.type-popup {
+  background: #fff;
+  border-top-left-radius: 24rpx;
+  border-top-right-radius: 24rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+}
+
+.popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10rpx 8rpx 18rpx;
+}
+
+.popup-title {
+  font-size: 32rpx;
+  color: #2f425a;
+  letter-spacing: 0.4rpx;
+}
+
+.popup-close {
+  font-size: 22rpx;
+  color: #8ea0b6;
+  padding: 8rpx 10rpx;
+}
+
+.popup-scroll {
+  max-height: 58vh;
+}
+
+.popup-tools {
+  max-height: 58vh;
+  overflow-y: auto;
+}
+
+.popup-item {
+  min-height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 8rpx;
+  border-bottom: 1rpx solid #edf2f8;
+}
+
+.popup-item:last-child {
+  border-bottom: none;
+}
+
+.popup-item.active {
+  background: #f5f9ff;
+}
+
+.popup-item.disabled {
+  opacity: 0.45;
+}
+
+.popup-item-texts {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 16rpx 0;
+}
+
+.popup-item-name {
+  font-size: 28rpx;
+  color: #35485f;
+  line-height: 1.3;
+}
+
+.popup-item-desc {
+  font-size: 20rpx;
+  color: #97a8ba;
+  line-height: 1.2;
+}
 
 /* 空态 */
 .empty-state {
