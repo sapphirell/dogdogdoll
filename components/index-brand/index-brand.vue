@@ -13,7 +13,7 @@
 					<text class="brand-tag">{{brand.country_name}}·{{brand.type}}</text>
 					<text class="goods-count">收录{{brand.total_goods}}款</text>
 				</view>
-				<text class="brand-desc">{{brand.description}}</text>
+				<text class="brand-desc app-readable-text">{{brand.description}}</text>
 			</view>
 		</view>
 
@@ -114,9 +114,7 @@ function jumpGoods(id) {
 	}
 	
 	.brand-desc {
-		font-size: 24rpx;
-		color: #7f8c8d;
-		line-height: 1.4;
+		font-size: 26rpx;
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 2;

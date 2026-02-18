@@ -23,12 +23,10 @@
         <!-- Tab 1：我的物品 -->
         <uni-transition :name="transitionName()" :mode-class="['fade','slide-bottom']" :duration="300" :show="activeTab === 1">
           <stock-myitems
-            ref="myItemsRef"
             :accountBookData="accountBookData"
             :active-tab="activeTab"
             @go2editor="go2editor"
             @update-type="handleTypeUpdate"
-            @open-type-manager="typeModalVisible = true"
           />
         </uni-transition>
 
@@ -103,14 +101,6 @@
       </view>
     </view>
 
-    <!-- ✅ 分类管理弹窗：移动到 uni-transition 外层，由父级控制显隐 -->
-    <item-category-manager
-      v-model="typeModalVisible"
-      :list="typeList"
-      @updated="onTypesUpdated"
-      @refresh="onTypesRefresh"
-    />
-
     <!-- 固定悬浮按钮 -->
     <view class="unified-floating-button" @tap="handleFloatingButton">
       <uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
@@ -119,31 +109,20 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
-  websiteUrl, wechatSignLogin, getUserInfo, global, asyncGetUserInfo
+  websiteUrl, global, asyncGetUserInfo
 } from "../../common/config.js"
 
-// ===== 新增：弹窗开关与列表（由父级控制） =====
-const typeModalVisible = ref(false)
-const typeList = ref([]) // 仅用于给弹窗初始渲染，真正数据以弹窗组件内部拉取为准
-const myItemsRef = ref(null) // 获取子组件实例以调用其 getAccountTypes()
-
 // ===== 原有状态 =====
-const systemInfo = uni.getSystemInfoSync()
-const statusBarHeight = ref(systemInfo.statusBarHeight)
 const activeTab = ref(1)
-const previousTab = ref(1)
 
 function transitionName() {
   return activeTab.value > 1 ? ['fade', 'slide-left'] : ['fade', 'slide-right']
 }
 function switch_tab(index) {
-  previousTab.value = activeTab.value
   activeTab.value = index
-  // 切走非 Tab1 时，保证关闭分类弹窗
-  if (activeTab.value !== 1) typeModalVisible.value = false
 
   switch (index) {
     case 1: getAccountBookData(); break
@@ -171,17 +150,6 @@ function countPaid(bills) {
 // ===== 分类筛选回调（子组件触发） =====
 const handleTypeUpdate = (type) => {
   getAccountBookData(type)
-}
-
-// ===== 弹窗事件回调（弹窗组件触发） =====
-function onTypesUpdated(list) {
-  typeList.value = list || []
-  // 让子组件（我的物品）刷新自身的分类选项
-  myItemsRef.value && myItemsRef.value.getAccountTypes && myItemsRef.value.getAccountTypes()
-}
-function onTypesRefresh() {
-  // 刷新当前账本数据；筛选值仍由子组件控制并通过 @update-type 回传
-  getAccountBookData()
 }
 
 // ===== 悬浮按钮 =====

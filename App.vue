@@ -106,13 +106,18 @@ function loadFonts() {
 		font-family: "cutefont";
 	}
 	
+	/* 通用正文排版（提取自树洞正文） */
+	.app-readable-text,
 	.common-text {
 		font-size: 32rpx;
-		color: #333;
-		line-height: 1.7; 
-		margin-bottom: 24rpx;
+		color: #333333;
+		line-height: 1.7;
 		letter-spacing: 0.5rpx;
 		word-break: break-all;
+	}
+	/* 兼容旧用法 */
+	.common-text {
+		margin-bottom: 24rpx;
 	}
 
 	.icon_image {

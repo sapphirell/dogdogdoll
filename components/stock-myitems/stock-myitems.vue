@@ -137,7 +137,7 @@ const props = defineProps({
   accountBookData: Object,
   activeTab: { type: Number, default: 1 }
 })
-const emit = defineEmits(['go2editor','update-type','init-request','update:accountBookData','open-type-manager'])
+const emit = defineEmits(['go2editor','update-type','init-request','update:accountBookData'])
 
 /* ===== 显示金额 ===== */
 const isPriceVisible = ref(true)
@@ -191,7 +191,11 @@ watch([customTypes, selectedTypeName], () => {
   const idx = list.findIndex(n => n === want)
   selectedType.value = idx >= 0 ? idx : 0
 })
-function openTypeManager(){ emit('open-type-manager') }
+function openTypeManagerPage() {
+  uni.navigateTo({
+    url: '/pkg-stock/stock-type-manager/stock-type-manager'
+  })
+}
 function closeTypeSelectPopup() { showTypeSelectPopup.value = false }
 function openTypeSelectPopup() {
   closeTypeToolsPopup()
@@ -228,7 +232,7 @@ async function handleTypeToolAction(action) {
   }
   closeTypeToolsPopup()
   if (action === 'manage') {
-    openTypeManager()
+    openTypeManagerPage()
     return
   }
   if (action === 'refresh') {

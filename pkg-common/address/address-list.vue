@@ -31,6 +31,19 @@
           {{ formatArea(item) }} {{ item.detail }}
         </view>
 
+        <view v-if="item.suggested_express && item.suggested_express.length" class="card-express">
+          <text class="express-label">建议快递</text>
+          <view class="express-tags">
+            <text
+              v-for="(name, idx) in item.suggested_express"
+              :key="name + '-' + idx"
+              class="express-tag"
+            >
+              {{ name }}
+            </text>
+          </view>
+        </view>
+
         <view class="card-actions">
           <view
             class="action-item"
@@ -81,6 +94,39 @@ function formatArea (item) {
   ].filter(Boolean).join(' ')
 }
 
+function normalizeSuggestedExpressList (list) {
+  if (!Array.isArray(list) || list.length === 0) return []
+  const uniq = []
+  list.forEach((item) => {
+    const txt = String(item || '').trim()
+    if (!txt) return
+    if (uniq.includes(txt)) return
+    uniq.push(txt)
+  })
+  return uniq
+}
+
+function parseSuggestedExpressField (value) {
+  if (Array.isArray(value)) return normalizeSuggestedExpressList(value)
+  const txt = String(value || '').trim()
+  if (!txt) return []
+  if (txt.startsWith('[') && txt.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(txt)
+      if (Array.isArray(parsed)) return normalizeSuggestedExpressList(parsed)
+    } catch (e) {}
+  }
+  return normalizeSuggestedExpressList(txt.split(','))
+}
+
+function normalizeAddressItem (item) {
+  if (!item || typeof item !== 'object') return item
+  return {
+    ...item,
+    suggested_express: parseSuggestedExpressField(item.suggested_express)
+  }
+}
+
 async function fetchAddressList () {
   const token = getToken()
   if (!token) {
@@ -98,7 +144,7 @@ async function fetchAddressList () {
 
     const resp = res?.data || {}
     if (resp.status === 'success' && Array.isArray(resp.data)) {
-      addressList.value = resp.data
+      addressList.value = resp.data.map(normalizeAddressItem)
       return
     }
     addressList.value = []
@@ -295,6 +341,33 @@ onShow(() => {
   font-size: 28rpx;
   line-height: 1.5;
   word-break: break-all;
+}
+
+.card-express {
+  margin-top: 14rpx;
+}
+
+.express-label {
+  font-size: 24rpx;
+  color: #7c8b94;
+}
+
+.express-tags {
+  margin-top: 8rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.express-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 44rpx;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  background: #f1f6f8;
+  color: #50616c;
+  font-size: 22rpx;
 }
 
 .card-actions {

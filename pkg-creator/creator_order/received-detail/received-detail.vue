@@ -187,17 +187,25 @@
     </scroll-view>
 
     <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: bottomBarPadding }">
-      <view class="bottom-actions-row">
+      <view class="bottom-actions-row" :class="{ 'only-cancel': canOnlyCancel }">
         <view class="left-text-actions">
-            <view class="text-btn-item" @tap="handleAuditSubmission('cancel_order')">
+            <view
+              v-if="canArtistCancel"
+              class="text-btn-item danger"
+              @tap="handleAuditSubmission('cancel_order')"
+            >
                 取消订单
             </view>
-            <view class="text-btn-item" @tap="handleAuditSubmission('return_pending')">
+            <view
+              v-if="canArtistReturn"
+              class="text-btn-item"
+              @tap="handleAuditSubmission('return_pending')"
+            >
                 退回修改
             </view>
         </view>
         
-        <button class="action-btn-large" @tap="handleConfirmSubmission">
+        <button v-if="canArtistConfirm" class="action-btn-large" @tap="handleConfirmSubmission">
             确认订单
         </button>
       </view>
@@ -299,28 +307,64 @@ const targetUserInfo = ref(null) // 新增：投递者用户信息
 const items = computed(() => (queueInfo.value?.items || []))
 const draftItems = computed(() => (queueInfo.value?.draft_items || []))
 
-const showBottomBar = computed(() => {
-    return queueInfo.value && queueInfo.value.status === 2
-})
-
 const currentUid = computed(() => {
   const u = global.userInfo || {}
   return u.id || u.Id || 0
 })
 
 const isBuyer = computed(() => {
+  const q = queueInfo.value || {}
+  if (typeof q.viewer_is_buyer === 'boolean') {
+    return q.viewer_is_buyer
+  }
+
+  const submissionUserID = Number(q.submission_user_id || q.user_id || q.userId || 0)
+  if (submissionUserID > 0 && Number(currentUid.value) > 0) {
+    return Number(submissionUserID) === Number(currentUid.value)
+  }
+
   const list = items.value
-  if (!list.length || !currentUid.value) return true
+  if (!list.length || !currentUid.value) {
+    const brandId = Number(global.userInfo?.brand_id || global.userInfo?.brandId || 0)
+    return brandId <= 0
+  }
   const first = list[0]
   const uid = first.user_id || first.userId
   return Number(uid) === Number(currentUid.value)
 })
 
+const SUBMISSION_STATUS_SELECTED_CONFIRM = 1
 const SUBMISSION_STATUS_BUYER_CONFIRMED = 2
 const SUBMISSION_STATUS_SELECTED_PAY = 3
 const SUBMISSION_STATUS_PAID = 4
 const PAYMENT_METHOD_PLATFORM = 1
 const PAYMENT_METHOD_QRCODE = 2
+
+const submissionStatus = computed(() => Number(queueInfo.value?.status || 0))
+
+const canArtistCancel = computed(() => {
+  if (isBuyer.value) return false
+  return (
+    submissionStatus.value === SUBMISSION_STATUS_SELECTED_CONFIRM ||
+    submissionStatus.value === SUBMISSION_STATUS_BUYER_CONFIRMED
+  )
+})
+
+const canArtistReturn = computed(() => {
+  if (isBuyer.value) return false
+  return submissionStatus.value === SUBMISSION_STATUS_BUYER_CONFIRMED
+})
+
+const canArtistConfirm = computed(() => {
+  if (isBuyer.value) return false
+  return submissionStatus.value === SUBMISSION_STATUS_BUYER_CONFIRMED
+})
+
+const canOnlyCancel = computed(() => canArtistCancel.value && !canArtistConfirm.value && !canArtistReturn.value)
+
+const showBottomBar = computed(() => {
+  return !!queueInfo.value && (canArtistCancel.value || canArtistReturn.value || canArtistConfirm.value)
+})
 
 const stepConfigs = computed(() => {
   const q = queueInfo.value || {}
@@ -477,12 +521,21 @@ async function fetchQueueInfo() {
         return
       }
       queueInfo.value = body.data || null
-      // 获取成功后，如果有关联的 User，解析用户信息
-      if (queueInfo.value && queueInfo.value.items && queueInfo.value.items.length > 0) {
-          const first = queueInfo.value.items[0]
-          const uid = first.user_id || first.userId || 0
-          if (uid) {
-              fetchTargetUserInfo(uid)
+      // 获取成功后，优先用 submission_user_id 定位买家
+      if (queueInfo.value) {
+          const first = queueInfo.value.items && queueInfo.value.items.length > 0
+            ? queueInfo.value.items[0]
+            : null
+          const uid = Number(
+            queueInfo.value.submission_user_id ||
+            first?.user_id ||
+            first?.userId ||
+            0
+          )
+          if (uid > 0) {
+            fetchTargetUserInfo(uid)
+          } else {
+            targetUserInfo.value = null
           }
       }
     },
@@ -515,10 +568,15 @@ function fetchTargetUserInfo(uid) {
 
 // 新增：跳转用户主页
 function goUserPage() {
-    if (!queueInfo.value || !queueInfo.value.items || !queueInfo.value.items.length) return
-    const first = queueInfo.value.items[0]
-    const uid = first.user_id || first.userId || 0
-    if (uid) {
+    if (!queueInfo.value) return
+    const first = queueInfo.value.items && queueInfo.value.items.length ? queueInfo.value.items[0] : null
+    const uid = Number(
+      queueInfo.value.submission_user_id ||
+      first?.user_id ||
+      first?.userId ||
+      0
+    )
+    if (uid > 0) {
         // H5 或 uni-app 页面跳转
         uni.navigateTo({
             url: `/pages/user_page/user_page?uid=${uid}`
@@ -534,13 +592,15 @@ function reload() {
 
 async function resolvePeerId() {
   const list = items.value
-  if (!list.length) {
-    uni.showToast({ title: '暂无作品，无法发起会话', icon: 'none' })
-    return null
-  }
-  const first = list[0]
-  const buyerUid = first.user_id || first.userId || 0
-  const brandId = first.brand_id || first.brandId || 0
+  const first = list.length ? list[0] : null
+  const buyerUid = Number(
+    queueInfo.value?.submission_user_id ||
+    first?.user_id ||
+    first?.userId ||
+    0
+  )
+  const brandId = Number(first?.brand_id || first?.brandId || 0)
+  const brandOwnerUid = Number(queueInfo.value?.brand_owner_uid || 0)
 
   if (!isBuyer.value) {
     // 如果我是卖家/妆师，我要找买家
@@ -552,6 +612,10 @@ async function resolvePeerId() {
   }
 
   // 如果我是买家，我要找品牌/妆师
+  if (brandOwnerUid > 0) {
+    return brandOwnerUid
+  }
+
   if (!brandId) {
     uni.showToast({ title: '缺少品牌信息', icon: 'none' })
     return null
@@ -658,7 +722,10 @@ function submitChangePrice() {
 }
 
 function handleConfirmSubmission() {
-  if (!queueInfo.value || queueInfo.value.status !== 2) return
+  if (!canArtistConfirm.value) {
+    uni.showToast({ title: '当前状态不可确认订单', icon: 'none' })
+    return
+  }
   currentActionType.value = 'confirm'
   auditModalTitle.value = '确认订单'
   auditModalDesc.value = '确认后将进入待付款状态，是否继续？'
@@ -688,6 +755,14 @@ function doConfirmSubmission() {
 
 function handleAuditSubmission(action) {
   if (!queueInfo.value) return
+  if (action === 'cancel_order' && !canArtistCancel.value) {
+    uni.showToast({ title: '当前状态不可取消订单', icon: 'none' })
+    return
+  }
+  if (action === 'return_pending' && !canArtistReturn.value) {
+    uni.showToast({ title: '当前状态不可退回修改', icon: 'none' })
+    return
+  }
   currentActionType.value = action
   if (action === 'return_pending') {
       auditModalTitle.value = '退回待确认'
@@ -1256,6 +1331,13 @@ onLoad((options) => {
   min-height: 96rpx;
   gap: 22rpx;
 }
+.bottom-actions-row.only-cancel {
+  justify-content: flex-end;
+}
+.bottom-actions-row.only-cancel .left-text-actions {
+  margin-left: auto;
+  justify-content: flex-end;
+}
 
 .left-text-actions {
   display: flex;
@@ -1268,6 +1350,9 @@ onLoad((options) => {
   color: #7a6670;
   padding: 18rpx 0;
   font-weight: 500;
+}
+.text-btn-item.danger {
+  color: #b35f5f;
 }
 .text-btn-item:active {
   opacity: 0.6;
@@ -1454,6 +1539,11 @@ onLoad((options) => {
   .left-text-actions {
     width: 100%;
     justify-content: space-between;
+  }
+  .bottom-actions-row.only-cancel .left-text-actions {
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
   }
   .action-btn-large {
     width: 100%;

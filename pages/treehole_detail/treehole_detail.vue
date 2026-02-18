@@ -35,7 +35,7 @@
 
     <view class="section-card post-card">
       <view class="post-content">
-        <text user-select>{{ detailData.content }}</text>
+        <text class="app-readable-text" user-select>{{ detailData.content }}</text>
       </view>
 
       <view 
@@ -416,12 +416,7 @@ $radius-img: 12rpx;
 /* 2. 内容区域 */
 .post-card {
   .post-content {
-    font-size: 32rpx;
-    color: #333;
-    line-height: 1.7;
     margin-bottom: 24rpx;
-    letter-spacing: 0.5rpx;
-    word-break: break-all;
   }
 
   .divider {

@@ -118,6 +118,52 @@
         <text v-if="errorFields.detail" class="field-error">{{ errorFields.detail }}</text>
       </view>
 
+      <view class="field-block express-block">
+        <view class="express-header">
+          <text class="express-title">建议快递</text>
+        </view>
+        <text class="express-desc">
+          您希望的收件快递是哪些。产生交易的另一方向您发快递时，会尽量使用您所选的快递，但不会对对方有强制约束，仅作为建议。
+        </text>
+
+        <view class="express-chip-list">
+          <view
+            v-for="item in suggestedExpressOptions"
+            :key="item"
+            class="express-chip"
+            :class="{ active: hasSuggestedExpress(item) }"
+            @click="toggleSuggestedExpress(item)"
+          >
+            {{ item }}
+          </view>
+        </view>
+
+        <view class="form-item express-custom-item">
+          <text class="form-label">自定义</text>
+          <input
+            v-model.trim="suggestedExpressInput"
+            class="form-input"
+            type="text"
+            maxlength="20"
+            placeholder="输入快递名后点击添加"
+            @confirm="addCustomSuggestedExpress"
+          />
+          <text class="express-add-btn" @click="addCustomSuggestedExpress">添加</text>
+        </view>
+
+        <view v-if="form.suggested_express.length > 0" class="express-selected-list">
+          <view
+            v-for="item in form.suggested_express"
+            :key="item"
+            class="express-selected-chip"
+            @click="removeSuggestedExpress(item)"
+          >
+            <text class="chip-name">{{ item }}</text>
+            <uni-icons type="closeempty" size="12" color="#6d7c85" />
+          </view>
+        </view>
+      </view>
+
       <view class="default-line">
         <text class="default-text">设为默认地址</text>
         <switch
@@ -157,8 +203,20 @@ const form = ref({
   city_code: 0,
   district_code: 0,
   detail: '',
+  suggested_express: [],
   is_default: 0
 })
+const suggestedExpressInput = ref('')
+const suggestedExpressOptions = [
+  '顺丰',
+  '京东',
+  '中通',
+  '圆通',
+  '申通',
+  '韵达',
+  '极兔',
+  'EMS'
+]
 
 const provinceOptions = ref([])
 const cityOptions = ref([])
@@ -201,6 +259,60 @@ function clearFieldError (field) {
   if (!field) return
   errorFields.value[field] = ''
   refreshSubmitErrorMessage()
+}
+
+function normalizeSuggestedExpressList (list) {
+  if (!Array.isArray(list) || list.length === 0) return []
+  const uniq = []
+  list.forEach((item) => {
+    const txt = String(item || '').trim()
+    if (!txt) return
+    if (uniq.includes(txt)) return
+    uniq.push(txt)
+  })
+  return uniq
+}
+
+function parseSuggestedExpressField (value) {
+  if (Array.isArray(value)) return normalizeSuggestedExpressList(value)
+  const txt = String(value || '').trim()
+  if (!txt) return []
+  if (txt.startsWith('[') && txt.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(txt)
+      if (Array.isArray(parsed)) return normalizeSuggestedExpressList(parsed)
+    } catch (e) {}
+  }
+  return normalizeSuggestedExpressList(txt.split(','))
+}
+
+function hasSuggestedExpress (name) {
+  return form.value.suggested_express.includes(name)
+}
+
+function toggleSuggestedExpress (name) {
+  const current = normalizeSuggestedExpressList(form.value.suggested_express)
+  if (current.includes(name)) {
+    form.value.suggested_express = current.filter(item => item !== name)
+    return
+  }
+  form.value.suggested_express = normalizeSuggestedExpressList([...current, name])
+}
+
+function removeSuggestedExpress (name) {
+  form.value.suggested_express = normalizeSuggestedExpressList(
+    form.value.suggested_express.filter(item => item !== name)
+  )
+}
+
+function addCustomSuggestedExpress () {
+  const custom = String(suggestedExpressInput.value || '').trim()
+  if (!custom) return
+  form.value.suggested_express = normalizeSuggestedExpressList([
+    ...form.value.suggested_express,
+    custom
+  ])
+  suggestedExpressInput.value = ''
 }
 
 function maskPhone (phone) {
@@ -379,6 +491,7 @@ async function fillFormById (id) {
     city_code: Number(current.city_code || 0),
     district_code: Number(current.district_code || 0),
     detail: current.detail || '',
+    suggested_express: parseSuggestedExpressField(current.suggested_express),
     is_default: Number(current.is_default || 0)
   }
 
@@ -435,6 +548,7 @@ function validateForm () {
 
 async function submitForm () {
   if (submitting.value || pageLoading.value) return
+  addCustomSuggestedExpress()
   if (!validateForm()) return
 
   const token = getToken()
@@ -452,6 +566,7 @@ async function submitForm () {
       city_code: form.value.city_code,
       district_code: form.value.district_code,
       detail: form.value.detail,
+      suggested_express: normalizeSuggestedExpressList(form.value.suggested_express),
       is_default: form.value.is_default
     }
     if (isEdit.value) payload.id = form.value.id
@@ -609,6 +724,95 @@ onLoad(async (options) => {
   font-size: 28rpx;
   line-height: 1.5;
   color: #273138;
+}
+
+.express-block {
+  padding: 20rpx 0 8rpx;
+}
+
+.express-header {
+  display: flex;
+  align-items: center;
+}
+
+.express-title {
+  font-size: 28rpx;
+  color: #3f4b53;
+  font-weight: 600;
+}
+
+.express-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #8b97a0;
+  line-height: 1.55;
+}
+
+.express-chip-list {
+  margin-top: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.express-chip {
+  min-width: 104rpx;
+  height: 54rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f6f8;
+  color: #5e6c75;
+  font-size: 24rpx;
+  border: 1px solid #e2e9ee;
+}
+
+.express-chip.active {
+  background: #eef8fb;
+  border-color: #a7d8e6;
+  color: #3f93ab;
+}
+
+.express-custom-item {
+  margin-top: 16rpx;
+  border-bottom: 0;
+  border-radius: 14rpx;
+  background: #f8fafb;
+  padding: 0 16rpx;
+}
+
+.express-add-btn {
+  margin-left: 12rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #e6f3f8;
+  color: #428ba0;
+  font-size: 24rpx;
+}
+
+.express-selected-list {
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.express-selected-chip {
+  height: 52rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  background: #f2f5f7;
+  border: 1px solid #dde6eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.chip-name {
+  font-size: 23rpx;
+  color: #54636c;
 }
 
 .default-line {

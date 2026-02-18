@@ -58,7 +58,13 @@
         </view>
       </view>
 
-      <view v-if="filtered.length === 0" class="empty">
+      <view v-if="isFetching && baseList.length === 0" class="empty">
+        <image class="empty-icon" src="/static/new-icon/loading.gif" />
+        <text class="empty-title font-title">正在加载娃柜数据…</text>
+        <text class="empty-tip">首次进入可能需要一点时间</text>
+      </view>
+
+      <view v-else-if="filtered.length === 0" class="empty">
         <image class="empty-icon" src="/static/empty.jpg" />
         <!-- 空态标题也用艺术字体 -->
         <text class="empty-title font-title">没有匹配的物品</text>
@@ -70,7 +76,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { websiteUrl } from '@/common/config.js'
 
 /* ========= 安全区 ========= */
 const safeTop = ref(0)
@@ -84,6 +91,8 @@ const safePadPx = `${Math.max(0, safeTop.value)}px`
 
 /* ========= 接收原页传来的列表 ========= */
 const baseList = ref([])
+const isFetching = ref(false)
+const hasTriedRemote = ref(false)
 
 /* ========= 选择模式：用于从娃柜中选择回填 ========= */
 // 是否为“选择模式”（投妆从娃柜中选择），通过 URL 参数控制：?pickMode=1
@@ -106,7 +115,81 @@ try {
 }
 // #endif
 
-/** H5/小程序通用的 opener 通道 + H5 的后备方案 */
+function normalizeListPayload(input) {
+  if (Array.isArray(input)) return input
+  if (!input || typeof input !== 'object') return []
+  if (Array.isArray(input.list)) return input.list
+  if (Array.isArray(input.rows)) return input.rows
+  if (Array.isArray(input.items)) return input.items
+  if (Array.isArray(input.account_books)) return input.account_books
+  if (Array.isArray(input?.account_books?.list)) return input.account_books.list
+  if (Array.isArray(input?.data?.list)) return input.data.list
+  if (Array.isArray(input?.data?.rows)) return input.data.rows
+  if (Array.isArray(input?.data?.items)) return input.data.items
+  if (Array.isArray(input?.data?.account_books)) return input.data.account_books
+  if (Array.isArray(input?.data?.account_books?.list)) return input.data.account_books.list
+  return []
+}
+
+function applyList(input, source = 'unknown') {
+  const list = normalizeListPayload(input)
+  if (!Array.isArray(list) || list.length === 0) return false
+  baseList.value = list
+  try { uni.setStorageSync('__stockList', list) } catch (e) {}
+  console.log('[stock-search] list loaded from', source, 'count=', list.length)
+  return true
+}
+
+function tryLoadFromCache() {
+  if (baseList.value.length > 0) return true
+
+  try {
+    const cached = uni.getStorageSync('__stockList')
+    if (applyList(cached, 'uniStorage')) return true
+  } catch (e) {}
+
+  // H5 兜底
+  try {
+    const fromState = history.state && history.state.__stockList
+    if (applyList(fromState, 'history.state')) return true
+  } catch (e) {}
+
+  try {
+    const cached = localStorage.getItem('__stockList')
+    if (cached && applyList(JSON.parse(cached), 'localStorage')) return true
+  } catch (e) {}
+
+  return false
+}
+
+async function fetchStockListFromServer(force = false) {
+  if (isFetching.value) return
+  if (hasTriedRemote.value && !force) return
+
+  const token = uni.getStorageSync('token') || ''
+  if (!token) return
+
+  hasTriedRemote.value = true
+  isFetching.value = true
+  try {
+    const res = await uni.request({
+      url: websiteUrl.value + '/with-state/account-book',
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    const raw = res?.data || {}
+    const data = raw?.data || {}
+    if (!applyList(raw, 'remote.raw') && !applyList(data, 'remote.data')) {
+      console.log('[stock-search] remote response has no account_books')
+    }
+  } catch (err) {
+    console.error('[stock-search] fetch remote list fail:', err)
+  } finally {
+    isFetching.value = false
+  }
+}
+
+/** H5/小程序通用的 opener 通道 + 缓存 + 远程兜底 */
 onLoad((options) => {
   // 选择模式开关：从 URL 参数中读取
   if (options && (options.pickMode === '1' || options.pickMode === 'true')) {
@@ -119,32 +202,25 @@ onLoad((options) => {
     ec &&
       ec.on &&
       ec.on('initList', (data) => {
-        baseList.value = Array.isArray(data?.list) ? data.list : []
+        if (!applyList(data, 'eventChannel')) {
+          if (!tryLoadFromCache()) {
+            fetchStockListFromServer(false)
+          }
+        }
       })
   } catch {}
 
-  // 2) 小程序/全端兜底：优先读 uniStorage
-  if (!baseList.value.length) {
-    try {
-      const cached = uni.getStorageSync('__stockList')
-      if (Array.isArray(cached)) baseList.value = cached
-      else if (typeof cached === 'string' && cached) baseList.value = JSON.parse(cached)
-    } catch {}
+  // 2) 先读缓存，无则远程拉取
+  if (!tryLoadFromCache()) {
+    fetchStockListFromServer(false)
   }
+})
 
-  // 3) H5 后备：用 history.state 或 localStorage 兜底（原逻辑保留）
-  if (!baseList.value.length) {
-    try {
-      const fromState = history.state && history.state.__stockList
-      if (Array.isArray(fromState)) baseList.value = fromState
-    } catch {}
-  }
-  if (!baseList.value.length) {
-    try {
-      const cached = localStorage.getItem('__stockList')
-      if (cached) baseList.value = JSON.parse(cached)
-    } catch {}
-  }
+onShow(() => {
+  // 某些端 eventChannel 或缓存命中时机存在延迟，onShow 再兜一层
+  if (baseList.value.length > 0) return
+  if (tryLoadFromCache()) return
+  fetchStockListFromServer(false)
 })
 
 /* ========= 搜索 ========= */

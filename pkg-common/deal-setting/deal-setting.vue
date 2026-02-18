@@ -27,6 +27,18 @@
       </view>
     </common-modal>
 
+    <common-modal :visible="showRoleModal" width="600rpx" @update:visible="showRoleModal = $event">
+      <view class="modal-content-box">
+        <view class="modal-title">提示</view>
+        <view class="modal-desc">仅妆师、毛娘或店主可设置收款码。</view>
+        <view class="modal-actions">
+          <view class="modal-btn single-gray-btn" @click="showRoleModal = false">
+            知道了
+          </view>
+        </view>
+      </view>
+    </common-modal>
+
   </view>
 </template>
 
@@ -42,6 +54,8 @@ import {
 uni.setNavigationBarTitle({ title: '交易设置' });
 
 const showAuthModal = ref(false)
+const showRoleModal = ref(false)
+const checkingPaymentRole = ref(false)
 
 // 判断是否设置了交易密码
 const hasTradePassword = computed(() => {
@@ -70,7 +84,7 @@ const menuItems = computed(() => [
     label: '设置收款码',
     isSet: hasPaymentCode.value, 
     displayValue: hasPaymentCode.value ? '已设置' : '去设置',
-    action: () => handleGuardedAction(jump2PaymentCode)
+    action: handlePaymentCodeAction
   },
   {
     label: '实名认证',
@@ -87,6 +101,58 @@ function handleGuardedAction(callback) {
     return;
   }
   callback();
+}
+
+function hasCreatorOrShopRoleLocal (userInfo) {
+  const info = userInfo || {}
+  const brandId = Number(info.brand_id || info.brandId || 0)
+  if (brandId > 0) return true
+
+  // 兼容不同端/历史字段
+  if (Number(info.is_artist) === 1) return true
+  if (Number(info.is_hairstylist) === 1) return true
+  if (Number(info.is_shop_owner) === 1) return true
+  if (Number(info.is_brand_manager) === 1) return true
+  return false
+}
+
+async function hasPaymentCodeRolePermission () {
+  if (hasCreatorOrShopRoleLocal(global.userInfo)) return true
+
+  const latest = await asyncGetUserInfo()
+  if (hasCreatorOrShopRoleLocal(latest || global.userInfo)) return true
+
+  const token = uni.getStorageSync('token')
+  if (!token) return false
+
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/brand-manager/get-artist-info`,
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    const status = String(res?.data?.status || '').toLowerCase()
+    if (status === 'success') return true
+    if (Number(res?.data?.code || 0) === 200 && !!res?.data?.data) return true
+    return false
+  } catch (e) {
+    return false
+  }
+}
+
+async function handlePaymentCodeAction () {
+  if (checkingPaymentRole.value) return
+  checkingPaymentRole.value = true
+  try {
+    const pass = await hasPaymentCodeRolePermission()
+    if (!pass) {
+      showRoleModal.value = true
+      return
+    }
+    handleGuardedAction(jump2PaymentCode)
+  } finally {
+    checkingPaymentRole.value = false
+  }
 }
 
 // ===== 跳转方法 =====

@@ -40,14 +40,16 @@
 							<uni-icons type="clear" color="#9b9b9b" size="30"></uni-icons>
 						</view>
 
-						<!-- ✅ 懒加载图片：进入视口前只渲染占位图，进入视口后再加载真正图片 -->
-						<image
+						<!-- 使用 common-image 统一图片渲染与懒加载 -->
+						<common-image
 							class="pre-image"
-							:id="'drag-img-' + item.id"
-							:src="item._imgLoaded ? getDisplayImg(item) : NO_IMG"
+							:src="getDisplayImg(item)"
+							width="100%"
+							height="85%"
+							radius="0"
 							mode="aspectFill"
-							:lazy-load="true"
-							@error="onImgError(item)"
+							:lazy="true"
+							:threshold="80"
 						/>
 
 						<view class="info-container" v-if="props.showItemInfo">
@@ -76,7 +78,6 @@
 		computed,
 		watch,
 		onMounted,
-		onBeforeUnmount,
 		nextTick,
 		getCurrentInstance
 	} from 'vue'
@@ -186,9 +187,6 @@
 
 	const instanceRef = ref(null); // 保存组件实例引用
 
-	// ✅ 懒加载：存放每个图片对应的 IntersectionObserver
-	const imgObservers = new Map()
-
 	// 计算属性
 	const areaHeight = computed(() => {
 		if (imageList.value.length < props.number) {
@@ -199,11 +197,15 @@
 
 	// 调整内部容器宽度计算
 	const childWidth = computed(() => {
-		return (viewWidth.value - rpx2px(props.padding) * 2) + 'px'
+		// itemMargin 为 px，padding 为 rpx；两者都计入内部可用宽度，避免只出现左右无上下的错觉
+		const widthPx = viewWidth.value - rpx2px(props.padding) * 2 - props.itemMargin * 2
+		return Math.max(widthPx, 0) + 'px'
 	})
 	// 新增：内部容器高度计算
 	const childHeight = computed(() => {
-		return (viewHeight.value - rpx2px(props.padding) * 2) + 'px'
+		// 与宽度一致，扣除上下 margin，保证行与行之间有稳定间距（padding=0 时也生效）
+		const heightPx = viewHeight.value - rpx2px(props.padding) * 2 - props.itemMargin * 2
+		return Math.max(heightPx, 0) + 'px'
 	})
 
 	// 删除图片方法
@@ -214,9 +216,6 @@
 		// 组件内部也需要删除该图片
 		const index = imageList.value.findIndex(img => img.id === item.id);
 		if (index !== -1) {
-			// 清理懒加载监听
-			destroyImgObserver(item.id)
-
 			imageList.value.splice(index, 1);
 			updateItemsPosition(); // 更新位置
 			sortList(); // 更新数据
@@ -524,9 +523,6 @@
 	};
 
 	const delImageHandle = (item, index) => {
-		// 清理懒加载监听
-		destroyImgObserver(item.id)
-
 		imageList.value.splice(index, 1)
 		imageList.value.forEach(obj => {
 			if (obj.index > item.index) {
@@ -646,15 +642,13 @@
 			scale: 1,
 			zIndex: 9,
 			opacity: 1,
-			index: imageList.value.length,
-			id: item.id,
-			disable: false,
-			offset: 0,
-			moveEnd: false,
-			ready: false,
-			_imgLoaded: false,   // ✅ 懒加载：默认未加载真实图片
-			__imgBroken: false
-		})
+				index: imageList.value.length,
+				id: item.id,
+				disable: false,
+				offset: 0,
+				moveEnd: false,
+				ready: false
+			})
 
 		add.value.x = (imageList.value.length % colsValue.value) * viewWidth.value
 		add.value.y = Math.floor(imageList.value.length / colsValue.value) * viewHeight.value
@@ -703,28 +697,15 @@
 					colsValue.value = Math.floor(data.width / viewWidth.value)
 				}
 
-				const list = props.modelValue.length ? props.modelValue : props.value
-				list.forEach(item => {
-					addProperties(item)
-				})
-				first.value = false
-
-				// ✅ 初始化时为所有图片建立懒加载监听
-				setupLazyLoadForAll()
-			}).exec()
+					const list = props.modelValue.length ? props.modelValue : props.value
+					list.forEach(item => {
+						addProperties(item)
+					})
+					first.value = false
+				}).exec()
+			})
+			isMounted.value = true;
 		})
-		isMounted.value = true;
-	})
-
-	// 组件卸载时清理所有 IntersectionObserver
-	onBeforeUnmount(() => {
-		imgObservers.forEach(ob => {
-			try {
-				ob.disconnect()
-			} catch (e) {}
-		})
-		imgObservers.clear()
-	})
 
 	// 更新所有项目的位置（根据当前索引）
 	const updateItemsPosition = () => {
@@ -775,15 +756,13 @@
 		() => props.modelValue,
 		(newVal) => {
 			if (isDragging.value) return; // 拖动时忽略父组件回写，避免受控回拉
-			if (isMounted.value) {
-				nextTick(() => {
-					initViewSize().then(() => {
-						updateImageList(newVal);
-						// ✅ 数据变化后重建懒加载监听
-						setupLazyLoadForAll()
+				if (isMounted.value) {
+					nextTick(() => {
+						initViewSize().then(() => {
+							updateImageList(newVal);
+						});
 					});
-				});
-			}
+				}
 		},
 		{
 			deep: true,
@@ -829,16 +808,14 @@
 			absY,
 			scale: 1,
 			zIndex: 9,
-			opacity: 1,
-			index: imageList.value.length,
-			disable: false,
-			offset: 0,
-			moveEnd: false,
-			ready: false,
-			_imgLoaded: false, // ✅ 默认未加载真实图片
-			__imgBroken: false
+				opacity: 1,
+				index: imageList.value.length,
+				disable: false,
+				offset: 0,
+				moveEnd: false,
+				ready: false
+			};
 		};
-	};
 
 	/* ========= 图片兜底 / 文本清洗 ========= */
 	const NO_IMG =
@@ -860,12 +837,9 @@
 	}
 
 	function getDisplayImg(item) {
-		if (item.__imgBroken) return NO_IMG
 		const src = normalizeFirstImage(item.src)
 		return src || NO_IMG
 	}
-
-	function onImgError(item) { item.__imgBroken = true }
 
 	function getDisplayPrice(price) {
 		if (price === null || price === undefined) return ''
@@ -876,58 +850,6 @@
 	function getPaymentText(item) {
 		const st = Number(item?.payStatus ?? 1)
 		return props.paymentMap?.[st] || props.paymentMap?.[1] || '已全款'
-	}
-
-	/* ========= 懒加载核心逻辑（App / H5 / 小程序通用） ========= */
-
-	// 为单个图片创建 IntersectionObserver
-	const createImgObserver = (id) => {
-		if (!instanceRef.value || imgObservers.has(id)) return
-
-		const observer = uni.createIntersectionObserver(instanceRef.value, {
-			thresholds: [0.01]
-		})
-
-		observer
-			.relativeToViewport({ bottom: 50 }) // 提前 50px 预加载
-			.observe(`#drag-img-${id}`, (res) => {
-				if (!res) return
-				if (res.intersectionRatio > 0) {
-					const target = imageList.value.find(i => i.id === id)
-					if (target) {
-						target._imgLoaded = true
-					}
-					try {
-						observer.disconnect()
-					} catch (e) {}
-					imgObservers.delete(id)
-				}
-			})
-
-		imgObservers.set(id, observer)
-	}
-
-	// 为当前所有图片建立懒加载监听（只给未加载过的建）
-	const setupLazyLoadForAll = () => {
-		if (!instanceRef.value) return
-		nextTick(() => {
-			imageList.value.forEach(item => {
-				if (!item._imgLoaded) {
-					createImgObserver(item.id)
-				}
-			})
-		})
-	}
-
-	// 删除某个 item 时，清理对应的 Observer
-	const destroyImgObserver = (id) => {
-		const ob = imgObservers.get(id)
-		if (ob) {
-			try {
-				ob.disconnect()
-			} catch (e) {}
-			imgObservers.delete(id)
-		}
 	}
 </script>
 

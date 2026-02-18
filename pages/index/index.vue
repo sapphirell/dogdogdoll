@@ -240,7 +240,7 @@
               <view
                 v-for="item in treeholeList"
                 :key="item.id"
-                class="treehole-item common-text"
+                class="treehole-item"
                 @tap="jump2treeholeDetail(item)"
               >
                 <view
@@ -268,7 +268,7 @@
                   <text class="cid"></text>
                 </view>
 
-                <text class="content">{{ item.content }}</text>
+                <text class="content app-readable-text">{{ item.content }}</text>
 
                 <view
                   v-if="item.images && item.images.length > 0"
@@ -1116,9 +1116,6 @@ onReady(() => {
   margin: 0 20rpx 30rpx;
   padding: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
- text {
-   font-size: 26rpx;
- }
 }
 
 .user-info {
@@ -1161,11 +1158,8 @@ onReady(() => {
 }
 
 .content {
-  font-size: 23rpx;
-  color: #888;
-  line-height: 1.6;
   margin-bottom: 30rpx;
-  display: inline-block;
+  display: block;
 }
 
 .image-grid {

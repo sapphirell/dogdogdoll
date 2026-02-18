@@ -41,7 +41,7 @@
             />
           </view>
 
-          <text class="comment-text" @click="handleReply(comment)">
+          <text class="comment-text app-readable-text" @click="handleReply(comment)">
             {{ comment.comment }}
           </text>
 
@@ -149,7 +149,7 @@
               />
             </view>
 
-            <text class="comment-text" @click="handleReply(comment)">
+            <text class="comment-text app-readable-text" @click="handleReply(comment)">
               {{ child.comment }}
             </text>
 
@@ -697,9 +697,6 @@ const loadMore = async comment => {
     }
 
     .comment-text {
-      font-size: 26rpx;
-      color: #494b4b;
-      line-height: 1.6;
       margin-bottom: 10rpx;
       flex: 1;
       min-height: 60rpx;
@@ -824,11 +821,7 @@ const loadMore = async comment => {
     }
   }
 
-  .comment-text {
-    font-size: 26rpx !important;
-    color: #666 !important;
-    line-height: 1.5;
-  }
+  .comment-text { margin-bottom: 8rpx; }
 }
 
 /* footer：时间 / 点赞 / 回复 对齐 & 字号统一 */
