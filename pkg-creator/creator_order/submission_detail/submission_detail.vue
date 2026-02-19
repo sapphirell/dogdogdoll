@@ -128,7 +128,7 @@
           <view v-if="currentItem" class="content-item-view anim-fade-up" :key="currentTabIndex">
             <view
               class="item-detail-card"
-              :class="{ editable: canEditSubmissionItems }"
+              :class="{ editable: canEditSubmissionItems, viewable: canViewItemDetail }"
               @click="goEditItem(currentItem)"
             >
               <image 
@@ -167,6 +167,7 @@
                     <text class="currency">¥</text>
                     <text class="amount font-title">{{ Number(currentItem.price_total || 0) }}</text>
                   </view>
+                  <text v-if="canViewItemDetail" class="item-view-detail">查看详情</text>
                 </view>
               </view>
             </view>
@@ -187,6 +188,23 @@
                       <text class="t-time">{{ event.timeText }}</text>
                     </view>
                     <text v-if="event.desc" class="t-desc">{{ event.desc }}</text>
+                    <view v-if="event.images && event.images.length" class="timeline-image-list">
+                      <image
+                        v-for="(img, imageIdx) in event.images.slice(0, 3)"
+                        :key="`${event.key}-img-${imageIdx}`"
+                        class="timeline-image"
+                        :src="img"
+                        mode="aspectFill"
+                        @tap.stop="previewTimelineImages(event.images, imageIdx)"
+                      />
+                      <view
+                        v-if="event.images.length > 3"
+                        class="timeline-image-more"
+                        @tap.stop="previewTimelineImages(event.images, 0)"
+                      >
+                        +{{ event.images.length - 3 }}
+                      </view>
+                    </view>
                     <view v-if="event.canOperate" class="timeline-action-row">
                       <view
                         class="timeline-action-btn reject"
@@ -500,6 +518,7 @@ import LoadingJumpText from '@/components/loading-jump-text/loading-jump-text.vu
 const SubmissionStatusQueued = 0
 const SubmissionStatusSelectedConfirm = 1
 const SubmissionStatusSelectedPay = 3
+const SubmissionStatusPaid = 4
 const PlanPaymentMethodQRCode = 1
 const PlanPaymentMethodAlipay = 2
 
@@ -614,6 +633,10 @@ const canEditSubmissionItems = computed(() => {
   return s === SubmissionStatusQueued || s === SubmissionStatusSelectedConfirm
 })
 
+const canViewItemDetail = computed(() => {
+  return Number(submission.status || 0) >= SubmissionStatusPaid
+})
+
 const tabList = computed(() => {
   const canEdit = canEditSubmissionItems.value
   if (!canEdit) {
@@ -714,11 +737,52 @@ const timelineEvents = computed(() => {
         finalStep: isFinalStep,
         title: timelineTitle(row),
         desc: timelineDesc(row),
+        images: parseTimelineImages(row),
         timeText: formatTimelineTime(row?.created_at),
         dotClass
       }
     })
 })
+
+function normalizeImageArray(input) {
+  if (Array.isArray(input)) {
+    return input
+      .map((v) => String(v || '').trim())
+      .filter(Boolean)
+  }
+  const raw = String(input || '').trim()
+  if (!raw) return []
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((v) => String(v || '').trim())
+          .filter(Boolean)
+      }
+    } catch (_) {}
+  }
+  return raw
+    .split(',')
+    .map((v) => String(v || '').trim())
+    .filter(Boolean)
+}
+
+function parseTimelineImages(row) {
+  const direct = normalizeImageArray(row?.images)
+  if (direct.length) return Array.from(new Set(direct))
+  const byField = normalizeImageArray(row?.images_urls || row?.images_json)
+  return Array.from(new Set(byField))
+}
+
+function previewTimelineImages(images, index = 0) {
+  const list = Array.isArray(images) ? images.filter(Boolean) : []
+  if (!list.length) return
+  uni.previewImage({
+    current: list[index] || list[0],
+    urls: list
+  })
+}
 
 const remainingCount = computed(() => {
   if (!canEditSubmissionItems.value) return 0
@@ -1413,10 +1477,15 @@ function goCreateItem() {
   uni.navigateTo({ url })
 }
 function goEditItem(item) {
-  if (!canEditSubmissionItems.value) return
   if (!item || !item.id) return
-  const url = `/pkg-creator/creator_order/submission_item_form/submission_item_form?submission_item_id=${item.id}`
-  uni.navigateTo({ url })
+  if (canEditSubmissionItems.value) {
+    const editUrl = `/pkg-creator/creator_order/submission_item_form/submission_item_form?submission_item_id=${item.id}`
+    uni.navigateTo({ url: editUrl })
+    return
+  }
+  if (!canViewItemDetail.value) return
+  const detailUrl = `/pkg-creator/creator_order/submission_item_detail/submission_item_detail?submission_id=${submission.submission_id}&item_id=${item.id}`
+  uni.navigateTo({ url: detailUrl })
 }
 
 async function useDraft(draft) {
@@ -1995,7 +2064,7 @@ watch(canSubmitPayFromPopup, (val) => {
 })
 
 watch(
-  () => progressOverviewVisible.value || payCodeModalVisible.value || payPopupVisible.value,
+  () => payPopupVisible.value,
   (visible) => {
     setH5PageScrollLock(!!visible)
   },
@@ -2405,6 +2474,9 @@ $spacing-page: 30rpx;
 .item-detail-card.editable {
   cursor: pointer;
 }
+.item-detail-card.viewable {
+  cursor: pointer;
+}
 .item-img {
   width: 180rpx;
   height: 180rpx;
@@ -2480,6 +2552,13 @@ $spacing-page: 30rpx;
   font-weight: bold;
   .currency { font-size: 24rpx; margin-right: 4rpx; margin-bottom: 4rpx;}
   .amount { font-size: 40rpx; line-height: 1; }
+}
+
+.item-view-detail {
+  font-size: 22rpx;
+  color: #7f8a97;
+  line-height: 1.2;
+  margin-bottom: 8rpx;
 }
 
 /* 进度 */
@@ -2558,6 +2637,27 @@ $spacing-page: 30rpx;
   font-size: 24rpx;
   color: #86909c;
   line-height: 1.5;
+}
+.timeline-image-list {
+  margin-top: 10rpx;
+  display: flex;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+.timeline-image,
+.timeline-image-more {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 12rpx;
+  background: #edf2f8;
+}
+.timeline-image-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #657081;
+  font-size: 24rpx;
+  font-weight: 600;
 }
 .t-time {
   font-size: 22rpx;

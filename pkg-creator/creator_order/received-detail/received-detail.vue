@@ -50,6 +50,18 @@
             <text class="status-label">ID</text>
             <text class="font-title">#{{ queueInfo.submission_id }}</text>
           </view>
+
+          <view
+            class="status-row payment-status-row"
+            :class="{ clickable: isQrPayment }"
+            @tap="openPaymentStatusModal"
+          >
+            <text class="status-label">付款状态</text>
+            <view class="payment-status-right">
+              <text class="status-normal-text">{{ paymentStatusText }}</text>
+              <uni-icons v-if="isQrPayment" type="right" size="16" color="#98a2b3" />
+            </view>
+          </view>
           
           <view class="status-actions">
             <view 
@@ -144,7 +156,7 @@
                 修改金额
               </button>
               <button
-                class="btn-mini outline"
+                class="btn-mini step-submit"
                 :class="{ disabled: !canSubmitStep(item) }"
                 :disabled="!canSubmitStep(item)"
                 @tap="handleSubmitStep(item)"
@@ -152,6 +164,53 @@
                 提交节点状态
               </button>
             </view>
+          </view>
+        </view>
+
+        <view class="card history-card">
+          <view class="card-header">
+            <text class="card-title">创作历史</text>
+          </view>
+
+          <view v-if="creativeHistoryEvents.length" class="history-list">
+            <view
+              v-for="(event, idx) in creativeHistoryEvents"
+              :key="event.key"
+              class="history-row"
+            >
+              <view class="history-axis">
+                <view class="history-dot" :class="event.dotClass"></view>
+                <view v-if="idx < creativeHistoryEvents.length - 1" class="history-line"></view>
+              </view>
+
+              <view class="history-main">
+                <view class="history-head">
+                  <text class="history-title">{{ event.title }}</text>
+                  <text class="history-time font-title">{{ event.timeText }}</text>
+                </view>
+                <text v-if="event.desc" class="history-desc">{{ event.desc }}</text>
+                <view v-if="event.images && event.images.length" class="history-image-list">
+                  <image
+                    v-for="(img, imgIdx) in event.images.slice(0, 3)"
+                    :key="`${event.key}-img-${imgIdx}`"
+                    class="history-image"
+                    :src="img"
+                    mode="aspectFill"
+                    @tap="previewHistoryImages(event.images, imgIdx)"
+                  />
+                  <view
+                    v-if="event.images.length > 3"
+                    class="history-image-more"
+                    @tap="previewHistoryImages(event.images, 0)"
+                  >
+                    +{{ event.images.length - 3 }}
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view v-else class="history-empty">
+            <text class="state-desc">暂无创作历史动态</text>
           </view>
         </view>
 
@@ -192,6 +251,7 @@
             <view
               v-if="canArtistCancel"
               class="text-btn-item danger"
+              :class="{ 'solo-cancel-box': canOnlyCancel }"
               @tap="handleAuditSubmission('cancel_order')"
             >
                 取消订单
@@ -279,12 +339,123 @@
       </view>
     </common-modal>
 
+    <common-modal v-model:visible="paymentStatusModalVisible" width="660rpx">
+      <view class="payment-modal-content" style="padding-bottom: 40rpx;">
+        <text class="payment-modal-title">扫码付款状态</text>
+
+        <view v-if="paymentStatusLoading" class="payment-modal-state">
+          <text class="state-desc">正在加载付款凭证...</text>
+        </view>
+        <view v-else-if="paymentStatusError" class="payment-modal-state">
+          <text class="state-desc">{{ paymentStatusError }}</text>
+          <view class="payment-modal-refresh" @tap="fetchPaymentStatusInfo">重试</view>
+        </view>
+        <scroll-view v-else class="payment-modal-scroll" scroll-y>
+          <view class="payment-section">
+            <view class="payment-info-row">
+              <text class="payment-info-label">状态</text>
+              <text class="payment-info-val">{{ paymentStatusInfo && paymentStatusInfo.payment_status_text ? paymentStatusInfo.payment_status_text : paymentStatusText }}</text>
+            </view>
+            <view class="payment-info-row" v-if="latestPaymentTransferNo">
+              <text class="payment-info-label">转账单号</text>
+              <text class="payment-info-val">{{ latestPaymentTransferNo }}</text>
+            </view>
+            <view class="payment-info-row" v-if="latestPaymentMessage">
+              <text class="payment-info-label">买家留言</text>
+              <text class="payment-info-val">{{ latestPaymentMessage }}</text>
+            </view>
+            <view class="payment-info-row" v-if="latestPaymentCreatedAt > 0">
+              <text class="payment-info-label">提交时间</text>
+              <text class="payment-info-val">{{ formatHistoryTime(latestPaymentCreatedAt) }}</text>
+            </view>
+          </view>
+
+          <view class="payment-section" v-if="latestProofImages.length">
+            <text class="payment-section-title">转账截图</text>
+            <view class="proof-list">
+              <image
+                v-for="(img, idx) in latestProofImages"
+                :key="`${img}-${idx}`"
+                class="proof-image"
+                :src="img"
+                mode="aspectFill"
+                @tap="previewPaymentProof(idx)"
+              />
+            </view>
+          </view>
+
+          <view class="payment-section" v-if="latestDispute">
+            <text class="payment-section-title">异议处理状态</text>
+            <text class="payment-dispute-state">{{ latestDisputeStatusText }}</text>
+            <text v-if="latestDispute.reason" class="payment-dispute-desc">异议原因：{{ latestDispute.reason }}</text>
+            <text v-if="latestDispute.result_note" class="payment-dispute-desc">处理说明：{{ latestDispute.result_note }}</text>
+          </view>
+
+          <view class="payment-section" v-if="canApplyDispute">
+            <button class="payment-unreceived-btn" @tap="toggleUnreceivedActions">
+              我未收到款
+            </button>
+
+            <view v-if="showUnreceivedActions" class="payment-unreceived-actions">
+              <view class="payment-unreceived-action" @tap="contactOrderOwner">
+                与单主沟通
+              </view>
+              <view class="payment-unreceived-action danger" @tap="openPlatformDisputeForm">
+                提交异议申请到平台
+              </view>
+            </view>
+
+            <view v-if="showDisputeForm" class="payment-dispute-form">
+              <text class="payment-section-title">提交异议申请</text>
+              <textarea
+                class="payment-dispute-textarea"
+                v-model="disputeReason"
+                maxlength="200"
+                auto-height
+                placeholder="请描述争议原因（至少2个字）"
+              />
+
+              <view class="payment-evidence-list">
+                <view
+                  v-for="(img, idx) in disputeEvidenceImages"
+                  :key="`${img}-${idx}`"
+                  class="payment-evidence-item"
+                >
+                  <image class="payment-evidence-image" :src="img" mode="aspectFill" />
+                  <view class="payment-evidence-remove" @tap.stop="removeDisputeImage(idx)">×</view>
+                </view>
+                <view
+                  v-if="disputeEvidenceImages.length < 3 && !disputeUploading"
+                  class="payment-evidence-add"
+                  @tap="pickDisputeImages"
+                >
+                  <text class="payment-evidence-add-icon">+</text>
+                  <text class="payment-evidence-add-text">上传举证</text>
+                </view>
+              </view>
+              <text v-if="disputeUploading" class="payment-uploading-text">{{ disputeUploadText || '上传中...' }}</text>
+              <text class="payment-evidence-help">最多3张，选填</text>
+
+              <button
+                class="payment-dispute-btn"
+                :class="{ disabled: disputeSubmitting }"
+                :disabled="disputeSubmitting"
+                @tap="submitPaymentDispute"
+              >
+                {{ disputeSubmitting ? '提交中...' : '提交异议申请' }}
+              </button>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </common-modal>
+
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import CommonModal from '@/components/common-modal/common-modal.vue' 
 import {
   websiteUrl,
@@ -294,6 +465,7 @@ import {
   getSafeBottom,
   toPx,
 } from '@/common/config.js'
+import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 
 // ================== 响应式状态 ==================
 
@@ -339,6 +511,11 @@ const SUBMISSION_STATUS_SELECTED_PAY = 3
 const SUBMISSION_STATUS_PAID = 4
 const PAYMENT_METHOD_PLATFORM = 1
 const PAYMENT_METHOD_QRCODE = 2
+const PAY_STATUS_PENDING = 0
+const PAY_STATUS_DEPOSIT_CONFIRMING = 1
+const PAY_STATUS_DEPOSIT_PAID = 2
+const PAY_STATUS_BALANCE_CONFIRMING = 3
+const PAY_STATUS_PAID = 4
 
 const submissionStatus = computed(() => Number(queueInfo.value?.status || 0))
 
@@ -366,34 +543,56 @@ const showBottomBar = computed(() => {
   return !!queueInfo.value && (canArtistCancel.value || canArtistReturn.value || canArtistConfirm.value)
 })
 
-const stepConfigs = computed(() => {
-  const q = queueInfo.value || {}
-  let raw = []
-
-  if (Array.isArray(q.step_configs)) {
-    raw = q.step_configs
-  } else if (Array.isArray(q.stepConfig)) {
-    raw = q.stepConfig
-  } else {
-    const txt = String(q.step_config_json || q.stepConfigJSON || '').trim()
-    if (txt) {
-      try {
-        const parsed = JSON.parse(txt)
-        if (Array.isArray(parsed)) raw = parsed
-      } catch (_) {}
-    }
+const paymentMethod = computed(() => Number(queueInfo.value?.payment_method || queueInfo.value?.paymentMethod || 0))
+const payStatus = computed(() => Number(queueInfo.value?.pay_status || queueInfo.value?.payStatus || 0))
+const isQrPayment = computed(() => paymentMethod.value === PAYMENT_METHOD_QRCODE)
+const paymentStatusText = computed(() => {
+  if (submissionStatus.value === SUBMISSION_STATUS_PAID) {
+    if (paymentMethod.value === PAYMENT_METHOD_QRCODE) return '已付款（扫码转账）'
+    if (paymentMethod.value === PAYMENT_METHOD_PLATFORM) return '已付款（在线支付）'
+    return '已付款'
   }
+  if (submissionStatus.value === SUBMISSION_STATUS_SELECTED_PAY) return '待付款'
+  switch (payStatus.value) {
+    case PAY_STATUS_PENDING: return '待支付'
+    case PAY_STATUS_DEPOSIT_CONFIRMING: return '定金待确认'
+    case PAY_STATUS_DEPOSIT_PAID: return '定金已付'
+    case PAY_STATUS_BALANCE_CONFIRMING: return '尾款待确认'
+    case PAY_STATUS_PAID: return '已结清'
+    default: return '未支付'
+  }
+})
 
-  const list = raw.map((s, idx) => {
-    const n = Number(s?.id || s?.ID || idx + 1)
-    const id = Number.isFinite(n) && n > 0 ? n : (idx + 1)
-    const name = String(s?.name || s?.Name || '').trim() || `节点${id}`
-    return { id, name }
-  })
+const progressLogs = computed(() => {
+  const q = queueInfo.value || {}
+  if (Array.isArray(q.progress_logs)) return q.progress_logs
+  if (Array.isArray(q.progressLogs)) return q.progressLogs
+  return []
+})
 
-  return list
-    .filter((x, idx) => x.id > 0 && list.findIndex((y) => y.id === x.id) === idx)
-    .sort((a, b) => a.id - b.id)
+const creativeHistoryEvents = computed(() => {
+  return progressLogs.value
+    .slice()
+    .sort((a, b) => {
+      const ta = Number(a?.created_at || 0)
+      const tb = Number(b?.created_at || 0)
+      if (tb !== ta) return tb - ta
+      return Number(b?.id || 0) - Number(a?.id || 0)
+    })
+    .map((row, idx) => {
+      const logType = Number(row?.log_type || 0)
+      const status = Number(row?.status || 0)
+      const dotClass = status === 2 ? 'reject' : (status === 0 ? (idx === 0 ? 'latest' : 'pending') : (idx === 0 ? 'latest' : 'done'))
+      return {
+        key: `${row?.id || idx}-${row?.event_code || ''}`,
+        title: historyTitle(row),
+        desc: historyDesc(row),
+        images: parseHistoryImages(row),
+        timeText: formatHistoryTime(row?.created_at),
+        dotClass,
+        logType,
+      }
+    })
 })
 
 const footerPlaceholderHeight = computed(() => {
@@ -410,12 +609,53 @@ const pricePopupRef = ref(null)
 const editingItem = ref(null)
 const priceInput = ref('')
 const reasonInput = ref('')
+const skipFirstOnShowRefresh = ref(true)
+const paymentStatusModalVisible = ref(false)
+const paymentStatusLoading = ref(false)
+const paymentStatusError = ref('')
+const paymentStatusInfo = ref(null)
+const disputeReason = ref('')
+const disputeEvidenceImages = ref([])
+const disputeUploading = ref(false)
+const disputeUploadText = ref('')
+const disputeSubmitting = ref(false)
+const showUnreceivedActions = ref(false)
+const showDisputeForm = ref(false)
 
 // ================== 确认/审核弹窗状态 ==================
 const auditModalVisible = ref(false)
 const auditModalTitle = ref('')
 const auditModalDesc = ref('')
 const currentActionType = ref('')
+
+const latestPayment = computed(() => paymentStatusInfo.value?.latest_payment || null)
+const latestDispute = computed(() => paymentStatusInfo.value?.latest_dispute || null)
+const latestProofImages = computed(() => {
+  const list = latestPayment.value?.proof_images
+  return Array.isArray(list) ? list : []
+})
+const latestPaymentTransferNo = computed(() => String(latestPayment.value?.transfer_no || '').trim())
+const latestPaymentMessage = computed(() => String(latestPayment.value?.message || '').trim())
+const latestPaymentCreatedAt = computed(() => Number(latestPayment.value?.created_at || 0))
+const canApplyDispute = computed(() => {
+  if (!isQrPayment.value) return false
+  return !!paymentStatusInfo.value?.can_apply_dispute
+})
+const latestDisputeStatusText = computed(() => {
+  const d = latestDispute.value
+  if (!d) return ''
+  const status = Number(d.status || 0)
+  const resultCode = Number(d.result_code || 0)
+  if (status === 0) return '待审核'
+  if (status === 1) return '处理中'
+  if (status === 2) {
+    if (resultCode === 1) return '已结案：争议成立'
+    if (resultCode === 2) return '已结案：争议驳回'
+    if (resultCode === 3) return '已结案：协商解决'
+    return '已结案'
+  }
+  return '处理中'
+})
 
 // ================== 工具函数 ==================
 
@@ -476,6 +716,90 @@ function formatItemStatus(st) {
     case 7: return '保留过期'
     default: return '未知'
   }
+}
+
+function historyTitle(row) {
+  const logType = Number(row?.log_type || 0)
+  const status = Number(row?.status || 0)
+  const stepName = String(row?.step_name || '').trim()
+  const stepID = Number(row?.step_id || 0)
+  const eventCode = String(row?.event_code || '').trim()
+
+  if (logType === 1) {
+    const nodeName = stepName || (stepID > 0 ? `节点#${stepID}` : '创作节点')
+    if (status === 0) return `节点：${nodeName}（待确认）`
+    if (status === 2) return `节点：${nodeName}（未通过）`
+    return `节点：${nodeName}（已通过）`
+  }
+
+  if (logType === 7) return '进度图片更新'
+  if (stepName) return stepName
+  if (eventCode === 'submission_created') return '买家拍下订单'
+  if (eventCode === 'buyer_confirm_content') return '买家确认投递内容'
+  if (eventCode === 'seller_confirm_submission') return '创作者确认订单'
+  if (eventCode === 'payment_completed') return '付款完成'
+  if (eventCode === 'final_product_confirmed') return '成品确认'
+  return '进度更新'
+}
+
+function historyDesc(row) {
+  const content = String(row?.content || '').trim()
+  if (content) return content
+  const eventCode = String(row?.event_code || '').trim()
+  if (eventCode === 'step_request') return '创作者上传了进度图片。'
+  return ''
+}
+
+function formatHistoryTime(ts) {
+  const sec = Number(ts || 0)
+  if (!sec) return '--'
+  const d = new Date(sec * 1000)
+  if (Number.isNaN(d.getTime())) return '--'
+  const M = `${d.getMonth() + 1}`.padStart(2, '0')
+  const D = `${d.getDate()}`.padStart(2, '0')
+  const h = `${d.getHours()}`.padStart(2, '0')
+  const m = `${d.getMinutes()}`.padStart(2, '0')
+  return `${M}-${D} ${h}:${m}`
+}
+
+function normalizeImageArray(input) {
+  if (Array.isArray(input)) {
+    return input
+      .map((v) => String(v || '').trim())
+      .filter(Boolean)
+  }
+  const raw = String(input || '').trim()
+  if (!raw) return []
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((v) => String(v || '').trim())
+          .filter(Boolean)
+      }
+    } catch (_) {}
+  }
+  return raw
+    .split(',')
+    .map((v) => String(v || '').trim())
+    .filter(Boolean)
+}
+
+function parseHistoryImages(row) {
+  const direct = normalizeImageArray(row?.images)
+  if (direct.length) return Array.from(new Set(direct))
+  const fromRaw = normalizeImageArray(row?.images_urls || row?.images_json)
+  return Array.from(new Set(fromRaw))
+}
+
+function previewHistoryImages(images, index = 0) {
+  const list = Array.isArray(images) ? images.filter(Boolean) : []
+  if (!list.length) return
+  uni.previewImage({
+    current: list[index] || list[0],
+    urls: list
+  })
 }
 
 // ================== 登录 & 请求 ==================
@@ -586,6 +910,164 @@ function goUserPage() {
 
 function reload() {
   fetchQueueInfo()
+}
+
+function openPaymentStatusModal() {
+  if (!isQrPayment.value) return
+  paymentStatusModalVisible.value = true
+  showUnreceivedActions.value = false
+  showDisputeForm.value = false
+  fetchPaymentStatusInfo()
+}
+
+async function fetchPaymentStatusInfo() {
+  if (paymentStatusLoading.value) return
+  const ok = await ensureLogin()
+  if (!ok) return
+  if (!submissionId.value) return
+  paymentStatusLoading.value = true
+  paymentStatusError.value = ''
+  const token = uni.getStorageSync('token') || ''
+  uni.request({
+    url: `${websiteUrl.value}/with-state/artist-order/submission/payment-status`,
+    method: 'GET',
+    header: { Authorization: token },
+    data: { submission_id: submissionId.value },
+    success: (res) => {
+      const body = res.data || {}
+      if (body.status !== 'success') {
+        paymentStatusError.value = body.msg || '获取付款信息失败'
+        return
+      }
+      paymentStatusInfo.value = body.data || null
+    },
+    fail: () => {
+      paymentStatusError.value = '网络异常，请稍后重试'
+    },
+    complete: () => {
+      paymentStatusLoading.value = false
+    }
+  })
+}
+
+function previewPaymentProof(index) {
+  const list = latestProofImages.value
+  if (!list.length) return
+  uni.previewImage({
+    current: list[index] || list[0],
+    urls: list,
+  })
+}
+
+async function pickDisputeImages() {
+  if (disputeUploading.value) return
+  const remain = 3 - disputeEvidenceImages.value.length
+  if (remain <= 0) {
+    uni.showToast({ title: '最多上传3张', icon: 'none' })
+    return
+  }
+  try {
+    const files = await chooseImageList(remain)
+    if (!files || !files.length) return
+    disputeUploading.value = true
+    disputeUploadText.value = '准备上传...'
+    const tk = await getQiniuToken()
+    if (!tk?.token || !tk?.path) {
+      throw new Error('获取上传凭证失败')
+    }
+    for (let i = 0; i < files.length; i++) {
+      disputeUploadText.value = `上传中 (${i + 1}/${files.length})`
+      const ret = await uploadImageToQiniu(files[i], tk.token, tk.path)
+      const url = String(ret?.imageUrl || '').trim()
+      if (url) {
+        disputeEvidenceImages.value.push(url)
+      }
+      if (disputeEvidenceImages.value.length >= 3) break
+    }
+  } catch (e) {
+    uni.showToast({ title: e?.message || '上传失败', icon: 'none' })
+  } finally {
+    disputeUploading.value = false
+    disputeUploadText.value = ''
+  }
+}
+
+function removeDisputeImage(index) {
+  if (index < 0 || index >= disputeEvidenceImages.value.length) return
+  disputeEvidenceImages.value.splice(index, 1)
+}
+
+function toggleUnreceivedActions() {
+  const next = !showUnreceivedActions.value
+  showUnreceivedActions.value = next
+  if (!next) {
+    showDisputeForm.value = false
+  }
+}
+
+function openPlatformDisputeForm() {
+  showUnreceivedActions.value = true
+  showDisputeForm.value = true
+}
+
+async function contactOrderOwner() {
+  paymentStatusModalVisible.value = false
+  showUnreceivedActions.value = false
+  showDisputeForm.value = false
+  await handleChatWithSeller()
+}
+
+function submitPaymentDispute() {
+  if (disputeSubmitting.value) return
+  if (!canApplyDispute.value) {
+    uni.showToast({ title: '当前不可重复提交异议', icon: 'none' })
+    return
+  }
+  const reason = String(disputeReason.value || '').trim()
+  if (reason.length < 2) {
+    uni.showToast({ title: '请至少填写2个字的异议说明', icon: 'none' })
+    return
+  }
+  const paymentID = Number(latestPayment.value?.id || 0)
+  if (!paymentID) {
+    uni.showToast({ title: '未找到付款凭证', icon: 'none' })
+    return
+  }
+  ensureLogin().then((ok) => {
+    if (!ok) return
+    disputeSubmitting.value = true
+    const token = uni.getStorageSync('token') || ''
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/payment-dispute/create`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: {
+        submission_id: submissionId.value,
+        payment_id: paymentID,
+        reason,
+        evidence_images: disputeEvidenceImages.value.slice(),
+      },
+      success: (res) => {
+        const body = res.data || {}
+        if (body.status !== 'success') {
+          uni.showToast({ title: body.msg || '提交异议失败', icon: 'none' })
+          return
+        }
+        uni.showToast({ title: '异议已提交', icon: 'success' })
+        disputeReason.value = ''
+        disputeEvidenceImages.value = []
+        showDisputeForm.value = false
+        showUnreceivedActions.value = false
+        fetchPaymentStatusInfo()
+      },
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      },
+      complete: () => {
+        disputeSubmitting.value = false
+      }
+    })
+  })
 }
 
 // ================== 业务逻辑 ==================
@@ -820,25 +1302,11 @@ function onModalConfirm() {
 
 function getStepDisabledReason(item) {
   if (!queueInfo.value) return '订单信息加载中'
+  if (isBuyer.value) return '仅妆师/毛娘可提交节点状态'
 
   const status = Number(queueInfo.value.status || 0)
-  if (status === SUBMISSION_STATUS_BUYER_CONFIRMED) {
-    return '买家已确认，待卖家确认阶段不可提交节点'
-  }
-  if (status !== SUBMISSION_STATUS_SELECTED_PAY && status !== SUBMISSION_STATUS_PAID) {
-    return '当前订单状态不支持提交节点'
-  }
-
-  if (!stepConfigs.value.length) {
-    return '当前订单未配置创作节点'
-  }
-
-  const payMethod = Number(queueInfo.value.payment_method || queueInfo.value.paymentMethod || 0)
-  if (payMethod === PAYMENT_METHOD_QRCODE) {
-    return '收款码收款订单不支持提交节点'
-  }
-  if (payMethod !== PAYMENT_METHOD_PLATFORM) {
-    return '仅在线支付并完成付款后可提交节点'
+  if (status !== SUBMISSION_STATUS_PAID) {
+    return '买家付款后才可提交节点状态'
   }
 
   const itemId = Number(item?.id || item?.ID || 0)
@@ -848,49 +1316,6 @@ function getStepDisabledReason(item) {
 
 function canSubmitStep(item) {
   return !getStepDisabledReason(item)
-}
-
-function buildStepCandidates(item) {
-  const all = stepConfigs.value
-  if (!all.length) return []
-
-  const currentStepId = Number(item?.current_step_id || item?.currentStepID || 0)
-  if (!Number.isFinite(currentStepId) || currentStepId <= 0) return all
-
-  const next = all.filter((s) => s.id > currentStepId)
-  return next.length ? next : all
-}
-
-function submitStepRequest(itemId, step) {
-  ensureLogin().then((ok) => {
-    if (!ok) return
-    const token = uni.getStorageSync('token') || ''
-    uni.showLoading({ title: '提交中' })
-    uni.request({
-      url: `${websiteUrl.value}/with-state/artist-order/step/request`,
-      method: 'POST',
-      header: { Authorization: token, 'Content-Type': 'application/json' },
-      data: {
-        item_id: itemId,
-        step_id: step.id,
-        images: [],
-      },
-      success: (res) => {
-        if (res.data?.status === 'success') {
-          uni.showToast({ title: '节点提交成功', icon: 'success' })
-          fetchQueueInfo()
-        } else {
-          uni.showToast({ title: res.data?.msg || '提交失败', icon: 'none' })
-        }
-      },
-      fail: () => {
-        uni.showToast({ title: '网络请求失败', icon: 'none' })
-      },
-      complete: () => {
-        uni.hideLoading()
-      }
-    })
-  })
 }
 
 function handleSubmitStep(item) {
@@ -906,24 +1331,8 @@ function handleSubmitStep(item) {
     return
   }
 
-  const steps = buildStepCandidates(item)
-  if (!steps.length) {
-    uni.showToast({ title: '当前订单未配置创作节点', icon: 'none' })
-    return
-  }
-
-  if (steps.length === 1) {
-    submitStepRequest(itemId, steps[0])
-    return
-  }
-
-  uni.showActionSheet({
-    itemList: steps.map((s) => `${s.id}. ${s.name}`),
-    success: (res) => {
-      const step = steps[res.tapIndex]
-      if (!step) return
-      submitStepRequest(itemId, step)
-    }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/step_submit/step_submit?submission_id=${submissionId.value}&item_id=${itemId}`
   })
 }
 
@@ -940,6 +1349,16 @@ onLoad((options) => {
     return
   }
   fetchQueueInfo()
+})
+
+onShow(() => {
+  if (skipFirstOnShowRefresh.value) {
+    skipFirstOnShowRefresh.value = false
+    return
+  }
+  if (submissionId.value > 0) {
+    fetchQueueInfo()
+  }
 })
 </script>
 
@@ -1023,6 +1442,14 @@ onLoad((options) => {
 .status-normal-text {
   font-size: 26rpx;
   color: #5f6775;
+}
+.payment-status-row.clickable:active {
+  opacity: 0.68;
+}
+.payment-status-right {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
 }
 
 
@@ -1260,10 +1687,396 @@ onLoad((options) => {
   border: none;
   color: #4f5c70;
 }
+.btn-mini.step-submit {
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
+  color: #ffffff;
+}
 .btn-mini.disabled {
   background-color: #e9edf3 !important;
   color: #a2acbb !important;
   box-shadow: none;
+}
+
+.history-card {
+  padding-bottom: 18rpx;
+}
+
+.history-list {
+  padding-top: 4rpx;
+}
+
+.history-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.history-row + .history-row {
+  margin-top: 10rpx;
+}
+
+.history-axis {
+  width: 34rpx;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.history-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin-top: 12rpx;
+  background: #cfd7e5;
+}
+
+.history-dot.latest {
+  background: #7bc8e8;
+}
+
+.history-dot.pending {
+  background: #f0ca7b;
+}
+
+.history-dot.reject {
+  background: #e08f8f;
+}
+
+.history-dot.done {
+  background: #b7c3d6;
+}
+
+.history-line {
+  position: absolute;
+  top: 30rpx;
+  bottom: -10rpx;
+  width: 2rpx;
+  background: #e8edf5;
+}
+
+.history-main {
+  flex: 1;
+  min-width: 0;
+  padding: 8rpx 0 12rpx;
+  border-bottom: 1rpx solid #f2f5fa;
+}
+
+.history-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+
+.history-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2b3445;
+  line-height: 1.5;
+}
+
+.history-time.font-title {
+  flex-shrink: 0;
+  font-size: 23rpx;
+  line-height: 1.4;
+  color: #8e99aa;
+}
+
+.history-desc {
+  margin-top: 6rpx;
+  display: block;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #758096;
+}
+
+.history-image-list {
+  margin-top: 10rpx;
+  display: flex;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+.history-image,
+.history-image-more {
+  width: 106rpx;
+  height: 106rpx;
+  border-radius: 12rpx;
+  background: #edf2f8;
+}
+
+.history-image-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #657081;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.history-empty {
+  padding: 12rpx 0 6rpx;
+}
+
+.payment-modal-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-modal-title {
+  display: block;
+  text-align: center;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1f2735;
+  margin-bottom: 20rpx;
+}
+
+.payment-modal-state {
+  padding: 20rpx 0;
+  text-align: center;
+}
+
+.payment-modal-refresh {
+  margin: 12rpx auto 0;
+  width: 120rpx;
+  height: 52rpx;
+  line-height: 52rpx;
+  border-radius: 999rpx;
+  background: #eef3fb;
+  color: #5e6b82;
+  font-size: 23rpx;
+}
+
+.payment-modal-scroll {
+  height: 68vh;
+  max-height: 68vh;
+}
+
+.payment-section {
+  margin-top: 16rpx;
+  border-radius: 18rpx;
+  border: 1rpx solid #ebeff6;
+  background: #f9fbff;
+  padding: 18rpx;
+}
+
+.payment-section-title {
+  display: block;
+  font-size: 27rpx;
+  color: #273043;
+  font-weight: 700;
+}
+
+.payment-unreceived-btn {
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #f3cfd4;
+  background: #fff4f6;
+  color: #b96572;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.payment-unreceived-btn::after {
+  border: none;
+}
+
+.payment-unreceived-actions {
+  margin-top: 14rpx;
+  display: flex;
+  gap: 12rpx;
+}
+
+.payment-unreceived-action {
+  flex: 1;
+  height: 66rpx;
+  line-height: 66rpx;
+  border-radius: 14rpx;
+  text-align: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #586379;
+  background: #edf2fa;
+}
+
+.payment-unreceived-action:active {
+  opacity: 0.74;
+}
+
+.payment-unreceived-action.danger {
+  color: #b96572;
+  background: #fff0f3;
+}
+
+.payment-dispute-form {
+  margin-top: 16rpx;
+}
+
+.payment-info-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.payment-info-row + .payment-info-row {
+  margin-top: 10rpx;
+}
+
+.payment-info-label {
+  font-size: 23rpx;
+  color: #8c97a9;
+}
+
+.payment-info-val {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #38455a;
+}
+
+.proof-list {
+  margin-top: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.proof-image {
+  width: 172rpx;
+  height: 172rpx;
+  border-radius: 14rpx;
+  background: #eef3fb;
+}
+
+.payment-dispute-state {
+  margin-top: 8rpx;
+  display: block;
+  font-size: 25rpx;
+  color: #3a465b;
+  font-weight: 600;
+}
+
+.payment-dispute-desc {
+  margin-top: 8rpx;
+  display: block;
+  font-size: 23rpx;
+  color: #6f7a8f;
+  line-height: 1.6;
+}
+
+.payment-dispute-textarea {
+  margin-top: 12rpx;
+  width: 100%;
+  min-height: 130rpx;
+  border-radius: 14rpx;
+  border: 1rpx solid #e4eaf4;
+  background: #fff;
+  padding: 14rpx 16rpx;
+  box-sizing: border-box;
+  font-size: 24rpx;
+}
+
+.payment-evidence-list {
+  margin-top: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.payment-evidence-item,
+.payment-evidence-add {
+  width: 148rpx;
+  height: 148rpx;
+  border-radius: 14rpx;
+  position: relative;
+}
+
+.payment-evidence-item {
+  overflow: hidden;
+  background: #edf2fa;
+}
+
+.payment-evidence-image {
+  width: 100%;
+  height: 100%;
+}
+
+.payment-evidence-remove {
+  position: absolute;
+  right: 6rpx;
+  top: 6rpx;
+  width: 30rpx;
+  height: 30rpx;
+  line-height: 30rpx;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 20rpx;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.payment-evidence-add {
+  border: 1rpx dashed #cfdaea;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-evidence-add-icon {
+  font-size: 40rpx;
+  color: #9aa5b8;
+  line-height: 1;
+}
+
+.payment-evidence-add-text {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8d98ac;
+}
+
+.payment-uploading-text {
+  margin-top: 8rpx;
+  display: block;
+  font-size: 22rpx;
+  color: #6d7b93;
+}
+
+.payment-evidence-help {
+  margin-top: 8rpx;
+  display: block;
+  font-size: 22rpx;
+  color: #97a2b5;
+}
+
+.payment-dispute-btn {
+  margin-top: 16rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 999rpx;
+  border: none;
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.payment-dispute-btn::after {
+  border: none;
+}
+
+.payment-dispute-btn.disabled {
+  background: #e7ecf4;
+  color: #a5afbe;
 }
 
 /* 草稿 */
@@ -1353,6 +2166,18 @@ onLoad((options) => {
 }
 .text-btn-item.danger {
   color: #b35f5f;
+}
+.text-btn-item.solo-cancel-box {
+  min-width: 188rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid #f1c2c6;
+  background: #fdecef;
+  text-align: center;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  font-weight: 700;
 }
 .text-btn-item:active {
   opacity: 0.6;

@@ -237,6 +237,12 @@
 			}
 		},
 		{
+			"path": "creator_order/submission_item_detail/submission_item_detail",
+			"style": {
+				"navigationBarTitleText": "作品详情"
+			}
+		},
+		{
 			"path": "creator_order/submission_item_form/submission_item_form",
 			"style": {
 				"navigationBarTitleText": ""
@@ -251,6 +257,12 @@
 			"path": "creator_order/received-detail/received-detail",
 			"style": {
 				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/step_submit/step_submit",
+			"style": {
+				"navigationBarTitleText": "提交节点状态"
 			}
 		},
 		{

@@ -4,10 +4,15 @@
     :class="{ 'is-center': props.center }"
     v-if="visible"
     @tap.stop="closeModal"
-    @touchmove.stop="moveHandle"
+    @touchmove.stop="onMaskTouchMove"
+    @wheel.stop.prevent="onMaskWheel"
   >
     <uni-transition :mode-class="modeClass" :show="visible">
-      <view class="modal-container safe-bottom" :style="containerStyle" @tap.stop>
+      <view
+        class="modal-container safe-bottom"
+        :style="containerStyle"
+        @tap.stop
+      >
         <!--
           使用提示：
           1) common-modal 只负责通用容器与滚动能力；
@@ -25,8 +30,12 @@ import {
   defineProps,
   defineEmits,
   computed,
-  ref
+  ref,
+  watch,
+  onBeforeUnmount
 } from 'vue'
+
+const BODY_SCROLL_LOCK_KEY = '__dogdogdoll_common_modal_scroll_lock__'
 
 const props = defineProps({
   visible: Boolean,
@@ -63,9 +72,113 @@ const containerStyle = computed(() => ({
   marginTop: props.center ? '0' : formatValue(props.top)
 }))
 
-// 阻止遮罩层下的页面滚动
-const moveHandle = () => false
+function getScrollLockStore() {
+  if (typeof globalThis === 'undefined') return null
+  if (!globalThis[BODY_SCROLL_LOCK_KEY]) {
+    globalThis[BODY_SCROLL_LOCK_KEY] = {
+      count: 0,
+      scrollTop: 0,
+      bodyStyle: null,
+      htmlStyle: null
+    }
+  }
+  return globalThis[BODY_SCROLL_LOCK_KEY]
+}
 
+const localLocked = ref(false)
+
+function lockBodyScroll() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (localLocked.value) return
+  const store = getScrollLockStore()
+  if (!store) return
+
+  if (store.count === 0) {
+    const body = document.body
+    const html = document.documentElement
+    store.scrollTop = window.pageYOffset || html.scrollTop || body.scrollTop || 0
+    store.bodyStyle = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width
+    }
+    store.htmlStyle = {
+      overflow: html.style.overflow
+    }
+
+    body.style.overflow = 'hidden'
+    body.style.position = 'fixed'
+    body.style.top = `-${store.scrollTop}px`
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.width = '100%'
+    html.style.overflow = 'hidden'
+  }
+
+  store.count += 1
+  localLocked.value = true
+}
+
+function unlockBodyScroll(force = false) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+  const store = getScrollLockStore()
+  if (!store) return
+
+  if (localLocked.value) {
+    store.count = Math.max(0, store.count - 1)
+    localLocked.value = false
+  } else if (!force) {
+    return
+  }
+
+  if (store.count > 0) return
+
+  const body = document.body
+  const html = document.documentElement
+  const bodyStyle = store.bodyStyle || {}
+  const htmlStyle = store.htmlStyle || {}
+  const top = Number(store.scrollTop || 0)
+
+  body.style.overflow = bodyStyle.overflow || ''
+  body.style.position = bodyStyle.position || ''
+  body.style.top = bodyStyle.top || ''
+  body.style.left = bodyStyle.left || ''
+  body.style.right = bodyStyle.right || ''
+  body.style.width = bodyStyle.width || ''
+  html.style.overflow = htmlStyle.overflow || ''
+
+  window.scrollTo(0, top)
+}
+
+// 阻止遮罩层下页面滚动（避免滑动穿透）
+function isFromModalContainer(e) {
+  const rawTarget = e?.target
+  if (!rawTarget) return false
+  const target = rawTarget.nodeType === 3 ? rawTarget.parentElement : rawTarget
+  if (target && typeof target.closest === 'function') {
+    return !!target.closest('.modal-container')
+  }
+  return false
+}
+
+const onMaskTouchMove = (e) => {
+  // 允许弹窗容器内滚动；只拦截遮罩层区域的滑动，防止穿透到下层页面。
+  if (isFromModalContainer(e)) return true
+  if (e && typeof e.preventDefault === 'function' && e.cancelable) {
+    e.preventDefault()
+  }
+  return false
+}
+const onMaskWheel = (e) => {
+  if (isFromModalContainer(e)) return true
+  if (e && typeof e.preventDefault === 'function' && e.cancelable) {
+    e.preventDefault()
+  }
+  return false
+}
 // 格式化单位
 function formatValue(val) {
   if (val === 'auto') return 'auto'
@@ -81,6 +194,22 @@ const closeModal = () => {
     emit('update:visible', false)
   }
 }
+
+watch(
+  () => props.visible,
+  (show) => {
+    if (show) {
+      lockBodyScroll()
+    } else {
+      unlockBodyScroll()
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  unlockBodyScroll(true)
+})
 </script>
 
 <style scoped>
@@ -101,6 +230,7 @@ const closeModal = () => {
   flex-direction: column;
   align-items: center; /* 确保子元素（弹窗）水平居中 */
   justify-content: flex-start;
+  overscroll-behavior: contain;
 }
 
 .modal-mask.is-center {
@@ -128,6 +258,7 @@ const closeModal = () => {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   
   padding: 40rpx;
   align-items: center;
