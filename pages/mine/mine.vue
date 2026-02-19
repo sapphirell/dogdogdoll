@@ -3,26 +3,13 @@
   <view-logs />
 
   <view head_color="url('/static/bg/bg2.jpg')">
-    <view class="my-center-page" style="position: relative;">
-      
-      <view class="star-bg-layer">
-        <view 
-          v-for="(star, index) in stars" 
-          :key="index"
-          class="star-item"
-          :style="{
-            left: star.left,
-            top: star.top,
-            fontSize: star.size,
-            animationDuration: star.duration,
-            animationDelay: star.delay,
-            opacity: star.opacity,
-            '--fall-dist': star.fallDist /* 传入 CSS 变量控制下落距离 */
-          }"
-        >
-          ★
-        </view>
-      </view>
+    <view class="my-center-page" :style="pageBackgroundStyle">
+      <skin-background
+        class="mine-skin-fx"
+        style="position: fixed; inset: 0; z-index: 99; pointer-events: none;"
+        :animation-type="activeSkin.background_animation"
+        :animation-config="activeSkin.animation_config"
+      />
 
       <view v-if="isLogin" class="login-wrap">
         <view class="headbg">
@@ -83,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
   websiteUrl,
@@ -94,38 +81,133 @@ import {
 
 const defaultAvatar = 'https://images1.fantuanpu.com/home/jpt.gif'
 
-// --- 星星背景逻辑 ---
-const stars = ref([])
+const noneSkin = {
+  id: 0,
+  skin_key: 'none',
+  name: '无皮肤',
+  background_color: '#ffffff',
+  background_image: '',
+  background_animation: '',
+  animation_config: {}
+}
 
-onMounted(() => {
-  generateStars()
+const defaultSkin = {
+  id: 0,
+  skin_key: 'star_snow',
+  name: '星雪',
+  background_color: 'linear-gradient(180deg, #eaf7ff 0%, #ffffff 58%, #f9fcff 100%)',
+  background_image: '',
+  background_animation: 'star_fall',
+  animation_config: {
+    count: 50,
+    min_size_rpx: 20,
+    max_size_rpx: 50,
+    min_duration_s: 15,
+    max_duration_s: 30,
+    min_opacity: 0.2,
+    max_opacity: 0.6,
+    min_fall_px: 500,
+    max_fall_px: 800,
+    max_delay_s: 10,
+    size_scale: 1.5
+  }
+}
+const activeSkin = ref({ ...defaultSkin })
+
+const pageBackgroundStyle = computed(() => {
+  const style = { position: 'relative' }
+  const bgColor = String(activeSkin.value?.background_color || '').trim()
+  const bgImage = String(activeSkin.value?.background_image || '').trim()
+
+  if (bgColor.includes('gradient(')) {
+    if (bgImage) style.backgroundImage = `${bgColor}, url('${bgImage}')`
+    else style.backgroundImage = bgColor
+    style.backgroundSize = bgImage ? 'cover, cover' : 'cover'
+    style.backgroundPosition = bgImage ? 'center center, center center' : 'center center'
+    style.backgroundRepeat = bgImage ? 'no-repeat, no-repeat' : 'no-repeat'
+  } else {
+    if (bgColor) style.backgroundColor = bgColor
+    if (bgImage) {
+      style.backgroundImage = `url('${bgImage}')`
+      style.backgroundSize = 'cover'
+      style.backgroundPosition = 'center center'
+      style.backgroundRepeat = 'no-repeat'
+    }
+  }
+  return style
 })
 
-function generateStars() {
-  // 1. 数量增加：从 35 改为 50 (增加了约 1/3)
-  const count = 50 
-  const tempStars = []
-  
-  for (let i = 0; i < count; i++) {
-    const duration = 15 + Math.random() * 15 // 保持 15-30秒的慢速旋转
-    const delay = Math.random() * 10 
-    
-    // 2. 随机下落距离：500px - 800px
-    const dist = Math.floor(Math.random() * 301 + 500)
-
-    tempStars.push({
-      left: Math.random() * 100 + '%', 
-      top: (Math.random() * 100) + '%', 
-      size: (20 + Math.random() * 30) + 'rpx', 
-      duration: duration + 's',
-      delay: '-' + delay + 's', 
-      opacity: 0.2 + Math.random() * 0.4,
-      fallDist: dist + 'px' // 将随机生成的距离存入变量
-    })
+function normalizeAnimationConfig (raw) {
+  if (!raw) return {}
+  if (typeof raw === 'string') {
+    try {
+      const obj = JSON.parse(raw)
+      return obj && typeof obj === 'object' ? obj : {}
+    } catch (e) {
+      return {}
+    }
   }
-  stars.value = tempStars
+  if (typeof raw === 'object') return raw
+  return {}
 }
-// ----------------
+
+function normalizeSkin (raw) {
+  if (!raw || typeof raw !== 'object') return { ...defaultSkin }
+  return {
+    id: Number(raw.id || 0),
+    skin_key: String(raw.skin_key || defaultSkin.skin_key),
+    name: String(raw.name || defaultSkin.name),
+    background_color: String(raw.background_color || defaultSkin.background_color),
+    background_image: String(raw.background_image || ''),
+    background_animation: String(raw.background_animation || ''),
+    animation_config: normalizeAnimationConfig(raw.background_animation_config || raw.animation_config)
+  }
+}
+
+function requestWithToken ({ url, method = 'GET', data }) {
+  return new Promise((resolve) => {
+    const token = uni.getStorageSync('token')
+    if (!token) {
+      resolve({ ok: false, data: null })
+      return
+    }
+    uni.request({
+      url,
+      method,
+      data,
+      header: { Authorization: token },
+      timeout: 15000,
+      success: (res) => resolve({ ok: true, data: res?.data }),
+      fail: () => resolve({ ok: false, data: null })
+    })
+  })
+}
+
+async function loadActiveSkin () {
+  if (!global.isLogin) {
+    activeSkin.value = { ...defaultSkin }
+    return
+  }
+
+  const ret = await requestWithToken({
+    url: `${websiteUrl.value}/with-state/skin/list`,
+    method: 'GET'
+  })
+  const resp = ret?.data || {}
+  if (!ret.ok || String(resp.status || '').toLowerCase() !== 'success') {
+    activeSkin.value = { ...defaultSkin }
+    return
+  }
+
+  const list = Array.isArray(resp?.data?.skins) ? resp.data.skins : []
+  const selectedId = Number(resp?.data?.selected_skin_id || 0)
+  if (selectedId <= 0) {
+    activeSkin.value = { ...noneSkin }
+    return
+  }
+  const selected = list.find(item => Number(item?.id || 0) === selectedId)
+  activeSkin.value = selected ? normalizeSkin(selected) : { ...noneSkin }
+}
 
 const mainTabs = [
   { key: 'inbox', label: '信息集' },
@@ -235,13 +317,16 @@ function jumpToSetName () { uni.navigateTo({ url: '/pages/setting/username/usern
 function handleSettingsAction (type) {
   if (type === 'profile') jumpSetting()
   else if (type === 'address') uni.navigateTo({ url: '/pkg-common/address/address-list' })
+  else if (type === 'skin') uni.navigateTo({ url: '/pkg-common/skin/skin-setting' })
 }
 function handleLoginSuccess () { asyncGetUserInfo() }
 
 onShow(async () => {
-  const user = await asyncGetUserInfo()
+  await asyncGetUserInfo()
   if (global.isLogin) uni.showTabBar({ animation: false })
   else uni.hideTabBar({ animation: false })
+
+  await loadActiveSkin()
 
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
@@ -253,47 +338,17 @@ onShow(async () => {
 </script>
 
 <style lang="scss" scoped>
-/* --- 星星样式优化 --- */
-.star-bg-layer {
-  position: absolute; 
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 99; 
-  pointer-events: none; 
-  overflow: hidden;
-}
-
-.star-item {
-  position: absolute;
-  color: #d1d5db; 
-  line-height: 1;
-  animation-name: fall-rotate;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  
-  /* 定义 CSS 变量默认值，防止 JS 未加载时出错 */
-  --fall-dist: 300px;
-}
-
-@keyframes fall-rotate {
-  0% {
-    transform: translateY(-20px) rotate(0deg);
-  }
-  100% {
-    /* 使用 var(--fall-dist) 读取 JS 传入的随机距离 (300-600px) */
-    transform: translateY(var(--fall-dist)) rotate(360deg);
-  }
-}
-
 /* --- 页面其他样式 --- */
 .my-center-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  position: relative; 
+  background: transparent;
+  position: relative;
+}
+
+.mine-skin-fx {
+  pointer-events: none;
 }
 
 .login-wrap {
@@ -301,10 +356,12 @@ onShow(async () => {
   display: flex;
   flex-direction: column;
   background: #ffffff;
+  position: relative;
+  z-index: 1;
 }
 
 .unlogin-wrap {
-  background: linear-gradient(135deg, #e0f3ff 0%, #fff9fb 100%);
+  background: transparent;
 }
 
 .headbg {

@@ -93,6 +93,7 @@ const emit = defineEmits(['action'])
 
 const items = [
   { key: 'profile', label: '基本信息设置' },
+  { key: 'skin', label: '个性皮肤' },
   { key: 'deal', label: '交易信息设置' }, // 改名：地址设置 -> 交易信息设置， key 保持 deal 或自定义
   { key: 'logout', label: '退出账号' }
 ]
@@ -108,6 +109,8 @@ function handleClick (key) {
     uni.navigateTo({
       url: '/pkg-common/deal-setting/deal-setting'
     })
+  } else if (key === 'skin') {
+    emit('action', 'skin')
   } else {
     emit('action', key)
   }

@@ -186,8 +186,8 @@
           </text>
           <view class="price-empty-wrap" v-else>
             <text class="value price-empty-text">暂无定价</text>
-            <button class="price-supplement-btn" @click="openPriceSupplementModal">
-              求补充
+            <button class="price-supplement-btn font-alimamashuhei" @click="openPriceSupplementModal">
+              求补充🥺
             </button>
           </view>
 

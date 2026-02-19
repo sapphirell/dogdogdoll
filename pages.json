@@ -326,15 +326,21 @@
 				"navigationBarTitleText": "收货地址管理"
 			}
 		},
-		{
-			"path": "address/address-form",
-			"style": {
-				"navigationBarTitleText": "新增收货地址"
+			{
+				"path": "address/address-form",
+				"style": {
+					"navigationBarTitleText": "新增收货地址"
+				}
+			},
+			{
+				"path": "skin/skin-setting",
+				"style": {
+					"navigationBarTitleText": "个性皮肤"
+				}
 			}
-		}
-      ]
-    }
-  ],
+	      ]
+	    }
+	  ],
 
   "preloadRule": {
     "pages/stock/stock": {
