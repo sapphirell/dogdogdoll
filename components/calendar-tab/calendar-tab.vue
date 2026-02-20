@@ -23,15 +23,15 @@
     <view class="header-gradient" @click="goHome" aria-label="回主页">
       <view class="nav-placeholder" :style="{ height: headerPadPx }" />
       <view class="tabs-underline" @click.stop>
-        <view class="tab" :class="{active: activeTab==='sale'}" @click.stop="switchTab('sale')">
+        <view class="tab font-alimamashuhei" :class="{active: activeTab==='sale'}" @click.stop="switchTab('sale')">
           <text>贩售</text>
           <view class="underline" v-if="activeTab==='sale'"></view>
         </view>
-        <view class="tab" :class="{active: activeTab==='makeup'}" @click.stop="switchTab('makeup')">
+        <view class="tab font-alimamashuhei" :class="{active: activeTab==='makeup'}" @click.stop="switchTab('makeup')">
           <text>约妆</text>
           <view class="underline" v-if="activeTab==='makeup'"></view>
         </view>
-        <view class="tab" :class="{active: activeTab==='hair'}" @click.stop="switchTab('hair')">
+        <view class="tab font-alimamashuhei" :class="{active: activeTab==='hair'}" @click.stop="switchTab('hair')">
           <text>约毛</text>
           <view class="underline" v-if="activeTab==='hair'"></view>
         </view>
@@ -42,7 +42,7 @@
     <view class="category-container" v-if="activeTab === 'sale'">
       <scroll-view scroll-x class="category-scroll" :show-scrollbar="false">
         <view
-          class="category-item"
+          class="category-item font-alimamashuhei"
           v-for="(item, index) in tabList"
           :key="index"
           :class="{ active: activeType === item }"
@@ -55,7 +55,7 @@
     <view class="size-container" v-if="activeTab === 'sale'">
       <scroll-view scroll-x class="size-scroll" :show-scrollbar="false">
         <view
-          class="size-item"
+          class="size-item font-alimamashuhei"
           v-for="(item, index) in sizeList"
           :key="index"
           :class="{ active: activeSize === item }"
@@ -68,23 +68,36 @@
 
     <!-- 日期选择 -->
     <view class="date-picker-container">
-      <scroll-view class="date-scroll" scroll-x :scroll-left="scrollLeft" :show-scrollbar="false">
+      <scroll-view
+        class="date-scroll"
+        scroll-x
+        scroll-with-animation
+        :scroll-left="dateScrollLeft"
+        :show-scrollbar="false"
+      >
         <view
           v-for="(item, date) in currentCalendar"
           :key="date"
           class="date-item"
+          :class="{ 'selected-item': chooseDate === date }"
+          :id="getDateAnchorId(date)"
           @click="selectDate(date)"
         >
+          <view class="weekday font-alimamashuhei" :class="{'weekend': item.weekday==='周日'||item.weekday==='周六'}">{{ item.weekday }}</view>
           <view
-            class="date-badge"
+            class="day-number font-title"
+            :class="{
+              'selected': chooseDate === date,
+              'today-unselected': isToday(date) && chooseDate !== date
+            }"
+          >
+            {{ isToday(date) ? '今天' : item.day_number }}
+          </view>
+          <view
+            class="date-badge font-title"
             v-if="activeTab === 'sale' ? (item.goods_number > 0) : (item.plans_number > 0)"
           >
             {{ activeTab === 'sale' ? item.goods_number : item.plans_number }}
-          </view>
-
-          <view class="weekday" :class="{'weekend': item.weekday==='周日'||item.weekday==='周六'}">{{ item.weekday }}</view>
-          <view class="day-number" :class="{'selected': chooseDate === date}">
-            {{ isToday(date) ? '今天' : item.day_number }}
           </view>
         </view>
       </scroll-view>
@@ -94,9 +107,9 @@
     <view class="goods-container">
       <!-- 贩售 -->
       <template v-if="activeTab === 'sale'">
-        <view class="date-title">
-          <text class="highlight">{{chooseDate}} 日</text>
-          <text> 星期{{chooseItem.weekday}}上新</text>
+        <view class="date-title font-alimamashuhei">
+          <text class="highlight font-title">{{chooseDate}} 日</text>
+          <text class="title-text"> 星期{{chooseItem.weekday}}上新</text>
         </view>
 
         <view v-if="chooseItem.goods == null" class="empty-tip">
@@ -124,42 +137,45 @@
 
             <view class="goods-info">
               <view>
-                <text class="brand-name">{{good.brand_name}}</text>
-                <text class="goods-name">{{good.goods_name}}</text>
+                <text class="brand-name font-alimamashuhei">{{good.brand_name}}</text>
+                <text class="goods-name font-alimamashuhei">{{good.goods_name}}</text>
               </view>
 
               <view class="goods-details">
                 <view v-if="good.sizes && good.sizes.length">
                   <view v-for="(g, i) in getSizeGroups(good.sizes)" :key="i" class="size-group">
                     <text class="size-category">{{ g.category }}：</text>
-                    <text class="size-details">{{ g.details.join('、') }}</text>
+                    <view class="size-values">
+                      <text class="size-details">{{ g.previewText }}</text>
+                      <text v-if="g.hiddenCount > 0" class="size-more font-title">... +{{ g.hiddenCount }}</text>
+                    </view>
                   </view>
                 </view>
                 <text v-else>{{good.size}} · {{good.size_detail}}</text>
               </view>
 
               <view class="time-info">
-                <text>开定 {{ formatTimestamp(good.sub_time) }}</text>
-                <text v-if="good.sub_time_end">截止 {{ formatTimestamp(good.sub_time_end)}}</text>
+                <text class="font-title">开售 {{ formatTimestamp(good.sub_time) }}</text>
+                <text class="font-title" v-if="good.sub_time_end">截止 {{ formatTimestamp(good.sub_time_end)}}</text>
               </view>
 
               <view class="price-info">
                 <view v-if="good.sale_type != '限量现货' && good.sale_type != '不限量现货'">
                   <view class="price-group">
-                    <text class="price-label">定金</text>
-                    <text class="deposit-price">{{good.sub_amount}}</text>
-                    <text class="currency">({{good.currency}})</text>
+                    <text class="price-label font-alimamashuhei">定金</text>
+                    <text class="deposit-price font-title">{{good.sub_amount}}</text>
+                    <text class="currency font-title">({{good.currency}})</text>
                   </view>
                   <view class="price-group">
-                    <text class="price-label">尾款</text>
-                    <text class="final-price">{{good.fin_amount}}</text>
+                    <text class="price-label font-alimamashuhei">尾款</text>
+                    <text class="final-price font-title">{{good.fin_amount}}</text>
                   </view>
                 </view>
                 <view v-else>
                   <view class="price-group">
-                    <text class="price-label">全款</text>
-                    <text class="full-price">{{good.sub_amount + good.fin_amount}}</text>
-                    <text class="currency">({{good.currency}})</text>
+                    <text class="price-label font-alimamashuhei">全款</text>
+                    <text class="full-price font-title">{{good.sub_amount + good.fin_amount}}</text>
+                    <text class="currency font-title">({{good.currency}})</text>
                   </view>
                 </view>
               </view>
@@ -170,9 +186,9 @@
 
       <!-- 约妆 / 约毛 共用 -->
       <template v-else>
-        <view class="date-title">
-          <text class="highlight">{{chooseDate}} 日</text>
-          <text> 星期{{chooseItem.weekday}}{{ planLabel }}</text>
+        <view class="date-title font-alimamashuhei">
+          <text class="highlight font-title">{{chooseDate}} 日</text>
+          <text class="title-text"> 星期{{chooseItem.weekday}}{{ planLabel }}</text>
         </view>
 
         <view v-if="chooseItem.plans == null || chooseItem.plans.length === 0" class="empty-tip">
@@ -199,7 +215,7 @@
                   class="artist-avatar"
                 />
                 <view class="artist-details">
-                  <text class="artist-name">{{plan.artist_name}}</text>
+                  <text class="artist-name font-alimamashuhei">{{plan.artist_name}}</text>
                   <view class="makeup-price-range">
                     <text>{{ priceLabel }}: {{ getPriceRange(plan) }}</text>
                   </view>
@@ -246,19 +262,19 @@
 
               <view class="plan-config">
                 <view class="config-section">
-                  <text class="section-title">档位选择</text>
+                  <text class="section-title font-alimamashuhei">档位选择</text>
                   <view v-for="tier in getTiers(plan)" :key="tier.title" class="tier-item">
-                    <text class="tier-title">{{tier.title}}</text>
-                    <text class="tier-price">{{tier.price}}元</text>
+                    <text class="tier-title font-alimamashuhei">{{tier.title}}</text>
+                    <text class="tier-price font-title">{{tier.price}}元</text>
                     <text class="tier-desc">{{tier.description}}</text>
                   </view>
                 </view>
 
                 <view class="config-section" v-if="getAddons(plan).length">
-                  <text class="section-title">加购服务</text>
+                  <text class="section-title font-alimamashuhei">加购服务</text>
                   <view v-for="addon in getAddons(plan)" :key="addon.title" class="addon-item">
-                    <text class="addon-title">{{addon.title}}</text>
-                    <text class="addon-price">{{addon.price}}元</text>
+                    <text class="addon-title font-alimamashuhei">{{addon.title}}</text>
+                    <text class="addon-price font-title">{{addon.price}}元</text>
                     <text class="addon-desc">{{addon.description}}</text>
                   </view>
                 </view>
@@ -369,14 +385,175 @@ function computeTodayFormat(){
   return `${y}-${m}-${day}`
 }
 
-/* 列表滚动定位 */
-const screenWidth = uni.getSystemInfoSync().screenWidth
-const itemWidth = screenWidth / 7
-let scrollLeft = ref(0)
-
 let chooseDate = ref('')
 let chooseItem = ref({})
 let loading = ref(true)
+const dateScrollLeft = ref(0)
+const targetDateOnEnter = ref('')
+const DATE_ITEM_STEP_RPX = 152
+const DATE_SCROLL_LEFT_PADDING_RPX = 14
+const hasTriggeredInitialSelect = ref(false)
+const measuredDateStepPx = ref(0)
+// 自动滚动开关：设为 false 可关闭“进入页面自动滚到选中日期（第二位）”
+const AUTO_SCROLL_ENABLED = true
+
+function normalizeDateString(input) {
+  const raw = String(input || '').trim()
+  if (!raw) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  if (/^\d{8}$/.test(raw)) return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+  return ''
+}
+
+function getDateAnchorId(date) {
+  return `calendar-date-${String(date || '').replace(/-/g, '')}`
+}
+
+const calendarDates = computed(() => Object.keys(currentCalendar.value || {}))
+function getDateStepPx() {
+  if (measuredDateStepPx.value > 0) return measuredDateStepPx.value
+  try {
+    return uni.upx2px ? uni.upx2px(DATE_ITEM_STEP_RPX) : 76
+  } catch {
+    return 76
+  }
+}
+function measureDateStepPx() {
+  return new Promise((resolve) => {
+    if (!selectorCtx.value) return resolve()
+    try {
+      uni.createSelectorQuery()
+        .in(selectorCtx.value)
+        .selectAll('.date-item')
+        .boundingClientRect((nodes) => {
+          const list = Array.isArray(nodes) ? nodes : []
+          if (list.length >= 2) {
+            const step = Math.round(Math.abs((list[1]?.left || 0) - (list[0]?.left || 0)))
+            if (step > 0) measuredDateStepPx.value = step
+          } else if (list.length === 1 && list[0]?.width) {
+            measuredDateStepPx.value = Math.round(list[0].width)
+          }
+          console.log('[calendar-debug] measureDateStepPx', {
+            measured: measuredDateStepPx.value,
+            fallback: uni.upx2px ? uni.upx2px(DATE_ITEM_STEP_RPX) : 76
+          })
+          resolve()
+        })
+        .exec()
+    } catch {
+      resolve()
+    }
+  })
+}
+function applyDateScrollLeft(targetLeft) {
+  const nextLeft = Math.max(0, Math.round(targetLeft))
+  if (dateScrollLeft.value === nextLeft) {
+    dateScrollLeft.value = Math.max(0, nextLeft - 1)
+    nextTick(() => {
+      dateScrollLeft.value = nextLeft
+    })
+    return
+  }
+  dateScrollLeft.value = nextLeft
+}
+function syncDateScrollPosition() {
+  if (!AUTO_SCROLL_ENABLED) return
+  const date = chooseDate.value
+  if (!date) {
+    console.log('[calendar-debug] syncDateScrollPosition skip: empty chooseDate')
+    return
+  }
+  const idx = calendarDates.value.indexOf(date)
+  if (idx < 0) {
+    console.log('[calendar-debug] syncDateScrollPosition miss date in calendarDates', {
+      chooseDate: date,
+      targetDateOnEnter: targetDateOnEnter.value,
+      today: todayFormat.value,
+      calendarDatesLen: calendarDates.value.length,
+      calendarDatesHead: calendarDates.value.slice(0, 8)
+    })
+    dateScrollLeft.value = 0
+    return
+  }
+  const targetIdx = Math.max(idx - 1, 0)
+  const stepPx = getDateStepPx()
+  const leftPaddingPx = uni.upx2px ? uni.upx2px(DATE_SCROLL_LEFT_PADDING_RPX) : 7
+  applyDateScrollLeft(Math.max(0, targetIdx * stepPx - leftPaddingPx))
+  console.log('[calendar-debug] syncDateScrollPosition applied', {
+    chooseDate: date,
+    idx,
+    targetIdx,
+    stepPx,
+    leftPaddingPx,
+    scrollLeft: dateScrollLeft.value
+  })
+}
+
+function normalizeDateKey(raw) {
+  return String(raw || '').replace(/[^0-9]/g, '')
+}
+
+function resolveDateFromCalendar(targetDate) {
+  const keys = calendarDates.value || []
+  if (!keys.length) return ''
+
+  if (keys.includes(targetDate)) return targetDate
+
+  const targetNorm = normalizeDateKey(targetDate)
+  if (targetNorm) {
+    const hit = keys.find(k => normalizeDateKey(k) === targetNorm)
+    if (hit) return hit
+
+    // 兜底：后端若仅返回 MMDD（或其它简写），按末 4 位匹配
+    if (targetNorm.length >= 4) {
+      const targetMMDD = targetNorm.slice(-4)
+      const hitByMMDD = keys.find(k => normalizeDateKey(k).slice(-4) === targetMMDD)
+      if (hitByMMDD) return hitByMMDD
+    }
+  }
+
+  const todayNorm = normalizeDateKey(todayFormat.value)
+  if (todayNorm) {
+    const todayHit = keys.find(k => normalizeDateKey(k) === todayNorm)
+    if (todayHit) return todayHit
+
+    if (todayNorm.length >= 4) {
+      const todayMMDD = todayNorm.slice(-4)
+      const todayHitByMMDD = keys.find(k => normalizeDateKey(k).slice(-4) === todayMMDD)
+      if (todayHitByMMDD) return todayHitByMMDD
+    }
+  }
+
+  return keys[0]
+}
+
+function triggerInitialSelectDateOnce() {
+  if (hasTriggeredInitialSelect.value) return false
+  const resolvedDate = resolveDateFromCalendar(chooseDate.value || targetDateOnEnter.value || todayFormat.value)
+  if (!resolvedDate) {
+    console.log('[calendar-debug] triggerInitialSelectDateOnce skip: resolvedDate empty', {
+      chooseDate: chooseDate.value,
+      targetDateOnEnter: targetDateOnEnter.value,
+      today: todayFormat.value,
+      calendarDatesLen: calendarDates.value.length
+    })
+    return false
+  }
+  chooseDate.value = resolvedDate
+  hasTriggeredInitialSelect.value = true
+  console.log('[calendar-debug] triggerInitialSelectDateOnce fire', {
+    resolvedDate,
+    calendarDatesLen: calendarDates.value.length
+  })
+  selectDate(resolvedDate)
+  // 强制二次对齐，确保首次进入也触发滚动定位
+  nextTick(() => {
+    syncDateScrollPosition()
+    setTimeout(() => syncDateScrollPosition(), 60)
+    setTimeout(() => syncDateScrollPosition(), 180)
+  })
+  return true
+}
 
 /* 过滤后的当月（贩售） */
 const filteredSaleCalendar = computed(()=>{
@@ -408,6 +585,7 @@ const currentCalendar = computed(()=>{
 const selectDate = (d) => {
   chooseDate.value = d
   updateSelectedItem()
+  syncDateScrollPosition()
   resetStickySoon()
 }
 
@@ -416,6 +594,18 @@ watch([activeType, activeSize], () => { if (activeTab.value === 'sale') updateSe
 watch(() => filteredSaleCalendar.value, () => { if (activeTab.value === 'sale') updateSelectedItem() })
 watch(() => makeupCalendar.value, () => { if (activeTab.value === 'makeup') updateSelectedItem() })
 watch(() => hairCalendar.value, () => { if (activeTab.value === 'hair') updateSelectedItem() })
+watch(() => chooseDate.value, () => {
+  syncDateScrollPosition()
+})
+watch(() => calendarDates.value.join(','), () => {
+  if (!hasTriggeredInitialSelect.value && calendarDates.value.length) {
+    console.log('[calendar-debug] calendarDates changed -> force initial select', {
+      calendarDatesLen: calendarDates.value.length
+    })
+    triggerInitialSelectDateOnce()
+  }
+  syncDateScrollPosition()
+})
 
 /* 请求（含中文日志） */
 const fetchSaleCalendar = () => new Promise(resolve => {
@@ -434,8 +624,8 @@ const fetchSaleCalendar = () => new Promise(resolve => {
       loading.value = false
       if (!chooseDate.value) chooseDate.value = todayFormat.value
       updateSelectedItem()
-      scrollLeft.value = itemWidth * 7 - 5
       await nextTick()
+      syncDateScrollPosition()
       resetStickySoon()
       resolve()
     }
@@ -460,6 +650,7 @@ const fetchMakeupCalendar = () => new Promise(resolve => {
       if (!chooseDate.value) chooseDate.value = todayFormat.value
       updateSelectedItem()
       await nextTick()
+      syncDateScrollPosition()
       resetStickySoon()
       resolve()
     }
@@ -484,6 +675,7 @@ const fetchHairCalendar = () => new Promise(resolve => {
       if (!chooseDate.value) chooseDate.value = todayFormat.value
       updateSelectedItem()
       await nextTick()
+      syncDateScrollPosition()
       resetStickySoon()
       resolve()
     }
@@ -502,6 +694,10 @@ function updateSelectedItem(){
   console.log('【日历】更新选中项：tab=', activeTab.value, ' 日期=', d, ' goods#=', goodsLen, ' plans#=', plansLen)
 
   if (cal[d]){ chooseItem.value = cal[d]; return }
+  if (d) {
+    chooseItem.value = activeTab.value === 'sale' ? { goods: null } : { plans: null }
+    return
+  }
   const first = Object.entries(cal).find(([_,v])=> (activeTab.value==='sale'&&v.goods) || ((activeTab.value!=='sale')&&v.plans))
   if (first){ chooseDate.value = first[0]; chooseItem.value = first[1] }
   else { chooseItem.value = activeTab.value==='sale' ? {goods:null} : {plans:null} }
@@ -524,7 +720,16 @@ function getSizeGroups(sizes){
   if (!sizes || !sizes.length) return []
   const g = {}
   sizes.forEach(it=>{ const k = it.goods_size; if(!g[k]) g[k]=[]; if(it.size_detail) g[k].push(it.size_detail) })
-  return Object.keys(g).map(k=>({category:k, details:g[k]}))
+  return Object.keys(g).map(k => {
+    const details = Array.from(new Set((g[k] || []).filter(Boolean)))
+    const previewDetails = details.slice(0, 2)
+    return {
+      category: k,
+      details,
+      previewText: previewDetails.join('、'),
+      hiddenCount: Math.max(details.length - 2, 0)
+    }
+  })
 }
 function getPriceRange(plan){
   const tiers = getTiers(plan) || []
@@ -670,13 +875,22 @@ function resetStickySoon() {
 async function refreshAll () {
   console.log('【日历】开始刷新全量数据，tab=', activeTab.value)
   todayFormat.value = computeTodayFormat()
-  if (!chooseDate.value) chooseDate.value = todayFormat.value
+  if (!chooseDate.value) chooseDate.value = targetDateOnEnter.value || todayFormat.value
 
   if (activeTab.value === 'makeup')      await fetchMakeupCalendar()
   else if (activeTab.value === 'hair')   await fetchHairCalendar()
   else                                    await fetchSaleCalendar()
 
   await nextTick()
+  await measureDateStepPx()
+  console.log('[calendar-debug] refreshAll after data ready', {
+    chooseDate: chooseDate.value,
+    targetDateOnEnter: targetDateOnEnter.value,
+    today: todayFormat.value,
+    calendarDatesLen: calendarDates.value.length
+  })
+  triggerInitialSelectDateOnce()
+  syncDateScrollPosition()
   resetStickySoon()
 }
 
@@ -691,10 +905,18 @@ onLoad((options = {})=>{
   activeTab.value = (tab === 'makeup' || tab === 'sale' || tab === 'hair') ? tab : 'sale'
 
   todayFormat.value = computeTodayFormat()
-  chooseDate.value = todayFormat.value
+  const inputDate = normalizeDateString(options.date || options.choose_date || options.target_date)
+  targetDateOnEnter.value = inputDate || todayFormat.value
+  chooseDate.value = targetDateOnEnter.value
 })
 
 onShow(async ()=>{
+  hasTriggeredInitialSelect.value = false
+  dateScrollLeft.value = 0
+  console.log('[calendar-debug] onShow reset initial flag', {
+    chooseDate: chooseDate.value,
+    targetDateOnEnter: targetDateOnEnter.value
+  })
   if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
   await refreshAll()
 })
@@ -748,16 +970,16 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 /* 顶部渐变头 */
 .header-gradient{
   padding: calc(var(--safe-top, 0px) + 16px) 28rpx 12rpx;
-  background: linear-gradient(180deg,#FCE259 0%,#FFD863 18%,#FFE891 46%,#FFF6CC 70%,#f5f6f8 100%);
+  background: linear-gradient(180deg,#b9e3ff 0%, #d1ecff 38%, #e8eef4 72%, #f5f6f8 100%);
   border-bottom-left-radius: 40rpx; border-bottom-right-radius: 40rpx;
-  box-shadow: 0 12rpx 28rpx rgba(252,226,89,.26);
+  box-shadow: 0 12rpx 28rpx rgba(123, 186, 224, .2);
 }
 
 /* 下划线Tab */
 .tabs-underline{ display:flex; gap: 40rpx; }
 .tab{ position:relative; padding: 8rpx 6rpx 18rpx; font-size:34rpx; font-weight:800; letter-spacing:.5rpx; color:#8a8f9a; }
 .tab.active{ color:#333; }
-.underline{ position:absolute; left:0; right:0; bottom:0; height: 6rpx; border-radius: 6rpx; background:#FCE259; box-shadow: 0 2rpx 6rpx rgba(252,226,89,.55); }
+.underline{ position:absolute; left:0; right:0; bottom:0; height: 6rpx; border-radius: 6rpx; background:#77b8de; box-shadow: 0 2rpx 6rpx rgba(119,184,222,.45); }
 
 /* 分类/尺寸（仅贩售） */
 .category-container{ padding:20rpx 20rpx 0; background:#f5f6f8; }
@@ -782,26 +1004,163 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 
 /* 日期选择卡片 */
 .date-picker-container{
-  padding:20rpx; background:#fff; margin: 8rpx 20rpx 0; border-radius:20rpx;
-  box-shadow:0 8rpx 20rpx rgba(0,0,0,.06); position:relative; z-index:10;
+  margin: 6rpx 20rpx 10rpx 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  position: relative;
+  z-index: 20;
+  overflow: visible;
 }
-.date-scroll{ white-space:nowrap; display:flex; padding:10rpx 0; }
-.date-item{ display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:calc(100vw / 7); padding:50rpx 0 10rpx; position:relative; }
-.date-badge{ position:absolute; top:0rpx; right:35rpx; background:#ff9ab2; color:#fff; border-radius:50%; width:36rpx; height:36rpx; line-height:36rpx; font-size:22rpx; text-align:center; font-weight:700; z-index:2; }
-.weekday{ font-size:26rpx; color:#666; margin-bottom:10rpx; }
-.weekday.weekend{ color:#ff6b6b; font-weight:700; }
-.day-number{ display:flex; align-items:center; justify-content:center; width:70rpx; height:70rpx; border-radius:50%; font-size:24rpx; color:#333; background:#f5f9ff; transition:.2s; font-weight:500; }
-.day-number.selected{ background: linear-gradient(135deg,#7dc3d3,#89d1e1); color:#fff; font-weight:700; transform:scale(1.1); box-shadow:0 5rpx 15rpx rgba(125,195,211,.3); }
+.date-scroll{
+  white-space: nowrap;
+  display: block;
+  padding: 6rpx 14rpx 0;
+  overflow: visible;
+}
+.date-item{
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 140rpx;
+  min-height: 168rpx;
+  padding: 24rpx 0 10rpx;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  vertical-align: top;
+  flex: 0 0 140rpx;
+  flex-shrink: 0;
+  margin-right: 12rpx;
+}
+.date-item.selected-item{
+  z-index: 6;
+}
+.date-item.selected-item::before{
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 132rpx;
+  height: 162rpx;
+  background: #fff;
+  border-radius: 72rpx 72rpx 0 0;
+}
+.date-item.selected-item::after{
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -12rpx;
+  transform: translateX(-50%);
+  width: 132rpx;
+  height: 36rpx;
+  background: #fff;
+  border-radius: 0;
+}
+.date-item.selected-item .weekday,
+.date-item.selected-item .day-number{
+  position: relative;
+  z-index: 2;
+}
+.date-badge{
+  position: absolute;
+  left: 50%;
+  bottom: 18rpx;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f39cb4;
+  color: #fff;
+  border-radius: 999rpx;
+  min-width: 34rpx;
+  padding: 0 8rpx;
+  height: 34rpx;
+  line-height: 34rpx;
+  font-size: 20rpx;
+  text-align: center;
+  font-weight: 700;
+  z-index: 3;
+}
+.weekday{
+  font-size: 24rpx;
+  color: #7a8cae;
+  margin-bottom: 8rpx;
+  font-weight: 500;
+  line-height: 1;
+}
+.weekday.weekend{
+  color: #9aa9c4;
+  font-weight: 600;
+}
+.day-number{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  width: 110rpx;
+  height: 52rpx;
+  border-radius: 24rpx;
+  font-size: 28rpx;
+  color: #31456a;
+  background: transparent;
+  transition: .2s ease;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+.day-number.selected{
+  color: #22385f;
+  font-weight: 700;
+  transform: none;
+  box-shadow: none;
+}
+.day-number.today-unselected{
+  color: #2f4c7f;
+  font-size: 30rpx;
+  background: transparent;
+}
+.day-number.today-unselected::before{
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #d8ecff;
+  z-index: -1;
+}
+.date-item.selected-item .weekday{
+  color: #5a6f94;
+  margin-top: 0;
+}
 
 /* 主体/卡片 */
-.goods-container{ padding:40rpx 30rpx; background:#f5f6f8; border-radius:40rpx 40rpx 0 0; min-height:70vh; }
-.date-title{ font-size:32rpx; color:#555; margin-bottom:30rpx; padding-left:15rpx; border-left:8rpx solid #7dc3d3; }
+.goods-container{
+  margin: -8rpx 20rpx 24rpx;
+  padding: 30rpx 24rpx 24rpx;
+  background: #fff;
+  border-radius: 52rpx;
+  box-shadow: 0 12rpx 24rpx rgba(84, 111, 162, .08);
+  min-height: 70vh;
+  position: relative;
+  bottom: 2rpx;
+}
+.date-title{ font-size:32rpx; color:#555; margin-bottom:30rpx; padding-left:15rpx; }
 .date-title .highlight{ color:#7dc3d3; font-weight:700; margin-right:10rpx; }
+.date-title .title-text{ color:#2e3340; font-weight:700; }
 
 .empty-tip{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80rpx 0; color:#999; font-size:32rpx; }
 .empty-tip .empty-icon{ width:180rpx; height:180rpx; margin-bottom:30rpx; opacity:.6; }
 
-.goods-card{ display:flex; background:#fff; border-radius:24rpx; overflow:hidden; margin-bottom:30rpx; box-shadow:0 8rpx 24rpx rgba(0,0,0,0.06); transition: transform .2s ease, box-shadow .2s ease; }
+.goods-card{ display:flex; background:#fff; border-radius:24rpx; overflow:hidden; margin-bottom:30rpx;  transition: transform .2s ease, box-shadow .2s ease; }
 .goods-card:active{ transform:scale(.98); box-shadow:0 6rpx 18rpx rgba(0,0,0,0.06); }
 .goods-image-container{ position:relative; width:260rpx; flex-shrink:0; }
 .goods-image{ width:100%; height:10.625rem; display:block; overflow:hidden; border-radius:10px; margin:20rpx 10rpx; }
@@ -810,17 +1169,56 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 .sale-type{ background: linear-gradient(90deg, rgba(52,68,160,.8), rgba(52,68,160,.6)); }
 .first-day{ background: linear-gradient(90deg, rgba(0,0,0,.7), rgba(0,0,0,.5)); }
 
-.goods-info{ flex:1; padding:25rpx; display:flex; flex-direction:column; }
+.goods-info{ flex:1; padding:25rpx 25rpx 25rpx 40rpx; display:flex; flex-direction:column; }
 .brand-name{ font-size:22rpx; color:#fff; font-weight:700; margin-bottom:8rpx; display:inline-block; background:#7dc3d3; padding:5rpx 10rpx; border-radius:10rpx; margin-right:15rpx; }
 .goods-name{ font-size:26rpx; color:#38374c; font-weight:700; margin-bottom:8rpx; display:inline-block; }
 
 .goods-details{ margin-bottom:20rpx; display:flex; flex-wrap:wrap; align-items:center; }
-.size-group{ display:flex; align-items:flex-start; margin-right:10rpx; margin-bottom:5rpx; white-space:nowrap; }
-.size-category{ font-weight:700; color:#555; margin-right:5rpx; flex-shrink:0; }
-.size-details{ color:#777; word-break:break-word; max-width:200rpx; }
+.size-group{
+  display: block;
+  margin-right: 10rpx;
+  margin-bottom: 10rpx;
+  white-space: normal;
+}
+.size-category{
+  display: block;
+  font-weight:700;
+  color:#555;
+  margin-bottom: 4rpx;
+}
+.size-values{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: 8rpx;
+  row-gap: 4rpx;
+  padding-left: 12rpx;
+}
+.size-details{
+  color:#777;
+  max-width: 100%;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.35;
+}
+.size-more{
+  color: #7f8ba4;
+  font-size: 22rpx;
+  flex-shrink: 0;
+  line-height: 1.35;
+}
 
-.time-info{ background:#f8f9ff; border-radius:12rpx; padding:15rpx; color:#666; margin-bottom:20rpx; }
-.time-info text{ display:block; font-size:22rpx; margin-bottom:10rpx; position:relative; padding-left:16rpx; }
+.time-info{
+  background:#f8f9ff;
+  border-radius:12rpx;
+  padding:18rpx 18rpx;
+  color:#666;
+  margin-top: 0;
+  margin-bottom: 30rpx;
+}
+.time-info text{ display:block; font-size:22rpx; margin-bottom:14rpx; position:relative; padding-left:16rpx; line-height: 1.45; }
+.time-info text:last-child{ margin-bottom: 0; }
 .time-info text::before{ content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); width:10rpx; height:10rpx; background:#7dc3d3; border-radius:50%; }
 
 .price-info{ margin-top:auto; display:flex; gap:25rpx; }
