@@ -86,8 +86,8 @@
       <view class="section s-artist-today" :class="[{ 'is-inview': secInView.artistToday }, { 'is-active': activeSection==='artistToday' }]">
       <view class="section-hd">
         <view class="title-group">
-          <text class="title font-title">今日约妆·约毛</text>
-          <text class="title-en font-title">Today's Faceup & Wigs</text>
+          <text class="title font-title">接单提示</text>
+          <text class="title-en font-title">Open Tips (Past24h ~ 7d)</text>
         </view>
         <view class="sub sub-row">
           <text v-if="artistPlanLoading" class="loading-mini">加载中…</text>
@@ -96,7 +96,7 @@
 
       <view v-if="faceupList.length === 0 && hairList.length === 0 && !artistPlanLoading" class="empty">
         <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
-        <text>24小时内暂无妆/毛掉落</text>
+        <text>过去24小时到未来7天暂无开妆/开手改毛提示</text>
       </view>
 
       <view v-else class="artist-plan-container">
@@ -349,28 +349,31 @@
     <view class="section s-timeline" :class="[{ 'is-inview': secInView.timeline }, { 'is-active': activeSection==='timeline' }]">
       <view class="section-hd">
         <view class="title-group">
-          <text class="title font-title">即将贩售</text>
-          <text class="title-en font-title">Upcoming (24h)</text>
+          <text class="title font-title">{{ timelineMode === 'sale' ? '即将贩售' : '接单时间轴' }}</text>
+          <text class="title-en font-title">{{ timelineMode === 'sale' ? 'Upcoming (24h)' : 'Faceup & Wig Timeline' }}</text>
         </view>
         <view class="sub sub-row">
-          <text v-if="timelineLoading" class="loading-mini">加载中…</text>
-          <text class="link-calendar" @tap="goCalendar">查看日历</text>
+          <text v-if="activeTimelineLoading" class="loading-mini">加载中…</text>
+          <view class="switch-order-tip" @tap="switchToOrderTips">
+            <text class="switch-order-text font-title">{{ timelineMode === 'sale' ? '切换到约妆/毛' : '切换到贩售' }}</text>
+            <uni-icons class="switch-order-icon" type="arrow-right" size="14" color="#6e7f95"></uni-icons>
+          </view>
         </view>
       </view>
 
-      <view v-if="timeline.length === 0 && !timelineLoading" class="empty">
+      <view v-if="activeTimelineList.length === 0 && !activeTimelineLoading" class="empty">
         <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
-        <text>暂无即将开始的上新</text>
+        <text>{{ activeTimelineEmptyText }}</text>
       </view>
 
       <view class="timeline" v-else>
         <view class="timeline-connector"></view>
         <view
           class="tl-item"
-          v-for="(r, index) in timeline"
+          v-for="(r, index) in activeTimelineList"
           :key="r.key"
           :class="{ 'is-visible': index < visibleCount }"
-          @tap="goGoods(r.goodsId, r.recordId)"
+          @tap="onTapTimelineItem(r)"
         >
           <view class="tl-left">
             <view class="tl-time">{{ fmtHM(r.time) }}</view>
@@ -387,14 +390,16 @@
                 </view>
                 <view class="row-2">
                   <text class="type-badge font-alimamashuhei" v-if="r.type">{{ r.type }}</text>
-                  <view class="hotness">
+                  <view class="hotness" v-if="timelineMode === 'sale'">
                     <uni-icons type="fire" size="22" color="#ff5a6e"></uni-icons>
                     <text class="views" v-if="r.views">{{ formatViews(r.views) }}</text>
                   </view>
+                  <text class="order-open-text font-title" v-else>{{ r.openStatusText || '' }}</text>
                 </view>
                 <view class="sizes" v-if="r.sizeChips && r.sizeChips.length">
                   <text class="size-chip font-alimamashuhei" v-for="(s, i) in r.sizeChips" :key="i">{{ s }}</text>
                 </view>
+                <view class="order-price font-title" v-if="timelineMode === 'order' && r.priceText">{{ r.priceText }}</view>
               </view>
             </view>
           </view>
@@ -436,6 +441,15 @@ const hasToken = ref(false)
 
 const timeline = ref([])
 const timelineLoading = ref(true)
+const orderTimeline = ref([])
+const timelineMode = ref('sale') // sale | order
+const activeTimelineList = computed(() => (timelineMode.value === 'sale' ? timeline.value : orderTimeline.value))
+const activeTimelineLoading = computed(() => (timelineMode.value === 'sale' ? timelineLoading.value : artistPlanLoading.value))
+const activeTimelineEmptyText = computed(() => (
+  timelineMode.value === 'sale'
+    ? '暂无即将开始的上新'
+    : '过去24小时到未来7天暂无开妆/手改毛'
+))
 
 /** 最近入库（ops-feed） */
 const opsList = ref([])
@@ -453,7 +467,7 @@ function startStaggerReveal () {
   if (staggerStarted.value) return
   staggerStarted.value = true
   visibleCount.value = 0
-  const total = timeline.value.length || 0
+  const total = activeTimelineList.value.length || 0
   if (total === 0) return
   const tick = () => {
     if (visibleCount.value < total) {
@@ -503,8 +517,8 @@ function resetTimelineRevealAndObserve () {
 
 function forceRevealIfStuck () {
   setTimeout(() => {
-    if (timeline.value.length > 0 && visibleCount.value === 0 && !staggerStarted.value) {
-      visibleCount.value = timeline.value.length
+    if (activeTimelineList.value.length > 0 && visibleCount.value === 0 && !staggerStarted.value) {
+      visibleCount.value = activeTimelineList.value.length
     }
   }, 800)
 }
@@ -650,7 +664,7 @@ async function refreshAll (isInit = false) {
   try {
     await Promise.all([
       fetchTodaySales(),    // 今日上新
-      fetchArtistPlansNext24h(), // 【新增】今日开妆约毛
+      fetchArtistPlansOpenTips(), // 开单时间轴数据（过去24h~未来7d）
       fetchWaitingSale(),   // 等待贩售
       fetchHotToday(),      // 今日热榜
       fetchThemes(),        // 主题合集
@@ -714,17 +728,29 @@ function fetchTodaySales() {
   }).finally(() => { todayLoading.value = false })
 }
 
-/** 【新增】拉取未来24小时开妆约毛 */
-function fetchArtistPlansNext24h() {
+/** 拉取开单时间轴（过去24小时到未来7天，开妆/开手改毛各最多10条） */
+function fetchArtistPlansOpenTips() {
   artistPlanLoading.value = true
   return uni.request({
-    url: websiteUrl.value + '/order-plan/next-24h',
+    url: websiteUrl.value + '/order-plan/open-tips',
     method: 'GET',
+    data: { start_offset_hours: -24, end_offset_hours: 168, limit: 10 },
     timeout: 5000
   }).then(res => {
     const d = res?.data?.data || {}
-    faceupList.value = d.faceup_list || []
-    hairList.value = d.hairstylist_list || []
+    const faceup = d.faceup_list || []
+    const hair = d.hairstylist_list || []
+    faceupList.value = faceup
+    hairList.value = hair
+
+    const merged = [
+      ...normalizePlanTimelineRows(faceup, 1),
+      ...normalizePlanTimelineRows(hair, 2)
+    ].sort((a, b) => a.time - b.time)
+    orderTimeline.value = merged
+    if (timelineMode.value === 'order') {
+      resetTimelineRevealAndObserve()
+    }
   }).finally(() => { artistPlanLoading.value = false })
 }
 
@@ -734,6 +760,35 @@ function getPlanCover(plan) {
   if (plan.images && plan.images.length > 0) return plan.images[0]
   // 兜底Logo
   return plan.logo_image || ''
+}
+
+function normalizePlanTimelineRows(list, artistType) {
+  const now = Math.floor(Date.now() / 1000)
+  return (list || []).map(plan => {
+    const tiers = Array.isArray(plan?.tiers) ? plan.tiers : []
+    const firstTierPrice = tiers.length > 0 ? formatPrice(tiers[0]?.price) : ''
+    const chips = tiers
+      .map(t => (t?.goods_size || t?.name || t?.label || '').trim())
+      .filter(Boolean)
+      .slice(0, 3)
+    const openTime = Number(plan?.open_time || 0)
+    return {
+      key: `plan-${plan?.id || 0}-${openTime}`,
+      mode: 'order',
+      planId: plan?.id || 0,
+      recordId: 0,
+      goodsId: 0,
+      time: openTime,
+      cover: getPlanCover(plan || {}),
+      brand_name: plan?.brand_name || plan?.artist_name || '接单计划',
+      goods_name: plan?.artist_name || plan?.brand_name || '接单计划',
+      type: artistType === 2 ? '手改毛' : '开妆',
+      views: 0,
+      sizeChips: chips,
+      openStatusText: openTime <= now ? '已开单' : '待开单',
+      priceText: firstTierPrice ? `¥${firstTierPrice}起` : '暂无报价'
+    }
+  }).filter(x => x.time > 0)
 }
 
 function fetchHotToday() {
@@ -952,6 +1007,19 @@ function goCalendar () {
   uni.navigateTo({ url: '/pages/calendar/calendar' })
 }
 
+function switchToOrderTips () {
+  timelineMode.value = timelineMode.value === 'sale' ? 'order' : 'sale'
+}
+
+function onTapTimelineItem (item) {
+  if (!item) return
+  if (timelineMode.value === 'order' || item.mode === 'order') {
+    if (item.planId) goPlan(item.planId)
+    return
+  }
+  goGoods(item.goodsId, item.recordId)
+}
+
 function deriveTime(it) {
   const cands = []
   if (it.sub_time) cands.push(+it.sub_time)
@@ -1036,7 +1104,7 @@ async function handlePullDownRefresh () {
   try {
     uni.showNavigationBarLoading()
     await refreshAll(false)
-    if (timeline.value.length > 0 && visibleCount.value === 0) {
+    if (activeTimelineList.value.length > 0 && visibleCount.value === 0) {
       resetTimelineRevealAndObserve()
       startStaggerReveal()
     }
@@ -1064,7 +1132,7 @@ onShow(() => {
     if (last && last !== now) {
       // 隔天自动刷新数据
       refreshAll(false).then(() => {
-        if (timeline.value.length > 0) {
+        if (activeTimelineList.value.length > 0) {
           resetTimelineRevealAndObserve()
           startStaggerReveal()
         }
@@ -1077,6 +1145,12 @@ watch(hotMode, (m) => {
   if (m === '7days' && hot7List.value.length === 0) {
     fetchHot7Days()
   }
+})
+
+watch(timelineMode, () => {
+  nextTick(() => {
+    resetTimelineRevealAndObserve()
+  })
 })
 
 onBeforeUnmount(() => {
@@ -1367,6 +1441,31 @@ onBeforeUnmount(() => {
   transition: all .2s ease;
 }
 .link-calendar:active{ opacity:.85; }
+
+.switch-order-tip{
+  padding: 8rpx 14rpx 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #f1f4f7;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  transition: all .2s ease;
+}
+.switch-order-tip:active{ opacity: .82; }
+.switch-order-text{
+  font-size: 20rpx;
+  color: #667488;
+  line-height: 1;
+}
+.switch-order-icon{
+  display: inline-flex;
+  animation: switch-right-bounce 1.2s ease-in-out infinite;
+}
+@keyframes switch-right-bounce{
+  0%, 100% { transform: translateX(0); }
+  45% { transform: translateX(8rpx); }
+  60% { transform: translateX(3rpx); }
+}
 
 /* 查看更多 */
 .link-more{
@@ -1747,6 +1846,10 @@ onBeforeUnmount(() => {
       .hotness{ display: flex; align-items: center;
         .views{ color:#ff5a6e; font-weight: 500; margin-left: 4rpx; }
       }
+      .order-open-text{
+        color: #6f7f92;
+        font-size: 19rpx;
+      }
     }
 
     .sizes{
@@ -1757,6 +1860,12 @@ onBeforeUnmount(() => {
         background: #f1f4f7;
         max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
+    }
+
+    .order-price{
+      margin-top: 12rpx;
+      font-size: 22rpx;
+      color: #5f6e83;
     }
   }
 }

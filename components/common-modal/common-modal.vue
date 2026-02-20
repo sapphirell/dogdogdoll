@@ -76,10 +76,7 @@ function getScrollLockStore() {
   if (typeof globalThis === 'undefined') return null
   if (!globalThis[BODY_SCROLL_LOCK_KEY]) {
     globalThis[BODY_SCROLL_LOCK_KEY] = {
-      count: 0,
-      scrollTop: 0,
-      bodyStyle: null,
-      htmlStyle: null
+      count: 0
     }
   }
   return globalThis[BODY_SCROLL_LOCK_KEY]
@@ -88,42 +85,17 @@ function getScrollLockStore() {
 const localLocked = ref(false)
 
 function lockBodyScroll() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return
   if (localLocked.value) return
   const store = getScrollLockStore()
   if (!store) return
 
-  if (store.count === 0) {
-    const body = document.body
-    const html = document.documentElement
-    store.scrollTop = window.pageYOffset || html.scrollTop || body.scrollTop || 0
-    store.bodyStyle = {
-      overflow: body.style.overflow,
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width
-    }
-    store.htmlStyle = {
-      overflow: html.style.overflow
-    }
-
-    body.style.overflow = 'hidden'
-    body.style.position = 'fixed'
-    body.style.top = `-${store.scrollTop}px`
-    body.style.left = '0'
-    body.style.right = '0'
-    body.style.width = '100%'
-    html.style.overflow = 'hidden'
-  }
-
+  // 仅记录锁计数。实际阻止滚动由遮罩层 touchmove/wheel 拦截完成，
+  // 避免在某些 H5 内核下修改 body/html 样式导致页面跳到顶部。
   store.count += 1
   localLocked.value = true
 }
 
 function unlockBodyScroll(force = false) {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return
   const store = getScrollLockStore()
   if (!store) return
 
@@ -135,22 +107,6 @@ function unlockBodyScroll(force = false) {
   }
 
   if (store.count > 0) return
-
-  const body = document.body
-  const html = document.documentElement
-  const bodyStyle = store.bodyStyle || {}
-  const htmlStyle = store.htmlStyle || {}
-  const top = Number(store.scrollTop || 0)
-
-  body.style.overflow = bodyStyle.overflow || ''
-  body.style.position = bodyStyle.position || ''
-  body.style.top = bodyStyle.top || ''
-  body.style.left = bodyStyle.left || ''
-  body.style.right = bodyStyle.right || ''
-  body.style.width = bodyStyle.width || ''
-  html.style.overflow = htmlStyle.overflow || ''
-
-  window.scrollTo(0, top)
 }
 
 // 阻止遮罩层下页面滚动（避免滑动穿透）
@@ -217,13 +173,14 @@ onBeforeUnmount(() => {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   /* 只有遮罩层级足够高，才能拦截点击和滚动 */
   z-index: 999; 
   
-  /* 【核心修改】透明背景，但保留 DOM 以拦截事件 */
-  background-color: rgba(0, 0, 0, 0); 
+  /* 全透明遮罩，仅拦截事件，不做变暗 */
+  background-color: transparent;
   
   /* Flex 布局实现水平居中 */
   display: flex;
