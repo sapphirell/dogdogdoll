@@ -52,7 +52,18 @@
     </zhouWei-navBar>
 
     <view class="hero">
-      <image class="hero-img" :src="coverUrl" mode="aspectFill" />
+      <swiper
+        v-if="heroImages.length > 1"
+        class="hero-swiper"
+        :current="heroSwiperCurrent"
+        circular
+        @change="onHeroSwiperChange"
+      >
+        <swiper-item v-for="(img, idx) in heroImages" :key="`hero-${idx}`">
+          <image class="hero-img" :src="img" mode="aspectFill" @click="previewHero(idx)" />
+        </swiper-item>
+      </swiper>
+      <image v-else class="hero-img" :src="coverUrl" mode="aspectFill" />
       <view class="hero-mask"></view>
       <view class="hero-footer">
         <image class="avatar" :src="avatarUrl" mode="aspectFill" @click="goArtistHome" />
@@ -60,9 +71,19 @@
           <text class="brand-name font-title" @click="goArtistHome">{{ artistName }}</text>
           <text class="plan-title font-alimamashuhei">开单</text>
         </view>
-        <view class="hero-follow" @click.stop="toggleFollow">
-           <image src="/static/new-icon/like.png" v-if="!hasLikeBrand" mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
-           <image src="/static/new-icon/like-fill.png" v-else mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+        <view class="hero-right">
+          <view class="hero-follow" @click.stop="toggleFollow">
+             <image src="/static/new-icon/like.png" v-if="!hasLikeBrand" mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+             <image src="/static/new-icon/like-fill.png" v-else mode="aspectFill" style="width: 50rpx;height: 50rpx;"></image>
+          </view>
+          <view v-if="heroImages.length > 1" class="hero-dots">
+            <view
+              v-for="(img, idx) in heroImages"
+              :key="`hero-dot-${idx}`"
+              class="hero-dot"
+              :class="{ active: idx === heroSwiperCurrent }"
+            />
+          </view>
         </view>
       </view>
     </view>
@@ -495,6 +516,8 @@
       </view>
     </common-modal>
 
+    <loading-toast :show="pageLoading" />
+
   </view>
 </template>
 
@@ -533,10 +556,12 @@ onShareTimeline(() => ({
 /** ====== 滚动 & 吸顶标题栏 ====== */
 const scrollTop = ref(0)
 const safeTop = ref(0)
+const pageLoading = ref(false)
 onPageScroll(e => { scrollTop.value = e?.scrollTop || 0 })
 const stickyShowThreshold = 140
 const showStickyTitle = computed(() => scrollTop.value > stickyShowThreshold)
 const showShare = ref(true)
+const heroSwiperCurrent = ref(0)
 /** ====== 路由参数 ====== */
 const planId = ref(0)
 
@@ -626,6 +651,7 @@ async function fetchPlan() {
   plan.open_time = Number(d.open_time || 0)
   plan.close_time = Number(d.close_time || 0)
   plan.images = d.images || ''
+  heroSwiperCurrent.value = 0
   plan.order_config = d.order_config || ''
   plan.service_scene = d.service_scene || 0
   plan.capacity = d.capacity || 0
@@ -660,12 +686,15 @@ async function fetchPlan() {
 }
 
 /** ====== 计算展示 ====== */
-const coverUrl = computed(() => {
+const heroImages = computed(() => {
   const imgs = String(plan.images || '').split(',').map(s => s.trim()).filter(Boolean)
-  if (imgs.length) return imgs[0]
-  if (plan.artist_info?.LogoImage) return plan.artist_info.LogoImage
-  if (plan.brand?.logo_image) return plan.brand.logo_image
-  return 'https://images1.fantuanpu.com/brand-avatar/default'
+  if (imgs.length) return imgs
+  if (plan.artist_info?.LogoImage) return [plan.artist_info.LogoImage]
+  if (plan.brand?.logo_image) return [plan.brand.logo_image]
+  return ['https://images1.fantuanpu.com/brand-avatar/default']
+})
+const coverUrl = computed(() => {
+  return heroImages.value[0]
 })
 const avatarUrl = computed(() => {
   if (plan.artist_info?.LogoImage) return plan.artist_info.LogoImage
@@ -691,6 +720,13 @@ const highlightImages = computed(() => {
   return artistImgs.length ? artistImgs : hairImgs
 })
 function previewHL(idx) { uni.previewImage({ urls: highlightImages.value, current: idx || 0 }) }
+function onHeroSwiperChange(e) {
+  heroSwiperCurrent.value = Number(e?.detail?.current || 0)
+}
+function previewHero(idx) {
+  if (!heroImages.value.length) return
+  uni.previewImage({ urls: heroImages.value, current: Number(idx || 0) })
+}
 
 /** 是否本平台/阶段 */
 const isLocalPlan = computed(() => plan.is_local ? true : false)
@@ -1234,7 +1270,6 @@ onLoad((q = {}) => {
 })
 onMounted(async () => {
   if (!planId.value) { uni.showToast({ title: '缺少参数：id', icon: 'none' }); return }
-  uni.showLoading({ title: '加载中...' })
   startTimer()
 })
 
@@ -1242,13 +1277,14 @@ onShow(async () => {
 	if (getScene() == 4) {
 		showShare.value = false
 	}
-	
+
+  pageLoading.value = true
   try {
     await fetchPlan()
     if (global.isLogin && plan.brand_id) await fetchHasLikeBrand()
     if (global.isLogin) await fetchDraftItems()
   } finally {
-    uni.hideLoading()
+    pageLoading.value = false
   }
 })
 onUnmounted(stopTimer)
@@ -1291,13 +1327,40 @@ const descText = computed(() => {
 
 /* 沉浸式大图 */
 .hero { width: 100vw; height: 60vh; position: relative; overflow: hidden; }
+.hero-swiper { width: 100%; height: 100%; }
 .hero-img { width: 100%; height: 100%; }
-.hero-mask { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.55) 100%); }
+.hero-mask { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.55) 100%); pointer-events: none; }
+.hero-dots{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  min-height: 16rpx;
+  margin-top: 2rpx;
+}
+.hero-dot{
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,.45);
+}
+.hero-dot.active{
+  width: 30rpx;
+  border-radius: 999rpx;
+  background: rgba(255,255,255,.95);
+}
 .hero-footer { position: absolute; left: 24rpx; right: 24rpx; bottom: 24rpx; display: flex; align-items: center; gap: 20rpx; }
 .avatar { width: 96rpx; height: 96rpx; border-radius: 50%; border: 4rpx solid rgba(255,255,255,.9); box-shadow: 0 6rpx 18rpx rgba(0,0,0,.25); }
 .hero-title { 
   display: flex; flex-direction: column; color: #fff; text-shadow: 0 2rpx 6rpx rgba(0,0,0,.35);
   flex: 1; /* 占据剩余空间 */
+}
+.hero-right{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 80rpx;
 }
 .hero-follow {
   display: flex;
@@ -1305,6 +1368,7 @@ const descText = computed(() => {
   justify-content: center;
   width: 80rpx; 
   height: 80rpx;
+  margin-bottom: 6rpx;
 }
 .brand-name { font-size: 28rpx; opacity: .95; color: #fff;}
 .plan-title { font-size: 40rpx; font-weight: 600; margin-top: 4rpx; color: #fff;}

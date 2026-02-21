@@ -66,6 +66,14 @@
       }
     },
     {
+      "path": "pages/waiting_sale/waiting_sale",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
       "path": "pages/pop_croper/pop_croper",
       "style": { "navigationBarTitleText": "" }
     },

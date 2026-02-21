@@ -72,7 +72,7 @@
           :key="'today-' + it.goodsId + '-' + it.recordId"
           @tap="goGoods(it.goodsId, it.recordId)"
         >
-          <common-image class="goods-cover" :src="it.cover" width="196" height="220" radius="18" mode="aspectFill" />
+          <common-image class="goods-cover" :src="it.cover" width="196" height="262" radius="18" mode="aspectFill" />
           <text class="type-badge font-alimamashuhei" v-if="it.type">{{ it.type }}</text>
           <view class="gname ellipsis-2 font-alimamashuhei">{{ it.goods_name }}</view>
           <view class="size-tags" v-if="it.sizeChips && it.sizeChips.length">
@@ -163,21 +163,25 @@
       </view>
     </view>
     
-    <!-- 等待贩售 -->
+    <!-- 待贩售 -->
       <view class="section s-waiting" :class="[{ 'is-inview': secInView.waiting }, { 'is-active': activeSection==='waiting' }]">
       <view class="section-hd">
         <view class="title-group">
-          <text class="title font-title">蹲开售</text>
-          <text class="title-en font-title">Waiting List</text>
+          <text class="title font-title">待贩售</text>
+          <text class="title-en font-title">Pending Sale</text>
         </view>
         <view class="sub sub-row">
           <text v-if="waitingLoading" class="loading-mini">加载中…</text>
+          <view class="waiting-view-all" @tap="goWaitingSaleByType">
+            <text class="waiting-view-all-text">查看所有待售</text>
+            <uni-icons class="waiting-view-all-icon" type="arrow-right" size="14" color="#6e7f95"></uni-icons>
+          </view>
         </view>
       </view>
     
       <view v-if="waitingList.length === 0 && !waitingLoading" class="empty">
         <common-image class="empty-icon" src="/static/empty-box.png" width="160" height="160" radius="20" mode="aspectFit" />
-        <text>暂无等待贩售的商品</text>
+        <text>暂无待贩售的商品</text>
       </view>
     
       <view v-else class="waiting-grid">
@@ -187,7 +191,7 @@
           :key="'wait-' + it.goodsId"
           @tap="goGoods(it.goodsId)"
         >
-          <common-image class="waiting-cover" :src="it.cover" width="100%" height="156" radius="14" mode="aspectFill" />
+          <common-image class="waiting-cover" :src="it.cover" width="100%" height="auto" radius="14" mode="aspectFill" />
           <text class="waiting-type-badge font-alimamashuhei" v-if="it.type">{{ it.type }}</text>
           <view class="waiting-name ellipsis-2 font-alimamashuhei">{{ it.goods_name }}</view>
           <view class="waiting-size-tags" v-if="it.sizeChips && it.sizeChips.length">
@@ -273,7 +277,7 @@
             :key="it.key"
             @tap="goGoods(it.goodsId, it.recordId)"
           >
-            <common-image class="goods-cover" :src="it.cover" width="196" height="220" radius="18" mode="aspectFill" />
+            <common-image class="goods-cover" :src="it.cover" width="196" height="262" radius="18" mode="aspectFill" />
             <text class="type-badge font-alimamashuhei" v-if="it.type">{{ it.type }}</text>
             <view class="gname ellipsis-2 font-alimamashuhei">{{ it.goods_name }}</view>
             <view class="size-tags" v-if="it.sizeChips && it.sizeChips.length">
@@ -523,7 +527,7 @@ function forceRevealIfStuck () {
   }, 800)
 }
 
-/** 等待贩售 */
+/** 待贩售 */
 const waitingList = ref([])
 const waitingLoading = ref(true)
 
@@ -545,7 +549,7 @@ function normalizePlainGoods (list) {
   })
 }
 
-/** 拉取等待贩售 */
+/** 拉取待贩售 */
 function fetchWaitingSale () {
   waitingLoading.value = true
   return uni.request({
@@ -665,7 +669,7 @@ async function refreshAll (isInit = false) {
     await Promise.all([
       fetchTodaySales(),    // 今日上新
       fetchArtistPlansOpenTips(), // 开单时间轴数据（过去24h~未来7d）
-      fetchWaitingSale(),   // 等待贩售
+      fetchWaitingSale(),   // 待贩售
       fetchHotToday(),      // 今日热榜
       fetchThemes(),        // 主题合集
       fetchLikes(),         // 订阅品牌
@@ -1005,6 +1009,13 @@ function goCalendar () {
     return
   }
   uni.navigateTo({ url: '/pages/calendar/calendar' })
+}
+function goWaitingSaleByType () {
+  if (process.env.UNI_PLATFORM === 'h5') {
+    location.href = '/#/pages/waiting_sale/waiting_sale'
+    return
+  }
+  uni.navigateTo({ url: '/pages/waiting_sale/waiting_sale' })
 }
 
 function switchToOrderTips () {
@@ -1398,6 +1409,13 @@ onBeforeUnmount(() => {
   .sub{ font-size: 20rpx; color:#999; }
 }
 
+.s-today .section-hd,
+.s-artist-today .section-hd,
+.s-waiting .section-hd,
+.s-themes .section-hd{
+  margin-bottom: 20rpx;
+}
+
 /* 旋转动画（只给唯一激活的 section） */
 @keyframes star-spin {
   from { transform: rotate(0deg); }
@@ -1441,6 +1459,26 @@ onBeforeUnmount(() => {
   transition: all .2s ease;
 }
 .link-calendar:active{ opacity:.85; }
+
+.waiting-view-all{
+  padding: 8rpx 14rpx 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #f1f4f7;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  transition: all .2s ease;
+}
+.waiting-view-all:active{ opacity: .82; }
+.waiting-view-all-text{
+  font-size: 20rpx;
+  color: #667488;
+  line-height: 1;
+}
+.waiting-view-all-icon{
+  display: inline-flex;
+  animation: switch-right-bounce 1.2s ease-in-out infinite;
+}
 
 .switch-order-tip{
   padding: 8rpx 14rpx 8rpx 16rpx;
@@ -1589,11 +1627,11 @@ onBeforeUnmount(() => {
 }
 .theme-scroll{ white-space: nowrap; padding-top: 10rpx; }
 
-/* 蹲开售：固定 3 列 x 2 行，不横向滚动 */
+/* 待贩售：固定 3 列 x 2 行，不横向滚动 */
 .waiting-grid{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14rpx;
+  gap: 10rpx;
 }
 
 .waiting-card{
@@ -1601,12 +1639,15 @@ onBeforeUnmount(() => {
   background: #fff;
   border-radius: 16rpx;
   overflow: hidden;
-  padding: 0 8rpx 10rpx;
+  padding: 0 6rpx 8rpx;
 }
 
 .waiting-cover{
   display: block;
-  margin-top: 8rpx;
+  width: 100%;
+  height: auto !important;
+  aspect-ratio: 3 / 4;
+  margin-top: 6rpx;
   background: linear-gradient(135deg, #f0f4f8, #e2e8f0);
 }
 
@@ -1623,32 +1664,34 @@ onBeforeUnmount(() => {
 }
 
 .waiting-name{
-  margin-top: 10rpx;
-  font-size: 20rpx;
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  line-height: 1.35;
   color: #232f42;
-  min-height: 64rpx;
+  min-height: 62rpx;
 }
 
 .waiting-size-tags{
-  margin-top: 8rpx;
+  margin-top: 10rpx;
   display: flex;
-  gap: 6rpx;
+  gap: 8rpx;
   flex-wrap: nowrap;
   overflow: hidden;
 }
 
 .waiting-size-tag-item{
-  padding: 3rpx 10rpx;
+  padding: 5rpx 12rpx;
   border-radius: 999rpx;
-  font-size: 16rpx;
+  font-size: 18rpx;
+  font-weight: 600;
   color: #667488;
   background: #f2f4f7;
   white-space: nowrap;
 }
 
 .goods-mini{
-  display:inline-flex; flex-direction:column; width: 224rpx; min-height: 368rpx; margin-bottom: 16rpx;
-  margin-right: 18rpx; background: #fff; border-radius: 24rpx; overflow: hidden;
+  display:inline-flex; flex-direction:column; width: 230rpx; min-height: 402rpx; margin-bottom: 16rpx;
+  margin-right: 12rpx; background: #fff; border-radius: 24rpx; overflow: hidden;
   transition: all 0.3s ease; position: relative;
   &:active{ transform: translateY(1rpx) scale(.996); }
 
@@ -1665,8 +1708,9 @@ onBeforeUnmount(() => {
   }
 
   .gname{
-    font-size: 21rpx;
-    margin: 14rpx 12rpx 0;
+    font-size: 24rpx;
+    margin: 12rpx 12rpx 0;
+    line-height: 1.35;
     color:#232f42;
     font-weight: 700;
     min-height: 66rpx;
@@ -1677,15 +1721,16 @@ onBeforeUnmount(() => {
     align-items: center;
     flex-wrap: nowrap;
     gap: 8rpx;
-    margin: 12rpx 12rpx 14rpx;
-    min-height: 34rpx;
+    margin: 10rpx 12rpx 12rpx;
+    min-height: 38rpx;
     overflow: hidden;
   }
 
   .size-tag-item{
-    padding: 4rpx 12rpx;
+    padding: 5rpx 14rpx;
     border-radius: 999rpx;
-    font-size: 17rpx;
+    font-size: 19rpx;
+    font-weight: 600;
     color: #667488;
     background: #f2f4f7;
     white-space: nowrap;
@@ -1936,16 +1981,23 @@ onBeforeUnmount(() => {
 }
 .artist-mini {
 	height: auto;
+  min-height: 0;
   /* 复用 .goods-mini 基础样式，微调内部 */
   .time-badge {
     position: absolute; left: 12rpx; top: 12rpx;
-    padding: 6rpx 12rpx; border-radius: 8rpx; font-size: 17rpx; font-weight: 600;
+    padding: 6rpx 12rpx; border-radius: 8rpx; font-size: 19rpx; font-weight: 600;
     background: rgba(255, 111, 145, 0.9); color:#fff; backdrop-filter: blur(2rpx);
     &.wig-bg { background: rgba(132, 94, 194, 0.9); }
   }
+  .gname{
+    margin: 10rpx 12rpx 0;
+    min-height: 34rpx;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
   .artist-meta {
-    margin: 10rpx 12rpx 14rpx;
-    min-height: 50rpx;
+    margin: 8rpx 12rpx 10rpx;
+    min-height: 44rpx;
     display: flex;
     align-items: flex-end;
     color: #2d3745;

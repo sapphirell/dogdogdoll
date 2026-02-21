@@ -293,18 +293,21 @@
           class="sale-item"
         >
           <view class="sale-header">
-            <text class="sale-type">{{ sale.sale_type }}</text>
-            <text class="sale-price">
-              {{ sale.sub_amount + sale.fin_amount }} {{ sale.currency }}
+            <view class="sale-type-wrap">
+              <text class="sale-type">{{ sale.sale_type }}</text>
+              <text v-if="isFuzzySaleMessage(sale)" class="sale-fuzzy-tag">模糊消息</text>
+            </view>
+            <text class="sale-price font-title">
+              {{ getSalePriceDisplay(sale) }}
             </text>
           </view>
-          <view class="sale-period">
-            <text>{{ formatTimestamp(sale.sub_time) }}</text>
-            <text v-if="sale.sub_time_end > 0" class="separator">至</text>
-            <text v-if="sale.sub_time_end > 0">
+          <view class="sale-period font-title">
+            <text>{{ getSaleStartDisplay(sale) }}</text>
+            <text v-if="showSaleEndDisplay(sale)" class="separator">至</text>
+            <text v-if="showSaleEndDisplay(sale)">
               {{ formatTimestamp(sale.sub_time_end) }}
             </text>
-            <text v-else class="separator">开定</text>
+            <text v-else class="separator">{{ isFuzzySaleMessage(sale) ? '预计' : '开定' }}</text>
           </view>
           <view class="sale-size">
             <text>{{ sale.size }} · {{ sale.size_detail }}</text>
@@ -722,6 +725,41 @@ function formatNumber (n) {
   const k = Math.floor(n / 1000)
   return `${k}k+`
 }
+
+function isFuzzySaleMessage (sale) {
+  const precise = Number(sale?.is_precise_msg)
+  if (!Number.isNaN(precise) && precise === 1) return false
+
+  const fuzzyType = Number(sale?.fuzzy_time_type || 0)
+  if (fuzzyType > 0) return true
+  if (String(sale?.display_price || sale?.fuzzy_price || '').trim()) return true
+  const displayTime = String(sale?.display_time || '').trim()
+  return /预计|待定|未定|上旬|中旬|下旬|年初|年中|年末/.test(displayTime)
+}
+
+function getSaleStartDisplay (sale) {
+  if (!isFuzzySaleMessage(sale)) return formatTimestamp(sale?.sub_time)
+  const display = String(sale?.display_time || '').trim()
+  if (display) return display
+  const ts = Number(sale?.sub_time || 0)
+  return ts > 0 ? `预计 ${formatTimestamp(ts)}` : '时间待定'
+}
+
+function showSaleEndDisplay (sale) {
+  return !isFuzzySaleMessage(sale) && Number(sale?.sub_time_end || 0) > 0
+}
+
+function getSalePriceDisplay (sale) {
+  const display = String(sale?.display_price || sale?.fuzzy_price || '').trim()
+  if (display) return display
+  const total = Number(sale?.sub_amount || 0) + Number(sale?.fin_amount || 0)
+  if (total > 0) {
+    const currency = String(sale?.currency || '').trim()
+    return currency ? `${total} ${currency}` : String(total)
+  }
+  return '待定'
+}
+
 function formatTimestamp (ts) {
   if (!ts || ts <= 0) return '未知'
   const d = new Date(ts * 1000)
@@ -1383,6 +1421,12 @@ function selectSize () {}
     align-items:center;
     margin-bottom:12rpx;
   }
+  .sale-type-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+    min-width: 0;
+  }
   .sale-type {
     font-size:26rpx;
     font-weight:bold;
@@ -1390,6 +1434,15 @@ function selectSize () {}
     background:#f0f9ff;
     padding:5rpx 12rpx;
     border-radius:8rpx;
+  }
+  .sale-fuzzy-tag {
+    font-size: 20rpx;
+    color: #fff;
+    background: linear-gradient(90deg, rgba(241,153,74,.95), rgba(241,153,74,.72));
+    border-radius: 999rpx;
+    padding: 4rpx 12rpx;
+    line-height: 1.2;
+    white-space: nowrap;
   }
   .sale-price {
     font-size:26rpx;

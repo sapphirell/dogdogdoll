@@ -131,7 +131,8 @@
               <image :src="good.goods_image" mode="aspectFill" class="goods-image"></image>
               <view class="goods-tags">
                 <text class="tag sale-type">{{good.type}} · {{good.sale_type}}</text>
-                <text class="tag first-day" v-if="good.is_first_sale_day == 1">首日</text>
+                <text class="tag fuzzy-sale" v-if="isFuzzySale(good)">模糊消息</text>
+                <text class="tag first-day" v-if="good.is_first_sale_day == 1">{{ getFirstDayTagText(good) }}</text>
               </view>
             </view>
 
@@ -155,12 +156,18 @@
               </view>
 
               <view class="time-info">
-                <text class="font-title">开售 {{ formatTimestamp(good.sub_time) }}</text>
-                <text class="font-title" v-if="good.sub_time_end">截止 {{ formatTimestamp(good.sub_time_end)}}</text>
+                <text class="font-title">{{ getSaleTimeText(good) }}</text>
+                <text class="font-title" v-if="showSaleEndTime(good)">截止 {{ formatTimestamp(good.sub_time_end)}}</text>
               </view>
 
               <view class="price-info">
-                <view v-if="good.sale_type != '限量现货' && good.sale_type != '不限量现货'">
+                <view v-if="isFuzzySale(good)">
+                  <view class="price-group">
+                    <text class="price-label font-alimamashuhei">价格</text>
+                    <text class="fuzzy-price font-title">{{ getSalePriceText(good) }}</text>
+                  </view>
+                </view>
+                <view v-else-if="good.sale_type != '限量现货' && good.sale_type != '不限量现货'">
                   <view class="price-group">
                     <text class="price-label font-alimamashuhei">定金</text>
                     <text class="deposit-price font-title">{{good.sub_amount}}</text>
@@ -703,12 +710,50 @@ function updateSelectedItem(){
   else { chooseItem.value = activeTab.value==='sale' ? {goods:null} : {plans:null} }
 }
 function formatTimestamp(ts){
-  const d = new Date(ts*1000)
+  const sec = Number(ts || 0)
+  if (!sec) return '--'
+  const d = new Date(sec*1000)
+  if (Number.isNaN(d.getTime())) return '--'
   const M = String(d.getMonth()+1).padStart(2,'0')
   const D = String(d.getDate()).padStart(2,'0')
   const h = String(d.getHours()).padStart(2,'0')
   const m = String(d.getMinutes()).padStart(2,'0')
   return `${M}/${D} ${h}:${m}`
+}
+function isFuzzySale(good){
+  const precise = Number(good?.is_precise_msg)
+  if (Number.isNaN(precise) || precise !== 0) return false
+  const fuzzyType = Number(good?.fuzzy_time_type || 0)
+  if (fuzzyType > 0) return true
+  if (String(good?.display_price || good?.fuzzy_price || '').trim()) return true
+  const displayTime = String(good?.display_time || '').trim()
+  return /预计|待定|未定|上旬|中旬|下旬|年初|年中|年末/.test(displayTime)
+}
+function getFirstDayTagText(good){
+  return isFuzzySale(good) ? '预计' : '首日'
+}
+function getSaleTimeText(good){
+  if (!isFuzzySale(good)) return `开售 ${formatTimestamp(good?.sub_time)}`
+
+  const display = String(good?.display_time || '').trim()
+  if (display) return display.replace(/^预计\s*/, '')
+
+  const ts = Number(good?.sub_time || 0)
+  return ts > 0 ? formatTimestamp(ts) : '时间待定'
+}
+function showSaleEndTime(good){
+  return !isFuzzySale(good) && Number(good?.sub_time_end || 0) > 0
+}
+function getSalePriceText(good){
+  const display = String(good?.display_price || good?.fuzzy_price || '').trim()
+  if (display) return display
+
+  const total = Number(good?.sub_amount || 0) + Number(good?.fin_amount || 0)
+  if (total > 0) {
+    const currency = String(good?.currency || '').trim()
+    return currency ? `${total} (${currency})` : String(total)
+  }
+  return '待定'
 }
 function getTiers(plan){ try{ return JSON.parse(plan.order_config).tiers || [] }catch{ return [] } }
 function getAddons(plan){ try{ return JSON.parse(plan.order_config).addons || [] }catch{ return [] } }
@@ -1167,6 +1212,7 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 .goods-tags{ position:absolute; top:35rpx; left:10rpx; display:flex; flex-direction:column; align-items:flex-start; }
 .tag{ font-size:24rpx; padding:6rpx 18rpx; border-radius:0 10rpx 10rpx 0; margin-bottom:10rpx; color:#fff; font-weight:500; }
 .sale-type{ background: linear-gradient(90deg, rgba(52,68,160,.8), rgba(52,68,160,.6)); }
+.fuzzy-sale{ background: linear-gradient(90deg, rgba(241,153,74,.95), rgba(241,153,74,.72)); }
 .first-day{ background: linear-gradient(90deg, rgba(0,0,0,.7), rgba(0,0,0,.5)); }
 
 .goods-info{ flex:1; padding:25rpx 25rpx 25rpx 40rpx; display:flex; flex-direction:column; }
@@ -1227,6 +1273,7 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 .deposit-price{ font-size:36rpx; color:#ff6b9c; font-weight:700; margin-right:6rpx; }
 .final-price{ font-size:32rpx; color:#ff6b9c; font-weight:700; }
 .full-price{ font-size:36rpx; color:#ff6b9c; font-weight:700; margin:0 5rpx; }
+.fuzzy-price{ font-size:30rpx; color:#f1994a; font-weight:700; }
 .currency{ font-size:24rpx; color:#999; transform: translateY(-2rpx); }
 
 /* 约妆/约毛卡片 */

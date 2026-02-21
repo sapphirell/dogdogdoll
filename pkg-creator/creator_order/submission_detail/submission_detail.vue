@@ -55,14 +55,9 @@
             
             <view class="chat-btn-row" >
               <view class="chat-pill" @click="handleStartChat">
-                <image src="/static/new-icon/chat.png" style="width: 50rpx;height: 50rpx;"></image>
-                
-                <view class="cyber-text-box">
-                  <text class="cyber-text layer-1 font-alimamashuhei">发起会话</text>
-                  <text class="cyber-text layer-2 font-alimamashuhei">发起会话</text>
-                </view>
-
-                <uni-icons type="arrow-right" size="12" color="#222" style="opacity: 0.8; margin-left: 4rpx;" />
+                <image class="chat-icon" src="/static/new-icon/chat.png" />
+                <text class="chat-pill-text font-alimamashuhei">发起会话</text>
+                <uni-icons class="chat-arrow" type="arrow-right" size="12" color="#6f7b8b" />
               </view>
             </view>
           </view>
@@ -2311,39 +2306,25 @@ $spacing-page: 30rpx;
 .chat-pill {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 10rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #f5f7fa;
+  border: 1rpx solid #e2e7ee;
 }
-
-/* 修改点：赛博朋克文字容器 */
-.cyber-text-box {
-  position: relative;
-  display: inline-block;
-  /* 增加：行高防止高度异常 */
-  line-height: 1;
-  width: 100rpx;
-  height: 22rpx;
+.chat-icon {
+  width: 30rpx;
+  height: 30rpx;
+  opacity: 0.85;
 }
-.cyber-text {
+.chat-pill-text {
   font-size: 24rpx;
-  font-weight: bold;
-  /* 增加：强制不换行 */
+  color: #4b5563;
   white-space: nowrap;
+  line-height: 1.2;
 }
-.layer-1 {
-  color: #ff0050; /* 红色底层 */
-  z-index: 1;
-  position: absolute;
-  top: 0;
-  left: 1rpx; /* 偏移 */
-}
-.layer-2 {
-  color: #00f0ff; /* 蓝色顶层 */
-  position: absolute;
-  top: 0;
-  left: -2rpx; /* 偏移 */
-  z-index: 2;
-  mix-blend-mode: multiply; /* 正片叠底，实现交错变色 */
-  opacity: 0.8;
+.chat-arrow {
+  opacity: 0.75;
 }
 
 /* ====== 信息栏 (垂直列表布局) ====== */

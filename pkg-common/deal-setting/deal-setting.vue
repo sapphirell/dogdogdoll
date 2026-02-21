@@ -39,6 +39,18 @@
       </view>
     </common-modal>
 
+    <common-modal :visible="showRealNameModal" width="600rpx" @update:visible="showRealNameModal = $event">
+      <view class="modal-content-box">
+        <view class="modal-title">提示</view>
+        <view class="modal-desc">该版本暂未支持实名认证，请等待下一个版本。</view>
+        <view class="modal-actions">
+          <view class="modal-btn single-gray-btn" @click="showRealNameModal = false">
+            知道了
+          </view>
+        </view>
+      </view>
+    </common-modal>
+
   </view>
 </template>
 
@@ -55,6 +67,7 @@ uni.setNavigationBarTitle({ title: '交易设置' });
 
 const showAuthModal = ref(false)
 const showRoleModal = ref(false)
+const showRealNameModal = ref(false)
 const checkingPaymentRole = ref(false)
 
 // 判断是否设置了交易密码
@@ -90,7 +103,7 @@ const menuItems = computed(() => [
     label: '实名认证',
     isSet: !!global.userInfo.is_real_name,
     displayValue: global.userInfo.is_real_name ? '已认证' : '去认证',
-    action: () => handleGuardedAction(jump2RealName)
+    action: handleRealNameAction
   }
 ])
 
@@ -171,12 +184,8 @@ function jump2PaymentCode() {
   uni.navigateTo({ url: '/pkg-common/deal-setting/payment-code/payment-code' }) 
 }
 
-function jump2RealName() {
-  if (global.userInfo.is_real_name) {
-     uni.showToast({ title: '您已完成实名认证', icon: 'none' });
-     return;
-  }
-  uni.navigateTo({ url: '/pages/setting/real_name/real_name' }) 
+function handleRealNameAction() {
+  showRealNameModal.value = true
 }
 
 // 使用 onShow 替代 onMounted

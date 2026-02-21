@@ -146,8 +146,41 @@ const baseURL = computed(() => {
   return ''
 })
 
+function normalizeBoolFlag (value) {
+  if (value === true || value === 1) return true
+  if (typeof value === 'string') {
+    const txt = value.trim().toLowerCase()
+    if (!txt) return false
+    if (txt === '1' || txt === 'true' || txt === 'yes') return true
+    if (txt === '0' || txt === 'false' || txt === 'no' || txt === 'null' || txt === 'undefined') return false
+  }
+  return false
+}
+
 const hasTradePassword = computed(() => {
-  return !!(global.userInfo && global.userInfo.trade_password)
+  const info = global.userInfo || {}
+
+  if (
+    normalizeBoolFlag(info.trade_password_set) ||
+    normalizeBoolFlag(info.has_trade_password) ||
+    normalizeBoolFlag(info.is_trade_password_set)
+  ) {
+    return true
+  }
+
+  const raw = info.trade_password
+  if (typeof raw === 'boolean') return raw
+  if (typeof raw === 'number') return raw > 0
+  if (typeof raw === 'string') {
+    const txt = raw.trim()
+    if (!txt) return false
+    const lowered = txt.toLowerCase()
+    if (lowered === '0' || lowered === 'false' || lowered === 'null' || lowered === 'undefined') return false
+    if (lowered === '1' || lowered === 'true') return true
+    // 兼容后端返回掩码或哈希字段（有值即视为已设置）
+    return txt.length >= 6
+  }
+  return false
 })
 
 const shouldShowDealNew = computed(() => {
@@ -267,8 +300,18 @@ async function fetchAddressStatus () {
       timeout: 15000
     })
     const resp = res?.data || {}
-    if (resp.status === 'success' && Array.isArray(resp.data)) {
-      hasAddress.value = resp.data.length > 0
+    const isSuccess = String(resp.status || '').toLowerCase() === 'success'
+    if (isSuccess) {
+      const payload = resp.data
+      let list = []
+      if (Array.isArray(payload)) list = payload
+      else if (payload && typeof payload === 'object') {
+        if (Array.isArray(payload.list)) list = payload.list
+        else if (Array.isArray(payload.rows)) list = payload.rows
+        else if (Array.isArray(payload.items)) list = payload.items
+        else if (Array.isArray(payload.data)) list = payload.data
+      }
+      hasAddress.value = list.length > 0
       return
     }
     hasAddress.value = null

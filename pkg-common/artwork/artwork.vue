@@ -37,17 +37,9 @@
       </view>
     </template>
 
-    <!-- 右侧：点赞 + 分享 -->
+    <!-- 右侧：分享 -->
     <template #right>
       <view class="nav-right">
-        <!-- 点赞（缩小尺寸，和分享对应） -->
-        <view class="nav-like-pill" @click="likeFn" aria-label="喜欢">
-          <uni-icons
-            :type="hasLike ? 'heart-filled' : 'heart'"
-            size="20"
-            color="#ff4d4f"
-          />
-        </view>
         <!-- 分享 -->
         <view class="nav-share-pill" @click="onShare" aria-label="分享">
           <uni-icons type="redo" size="20" color="#000" />
@@ -57,13 +49,6 @@
 
     <template #transparentFixedRight>
       <view class="nav-right">
-        <view class="nav-like-pill" @click="likeFn" aria-label="喜欢">
-          <uni-icons
-            :type="hasLike ? 'heart-filled' : 'heart'"
-            size="20"
-            color="#ff4d4f"
-          />
-        </view>
         <view class="nav-share-pill" @click="onShare" aria-label="分享">
           <uni-icons type="redo" size="20" color="#000" />
         </view>
@@ -71,10 +56,16 @@
     </template>
   </zhouWei-navBar>
 
-  <view>
-    <!-- 图片轮播区域（已移除悬浮 heart） -->
-    <view v-if="detailData.images && detailData.images.length" style="position: relative;">
-      <swiper class="swiper-box" :indicator-dots="true" :autoplay="false">
+  <view class="artwork-page">
+    <view class="hero-wrap">
+      <swiper
+        v-if="detailData.images && detailData.images.length"
+        class="swiper-box"
+        :indicator-dots="false"
+        :autoplay="false"
+        :current="heroCurrent"
+        @change="onHeroChange"
+      >
         <swiper-item v-for="(img, index) in detailData.images" :key="index">
           <image
             :src="img"
@@ -84,77 +75,145 @@
           />
         </swiper-item>
       </swiper>
-    </view>
-
-    <!-- 作者信息区域 -->
-    <view class="author-info" @click="navigateToBrand(detailData.brand_id)" v-if="brandInfo">
-      <image :src="brandInfo.logo_image" mode="aspectFill" class="author-avatar" />
-      <view class="author-details">
-        <text class="author-name">{{ brandInfo.brand_name }}</text>
-        <text class="publish-time">发布于 {{ formatTimestamp(detailData.created_at) }}</text>
-      </view>
-    </view>
-
-    <!-- 作品信息区域 -->
-    <view class="content-box">
-      <text class="title">{{ detailData.title }}</text>
-      <text class="head-name">头名: {{ detailData.head_name }}</text>
-
-      <!-- 作品元信息 -->
-      <view class="meta-info">
-        <text class="meta-item">性别: {{ getSexText(detailData.sex) }}</text>
-        <text class="meta-item">类型: {{ getArtTypeText(detailData.art_type) }}</text>
+      <view v-else class="hero-empty">
+        <text class="hero-empty-text font-title">暂无作品图</text>
       </view>
 
-      <!-- 风格标签 -->
-      <view
-        class="tags-container"
-        v-if="detailData.faceup_tag_content && detailData.faceup_tag_content.length"
-      >
-        <text class="tags-title">风格:</text>
-        <view class="tags-list">
-          <view
-            v-for="(tag, index) in detailData.faceup_tag_content"
-            :key="index"
-            class="tag-item"
-          >
-            {{ tag }}
+      <view class="hero-mask"></view>
+
+      <view class="hero-info-row">
+        <view
+          v-if="detailData.brand_id"
+          class="hero-author"
+          @click="navigateToBrand(detailData.brand_id)"
+        >
+          <image
+            :src="brandInfo?.logo_image || 'https://images1.fantuanpu.com/home/default_avatar.jpg'"
+            mode="aspectFill"
+            class="hero-author-avatar"
+          />
+          <view class="hero-author-main">
+            <text class="hero-author-name font-alimamashuhei">{{ brandInfo?.brand_name || '作者主页' }}</text>
+            <text class="hero-author-time font-alimamashuhei">发布于 {{ formatTimestamp(detailData.created_at) || '未知时间' }}</text>
+          </view>
+        </view>
+        <view class="hero-right-tools">
+          <view class="hero-like-btn" @click="likeFn" aria-label="喜欢">
+            <image
+              v-if="!hasLike"
+              src="/static/new-icon/like.png"
+              mode="aspectFill"
+              class="hero-like-icon"
+            />
+            <image
+              v-else
+              src="/static/new-icon/like-fill.png"
+              mode="aspectFill"
+              class="hero-like-icon"
+            />
+          </view>
+          <view v-if="detailData.images && detailData.images.length > 1" class="hero-dots">
+            <view
+              v-for="(img, index) in detailData.images"
+              :key="`hero-dot-${index}`"
+              class="hero-dot"
+              :class="{ active: index === heroCurrent }"
+            />
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 关联商品 -->
-    <view class="goods-section" v-if="detailData.goods_id && goodsInfo">
-      <text class="section-title">关联商品</text>
-      <view class="goods-item" @click="navigateToGoods(detailData.goods_id)">
-        <view class="image-container">
-          <image
-            :src="goodsInfo.goods_images?.[0] || '/static/goods-default.png'"
-            mode="aspectFill"
-            class="goods-image"
-          />
+    <view v-if="!loading && !error" class="content-wrap">
+      <view class="section-card intro-card">
+        <view v-if="detailData.head_name" class="head-row">
+          <text class="head-label">头名</text>
+          <text class="head-value font-title">{{ detailData.head_name }}</text>
         </view>
-        <view class="goods-info">
-          <text class="goods-name">{{ goodsInfo.name }}</text>
-          <text class="goods-brand">{{ goodsInfo.brand_name }}</text>
-          <view class="see">去看看 →</view>
+
+        <view class="meta-grid">
+          <view class="meta-chip">
+            <text class="meta-key">性别</text>
+            <text class="meta-value">{{ getSexText(detailData.sex) }}</text>
+          </view>
+          <view class="meta-chip">
+            <text class="meta-key">类型</text>
+            <text class="meta-value">{{ getArtTypeText(detailData.art_type) }}</text>
+          </view>
         </view>
+
+        <view
+          v-if="detailData.faceup_tag_content && detailData.faceup_tag_content.length"
+          class="tags-wrap"
+        >
+          <text class="card-title font-title">风格标签</text>
+          <view class="tags-list">
+            <view
+              v-for="(tag, index) in detailData.faceup_tag_content"
+              :key="index"
+              class="tag-item"
+            >
+              <text class="tag-text">{{ tag }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="detailData.goods_id && goodsInfo" class="section-card goods-section">
+        <view class="section-head">
+          <text class="card-title font-title">关联商品</text>
+          <text class="section-tip">点击查看详情</text>
+        </view>
+        <view class="goods-item" @click="navigateToGoods(detailData.goods_id)">
+          <view class="goods-cover-wrap">
+            <image
+              :src="goodsInfo.goods_images?.[0] || '/static/goods-default.png'"
+              mode="aspectFill"
+              class="goods-image"
+            />
+          </view>
+          <view class="goods-info">
+            <text class="goods-name font-alimamashuhei">{{ goodsInfo.name || '未命名商品' }}</text>
+            <text class="goods-brand">{{ goodsInfo.brand_name || '未知品牌' }}</text>
+            <view class="goods-meta">
+              <view class="goods-meta-line">
+                <text class="goods-meta-label">尺寸</text>
+                <text class="goods-meta-text">{{ getGoodsSizeText(goodsInfo) }}</text>
+              </view>
+              <view class="goods-meta-line goods-meta-line--heat">
+                <uni-icons type="eye" size="16" color="#4a5a72" />
+                <text class="goods-meta-text goods-meta-text--heat">{{ getGoodsViewsText(goodsInfo) }}</text>
+              </view>
+            </view>
+            <view class="goods-enter">
+              <text class="goods-enter-text">去看看</text>
+              <uni-icons type="right" size="14" color="#41526b" />
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-card comments-section">
+        <view class="section-head comments-head">
+          <text class="card-title font-title">评论区</text>
+        </view>
+        <comment-list
+          ref="commentListRef"
+          :type="commentType"
+          :relation-id="parseInt(pageId)"
+          @reply="handleReplyComment"
+        />
       </view>
     </view>
 
-    <!-- 评论区 -->
-    <view style="padding: 10px;">
-      <comment-list
-        ref="commentListRef"
-        :type="commentType"
-        :relation-id="parseInt(pageId)"
-        @reply="handleReplyComment"
-      />
+    <view v-if="!loading && error" class="error-state">
+      <text class="error-title font-title">页面加载失败</text>
+      <text class="error-msg">{{ errorMsg || '请稍后重试' }}</text>
+      <view class="retry-btn" @click="retryFetch">重新加载</view>
     </view>
 
-    <!-- 输入框 -->
     <comment-input
+      v-if="!loading && !error"
       ref="commentInputRef"
       :reply-info="replyForItem"
       :target-id="pageId"
@@ -162,11 +221,8 @@
       @update:reply-info="val => replyForItem = val"
     />
 
-    <view style="width: 100%;height: 120rpx;"></view>
-
-    <!-- 加载状态 -->
-    <view v-if="loading" class="loading">加载中...</view>
-    <view v-if="error" class="error">{{ errorMsg }}</view>
+    <view class="bottom-safe-space"></view>
+    <loading-toast :show="loading" text="作品加载中..." />
   </view>
 </template>
 
@@ -217,6 +273,8 @@ const commentInputRef = ref(null)
 const replyForItem = ref({})
 
 const scrollTop = ref(0)
+const heroCurrent = ref(0)
+const artworkPath = '/pkg-common/artwork/artwork'
 
 // transparentFixed 导航滚动
 onPageScroll(e => {
@@ -241,7 +299,7 @@ const onShare = () => {
   // #endif
 
   // #ifndef MP-WEIXIN
-  const url = `/pages/faceup/detail?id=${pageId.value}`
+  const url = `${artworkPath}?id=${pageId.value}`
   uni.setClipboardData({
     data: url,
     success: () => uni.showToast({ title: '链接已复制', icon: 'none' }),
@@ -256,20 +314,14 @@ onShareAppMessage(() => ({
     (brandInfo.value?.brand_name
       ? `${brandInfo.value.brand_name} · 作品`
       : 'BJD作品'),
-  path: `/pages/faceup/detail?id=${pageId.value}`,
+  path: `${artworkPath}?id=${pageId.value}`,
   imageUrl: detailData.value.images?.[0] || '',
 }))
 onShareTimeline?.(() => ({
   title: detailData.value.title || 'BJD作品',
+  query: `id=${pageId.value}`,
   imageUrl: detailData.value.images?.[0] || '',
 }))
-
-// 格式化数字
-function formatNumber(num) {
-  if (!num) return '0'
-  if (num < 1000) return num.toString()
-  return `${Math.floor(num / 1000)}k+`
-}
 
 // 获取性别文本
 function getSexText(sex) {
@@ -302,6 +354,41 @@ function formatTimestamp(timestamp) {
     .padStart(2, '0')}`
 }
 
+function getGoodsSizeText(goods) {
+  if (!goods) return '未知'
+
+  const sizes = Array.isArray(goods.sizes) ? goods.sizes : []
+  if (sizes.length) {
+    const groups = {}
+    sizes.forEach(item => {
+      const category = String(item?.goods_size || '').trim()
+      const detail = String(item?.size_detail || '').trim()
+      if (!category && !detail) return
+      const key = category || '其它'
+      if (!groups[key]) groups[key] = []
+      if (detail) groups[key].push(detail)
+    })
+
+    const text = Object.keys(groups).map(category => {
+      const details = groups[category].filter(Boolean)
+      return details.length ? `${category}（${details.join('、')}）` : category
+    }).join(' / ')
+
+    if (text) return text
+  }
+
+  const size = String(goods.size || '').trim()
+  const sizeDetail = String(goods.size_detail || '').trim()
+  if (size && sizeDetail) return `${size} / ${sizeDetail}`
+  return size || sizeDetail || '未知'
+}
+
+function getGoodsViewsText(goods) {
+  const views = Number(goods?.views || 0)
+  if (!Number.isFinite(views) || views < 0) return '0'
+  return String(Math.floor(views))
+}
+
 // 查看大图
 function viewFullImage(index) {
   uni.previewImage({
@@ -309,11 +396,24 @@ function viewFullImage(index) {
     urls: detailData.value.images,
   })
 }
+function onHeroChange(e) {
+  heroCurrent.value = Number(e?.detail?.current || 0)
+}
+function retryFetch() {
+  if (!pageId.value) return
+  fetchData(pageId.value)
+}
 
 // 获取作品详情
 const fetchData = async id => {
   try {
     loading.value = true
+    error.value = false
+    errorMsg.value = ''
+    heroCurrent.value = 0
+    goodsInfo.value = null
+    brandInfo.value = null
+
     const res = await uni.request({
       url: websiteUrl.value + `/faceup/detail?id=${id}`,
     })
@@ -332,6 +432,9 @@ const fetchData = async id => {
         ? detailData.value.face_up_image_urls.split(',')
         : []
     }
+    detailData.value.images = detailData.value.images
+      .map(img => String(img || '').trim())
+      .filter(Boolean)
 
     // 获取关联商品信息
     if (detailData.value.goods_id) {
@@ -658,224 +761,437 @@ onLoad(options => {
 </script>
 
 <style lang="less" scoped>
-.swiper-box {
-  height: 750rpx;
+.artwork-page {
+  --bg-start: #f4eee7;
+  --bg-end: #edf3ff;
+  --card-bg: #ffffff;
+  --ink-strong: #1f2836;
+  --ink-main: #34465e;
+  --ink-soft: #7f8da2;
+
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 45%, #f8fbff 100%);
 }
+
+.hero-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.swiper-box {
+  height: 920rpx;
+}
+
 .swiper-image {
   width: 100%;
   height: 100%;
+  display: block;
 }
 
-/* 作者信息区域 */
-.author-info {
+.hero-empty {
+  height: 920rpx;
   display: flex;
   align-items: center;
-  padding: 30rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #f0f0f0;
-
-  .author-avatar {
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: 50%;
-    margin-right: 20rpx;
-  }
-
-  .author-details {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .author-name {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #333;
-  }
-
-  .publish-time {
-    font-size: 26rpx;
-    color: #999;
-    margin-top: 8rpx;
-  }
+  justify-content: center;
+  background: linear-gradient(160deg, #f8f4ec 0%, #e7eefb 100%);
 }
 
-.content-box {
-  padding: 30rpx;
-  background: #fff;
-  border-radius: 0 0 16rpx 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+.hero-empty-text {
+  font-size: 32rpx;
+  letter-spacing: 2rpx;
+  color: #5e6d84;
 }
 
-.title {
-  font-size: 36rpx;
-  font-weight: 800;
-  margin-bottom: 20rpx;
-  display: block;
-  color: #333;
+.hero-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.34) 42%, rgba(0, 0, 0, 0) 100%);
 }
 
-.head-name {
-  display: block;
+.hero-info-row {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 24rpx;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.hero-author {
+  max-width: calc(100% - 120rpx);
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.hero-author-avatar {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.hero-author-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hero-author-name {
   font-size: 30rpx;
-  color: #666;
-  margin-bottom: 20rpx;
+  color: #fff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.meta-info {
+.hero-author-time {
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-right-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8rpx;
+}
+
+.hero-like-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.hero-like-icon {
+  width: 52rpx;
+  height: 52rpx;
+}
+
+.hero-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-height: 14rpx;
+}
+
+.hero-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.hero-dot.active {
+  width: 38rpx;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.content-wrap {
+  position: relative;
+  z-index: 3;
+  margin-top: 20rpx;
+  padding: 0 20rpx 188rpx;
+}
+
+.section-card {
+  background: var(--card-bg);
+  border-radius: 24rpx;
+  box-shadow: 0 16rpx 40rpx rgba(36, 49, 71, 0.08);
+}
+
+.intro-card {
+  padding: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.head-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.head-label {
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: #4f5f78;
+  background: #eaf0ff;
+}
+
+.head-value {
+  font-size: 30rpx;
+  color: var(--ink-strong);
+}
+
+.meta-grid {
+  margin-top: 18rpx;
   display: flex;
   flex-wrap: wrap;
-  gap: 15rpx;
-  margin-bottom: 20rpx;
+  gap: 12rpx;
 }
 
-.meta-item {
-  font-size: 28rpx;
-  color: #666;
-  padding: 8rpx 20rpx;
-  background: #f5f5f5;
-  border-radius: 8rpx;
+.meta-chip {
+  padding: 12rpx 16rpx;
+  border-radius: 14rpx;
+  background: #f4f7ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
 }
 
-/* 风格标签区域 */
-.tags-container {
-  display: flex;
-  margin-top: 20rpx;
-
-  .tags-title {
-    font-size: 28rpx;
-    color: #666;
-    margin-right: 20rpx;
-    line-height: 50rpx;
-  }
-
-  .tags-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15rpx;
-    flex: 1;
-  }
-
-  .tag-item {
-    font-size: 26rpx;
-    color: #1ed1e1;
-    padding: 8rpx 20rpx;
-    background: #e8f7ff;
-    border-radius: 8rpx;
-    border: 1rpx solid #b3e5fc;
-  }
+.meta-key {
+  font-size: 22rpx;
+  color: var(--ink-soft);
 }
 
-.section-title {
-  display: block;
-  font-size: 32rpx;
+.meta-value {
+  font-size: 25rpx;
+  color: var(--ink-main);
   font-weight: 700;
-  color: #333;
-  margin: 30rpx 20rpx 20rpx;
-  padding-left: 20rpx;
-  border-left: 8rpx solid #1ed1e1;
+}
+
+.tags-wrap {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+}
+
+.card-title {
+  display: block;
+  font-size: 30rpx;
+  color: var(--ink-strong);
+}
+
+.tags-list {
+  margin-top: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.tag-item {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #e8f1ff 0%, #edf8ff 100%);
+}
+
+.tag-text {
+  font-size: 24rpx;
+  color: #3f5e82;
 }
 
 .goods-section {
-  background: #fff;
-  border-radius: 16rpx;
-  margin: 20rpx;
-  padding: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 18rpx;
+  padding: 24rpx;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.section-tip {
+  font-size: 22rpx;
+  color: var(--ink-soft);
 }
 
 .goods-item {
+  padding: 18rpx;
+  border-radius: 18rpx;
+  background: #f7faff;
   display: flex;
-  padding: 20rpx;
-  background: #f9f9f9;
-  border-radius: 12rpx;
   align-items: center;
+  gap: 18rpx;
 }
 
-.image-container {
-  width: 180rpx;
-  height: 180rpx;
-  margin-right: 30rpx;
+.goods-cover-wrap {
+  width: 198rpx;
+  height: 264rpx;
+  border-radius: 14rpx;
+  overflow: hidden;
   flex-shrink: 0;
+  background: #e9effb;
 }
 
 .goods-image {
   width: 100%;
   height: 100%;
-  border-radius: 8rpx;
-  object-fit: cover;
+  display: block;
 }
 
 .goods-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .goods-name {
   font-size: 30rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10rpx;
+  color: var(--ink-strong);
+  line-height: 1.28;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .goods-brand {
-  font-size: 26rpx;
-  color: #666;
-  margin-bottom: 20rpx;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--ink-soft);
 }
 
-.see {
-  color: #1ed1e1;
-  font-size: 26rpx;
-  font-weight: bold;
+.goods-meta {
+  margin-top: 10rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.goods-meta-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+}
+
+.goods-meta-line--heat {
+  align-items: center;
+  gap: 6rpx;
+}
+
+.goods-meta-label {
+  font-size: 22rpx;
+  color: #7a889b;
+  flex-shrink: 0;
+}
+
+.goods-meta-text {
+  font-size: 22rpx;
+  color: #4a5a72;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.goods-meta-text--heat {
+  line-height: 1;
+  font-weight: 600;
+}
+
+.goods-enter {
+  margin-top: 20rpx;
   align-self: flex-start;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #e9f0ff;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
 }
 
-.loading,
-.error {
-  text-align: center;
-  padding: 40rpx;
-  font-size: 28rpx;
-  color: #999;
+.goods-enter-text {
+  font-size: 23rpx;
+  color: #41526b;
+  font-weight: 700;
 }
 
-/* 左右容器：同一排 + 安全边距 */
+.comments-section {
+  padding: 24rpx 20rpx 6rpx;
+}
+
+.comments-head {
+  margin-bottom: 10rpx;
+}
+
+.error-state {
+  margin: 34rpx 20rpx 0;
+  padding: 46rpx 32rpx;
+  border-radius: 24rpx;
+  background: var(--card-bg);
+  box-shadow: 0 16rpx 40rpx rgba(36, 49, 71, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.error-title {
+  font-size: 32rpx;
+  color: var(--ink-strong);
+}
+
+.error-msg {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: var(--ink-soft);
+}
+
+.retry-btn {
+  margin-top: 28rpx;
+  padding: 14rpx 32rpx;
+  border-radius: 999rpx;
+  color: #2f4260;
+  font-size: 26rpx;
+  font-weight: 700;
+  background: #e8f0ff;
+}
+
+.bottom-safe-space {
+  width: 100%;
+  height: 160rpx;
+}
+
 .nav-left,
 .nav-right {
   height: 88rpx;
   display: flex;
   align-items: center;
 }
+
 .nav-left {
   padding-left: 24rpx;
   padding-left: calc(24rpx + constant(safe-area-inset-left));
   padding-left: calc(24rpx + env(safe-area-inset-left));
-  gap: 16rpx; /* 返回图标与文字间距 */
+  gap: 16rpx;
 }
+
 .nav-right {
   padding-right: 24rpx;
   padding-right: calc(24rpx + constant(safe-area-inset-right));
   padding-right: calc(24rpx + env(safe-area-inset-right));
-  gap: 16rpx; /* 点赞和分享间距 */
+  gap: 16rpx;
 }
 
-/* 返回 / 分享 / 点赞 按钮胶囊 */
 .nav-back-pill,
-.nav-share-pill,
-.nav-like-pill {
+.nav-share-pill {
   width: 56rpx;
   height: 56rpx;
   border-radius: 9999rpx;
-  background: rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #ffffff;
 }
 
-/* 返回文字 */
 .nav-back-text {
   font-size: 28rpx;
-  color: #000;
+  color: #1f2836;
 }
 </style>

@@ -14,16 +14,7 @@
         :class="{ 'skin-card-active': Number(selectedSkinId) === Number(skin.id) }"
         @tap="onSelectSkin(skin)"
       >
-        <view class="preview" :style="previewStyle(skin)">
-          <view
-            v-if="String(skin.background_animation || '').toLowerCase() === 'star_fall'"
-            class="preview-star-row"
-          >
-            <text class="preview-star">★</text>
-            <text class="preview-star">★</text>
-            <text class="preview-star">★</text>
-          </view>
-        </view>
+        <view class="preview" :style="previewStyle(skin)"></view>
 
         <view class="meta">
           <text class="name">{{ skin.name || '-' }}</text>
@@ -55,6 +46,7 @@ const noneSkinOption = {
   id: 0,
   name: '无皮肤',
   description: '关闭背景图与背景动画，使用默认白色背景',
+  preview_image: '',
   background_color: '#ffffff',
   background_image: '',
   background_animation: ''
@@ -85,10 +77,20 @@ function normalizeSkin (raw) {
     id: Number(raw.id || 0),
     name: String(raw.name || ''),
     description: String(raw.description || ''),
+    preview_image: normalizePreviewImage(raw.preview_image),
     background_color: String(raw.background_color || ''),
     background_image: String(raw.background_image || ''),
     background_animation: String(raw.background_animation || '')
   }
+}
+
+function normalizePreviewImage (value) {
+  const txt = String(value || '').trim()
+  if (!txt) return ''
+  if (/^https?:\/\//i.test(txt) || txt.startsWith('data:')) return txt
+  if (txt.startsWith('//')) return `https:${txt}`
+  if (txt.startsWith('/')) return txt
+  return `https://images1.fantuanpu.com/${txt.replace(/^\/+/, '')}`
 }
 
 async function fetchSkinList () {
@@ -138,15 +140,13 @@ async function onSelectSkin (skin) {
 
 function previewStyle (skin) {
   const style = {
+    backgroundColor: '#ffffff',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
   }
-  const bgColor = String(skin?.background_color || '')
-  const bgImage = String(skin?.background_image || '')
-  if (bgColor.includes('gradient(')) style.background = bgColor
-  else if (bgColor) style.backgroundColor = bgColor
-  if (bgImage) style.backgroundImage = `url('${bgImage}')`
+  const previewImage = normalizePreviewImage(skin?.preview_image)
+  if (previewImage) style.backgroundImage = `url('${previewImage}')`
   return style
 }
 
@@ -205,25 +205,11 @@ onShow(() => {
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  border: 1rpx solid #edf1f5;
 }
 
 .skin-card-active .preview {
   box-shadow: inset 0 0 0 2rpx rgba(127, 196, 222, 0.45);
-}
-
-.preview-star-row {
-  position: absolute;
-  left: 12rpx;
-  right: 12rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  justify-content: space-between;
-}
-
-.preview-star {
-  color: rgba(145, 157, 173, 0.6);
-  font-size: 24rpx;
 }
 
 .meta {
