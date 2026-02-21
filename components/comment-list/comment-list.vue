@@ -288,6 +288,15 @@ const handleAttitudeChange = (comment, { status, counts }) => {
 
 // 暴露给父组件的方法
 defineExpose({
+  // 重新拉取第一页评论（供父组件提交后刷新）
+  reloadList: async () => {
+    if (loading.value) return
+    currentPage.value = 1
+    hasMore.value = true
+    tempCommentMap.value = {}
+    await loadMainComments()
+  },
+
   // 添加主评论（支持临时评论）
   addNewComment: comment => {
     const tempComment = {

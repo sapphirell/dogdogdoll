@@ -26,8 +26,11 @@
     <template #transparentFixedRight>
       <!-- 非小程序：显示点赞；小程序：不显示 -->
       <view v-if="!isMpWeixin" class="nav-right-like" @tap="likeFn">
-        <uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
-        <text class="nav-like-text">{{ formatNumber(goods.goods_like_count || 0) }}</text>
+        <image
+          class="nav-like-icon"
+          :src="hasLike ? '/static/new-icon/like-fill.png' : '/static/new-icon/like.png'"
+          mode="aspectFill"
+        />
       </view>
     </template>
 
@@ -47,8 +50,11 @@
         @tap="likeFn"
         style="margin-right: 0;"
       >
-        <uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
-        <text class="nav-like-text">{{ formatNumber(goods.goods_like_count || 0) }}</text>
+        <image
+          class="nav-like-icon"
+          :src="hasLike ? '/static/new-icon/like-fill.png' : '/static/new-icon/like.png'"
+          mode="aspectFill"
+        />
       </view>
 
       <!-- 场景2：非小程序 -> 显示品牌信息（恢复原逻辑） -->
@@ -74,8 +80,11 @@
     <template #right>
       <!-- 非小程序：显示点赞；小程序：空（因已移至中间） -->
       <view v-if="!isMpWeixin" class="nav-right-like" @tap="likeFn">
-        <uni-icons :type="hasLike ? 'heart-filled' : 'heart'" size="20" color="#ff4d4f" />
-        <text class="nav-like-text">{{ formatNumber(goods.goods_like_count || 0) }}</text>
+        <image
+          class="nav-like-icon"
+          :src="hasLike ? '/static/new-icon/like-fill.png' : '/static/new-icon/like.png'"
+          mode="aspectFill"
+        />
       </view>
     </template>
   </zhouWei-navBar>
@@ -123,40 +132,43 @@
 
     <!-- 商品基本信息 -->
     <view class="goods-info">
-      <view class="action-buttons">
-        <button class="action-btn add-to-stock" @click="addToStock">
-          <view class="btn-content">
-            <uni-icons
-              type="plus"
-              size="18"
-              color="#fff"
-              style="height: 36rpx; margin-bottom: 10rpx;"
-            ></uni-icons>
-            <text>放入物品栏</text>
+      <view class="engage-panel">
+        <view class="quick-actions">
+          <view class="quick-btn quick-btn-stock" @tap="addToStock">
+            <uni-icons type="plus" size="16" color="#4c6a8f"></uni-icons>
+            <text class="quick-btn-text font-alimamashuhei">放入物品栏</text>
           </view>
-        </button>
-        <button class="action-btn wish-resale" @click="wishResale">
-          <view class="btn-content">
-            <uni-icons
-              type="star"
-              size="18"
-              color="#fff"
-              style="height: 36rpx; margin-bottom: 10rpx;"
-            ></uni-icons>
-            <text>期望再贩 {{ formatNumber(wishCount) }}</text>
+          <view class="quick-btn quick-btn-wish" @tap="wishResale">
+            <text class="quick-btn-badge font-title">{{ formatNumber(wishCount) }}</text>
+            <uni-icons type="star" size="16" color="#7e5f4c"></uni-icons>
+            <text class="quick-btn-text font-alimamashuhei">期望再贩</text>
           </view>
-        </button>
-        <button class="action-btn add-showcase" @click="addToShowcase">
-          <view class="btn-content">
-            <uni-icons
-              type="vip"
-              size="18"
-              color="#fff"
-              style="height: 36rpx; margin-bottom: 10rpx;"
-            ></uni-icons>
-            <text>加入展示柜</text>
+          <view class="quick-btn quick-btn-showcase" @tap="addToShowcase">
+            <uni-icons type="vip" size="16" color="#4f5f86"></uni-icons>
+            <text class="quick-btn-text font-alimamashuhei">加入展示柜</text>
           </view>
-        </button>
+          <view class="quick-btn quick-btn-want" @tap="openWantPanel">
+            <view class="quick-want-bubble font-alimamashuhei">试试新功能？</view>
+            <image
+              class="quick-like-icon"
+              :src="hasLike ? '/static/new-icon/like-fill.png' : '/static/new-icon/like.png'"
+              mode="aspectFill"
+            />
+            <text class="quick-btn-text font-alimamashuhei">想要</text>
+          </view>
+        </view>
+
+        <view class="avg-score-box">
+          <view class="avg-score-main">
+            <text class="avg-score-title font-alimamashuhei">所有用户平均评分</text>
+            <text class="avg-score-overall font-title">{{ overallAvgText }}</text>
+          </view>
+          <view class="avg-score-detail">
+            <text class="avg-chip">外观 {{ appearanceAvgText }}</text>
+            <text class="avg-chip">价格 {{ priceAvgText }}</text>
+            <text class="avg-chip">质量 {{ qualityAvgText }}</text>
+          </view>
+        </view>
       </view>
 
       <view class="info-item">
@@ -467,12 +479,55 @@
       </view>
     </common-modal>
 
+    <common-modal :visible="wantPanelVisible" @update:visible="v => (wantPanelVisible = v)" top="20vh" width="720rpx">
+      <view class="want-modal">
+        <text class="want-modal-title font-alimamashuhei">标记为「想要」</text>
+        <text class="want-modal-sub">填写打分和评论后可提交，至少填写一项。</text>
+
+        <view class="want-score-row" v-for="cfg in goodsScoreConfigs" :key="`want-${cfg.key}`">
+          <text class="want-score-label font-alimamashuhei">{{ cfg.label }}</text>
+          <view class="want-rate-wrap">
+            <uni-rate
+              :value="goodsScoreDraft[cfg.key]"
+              :max="10"
+              :size="16"
+              :margin="2"
+              active-color="#e5ac62"
+              color="#d9dee6"
+              @change="onGoodsScoreChange(cfg.key, $event)"
+            />
+          </view>
+          <text class="want-score-val font-title">
+            {{ goodsScoreDraft[cfg.key] > 0 ? `${goodsScoreDraft[cfg.key]}分` : '未评' }}
+          </text>
+        </view>
+
+        <textarea
+          v-model.trim="wantComment"
+          class="want-comment-input"
+          maxlength="200"
+          placeholder="写下你想要它的原因（可选）"
+          placeholder-class="want-comment-ph"
+        />
+        <view class="want-actions">
+          <button class="want-cancel-btn font-alimamashuhei" @click="wantPanelVisible = false">取消</button>
+          <button
+            class="want-submit-btn font-alimamashuhei"
+            :disabled="!canSubmitWant || wantSubmitting"
+            @click="submitWantPanel"
+          >
+            {{ wantSubmitting ? '提交中...' : '提交' }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
+
     <view class="bottom-placeholder"></view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { onPageScroll, onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import {
   asyncGetUserInfo,
@@ -555,6 +610,242 @@ const resolvedMainCurrency = computed(() => {
   return firstSale?.currency || goods.value?.currency || approvedPriceSubmission.value?.currency || ''
 })
 
+const GOODS_SCORE_TYPE_MAP = Object.freeze({
+  appearance: 101,
+  price: 102,
+  quality: 103
+})
+
+const goodsScoreConfigs = Object.freeze([
+  { key: 'appearance', label: '外观' },
+  { key: 'price', label: '价格' },
+  { key: 'quality', label: '质量' }
+])
+
+const goodsScoreDraft = reactive({
+  appearance: 0,
+  price: 0,
+  quality: 0
+})
+
+const goodsScoreOrigin = reactive({
+  appearance: 0,
+  price: 0,
+  quality: 0
+})
+
+const wantPanelVisible = ref(false)
+const wantComment = ref('')
+const wantSubmitting = ref(false)
+const scoreLoading = ref(false)
+
+function normalizeGoodsScore (score) {
+  const n = Number(score || 0)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return Math.max(1, Math.min(10, Math.round(n)))
+}
+
+function resetGoodsScoreState () {
+  goodsScoreConfigs.forEach((cfg) => {
+    goodsScoreDraft[cfg.key] = 0
+    goodsScoreOrigin[cfg.key] = 0
+  })
+}
+
+function onGoodsScoreChange (key, evt) {
+  if (!GOODS_SCORE_TYPE_MAP[key]) return
+  goodsScoreDraft[key] = normalizeGoodsScore(evt?.value)
+}
+
+const canSubmitWant = computed(() => {
+  if (wantSubmitting.value) return false
+  const hasAnyScore = goodsScoreConfigs.some((cfg) => Number(goodsScoreDraft[cfg.key] || 0) > 0)
+  const hasComment = String(wantComment.value || '').trim().length > 0
+  return hasAnyScore || hasComment
+})
+
+const scoreSummary = computed(() => goods.value?.score_summary || {})
+const appearanceAvgText = computed(() => formatScoreText(scoreSummary.value?.appearance?.avg, scoreSummary.value?.appearance?.count))
+const priceAvgText = computed(() => formatScoreText(scoreSummary.value?.price?.avg, scoreSummary.value?.price?.count))
+const qualityAvgText = computed(() => formatScoreText(scoreSummary.value?.quality?.avg, scoreSummary.value?.quality?.count))
+const overallAvgText = computed(() => formatScoreText(scoreSummary.value?.overall_avg, scoreSummary.value?.overall_count))
+
+async function fetchMyVoteScoreByType (goodsId, voteType) {
+  const token = uni.getStorageSync('token')
+  if (!token || !goodsId || !voteType) return 0
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/my-vote-record?target_id=${goodsId}&type=${voteType}`,
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    if (res?.data?.status !== 'success') return 0
+    return normalizeGoodsScore(res?.data?.data?.score)
+  } catch (_) {
+    return 0
+  }
+}
+
+async function loadMyGoodsScore (id) {
+  const token = uni.getStorageSync('token')
+  const gid = parseInt(id || currentId.value || 0)
+  if (!token || !global.isLogin || !gid) {
+    resetGoodsScoreState()
+    return
+  }
+
+  scoreLoading.value = true
+  try {
+    const [appearance, price, quality] = await Promise.all([
+      fetchMyVoteScoreByType(gid, GOODS_SCORE_TYPE_MAP.appearance),
+      fetchMyVoteScoreByType(gid, GOODS_SCORE_TYPE_MAP.price),
+      fetchMyVoteScoreByType(gid, GOODS_SCORE_TYPE_MAP.quality)
+    ])
+
+    goodsScoreDraft.appearance = appearance
+    goodsScoreDraft.price = price
+    goodsScoreDraft.quality = quality
+    goodsScoreOrigin.appearance = appearance
+    goodsScoreOrigin.price = price
+    goodsScoreOrigin.quality = quality
+  } finally {
+    scoreLoading.value = false
+  }
+}
+
+function formatScoreText (avg, count) {
+  const n = Number(avg || 0)
+  const c = Number(count || 0)
+  if (c <= 0 || !Number.isFinite(n) || n <= 0) return '--'
+  return `${n.toFixed(1)}分`
+}
+
+async function openWantPanel () {
+  if (!global.isLogin || !uni.getStorageSync('token')) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  wantComment.value = ''
+  await loadMyGoodsScore(currentId.value)
+  wantPanelVisible.value = true
+}
+
+function postLikeOnceIfNeeded (goodsId, token) {
+  if (hasLike.value) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    uni.request({
+      url: `${websiteUrl.value}/with-state/add-like`,
+      method: 'POST',
+      header: { Authorization: token },
+      data: { id: goodsId, type: 1 },
+      success: (res) => {
+        const ok = res?.data?.status === 'success'
+        if (ok) hasLike.value = true
+        resolve(ok)
+      },
+      fail: () => resolve(false)
+    })
+  })
+}
+
+function postWantCommentIfNeeded (goodsId, token, content) {
+  const c = String(content || '').trim()
+  if (!c) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    uni.request({
+      url: `${websiteUrl.value}/with-state/add-comment`,
+      method: 'POST',
+      header: { Authorization: token },
+      data: {
+        content: c,
+        type: 2,
+        target_id: goodsId,
+        origin: 1
+      },
+      success: (res) => resolve(res?.data?.status === 'success'),
+      fail: () => resolve(false)
+    })
+  })
+}
+
+async function submitWantPanel () {
+  if (wantSubmitting.value) return
+  const token = uni.getStorageSync('token')
+  const goodsId = parseInt(currentId.value)
+
+  if (!global.isLogin || !token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  if (!goodsId) {
+    uni.showToast({ title: '缺少商品ID', icon: 'none' })
+    return
+  }
+  if (!canSubmitWant.value) {
+    uni.showToast({ title: '请先填写评分或评论', icon: 'none' })
+    return
+  }
+
+  const tasks = goodsScoreConfigs
+    .map((cfg) => {
+      const score = normalizeGoodsScore(goodsScoreDraft[cfg.key])
+      if (score <= 0) return null
+      return {
+        key: cfg.key,
+        score,
+        type: GOODS_SCORE_TYPE_MAP[cfg.key]
+      }
+    })
+    .filter(Boolean)
+
+  wantSubmitting.value = true
+  try {
+    const [likeOk, commentOk] = await Promise.all([
+      postLikeOnceIfNeeded(goodsId, token),
+      postWantCommentIfNeeded(goodsId, token, wantComment.value)
+    ])
+
+    let scoreOk = true
+    if (tasks.length > 0) {
+      const scoreRespList = await Promise.all(tasks.map(task => uni.request({
+        url: `${websiteUrl.value}/with-state/add-vote-score`,
+        method: 'POST',
+        header: { Authorization: token },
+        data: {
+          target_id: goodsId,
+          type: task.type,
+          score: task.score
+        }
+      })))
+      scoreOk = !scoreRespList.find(resp => resp?.data?.status !== 'success')
+    }
+
+    if (!likeOk || !commentOk || !scoreOk) {
+      uni.showToast({ title: '提交失败，请重试', icon: 'none' })
+      return
+    }
+
+    tasks.forEach((task) => {
+      goodsScoreOrigin[task.key] = task.score
+    })
+
+    if (commentListRef.value && typeof commentListRef.value.reloadList === 'function') {
+      await commentListRef.value.reloadList()
+    }
+
+    wantPanelVisible.value = false
+    wantComment.value = ''
+    uni.showToast({ title: '已记录想要', icon: 'success' })
+    getHasLike(goodsId)
+    getGoods(goodsId)
+    loadMyGoodsScore(goodsId)
+  } catch (_) {
+    uni.showToast({ title: '网络请求失败', icon: 'none' })
+  } finally {
+    wantSubmitting.value = false
+  }
+}
+
 /* ===== 关键：按 ID 重新拉取 ===== */
 const currentId = ref(String(props.goods_id || ''))
 const lastGoodsId = ref(String(props.goods_id || ''))
@@ -584,7 +875,13 @@ function reloadById (id, reason = 'unknown') {
   uni.showLoading({ title: '加载中' })
   getGoods(newId)
   getCollocation(newId)
-  asyncGetUserInfo().then(() => { getHasLike(newId) })
+  if (!uni.getStorageSync('token')) resetGoodsScoreState()
+  asyncGetUserInfo().then(() => {
+    getHasLike(newId)
+    loadMyGoodsScore(newId)
+  }).catch(() => {
+    resetGoodsScoreState()
+  })
   getWishInfo(newId)
 }
 
@@ -1127,6 +1424,9 @@ onShow(() => {
       lastGoodsId.value,
       '）'
     )
+    getWishInfo(currentId.value)
+    getHasLike(currentId.value)
+    loadMyGoodsScore(currentId.value)
   }
 })
 
@@ -1169,8 +1469,8 @@ function selectSize () {}
 
 /* nav 右侧关注区 */
 .nav-right-like{
+  width: 68rpx;
   height: 56rpx;
-  padding: 0 20rpx;
   border-radius: 33rpx;
   background: rgba(255,255,255,0.85);
   border: 2rpx solid rgba(0,0,0,0.06);
@@ -1179,11 +1479,9 @@ function selectSize () {}
   justify-content: center;
   margin-right: 20rpx;
 }
-.nav-like-text{
-  margin-left: 8rpx;
-  font-size: 24rpx;
-  color: #ff4d4f;
-  font-weight: 600;
+.nav-like-icon{
+  width: 38rpx;
+  height: 38rpx;
 }
 
 .goods-detail-container {
@@ -1403,10 +1701,10 @@ function selectSize () {}
     display:block;
     font-size:28rpx;
     font-weight:bold;
-    color:#64c6dc;
+    color:#5f6e83;
     margin-bottom:25rpx;
     padding-left:10rpx;
-    border-left:8rpx solid #64c6dc;
+    border-left:8rpx solid #5f6e83;
   }
 }
 .sales-list {
@@ -1501,7 +1799,7 @@ function selectSize () {}
   .section-title {
     font-size:28rpx;
     font-weight:bold;
-    color:#64c6dc;
+    color:#5f6e83;
   }
   .more-link {
     display:flex;
@@ -1564,9 +1862,9 @@ function selectSize () {}
   .section-title{
     font-size:28rpx;
     font-weight:bold;
-    color:#64c6dc;
+    color:#5f6e83;
     padding-left:10rpx;
-    border-left:8rpx solid #64c6dc;
+    border-left:8rpx solid #5f6e83;
   }
   .refresh-btn{
     display:flex;
@@ -1636,65 +1934,256 @@ function selectSize () {}
   left:-5rpx;
 }
 
-/* 顶部按钮组 */
-.action-buttons {
-  display:flex;
-  gap:15rpx;
-  padding:0;
-  margin:20rpx 0 30rpx;
-  justify-content:space-between;
+/* 互动区：物品栏 / 再贩 / 展示柜 / 评分 */
+.engage-panel{
+  margin: 8rpx 0 22rpx;
+  padding: 12rpx;
+  border-radius: 22rpx;
+  background: #f8fafd;
 }
-.action-btn {
-  line-height:normal !important;
-  flex:1;
-  height:100rpx;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:8rpx;
-  border-radius:16rpx;
-  font-size:24rpx;
-  font-weight:600;
-  border:none;
-  transition:all .2s ease;
-  position:relative;
-  overflow:hidden;
-  padding:10rpx 0;
-  box-shadow:0 6rpx 16rpx rgba(0,0,0,.15);
-  text-shadow:0 1rpx 2rpx rgba(0,0,0,.1);
-  &::before{ content:none; }
-  &:active{
-    transform:scale(.96);
-    box-shadow:0 3rpx 8rpx rgba(0,0,0,.15);
+.quick-actions{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8rpx;
+}
+.quick-btn{
+  min-height: 74rpx;
+  border-radius: 12rpx;
+  padding: 8rpx 4rpx;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+  box-sizing: border-box;
+  border: 1rpx solid #e6ebf2;
+  background: #f2f5f9;
+}
+.quick-btn-stock{
+  background: #eef3f8;
+}
+.quick-btn-wish{
+  background: #f6f1ec;
+}
+.quick-btn-showcase{
+  background: #f0f1f7;
+}
+.quick-btn-want{
+  background: linear-gradient(180deg, #fff2f7 0%, #fbeaf1 100%);
+  border-color: #f2c6d6;
+}
+.quick-want-bubble{
+  position: absolute;
+  left: 50%;
+  top: -50rpx;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #fff9d8 0%, #ffe9f4 55%, #e8f4ff 100%);
+  color: #5a4169;
+  border: 1rpx solid #f5d3e2;
+  border-radius: 999rpx;
+  padding: 6rpx 18rpx;
+  font-size: 17rpx;
+  font-weight: 600;
+  letter-spacing: 0.6rpx;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow:
+    0 8rpx 20rpx rgba(226, 130, 171, 0.26),
+    0 0 0 3rpx rgba(255, 242, 248, 0.8);
+  z-index: 4;
+  animation: quickWantBubbleFloat 1.9s ease-in-out infinite, quickWantBubbleGlow 2.4s ease-in-out infinite;
+}
+.quick-want-bubble::before{
+  content: 'NEW';
+  position: absolute;
+  top: -14rpx;
+  right: -10rpx;
+  height: 24rpx;
+  line-height: 24rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: #ff7ea6;
+  color: #fff;
+  font-size: 13rpx;
+  font-weight: 700;
+  box-shadow: 0 4rpx 10rpx rgba(255, 126, 166, 0.35);
+}
+.quick-want-bubble::after{
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9rpx;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8rpx solid transparent;
+  border-right: 8rpx solid transparent;
+  border-top: 10rpx solid #ffeef6;
+}
+.quick-like-icon{
+  width: 24rpx;
+  height: 24rpx;
+}
+.quick-btn-text{
+  font-size: 19rpx;
+  color: #4d5b6f;
+  line-height: 1.1;
+}
+.quick-btn-badge{
+  position: absolute;
+  top: 6rpx;
+  right: 6rpx;
+  min-width: 28rpx;
+  padding: 0 8rpx;
+  height: 28rpx;
+  border-radius: 999rpx;
+  background: #ecd6bf;
+  color: #735943;
+  font-size: 15rpx;
+  line-height: 28rpx;
+  text-align: center;
+}
+@keyframes quickWantBubbleFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-6rpx); }
+}
+@keyframes quickWantBubbleGlow {
+  0%, 100% {
+    box-shadow:
+      0 8rpx 20rpx rgba(226, 130, 171, 0.26),
+      0 0 0 3rpx rgba(255, 242, 248, 0.8);
   }
-  &::after{ border:none; }
-  text{
-    color:#fff;
-    line-height:1.2;
-  }
-  .uni-icons{
-    filter:drop-shadow(0 1rpx 2rpx rgba(0,0,0,.2));
+  50% {
+    box-shadow:
+      0 10rpx 24rpx rgba(226, 130, 171, 0.34),
+      0 0 0 6rpx rgba(255, 236, 245, 0.55);
   }
 }
-.btn-content{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  height:100%;
+
+.avg-score-box{
+  margin-top: 10rpx;
+  border-radius: 12rpx;
+  background: #ffffff;
+  border: 1rpx solid #edf1f6;
+  padding: 8rpx 10rpx;
 }
-.add-to-stock{
-  background:linear-gradient(135deg,#64c6dc,#4aa5c0);
-  box-shadow:0 6rpx 16rpx rgba(74,165,192,.3);
+.avg-score-main{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.wish-resale{
-  background:linear-gradient(135deg,#ff9a9e,#f78ca0);
-  box-shadow:0 6rpx 16rpx rgba(247,140,160,.3);
+.avg-score-title{
+  font-size: 20rpx;
+  color: #556378;
 }
-.add-showcase{
-  background:linear-gradient(135deg,#a18cd1,#fbc2eb);
-  box-shadow:0 6rpx 16rpx rgba(161,140,209,.3);
+.avg-score-overall{
+  font-size: 22rpx;
+  color: #35445a;
+}
+.avg-score-detail{
+  margin-top: 6rpx;
+  display: flex;
+  gap: 6rpx;
+  flex-wrap: wrap;
+}
+.avg-chip{
+  font-size: 18rpx;
+  color: #6f7c8f;
+  background: #f6f8fb;
+  border-radius: 999rpx;
+  padding: 4rpx 8rpx;
+}
+
+.want-modal{
+  width: 100%;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx 24rpx 26rpx;
+  box-sizing: border-box;
+}
+.want-modal-title{
+  display: block;
+  font-size: 28rpx;
+  color: #2d3950;
+  font-weight: 700;
+}
+.want-modal-sub{
+  margin-top: 10rpx;
+  display: block;
+  font-size: 21rpx;
+  color: #8591a3;
+}
+.want-score-row{
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #eef2f7;
+}
+.want-score-row:first-of-type{
+  margin-top: 10rpx;
+}
+.want-score-label{
+  width: 78rpx;
+  font-size: 24rpx;
+  color: #4c5b72;
+}
+.want-rate-wrap{
+  flex: 1;
+  min-width: 0;
+}
+.want-score-val{
+  margin-left: 2rpx;
+  width: 64rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: #66788f;
+}
+.want-comment-input{
+  margin-top: 20rpx;
+  width: 100%;
+  min-height: 132rpx;
+  padding: 16rpx 18rpx;
+  box-sizing: border-box;
+  border-radius: 12rpx;
+  background: #f8f9fc;
+  border: 1rpx solid #edf1f6;
+  font-size: 23rpx;
+  color: #37465d;
+}
+.want-comment-ph{
+  color: #9eabba;
+}
+.want-actions{
+  margin-top: 20rpx;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+.want-cancel-btn,
+.want-submit-btn{
+  margin: 0;
+  min-width: 138rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+.want-cancel-btn{
+  background: #eef2f7;
+  color: #617188;
+}
+.want-submit-btn{
+  background: #27364f;
+  color: #fff;
+}
+.want-cancel-btn::after,
+.want-submit-btn::after{
+  border: none;
+}
+.want-submit-btn[disabled]{
+  opacity: .45;
 }
 
 .goods-info{

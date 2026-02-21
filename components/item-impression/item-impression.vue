@@ -441,16 +441,16 @@
 		align-items: baseline;
 		margin-bottom: 20rpx;
 
-		.title {
-		    display: block;
-		    font-size: 26rpx;
-		    font-weight: bold;
-		    color: #64c6dc;
-		    margin-bottom: 0.78125rem;
-		    padding-left: 0.3125rem;
-		    border-left: 0.25rem solid #64c6dc;
-			margin-left: 10rpx;
-		}
+			.title {
+			    display: block;
+			    font-size: 26rpx;
+			    font-weight: bold;
+			    color: #5f6e83;
+			    margin-bottom: 0.78125rem;
+			    padding-left: 0.3125rem;
+			    border-left: 0.25rem solid #5f6e83;
+				margin-left: 10rpx;
+			}
 
 		.subtitle {
 			font-size: 22rpx; /* 调小字体 */

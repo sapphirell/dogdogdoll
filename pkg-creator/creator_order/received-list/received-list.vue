@@ -37,43 +37,47 @@
 
       <!-- 头部（跟着列表一起滚动，因为不在 slot="top" 里） -->
       <view class="page-header">
-        <!-- Hero -->
-        <view class="hero hero-small">
-          <view class="hero-bg"></view>
-          <view class="hero-footer hero-small-footer">
-            <view class="hero-title">
-              <text class="brand-name font-title">投递我的</text>
+        <view class="card order-toolbar">
+          <view class="toolbar-head">
+            <text class="toolbar-title font-alimamashuhei">订单操作栏</text>
+            <text class="toolbar-sub">共 <text class="font-title">{{ totalCount }}</text> 笔投递</text>
+          </view>
+          <view class="toolbar-grid">
+            <view
+              v-for="op in orderOps"
+              :key="op.key"
+              class="toolbar-item"
+              :class="{ active: currentFilterKey === op.key, schedule: op.key === 'schedule' }"
+              @tap="handleToolbarTap(op)"
+            >
+              <view class="toolbar-icon-wrap">
+                <uni-icons :type="op.icon" :size="22" :color="toolbarIconColor(op)" />
+                <text
+                  v-if="op.key !== 'schedule' && getToolbarCount(op.key) > 0"
+                  class="toolbar-badge font-title"
+                >
+                  {{ formatToolbarBadge(getToolbarCount(op.key)) }}
+                </text>
+              </view>
+              <text class="toolbar-label font-alimamashuhei">{{ op.label }}</text>
             </view>
-            <text class="hero-desc">按订单状态查看谁投递了你</text>
-          </view>
-        </view>
-
-        <!-- 状态筛选条：点击弹出底部 Picker -->
-        <view class="card filter-bar" @tap="openFilterSheet">
-          <view class="filter-left">
-            <text class="filter-label">当前筛选</text>
-            <text class="filter-value">{{ currentFilterLabel }}</text>
-          </view>
-          <view class="filter-right">
-            <text class="filter-hint">点击切换</text>
-            <text class="filter-arrow">▼</text>
           </view>
         </view>
 
         <!-- 汇总信息：当前筛选的 submission 数量 + 总金额 -->
         <view
           class="card summary-card"
-          v-if="filteredSubmissions.length > 0"
+          v-if="filteredSubmissions.length > 0 && currentFilterKey !== 'schedule'"
         >
           <view class="summary-row">
             <text class="summary-label">当前筛选</text>
             <text class="summary-value">
-              {{ currentFilterLabel }} · 共 {{ currentSubmissionCount }} 笔投递
+              {{ currentFilterLabel }} · 共 <text class="font-title">{{ currentSubmissionCount }}</text> 笔投递
             </text>
           </view>
           <view class="summary-row">
             <text class="summary-label">总金额</text>
-            <text class="summary-value price">
+            <text class="summary-value price font-title">
               ¥ {{ formatPrice(currentTotalAmount) }}
             </text>
           </view>
@@ -95,34 +99,27 @@
               <text class="item-title">
                 {{ buildSubmissionSubject(row) || '未填写作品标题' }}
               </text>
-              <view
-                class="status-chip"
-                :class="'s-' + getSubmissionStatus(row)"
-              >
-                <text class="status-text">
-                  {{ itemStatusText(getSubmissionStatus(row)) }}
-                </text>
-              </view>
+              <order-status :status="getSubmissionStatus(row)" />
             </view>
 
             <!-- 基本信息 -->
             <view class="item-row">
               <text class="item-label">投递用户</text>
-              <text class="item-value">
+              <text class="item-value font-title">
                 UID {{ getSubmissionUserId(row) || '-' }}
               </text>
             </view>
 
             <view class="item-row">
               <text class="item-label">投递时间</text>
-              <text class="item-value">
+              <text class="item-value font-title">
                 {{ formatTime(getSubmissionCreatedAt(row)) }}
               </text>
             </view>
 
             <view class="item-row">
               <text class="item-label">作品数量</text>
-              <text class="item-value">
+              <text class="item-value font-title">
                 {{ getItems(row).length }} 个作品
               </text>
             </view>
@@ -130,7 +127,7 @@
             <!-- 总金额 -->
             <view class="item-row" v-if="Number(row.total_amount) > 0">
               <text class="item-label">订单总金额</text>
-              <text class="item-value price">
+              <text class="item-value price font-title">
                 ¥ {{ formatPrice(row.total_amount) }}
               </text>
             </view>
@@ -160,7 +157,7 @@
                         {{ (it.work_subject || '').trim() || '未命名作品' }}
                       </text>
                       <text
-                        class="sub-item-price"
+                        class="sub-item-price font-title"
                         v-if="calcItemTotal(it) > 0"
                       >
                         ¥ {{ formatPrice(calcItemTotal(it)) }}
@@ -224,50 +221,14 @@
 
     </z-paging>
 
-    <!-- 底部状态筛选弹层 -->
-    <uni-popup
-      ref="filterPopup"
-      type="bottom"
-      :mask-click="true"
-      @change="onFilterPopupChange"
-    >
-      <view class="sheet" :style="{ paddingBottom: safeBottom + 'px' }">
-        <view class="sheet-header">
-          <text class="btn-cancel" @tap="closeFilterSheet">取消</text>
-          <text class="sheet-title">筛选订单状态</text>
-        </view>
-
-        <picker-view
-          v-if="filterMounted"
-          class="picker"
-          :indicator-style="indicatorStyle"
-          :value="[tempFilterIndex]"
-          @change="onFilterPickerChange"
-        >
-          <picker-view-column>
-            <view
-              v-for="(opt, idx) in statusFilterOptions"
-              :key="opt.key"
-              class="picker-item"
-            >
-              {{ opt.label }}
-            </view>
-          </picker-view-column>
-        </picker-view>
-
-        <view class="sheet-footer">
-          <button class="btn-confirm" @tap="confirmFilter">确定</button>
-        </view>
-      </view>
-    </uni-popup>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
-import LoadingJumpText from '@/components/loading-jump-text/loading-jump-text.vue'
+import OrderStatus from '@/components/order_status/order_status.vue'
 
 // 传入的 plan_id（可选，用于只看某个开单计划）
 const planId = ref(0)
@@ -293,39 +254,53 @@ const totalCount = ref(0)
  * 7: 付款超时
  */
 
-// 状态筛选选项（用于 Picker）
-const statusFilterOptions = ref([
-  { key: 'all', label: '全部', value: null },
-  { key: 'selected_confirm', label: '等待买家确认订单内容', value: 1 },
-  { key: 'buyer_confirmed', label: '买家已确认请您确认', value: 2 },
-  { key: 'selected_pay', label: '等待买家付款', value: 3 },
-  { key: 'paid', label: '已付款进行中', value: 4 },
-  { key: 'failed', label: '排队失败', value: 5 },
-  { key: 'cancelled', label: '买家取消', value: 6 },
-  { key: 'timeout', label: '付款超时', value: 7 },
+const orderOps = Object.freeze([
+  { key: 'all', label: '全部', icon: 'list', statuses: [] },
+  { key: 'need_confirm', label: '待确认', icon: 'compose', statuses: [1, 2] },
+  { key: 'need_pay', label: '待付款', icon: 'info-filled', statuses: [3] },
+  { key: 'processing', label: '进行中', icon: 'spinner-cycle', statuses: [0, 4] },
+  { key: 'closed', label: '已结束', icon: 'checkbox-filled', statuses: [5, 6, 7] },
+  { key: 'schedule', label: '排期', icon: 'calendar', statuses: [] },
 ])
 
 const currentFilterKey = ref('all')
 
-// 当前选中筛选的 label
 const currentFilterLabel = computed(() => {
-  const opt = statusFilterOptions.value.find((o) => o.key === currentFilterKey.value)
-  return opt ? opt.label : '全部'
+  const op = orderOps.find((o) => o.key === currentFilterKey.value)
+  return op ? op.label : '全部'
 })
 
 // 所有 submission 列表
 const allSubmissions = computed(() => rawList.value || [])
 
+function isInStatuses(status, statuses) {
+  if (!Array.isArray(statuses) || statuses.length === 0) return true
+  return statuses.includes(Number(status))
+}
+
 // 当前筛选后的 submission 列表
 const filteredSubmissions = computed(() => {
   const list = allSubmissions.value
   if (currentFilterKey.value === 'all') return list
+  const op = orderOps.find((o) => o.key === currentFilterKey.value)
+  if (!op || op.key === 'schedule') return list
+  return list.filter((row) => isInStatuses(getSubmissionStatus(row), op.statuses))
+})
 
-  const opt = statusFilterOptions.value.find((o) => o.key === currentFilterKey.value)
-  if (!opt || opt.value === null || opt.value === undefined) return list
-
-  const targetStatus = Number(opt.value)
-  return list.filter((row) => Number(getSubmissionStatus(row)) === targetStatus)
+const toolbarCountMap = computed(() => {
+  const list = allSubmissions.value || []
+  const map = {}
+  orderOps.forEach((op) => {
+    if (op.key === 'schedule') return
+    if (op.key === 'all') {
+      map[op.key] = list.length
+      return
+    }
+    map[op.key] = list.reduce((sum, row) => {
+      return sum + (isInStatuses(getSubmissionStatus(row), op.statuses) ? 1 : 0)
+    }, 0)
+  })
+  return map
 })
 
 // 当前筛选下 submission 数量
@@ -339,6 +314,32 @@ const currentTotalAmount = computed(() => {
     return sum + n
   }, 0)
 })
+
+function getToolbarCount(key) {
+  return Number(toolbarCountMap.value[key] || 0)
+}
+
+function formatToolbarBadge(n) {
+  const num = Number(n || 0)
+  if (num > 99) return '99+'
+  return String(num)
+}
+
+function toolbarIconColor(op) {
+  if (op.key === 'schedule') return '#5b6d86'
+  return currentFilterKey.value === op.key ? '#2f5d8f' : '#8a97ab'
+}
+
+function handleToolbarTap(op) {
+  if (!op) return
+  if (op.key === 'schedule') {
+    uni.navigateTo({
+      url: '/pkg-creator/creator_base/order_plan/order_plan',
+    })
+    return
+  }
+  currentFilterKey.value = op.key
+}
 
 /* ---------- 下拉刷新 gif/静态图状态判断（含调试） ---------- */
 function isRefresherGif(status) {
@@ -389,31 +390,6 @@ function getSubmissionCreatedAt(row) {
 function getItems(row) {
   if (!row) return []
   return row.items || row.Items || []
-}
-
-// 状态文案（使用新的枚举含义）
-function itemStatusText(status) {
-  const s = Number(status)
-  switch (s) {
-    case 0:
-      return '排队中'
-    case 1:
-      return '等待买家确认订单内容'
-    case 2:
-      return '买家已确认请您确认'
-    case 3:
-      return '等待买家付款'
-    case 4:
-      return '已付款进行中'
-    case 5:
-      return '排队失败'
-    case 6:
-      return '买家取消'
-    case 7:
-      return '付款超时'
-    default:
-      return '未知状态'
-  }
 }
 
 // 作品摘要：从第一个 item 取 娃头 / 尺寸 / 档位
@@ -624,71 +600,11 @@ async function queryList(pageNo, pageSizeArg) {
   }
 }
 
-/* ---------- 底部筛选弹层逻辑 ---------- */
-
-const filterPopup = ref(null)
-const filterMounted = ref(false)
-const safeBottom = ref(0)
-const indicatorStyle = 'height:64px;'
-
-// 当前筛选对应的 index
-const currentFilterIndex = computed(() => {
-  const idx = statusFilterOptions.value.find((opt) => opt.key === currentFilterKey.value)
-  return idx >= 0 ? idx : 0
-})
-
-// 临时选中的 index（picker 滚动中的值）
-const tempFilterIndex = ref(0)
-
-function openFilterSheet() {
-  tempFilterIndex.value = currentFilterIndex.value
-  try {
-    const wi = uni.getWindowInfo && uni.getWindowInfo()
-    safeBottom.value = wi?.safeAreaInsets?.bottom || 0
-  } catch {
-    safeBottom.value = 0
-  }
-  nextTick(() => {
-    filterMounted.value = true
-    filterPopup.value?.open?.()
-  })
-}
-
-function closeFilterSheet() {
-  filterPopup.value?.close?.()
-}
-
-function onFilterPopupChange(e) {
-  if (!e.show) {
-    filterMounted.value = false
-  }
-}
-
-function onFilterPickerChange(e) {
-  const arr = e.detail && e.detail.value
-  if (!arr || !arr.length) return
-  const idx = Number(arr[0])
-  if (Number.isNaN(idx)) return
-  tempFilterIndex.value = idx
-}
-
-function confirmFilter() {
-  const opt =
-    statusFilterOptions.value[tempFilterIndex.value] ||
-    statusFilterOptions.value[0]
-  currentFilterKey.value = opt.key
-  closeFilterSheet()
-  // 现在只是前端本地筛选，reload 主要用于刷新数据
-  if (paging.value) {
-    paging.value.reload()
-  }
-}
-
 /* ---------- 生命周期 ---------- */
 
 onLoad((options) => {
   uni.setNavigationBarTitle({
-    title: '投递我的',
+    title: '我的订单',
   })
 
   if (options && options.plan_id) {
@@ -703,7 +619,7 @@ onLoad((options) => {
 <style lang="scss" scoped>
 .received-page {
   min-height: 100vh;
-  background-color: #f5f5f7;
+  background: linear-gradient(180deg, #f7f9fc 0%, #f3f5f9 48%, #f6f7fb 100%);
   box-sizing: border-box;
 }
 
@@ -729,12 +645,15 @@ onLoad((options) => {
 
 /* 让头部和列表视觉上分组，可以视情况调整 */
 .page-header {
+  padding-top: 8rpx;
 }
 
 /* Hero */
 .hero {
   position: relative;
-  margin-bottom: 16rpx;
+  margin: 0 24rpx 16rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
 }
 
 .hero-small {
@@ -744,7 +663,7 @@ onLoad((options) => {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #ffd2e4 0%, #ffe9c8 50%, #daf2ff 100%);
+  background: linear-gradient(135deg, #dfeeff 0%, #f4e9ff 45%, #fdeedb 100%);
 }
 
 .hero-footer {
@@ -766,15 +685,15 @@ onLoad((options) => {
 }
 
 .brand-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #222;
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #1f2736;
 }
 
 .hero-desc {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #555;
+  color: #5f6e83;
 }
 
 /* 通用卡片 */
@@ -783,47 +702,96 @@ onLoad((options) => {
   padding: 24rpx;
   border-radius: 24rpx;
   background-color: #fff;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+  border: 1rpx solid #edf1f6;
+  box-shadow: 0 8rpx 18rpx rgba(39, 48, 67, 0.04);
 }
 
-/* 筛选条 */
-.filter-bar {
+.order-toolbar {
+  padding: 24rpx 20rpx 18rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.toolbar-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 8rpx;
+  margin-bottom: 16rpx;
 }
 
-.filter-left {
+.toolbar-title {
+  font-size: 28rpx;
+  color: #273043;
+  font-weight: 700;
+}
+
+.toolbar-sub {
+  font-size: 22rpx;
+  color: #8e99aa;
+}
+
+.toolbar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.toolbar-item {
+  border-radius: 16rpx;
+  min-height: 124rpx;
+  padding: 14rpx 10rpx 12rpx;
   display: flex;
   flex-direction: column;
-}
-
-.filter-label {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.filter-value {
-  margin-top: 6rpx;
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 600;
-}
-
-.filter-right {
-  display: flex;
   align-items: center;
+  justify-content: center;
+  background: #f2f4f8;
+  border: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
-.filter-hint {
-  font-size: 24rpx;
-  color: #999;
-  margin-right: 6rpx;
+.toolbar-item.active {
+  background: #e9eff8;
+  transform: translateY(-1rpx);
 }
 
-.filter-arrow {
-  font-size: 28rpx;
-  color: #666;
+.toolbar-item.schedule {
+  background: #eef3fb;
+}
+
+.toolbar-icon-wrap {
+  position: relative;
+  width: 48rpx;
+  height: 48rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-badge {
+  position: absolute;
+  right: -14rpx;
+  top: -8rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  border-radius: 999rpx;
+  padding: 0 8rpx;
+  line-height: 30rpx;
+  font-size: 17rpx;
+  text-align: center;
+  color: #fff;
+  background: #ff6f8f;
+}
+
+.toolbar-label {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #5f6775;
+}
+
+.toolbar-item.active .toolbar-label {
+  color: #273043;
+  font-weight: 700;
 }
 
 /* 汇总卡片 */
@@ -837,12 +805,12 @@ onLoad((options) => {
 
   .summary-label {
     font-size: 24rpx;
-    color: #888;
+    color: #8692a6;
   }
 
   .summary-value {
     font-size: 26rpx;
-    color: #333;
+    color: #273043;
   }
 
   .summary-value.price {
@@ -883,7 +851,7 @@ onLoad((options) => {
 
 /* Item 卡片 */
 .item-card {
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .item-header {
@@ -898,83 +866,7 @@ onLoad((options) => {
   margin-right: 16rpx;
   font-size: 28rpx;
   font-weight: 600;
-  color: #222;
-}
-
-/* 状态标签 */
-.status-chip {
-  padding: 6rpx 16rpx;
-  border-radius: 999rpx;
-  background-color: #f0f0f0;
-}
-
-.status-text {
-  font-size: 22rpx;
-}
-
-/* 各状态颜色 */
-.status-chip.s-0 {
-  background: rgba(145, 213, 255, 0.14);
-  border: 1rpx solid rgba(63, 169, 245, 0.6);
-}
-.status-chip.s-0 .status-text {
-  color: #3fa9f5;
-}
-
-.status-chip.s-1 {
-  background: rgba(255, 210, 151, 0.14);
-  border: 1rpx solid rgba(255, 156, 85, 0.6);
-}
-.status-chip.s-1 .status-text {
-  color: #ff8a3d;
-}
-
-.status-chip.s-2 {
-  background: rgba(189, 214, 255, 0.16);
-  border: 1rpx solid rgba(95, 149, 255, 0.65);
-}
-.status-chip.s-2 .status-text {
-  color: #5f95ff;
-}
-
-.status-chip.s-3 {
-  background: rgba(140, 235, 195, 0.16);
-  border: 1rpx solid rgba(64, 192, 135, 0.65);
-}
-.status-chip.s-3 .status-text {
-  color: #36b67a;
-}
-
-.status-chip.s-4 {
-  background: rgba(110, 218, 151, 0.16);
-  border: 1rpx solid rgba(27, 176, 102, 0.65);
-}
-.status-chip.s-4 .status-text {
-  color: #1bb066;
-}
-
-.status-chip.s-5 {
-  background: rgba(230, 170, 170, 0.16);
-  border: 1rpx solid rgba(210, 110, 110, 0.7);
-}
-.status-chip.s-5 .status-text {
-  color: #d46b6b;
-}
-
-.status-chip.s-6 {
-  background: rgba(210, 210, 210, 0.18);
-  border: 1rpx solid rgba(170, 170, 170, 0.78);
-}
-.status-chip.s-6 .status-text {
-  color: #999;
-}
-
-.status-chip.s-7 {
-  background: rgba(220, 200, 200, 0.18);
-  border: 1rpx solid rgba(190, 140, 140, 0.8);
-}
-.status-chip.s-7 .status-text {
-  color: #c25b5b;
+  color: #1f2735;
 }
 
 /* 行信息 */
@@ -987,12 +879,12 @@ onLoad((options) => {
 
 .item-label {
   font-size: 24rpx;
-  color: #888;
+  color: #8692a6;
 }
 
 .item-value {
   font-size: 24rpx;
-  color: #333;
+  color: #273043;
 }
 
 .item-value.price {
@@ -1048,7 +940,7 @@ onLoad((options) => {
   flex: 1;
   margin-right: 16rpx;
   font-size: 26rpx;
-  color: #222;
+  color: #1f2735;
 }
 
 .sub-item-price {
@@ -1065,7 +957,7 @@ onLoad((options) => {
 .sub-item-meta {
   margin-right: 16rpx;
   font-size: 22rpx;
-  color: #777;
+  color: #758096;
 }
 
 .sub-item-meta.adjust {
@@ -1074,7 +966,7 @@ onLoad((options) => {
 
 /* 卡片底部操作区 */
 .item-footer {
-  margin-top: 20rpx;
+  margin-top: 16rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1089,86 +981,26 @@ onLoad((options) => {
 }
 
 .btn-chat {
-  min-width: 180rpx;
-  height: 68rpx;
-  line-height: 68rpx;
-  padding: 0 32rpx;
+  min-width: 172rpx;
+  height: 62rpx;
+  line-height: 62rpx;
+  padding: 0 28rpx;
   border-radius: 999rpx;
   border: none;
-  background: linear-gradient(135deg, #ffd2e4, #ffe1b3);
-  color: #4a3131;
-  font-size: 26rpx;
+  background: #eef3fb;
+  color: #5e6b82;
+  font-size: 24rpx;
   font-weight: 600;
 }
 .btn-chat::after {
   border: none;
 }
 
-/* ---- 底部筛选弹层样式 ---- */
-.sheet {
-  width: 100vw;
-  background: #fff;
-  border-top-left-radius: 20rpx;
-  border-top-right-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.04);
-}
-.sheet-header {
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-.btn-cancel {
-  position: absolute;
-  left: 24rpx;
-  font-size: 28rpx;
-  color: #999;
-}
-.sheet-title {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #333;
+button {
+  border: none !important;
 }
 
-.picker {
-  height: 420px;
-  background: #fff;
-  padding: 20rpx 0;
-}
-.picker-item {
-  height: 64px;
-  line-height: 64px;
-  text-align: center;
-  font-size: 30rpx;
-  color: #222;
-}
-
-.sheet-footer {
-  padding: 16rpx 24rpx 24rpx;
-  background: #fff;
-}
-.btn-confirm {
-  width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
-  border-radius: 44rpx;
-  background: #4df0ff;
-  color: #090a0f;
-  font-weight: 700;
-  font-size: 30rpx;
-  border: none;
-}
-.btn-confirm::after {
-  border: none;
-}
-
-uni-picker-view {
-  display: block;
-}
-.uni-picker-view-wrapper {
-  height: 100%;
+button::after {
+  border: none !important;
 }
 </style>

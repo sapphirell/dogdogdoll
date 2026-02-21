@@ -110,13 +110,7 @@
 					如果您是娃圈贩售方、BJD妆师或毛娘，并希望管理和展示自己的品牌信息，欢迎申请入驻。通过认证后，您可以发布商品词条、图透、妆图等相关内容。除特殊情况外，我们的官方账号会在小红书和微博每日定期汇总并发布当日的贩售信息；妆师与毛娘的开单信息也将提前进行集中同步。
 				</text>
 				<text class="desc-text">
-					入驻认证流程如下：
-				</text>
-				<text class="desc-text">
-					1：添加官方客服微信 dogdogdoll，在下方输入或搜索自己的名称。复制并发送给客服微信 dogdogdoll；
-				</text>
-				<text class="desc-text">
-					2：使用您在小红书或微博的官方账号向我们的官方账号发送一条验证消息，即可完成认证；
+					点击下方「去入驻」后，按步骤完成：选择身份 → 搜索自己的名字 → 复制验证信息并联系微信客服。
 				</text>
 				<text class="desc-text">
 					入驻及代宣传服务均为无偿。后续的使用体验与意见，您可直接通过该微信号反馈给我们。
@@ -135,20 +129,68 @@
 			</view>
 
 			<view class="form-section">
-				<view class="form-group">
-					<text class="form-label">品牌名称</text>
-					<common-search mode="fill" @select="onBrandSelect" placeholder="搜索并选择您的品牌/名字" show-index-selector  @close-associate="onCloseAssociate"/>
-					<text v-if="selectedBrandId" class="brand-id">品牌ID: {{ selectedBrandId }}</text>
-					<text class="desc-text">
-						您的信息可能已经被录入，可以在尝试这里搜索您的品牌名称。需要在搜索框左边勾选【店铺】【毛娘】【妆师】身份后，才能搜索到您的名字。
-					</text>
+				<view class="step-bar">
+					<view class="step-pill font-alimamashuhei" :class="{ active: settleStep >= 1 }">1 选择身份</view>
+					<view class="step-pill font-alimamashuhei" :class="{ active: settleStep >= 2 }">2 搜索名字</view>
+					<view class="step-pill font-alimamashuhei" :class="{ active: settleStep >= 3 }">3 复制验证信息</view>
 				</view>
 
-				<view class="form-group">
-					<text class="form-label">入驻信息</text>
-					<textarea class="info-textarea" :value="settleInfo" disabled placeholder="请先选择品牌"
-						 auto-height />
-					<button class="copy-btn" @click="copySettleInfo">复制信息</button>
+				<view v-if="settleStep === 0" class="step-start">
+					<button class="start-btn font-alimamashuhei" @click="startSettleFlow">去入驻</button>
+				</view>
+
+				<view v-else>
+					<view v-if="settleStep === 1" class="form-group">
+						<text class="form-label font-alimamashuhei">请选择您的身份</text>
+						<view class="role-options">
+							<view
+								v-for="item in settleRoleOptions"
+								:key="item.value"
+								class="role-chip font-alimamashuhei"
+								:class="[`role-${item.value}`, { active: entryRole === item.value }]"
+								@click="selectEntryRole(item.value)"
+							>
+								{{ item.label }}
+							</view>
+						</view>
+						<text class="desc-text">请先选择您要申请入驻的身份类型。</text>
+					</view>
+
+					<view v-if="settleStep === 2" class="form-group search-form-group">
+						<text class="form-label font-alimamashuhei">搜索自己的名字</text>
+						<common-search
+							:key="searchCompKey"
+							mode="fill"
+							placeholder="搜索并选择您的品牌/名字"
+							:show-index-selector="false"
+							:defaultIndex="searchIndexByRole"
+							@select="onBrandSelect"
+							@close-associate="onCloseAssociate"
+						/>
+						<text v-if="selectedBrandId" class="brand-id">已搜到品牌ID: {{ selectedBrandId }}</text>
+						<text v-if="searchResultTip" class="search-result-tip">{{ searchResultTip }}</text>
+						<text class="desc-text">请先搜索自己的名字；如果没搜到也可以继续，系统会按“未收录”生成验证信息。</text>
+					</view>
+
+					<view v-if="settleStep === 3" class="form-group">
+						<text class="form-label font-alimamashuhei">验证信息</text>
+						<textarea
+							class="info-textarea"
+							:value="settleInfo"
+							disabled
+							placeholder="请先完成前两步"
+							auto-height
+						/>
+						<button class="copy-btn font-alimamashuhei" @click="copySettleInfo">复制验证信息</button>
+						<text class="desc-text settle-final-tip">复制后请联系微信号 dogdogdoll 完成入驻。</text>
+					</view>
+
+					<view class="step-actions">
+						<button v-if="settleStep > 1" class="step-btn ghost font-alimamashuhei" @click="goPrevStep">上一步</button>
+						<button class="step-btn primary font-alimamashuhei" @click="goNextStep">
+							{{ settleStep >= 3 ? '重新搜索' : '下一步' }}
+						</button>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -190,6 +232,28 @@
 	const brandName = ref("");
 	const selectedBrandId = ref(0);
 	const userInfo = ref({});
+	const settleStep = ref(0);
+	const entryRole = ref('');
+
+	const settleRoleOptions = [{
+			label: '店铺',
+			value: 'shop'
+		},
+		{
+			label: '妆师',
+			value: 'artist'
+		},
+		{
+			label: '毛娘',
+			value: 'hairstylist'
+		}
+	];
+
+	const roleLabelMap = {
+		shop: '店铺',
+		artist: '妆师',
+		hairstylist: '毛娘'
+	};
 
 	// 计算是否有品牌
 	const hasBrand = computed(() => {
@@ -197,12 +261,32 @@
 	});
 
 
-	// 计算入驻信息
+	const searchCompKey = computed(() => `settle-search-${entryRole.value || 'unset'}`);
+
+	const searchIndexByRole = computed(() => {
+		if (entryRole.value === 'artist') return 'bjd_artist';
+		if (entryRole.value === 'hairstylist') return 'hairstylist';
+		return '';
+	});
+
+	const searchResultTip = computed(() => {
+		if (!brandName.value) return '';
+		if (selectedBrandId.value > 0) {
+			return `已搜到您的信息，品牌ID：${selectedBrandId.value}`;
+		}
+		return '未搜到已收录品牌，可继续生成“未收录”验证信息。';
+	});
+
+	// 计算入驻信息（根据是否搜到分别生成）
 	const settleInfo = computed(() => {
-		if (!brandName.value) return "";
-		
-		let isBrand = selectedBrandId.value > 0 ? selectedBrandId.value : "尚未收录"
-		return `我的UID是${userInfo.value.id}，我的品牌/名字是${brandName.value}，品牌ID是${isBrand}`;
+		if (!brandName.value || !entryRole.value) return "";
+
+		const uid = (userInfo.value && userInfo.value.id) ? userInfo.value.id : '未知';
+		const roleLabel = roleLabelMap[entryRole.value] || '未选择';
+		if (selectedBrandId.value > 0) {
+			return `您好，我申请入驻。\nUID：${uid}\n身份：${roleLabel}\n我已搜索到自己的名字：${brandName.value}\n品牌ID：${selectedBrandId.value}\n请协助我绑定该品牌并完成入驻。`;
+		}
+		return `您好，我申请入驻。\nUID：${uid}\n身份：${roleLabel}\n我已搜索自己的名字：${brandName.value}\n搜索结果：未搜到\n请协助我新建收录并完成入驻。`;
 	});
 
 	let brandId = ref(0); // 存储品牌ID
@@ -333,18 +417,63 @@
 		updateBrandIdentity('is_bjd_hairstylist', newValue);
 	};
 
+	// 开始入驻分段流程
+	const startSettleFlow = () => {
+		settleStep.value = 1;
+	};
+
+	const selectEntryRole = (role) => {
+		entryRole.value = role;
+		brandName.value = '';
+		selectedBrandId.value = 0;
+	};
+
+	const goPrevStep = () => {
+		if (settleStep.value > 1) {
+			settleStep.value -= 1;
+		}
+	};
+
+	const goNextStep = () => {
+		if (settleStep.value === 1) {
+			if (!entryRole.value) {
+				uni.showToast({
+					title: '请先选择身份',
+					icon: 'none'
+				});
+				return;
+			}
+			settleStep.value = 2;
+			return;
+		}
+
+		if (settleStep.value === 2) {
+			if (!brandName.value) {
+				uni.showToast({
+					title: '请先搜索自己的名字',
+					icon: 'none'
+				});
+				return;
+			}
+			settleStep.value = 3;
+			return;
+		}
+
+		// 第三步点击“重新搜索”
+		settleStep.value = 2;
+	};
+
 	// 处理关闭联想事件
 	const onCloseAssociate = (searchTerm) => {
-		 console.log(searchTerm)
-	  // 保留用户输入的品牌名称
-	  brandName.value = searchTerm;
-	  // 清空品牌ID
-	  selectedBrandId.value = 0;
+		// 保留用户输入的品牌名称
+		brandName.value = searchTerm;
+		// 清空品牌ID
+		selectedBrandId.value = 0;
 	};
 	// 品牌选择
 	const onBrandSelect = (id, name) => {
-	  selectedBrandId.value = id;
-	  brandName.value = name; // 注意这里使用 brandName.value 而不是 brandName
+		selectedBrandId.value = id;
+		brandName.value = name;
 	};
 	// 复制联系方式
 	const copyContact = () => {
@@ -363,7 +492,7 @@
 	const copySettleInfo = () => {
 		if (!settleInfo.value) {
 			uni.showToast({
-				title: '请先选择品牌',
+				title: '请先完成身份选择与搜索',
 				icon: 'none'
 			});
 			return;
@@ -373,7 +502,7 @@
 			data: settleInfo.value,
 			success: () => {
 				uni.showToast({
-					title: '已复制入驻信息',
+					title: '已复制验证信息',
 					icon: 'success'
 				});
 			}
@@ -693,12 +822,16 @@
 
 	/* 入驻申请页面样式 */
 	.settle-container {
-		padding: 20rpx;
+		padding: 18rpx 20rpx calc(30rpx + env(safe-area-inset-bottom));
+		display: flex;
+		flex-direction: column;
+		gap: 18rpx;
+		overflow: visible;
 	}
 
 	.settle-header {
 		text-align: center;
-		margin-bottom: 40rpx;
+		margin-bottom: 32rpx;
 
 		.title {
 			font-size: 40rpx;
@@ -714,35 +847,36 @@
 		}
 	}
 
-	.description {
+	.description,
+	.contact-section,
+	.form-section,
+	.info-section {
 		background-color: #fff;
-		border-radius: 16rpx;
-		padding: 30rpx;
-		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		border-radius: 18rpx;
+		box-shadow: 0 8rpx 22rpx rgba(56, 78, 108, 0.08);
+	}
 
-		
+	.description {
+		padding: 24rpx 24rpx 20rpx;
 	}
 
 	.contact-section {
-		background-color: #fff;
-		border-radius: 16rpx;
-		padding: 30rpx;
-		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		padding: 24rpx;
 
 		.contact-label {
 			display: block;
-			font-size: 28rpx;
-			color: #333;
-			font-weight: 500;
-			margin-bottom: 20rpx;
+			font-size: 27rpx;
+			color: #3a4456;
+			font-weight: 600;
+			margin-bottom: 16rpx;
 		}
 
 		.contact-content {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
+			gap: 16rpx;
+			min-height: 66rpx;
 
 			text {
 				font-size: 30rpx;
@@ -751,106 +885,304 @@
 			}
 
 			.copy-btn {
-				background-color: #65C3D6;
-				color: white;
-				font-size: 26rpx;
-				padding: 10rpx 30rpx;
-				border-radius: 40rpx;
 				margin: 0;
+				height: 56rpx;
+				line-height: 56rpx;
+				padding: 0 24rpx;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 22rpx;
+				font-weight: 600;
+				color: #fff;
+				border-radius: 999rpx;
+				background: linear-gradient(135deg, #78cbdd 0%, #62b9d8 100%);
 			}
 		}
 	}
 
 	.form-section {
-		background-color: #fff;
-		border-radius: 16rpx;
-		padding: 30rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+		padding: 24rpx;
+		margin-top: 0;
+		overflow: visible;
+		position: relative;
+		z-index: 2;
+
+		.step-bar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10rpx;
+			margin-top: 24rpx;
+			margin-bottom: 102rpx;
+		}
+
+		.step-pill {
+			height: 52rpx;
+			line-height: 52rpx;
+			padding: 0 20rpx;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 999rpx;
+			font-size: 23rpx;
+			color: #8b97ab;
+			background: #f2f5fa;
+			border: 1rpx solid #e6edf5;
+			font-weight: 500;
+		}
+
+		.step-pill.active {
+			color: #2f5d8f;
+			background: #e6f4ff;
+			border-color: #c9e5ff;
+		}
+
+		.step-start {
+			padding: 6rpx 0 2rpx;
+		}
+
+		.start-btn {
+			width: 100%;
+			height: 66rpx;
+			line-height: 66rpx;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: linear-gradient(135deg, #78cbdd 0%, #62b9d8 100%);
+			color: #fff;
+			font-size: 26rpx;
+			font-weight: 600;
+			border-radius: 14rpx;
+			box-shadow: 0 8rpx 18rpx rgba(101, 195, 214, 0.22);
+		}
+
+		.start-btn::after,
+		.step-btn::after,
+		.copy-btn::after {
+			border: none;
+		}
 
 		.form-group {
-			margin-bottom: 40rpx;
+			margin-bottom: 90rpx;
+			overflow: visible;
 
 			&:last-child {
 				margin-bottom: 0;
 			}
 
+			&.search-form-group {
+				position: relative;
+				z-index: 20;
+				padding-bottom: 190rpx;
+			}
+
 			.form-label {
 				display: block;
-				font-size: 28rpx;
-				color: #333;
-				font-weight: 500;
-				margin-bottom: 20rpx;
+				font-size: 30rpx;
+				color: #2f3b4f;
+				font-weight: 700;
+				margin-top: 18rpx;
+				margin-bottom: 42rpx;
+			}
+
+			.role-options {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 14rpx;
+				margin-top: 30rpx;
+				margin-bottom: 54rpx;
+			}
+
+			.role-chip {
+				position: relative;
+				overflow: hidden;
+				height: 58rpx;
+				line-height: 58rpx;
+				padding: 0 30rpx;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 999rpx;
+				font-size: 26rpx;
+				font-weight: 600;
+				color: #49566e;
+				background: linear-gradient(160deg, #ffffff 0%, #f4f8fc 100%);
+				border: 1rpx solid #dbe6f2;
+				box-shadow: 0 4rpx 10rpx rgba(26, 42, 65, 0.06);
+				transition: all 0.2s ease;
+			}
+
+			.role-chip::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				opacity: 0;
+				transition: opacity 0.2s ease;
+			}
+
+			.role-chip.role-shop::before {
+				background: linear-gradient(135deg, rgba(103, 182, 255, 0.18), rgba(103, 182, 255, 0.05));
+			}
+
+			.role-chip.role-artist::before {
+				background: linear-gradient(135deg, rgba(130, 206, 188, 0.22), rgba(130, 206, 188, 0.06));
+			}
+
+			.role-chip.role-hairstylist::before {
+				background: linear-gradient(135deg, rgba(245, 168, 200, 0.22), rgba(245, 168, 200, 0.06));
+			}
+
+			.role-chip:active {
+				transform: scale(0.98);
+			}
+
+			.role-chip.active {
+				color: #1f4f8c;
+				border-color: #aecdff;
+				box-shadow: 0 8rpx 18rpx rgba(95, 154, 220, 0.22);
+				transform: translateY(-2rpx);
+			}
+
+			.role-chip.active::before {
+				opacity: 1;
 			}
 
 			.brand-id {
 				display: block;
-				font-size: 26rpx;
-				color: #666;
-				margin-top: 10rpx;
+				font-size: 24rpx;
+				color: #667085;
+				margin-top: 30rpx;
 				text-align: right;
+			}
+
+			.search-result-tip {
+				display: block;
+				font-size: 24rpx;
+				color: #5f6e84;
+				margin-top: 36rpx;
 			}
 
 			.info-textarea {
 				width: 100%;
-				min-height: 200rpx;
-				background-color: #f8f9fa;
-				border-radius: 12rpx;
+				min-height: 168rpx;
+				background-color: #f8fafc;
+				border-radius: 14rpx;
 				padding: 20rpx;
-				font-size: 26rpx;
-				color: #333;
-				margin-bottom: 20rpx;
+				font-size: 25rpx;
+				color: #39465a;
+				margin-bottom: 16rpx;
 				box-sizing: border-box;
+				border: 1rpx solid #e6edf5;
+				line-height: 1.75;
 			}
 
 			.copy-btn {
 				width: 100%;
-				background-color: #65C3D6;
+				height: 66rpx;
+				line-height: 66rpx;
+				padding: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: linear-gradient(135deg, #78cbdd 0%, #62b9d8 100%);
 				color: white;
-				font-size: 28rpx;
-				padding: 20rpx 0;
-				border-radius: 12rpx;
+				font-size: 24rpx;
+				font-weight: 600;
+				border-radius: 14rpx;
 				text-align: center;
+				margin-top: 18rpx;
+				box-shadow: 0 8rpx 18rpx rgba(101, 195, 214, 0.22);
+			}
+
+			.settle-final-tip {
+				margin-top: 36rpx;
+				color: #72819a;
 			}
 		}
+
+		.step-actions {
+			display: flex;
+			align-items: center;
+			gap: 14rpx;
+			margin-top: 60rpx;
+			margin-bottom: 18rpx;
+		}
+
+		.step-btn {
+			flex: 1;
+			height: 64rpx;
+			min-height: 64rpx;
+			line-height: 64rpx;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 12rpx;
+			font-size: 24rpx;
+			font-weight: 600;
+			text-align: center;
+			box-sizing: border-box;
+		}
+
+		.step-btn.primary {
+			background: linear-gradient(135deg, #78cbdd 0%, #62b9d8 100%);
+			color: #fff;
+			box-shadow: 0 8rpx 18rpx rgba(101, 195, 214, 0.2);
+		}
+
+		.step-btn.ghost {
+			background: #f4f6fa;
+			color: #5a667a;
+			border: 1rpx solid #e3e9f1;
+		}
+
+		/* 防止搜索结果被后续内容覆盖或截断 */
+		:deep(.search_results) {
+			z-index: 999;
+			max-height: 560rpx;
+		}
+
+		:deep(.search_tab) {
+			position: relative;
+			z-index: 30;
+		}
 	}
-	
+
 	.desc-text {
 		display: block;
-		font-size: 26rpx;
-		color: #666;
-		line-height: 1.8;
-		margin-bottom: 20rpx;
-	
+		font-size: 25rpx;
+		color: #607086;
+		line-height: 1.75;
+		margin-bottom: 42rpx;
+
 		&:last-child {
 			margin-bottom: 0;
 		}
 	}
-	
+
 	.info-section {
-	  background: #fff;
-	  border-radius: 16rpx;
-	  padding: 30rpx;
-	  margin: 20rpx 0;
-	  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
-	
-	  .info-title {
-	    display: block;
-	    font-size: 32rpx;
-	    font-weight: bold;
-	    color: #333;
-	    margin-bottom: 20rpx;
-	  }
-	
-	  .info-text {
-	    display: block;
-	    font-size: 26rpx;
-	    color: #555;
-	    line-height: 1.8;
-	    margin-bottom: 16rpx;
-	
-	    &:last-child {
-	      margin-bottom: 0;
-	    }
-	  }
+		padding: 24rpx;
+		margin: 0;
+
+		.info-title {
+			display: block;
+			font-size: 30rpx;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 16rpx;
+		}
+
+		.info-text {
+			display: block;
+			font-size: 24rpx;
+			color: #555;
+			line-height: 1.75;
+			margin-bottom: 12rpx;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
 	}
 </style>

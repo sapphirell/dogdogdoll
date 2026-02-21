@@ -102,67 +102,89 @@
             <text class="state-desc">可以稍后再为本次投递添加作品</text>
           </view>
 
-          <view
-            v-for="item in items"
-            :key="item.id"
-            class="item-row"
-          >
-            <view class="item-main">
-              <view class="item-cover-wrap" v-if="getFirstImage(item)">
-                <image
-                  class="item-cover"
-                  :src="getFirstImage(item)"
-                  mode="aspectFill"
-                />
-              </view>
-
-              <view class="item-body">
-                <view class="item-title-row">
-                  <text class="item-title">
-                    {{ (item.work_subject || '').trim() || '未命名作品' }}
-                  </text>
-                </view>
-
-                <view class="item-meta-row">
-                  <text v-if="item.size" class="item-meta">尺寸：{{ item.size }}</text>
-                  <text v-if="item.tier_title" class="item-meta">档位：{{ item.tier_title }}</text>
-                  <text v-if="getAddonsTitles(item)" class="item-meta">
-                    加购：{{ getAddonsTitles(item) }}
-                  </text>
-                </view>
-
-                <view class="item-meta-row">
-                  <text class="item-meta">
-                    订单状态：{{ formatItemStatus(item.status) }}
-                  </text>
-                </view>
-
-                <view class="item-meta-row">
-                  <text class="item-meta">
-                    当前金额：¥ {{ formatPrice(calcItemTotal(item)) }}
-                  </text>
-                  <text v-if="Number(item.adjust_price) !== 0" class="item-meta adjust">
-                    调价差额：{{ item.adjust_price > 0 ? '+' : '' }}{{ formatPrice(item.adjust_price) }}
-                  </text>
+          <view v-else>
+            <scroll-view
+              v-if="items.length > 1"
+              class="item-tabs-scroll"
+              scroll-x
+              :show-scrollbar="false"
+            >
+              <view class="item-tabs-wrap">
+                <view
+                  v-for="(item, idx) in items"
+                  :key="`tab-${getItemID(item) || idx}`"
+                  class="item-tab"
+                  :class="{ active: isActiveItem(item) }"
+                  @tap="setActiveItem(item)"
+                >
+                  <text class="item-tab-title">{{ getItemTabTitle(item, idx) }}</text>
+                  <text class="item-tab-sub font-title">No.{{ String(idx + 1).padStart(3, '0') }}</text>
                 </view>
               </view>
-            </view>
+            </scroll-view>
 
-            <view class="item-actions">
-              <button
-                class="btn-mini"
-                @tap="openChangePricePanel(item)"
-              >
-                修改金额
-              </button>
-              <button
-                class="btn-mini step-submit"
-                :class="{ disabled: !canSubmitStep(item) }"
-                :disabled="!canSubmitStep(item)"
-                @tap="handleSubmitStep(item)"
-              >
-                提交节点状态
-              </button>
+            <view
+              v-if="activeItem"
+              :key="`active-item-${getItemID(activeItem)}`"
+              class="item-row item-row-active"
+            >
+              <view class="item-main">
+                <view class="item-cover-wrap" v-if="getFirstImage(activeItem)">
+                  <image
+                    class="item-cover"
+                    :src="getFirstImage(activeItem)"
+                    mode="aspectFill"
+                  />
+                </view>
+
+                <view class="item-body">
+                  <view class="item-title-row">
+                    <text class="item-title">
+                      {{ getItemTitle(activeItem) }}
+                    </text>
+                  </view>
+
+                  <view class="item-meta-row">
+                    <text v-if="activeItem.size" class="item-meta">尺寸：{{ activeItem.size }}</text>
+                    <text v-if="activeItem.tier_title" class="item-meta">档位：{{ activeItem.tier_title }}</text>
+                    <text v-if="getAddonsTitles(activeItem)" class="item-meta">
+                      加购：{{ getAddonsTitles(activeItem) }}
+                    </text>
+                  </view>
+
+                  <view class="item-meta-row">
+                    <text class="item-meta">
+                      订单状态：{{ formatItemStatus(activeItem.status) }}
+                    </text>
+                  </view>
+
+                  <view class="item-meta-row">
+                    <text class="item-meta">
+                      当前金额：¥ {{ formatPrice(calcItemTotal(activeItem)) }}
+                    </text>
+                    <text v-if="Number(activeItem.adjust_price) !== 0" class="item-meta adjust">
+                      调价差额：{{ activeItem.adjust_price > 0 ? '+' : '' }}{{ formatPrice(activeItem.adjust_price) }}
+                    </text>
+                  </view>
+                </view>
+              </view>
+
+              <view class="item-actions">
+                <button
+                  class="btn-mini"
+                  @tap="openChangePricePanel(activeItem)"
+                >
+                  修改金额
+                </button>
+                <button
+                  class="btn-mini step-submit"
+                  :class="{ disabled: !canSubmitStep(activeItem) }"
+                  :disabled="!canSubmitStep(activeItem)"
+                  @tap="handleSubmitStep(activeItem)"
+                >
+                  提交节点状态
+                </button>
+              </view>
             </view>
           </view>
         </view>
@@ -170,17 +192,18 @@
         <view class="card history-card">
           <view class="card-header">
             <text class="card-title">创作历史</text>
+            <text v-if="activeItemName" class="history-current-item">{{ activeItemName }}</text>
           </view>
 
-          <view v-if="creativeHistoryEvents.length" class="history-list">
+          <view v-if="visibleCreativeHistoryEvents.length" class="history-list">
             <view
-              v-for="(event, idx) in creativeHistoryEvents"
+              v-for="(event, idx) in visibleCreativeHistoryEvents"
               :key="event.key"
               class="history-row"
             >
               <view class="history-axis">
                 <view class="history-dot" :class="event.dotClass"></view>
-                <view v-if="idx < creativeHistoryEvents.length - 1" class="history-line"></view>
+                <view v-if="idx < visibleCreativeHistoryEvents.length - 1" class="history-line"></view>
               </view>
 
               <view class="history-main">
@@ -246,7 +269,13 @@
     </scroll-view>
 
     <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: bottomBarPadding }">
-      <view class="bottom-actions-row" :class="{ 'only-cancel': canOnlyCancel }">
+      <view
+        class="bottom-actions-row"
+        :class="{
+          'only-cancel': canOnlyCancel,
+          'three-actions': canArtistCancel && canArtistReturn && canArtistConfirm
+        }"
+      >
         <view class="left-text-actions">
             <view
               v-if="canArtistCancel"
@@ -454,7 +483,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import CommonModal from '@/components/common-modal/common-modal.vue' 
 import {
@@ -478,6 +507,65 @@ const targetUserInfo = ref(null) // 新增：投递者用户信息
 
 const items = computed(() => (queueInfo.value?.items || []))
 const draftItems = computed(() => (queueInfo.value?.draft_items || []))
+const activeItemId = ref(0)
+
+function getItemID(item) {
+  return Number(item?.id || item?.ID || 0)
+}
+
+function getItemTitle(item) {
+  return String(item?.work_subject || '').trim() || '未命名作品'
+}
+
+function getItemTabTitle(item, idx) {
+  const title = getItemTitle(item)
+  if (title === '未命名作品') return `投递内容 ${idx + 1}`
+  return title
+}
+
+function setActiveItem(item) {
+  const id = getItemID(item)
+  if (id > 0) {
+    activeItemId.value = id
+  }
+}
+
+function isActiveItem(item) {
+  return getItemID(item) > 0 && getItemID(item) === Number(activeItemId.value)
+}
+
+const activeItem = computed(() => {
+  const list = items.value
+  if (!list.length) return null
+  const id = Number(activeItemId.value || 0)
+  if (id > 0) {
+    const found = list.find((item) => getItemID(item) === id)
+    if (found) return found
+  }
+  return list[0] || null
+})
+
+const activeItemName = computed(() => {
+  if (!activeItem.value) return ''
+  return getItemTitle(activeItem.value)
+})
+
+watch(
+  () => items.value.map((item) => getItemID(item)).join(','),
+  () => {
+    const list = items.value
+    if (!list.length) {
+      activeItemId.value = 0
+      return
+    }
+    const id = Number(activeItemId.value || 0)
+    const exists = list.some((item) => getItemID(item) === id)
+    if (!exists) {
+      activeItemId.value = getItemID(list[0]) || 0
+    }
+  },
+  { immediate: true }
+)
 
 const currentUid = computed(() => {
   const u = global.userInfo || {}
@@ -570,6 +658,35 @@ const progressLogs = computed(() => {
   return []
 })
 
+function getStepLogItemID(row) {
+  return Number(row?.submission_item_id || row?.submissionItemID || row?.submissionItemId || 0)
+}
+
+function isSubmissionScopeLog(row, submissionItemId) {
+  // 明确有子单ID的，永远视为子单事件
+  if (submissionItemId > 0) return false
+
+  const logType = Number(row?.log_type || 0)
+  const eventCode = String(row?.event_code || '').trim()
+
+  // 明确属于父订单维度的事件
+  if (
+    logType === 6 || // 买家拍下订单
+    logType === 2 || // 买家确认投递内容
+    logType === 3 || // 付款完成
+    logType === 4 || // 卖家确认订单
+    eventCode === 'submission_created' ||
+    eventCode === 'buyer_confirm_content' ||
+    eventCode === 'payment_completed' ||
+    eventCode === 'seller_confirm_submission'
+  ) {
+    return true
+  }
+
+  // 其余 item_id=0 的事件默认不展示，防止把其他子单动态误判为父订单事件
+  return false
+}
+
 const creativeHistoryEvents = computed(() => {
   return progressLogs.value
     .slice()
@@ -583,6 +700,8 @@ const creativeHistoryEvents = computed(() => {
       const logType = Number(row?.log_type || 0)
       const status = Number(row?.status || 0)
       const dotClass = status === 2 ? 'reject' : (status === 0 ? (idx === 0 ? 'latest' : 'pending') : (idx === 0 ? 'latest' : 'done'))
+      const submissionItemId = getStepLogItemID(row)
+      const isSubmissionScope = isSubmissionScopeLog(row, submissionItemId)
       return {
         key: `${row?.id || idx}-${row?.event_code || ''}`,
         title: historyTitle(row),
@@ -591,8 +710,17 @@ const creativeHistoryEvents = computed(() => {
         timeText: formatHistoryTime(row?.created_at),
         dotClass,
         logType,
+        submissionItemId,
+        isSubmissionScope,
       }
     })
+})
+
+const visibleCreativeHistoryEvents = computed(() => {
+  const list = creativeHistoryEvents.value
+  const itemId = Number(activeItem.value?.id || activeItem.value?.ID || 0)
+  if (itemId <= 0) return list
+  return list.filter((event) => event.isSubmissionScope || Number(event.submissionItemId) === itemId)
 })
 
 const footerPlaceholderHeight = computed(() => {
@@ -1584,6 +1712,63 @@ onShow(() => {
   font-weight: 600;
   color: #20293a;
 }
+.history-current-item {
+  max-width: 56%;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  color: #5f6f84;
+  background: #eef3fb;
+  border: 1rpx solid #e2eaf6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-tabs-scroll {
+  width: 100%;
+  margin-top: 2rpx;
+}
+
+.item-tabs-wrap {
+  display: inline-flex;
+  gap: 12rpx;
+  padding-bottom: 4rpx;
+}
+
+.item-tab {
+  min-width: 188rpx;
+  max-width: 260rpx;
+  padding: 12rpx 16rpx;
+  border-radius: 14rpx;
+  border: 1rpx solid #e8edf6;
+  background: #f5f8fc;
+  box-sizing: border-box;
+}
+
+.item-tab.active {
+  border-color: #c7ddf6;
+  background: linear-gradient(180deg, #edf6ff 0%, #f4f9ff 100%);
+  box-shadow: 0 6rpx 14rpx rgba(118, 153, 196, 0.14);
+}
+
+.item-tab-title {
+  display: block;
+  font-size: 23rpx;
+  color: #3a475d;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-tab-sub {
+  display: block;
+  margin-top: 5rpx;
+  font-size: 18rpx;
+  line-height: 1.2;
+  color: #95a2b5;
+}
 
 /* item 行 */
 .item-row {
@@ -1595,6 +1780,9 @@ onShow(() => {
 }
 .item-row:first-of-type {
   margin-top: 10rpx;
+}
+.item-row-active {
+  margin-top: 12rpx;
 }
 
 .item-main {
@@ -2158,12 +2346,40 @@ onShow(() => {
   flex-shrink: 0;
 }
 
+.bottom-actions-row.three-actions .left-text-actions {
+  flex: 1;
+  gap: 14rpx;
+}
+
 .text-btn-item {
   font-size: 27rpx;
   color: #7a6670;
   padding: 18rpx 0;
   font-weight: 500;
 }
+
+.bottom-actions-row.three-actions .text-btn-item {
+  min-width: 148rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  text-align: center;
+  font-size: 24rpx;
+  font-weight: 650;
+  color: #6a7588;
+  background: #f8fbff;
+  border: none;
+  box-shadow: 0 8rpx 18rpx rgba(142, 160, 188, 0.2);
+}
+
+.bottom-actions-row.three-actions .text-btn-item.danger {
+  color: #b35f5f;
+  background: #fff2f4;
+  border: none;
+  box-shadow: 0 8rpx 18rpx rgba(215, 155, 165, 0.22);
+}
+
 .text-btn-item.danger {
   color: #b35f5f;
 }
@@ -2172,8 +2388,9 @@ onShow(() => {
   height: 72rpx;
   line-height: 72rpx;
   border-radius: 16rpx;
-  border: 1rpx solid #f1c2c6;
+  border: none;
   background: #fdecef;
+  box-shadow: 0 8rpx 18rpx rgba(215, 155, 165, 0.2);
   text-align: center;
   padding: 0 24rpx;
   font-size: 26rpx;
@@ -2196,6 +2413,16 @@ onShow(() => {
   color: #4a3131;
   box-shadow: 0 6rpx 14rpx rgba(253, 212, 170, 0.35);
 }
+
+.bottom-actions-row.three-actions .action-btn-large {
+  flex: 0 0 272rpx;
+  width: 272rpx;
+  height: 78rpx;
+  line-height: 78rpx;
+  font-size: 30rpx;
+  box-shadow: 0 10rpx 22rpx rgba(253, 212, 170, 0.34);
+}
+
 .action-btn-large::after { border: none; }
 
 
@@ -2370,9 +2597,25 @@ onShow(() => {
     margin-left: auto;
     justify-content: flex-end;
   }
+  .bottom-actions-row.three-actions {
+    flex-wrap: nowrap;
+  }
+  .bottom-actions-row.three-actions .left-text-actions {
+    width: auto;
+    flex: 1;
+    justify-content: flex-start;
+    gap: 12rpx;
+  }
+  .bottom-actions-row.three-actions .text-btn-item {
+    min-width: 138rpx;
+  }
   .action-btn-large {
     width: 100%;
     flex: none;
+  }
+  .bottom-actions-row.three-actions .action-btn-large {
+    width: 238rpx;
+    flex: 0 0 238rpx;
   }
 }
 </style>

@@ -78,23 +78,25 @@
           <!-- 中间文本 -->
           <view class="sub-card-middle">
             <view class="sub-title-row">
-              <text class="status-pill font-alimama">
-                {{ statusPillText(row) }}
-              </text>
-              <text class="sub-main-title">
+              <order-status
+                class="status-pill"
+                size="small"
+                :status="getSubmissionStatus(row.submission)"
+              />
+              <text class="sub-main-title font-alimamashuhei">
                 {{ mainTitle(row) }}
               </text>
             </view>
 
             <view class="sub-subtitle-row">
               <text class="sub-meta-text">{{ itemsCount(row) }}个投递项</text>
-              <text class="sub-meta-text price-text">{{ cardAmount(row) }}</text>
+              <text class="sub-meta-text price-text font-title">{{ cardAmount(row) }}</text>
             </view>
           </view>
 
           <!-- 右侧箭头 -->
           <view class="sub-card-right">
-            <uni-icons type="right" size="26" color="#444444" />
+            <uni-icons type="arrow-right" size="20" color="#566178" />
           </view>
         </view>
       </view>
@@ -115,6 +117,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
+import OrderStatus from '@/components/order_status/order_status.vue'
 
 const props = defineProps({
   active: { type: Boolean, default: true }
@@ -442,22 +445,6 @@ function itemsCount(row) {
   return items.length || 0
 }
 
-/** 状态 pill：统一短文案，避免折行 */
-function statusPillText(row) {
-  const st = getSubmissionStatus(row?.submission)
-  switch (st) {
-    case 0: return '排队中'
-    case 1: return '已中选'
-    case 2: return '待确认'
-    case 3: return '待付款'
-    case 4: return '已付款'
-    case 5: return '失败'
-    case 6: return '已取消'
-    case 7: return '超时'
-    default: return '未知'
-  }
-}
-
 /** 金额：无价格时显示 0￥（不再显示横杠） */
 function calcRowTotalAmount(row) {
   const items = row?.items || []
@@ -597,10 +584,13 @@ onReachBottom(() => {
 }
 
 .sub-card {
-  margin-bottom: 24rpx;
-  padding: 0;
+  margin-bottom: 20rpx;
+  padding: 18rpx 20rpx;
   display: flex;
   align-items: center;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 8rpx 26rpx rgba(21, 37, 78, 0.06);
 
   opacity: 0;
   transform: translateY(16rpx);
@@ -611,11 +601,11 @@ onReachBottom(() => {
 }
 
 .sub-card-left {
-  width: 140rpx;
-  height: 140rpx;
-  margin-right: 32rpx;
+  width: 132rpx;
+  height: 132rpx;
+  margin-right: 20rpx;
   border-radius: 12rpx;
-  border: 4rpx solid #6b8cff;
+  border: none;
   background: #d9d9d9;
   overflow: hidden;
   flex-shrink: 0;
@@ -624,10 +614,10 @@ onReachBottom(() => {
 
 .sub-card-middle {
   flex: 1;
-  height: 140rpx;
+  height: 132rpx;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: space-between;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -638,25 +628,13 @@ onReachBottom(() => {
   display: flex;
   align-items: center;
   min-width: 0;
-  margin: 0 0 8rpx 0;
+  margin: 0;
 }
 
 /* 关键修复：pill 不折行、不基线错位 */
 .status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 40rpx;
-  padding: 0 16rpx;
-  border-radius: 999rpx;
-  background: #8fd7ff;
-  color: #ffffff;
-  font-size: 22rpx;
-  line-height: 40rpx;
-  white-space: nowrap;
   flex-shrink: 0;
-  margin-right: 16rpx;
-  box-sizing: border-box;
+  margin-right: 14rpx;
 }
 
 /* 标题：调小字号，避免“太大” */
@@ -664,17 +642,17 @@ onReachBottom(() => {
   flex: 1;
   min-width: 0;
   font-size: 28rpx;
-  font-weight: 700;
-  color: #000000;
+  font-weight: 600;
+  color: #23293a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .sub-subtitle-row { display: flex; align-items: baseline; margin: 0; }
-.sub-meta-text { font-size: 28rpx; color: #000000; }
-.sub-meta-text + .sub-meta-text { margin-left: 26rpx; }
-.price-text { font-weight: 700; }
+.sub-meta-text { font-size: 22rpx; color: #7b8597; }
+.sub-meta-text + .sub-meta-text { margin-left: 24rpx; }
+.price-text { font-size: 28rpx; color: #2a3550; }
 
 .sub-card-right {
   flex-shrink: 0;
