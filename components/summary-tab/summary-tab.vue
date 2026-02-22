@@ -359,6 +359,7 @@
         <view class="sub sub-row">
           <text v-if="activeTimelineLoading" class="loading-mini">加载中…</text>
           <view class="switch-order-tip" @tap="switchToOrderTips">
+            <view v-if="timelineMode === 'sale'" class="switch-order-bubble font-alimamashuhei">点击试试</view>
             <text class="switch-order-text font-title">{{ timelineMode === 'sale' ? '切换到约妆/毛' : '切换到贩售' }}</text>
             <uni-icons class="switch-order-icon" type="arrow-right" size="14" color="#6e7f95"></uni-icons>
           </view>
@@ -1481,6 +1482,8 @@ onBeforeUnmount(() => {
 }
 
 .switch-order-tip{
+  position: relative;
+  overflow: visible;
   padding: 8rpx 14rpx 8rpx 16rpx;
   border-radius: 999rpx;
   background: #f1f4f7;
@@ -1499,10 +1502,72 @@ onBeforeUnmount(() => {
   display: inline-flex;
   animation: switch-right-bounce 1.2s ease-in-out infinite;
 }
+.switch-order-bubble{
+  position: absolute;
+  left: 50%;
+  top: -52rpx;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #fff9d8 0%, #ffe9f4 55%, #e8f4ff 100%);
+  color: #5a4169;
+  border: 1rpx solid #f5d3e2;
+  border-radius: 999rpx;
+  padding: 6rpx 18rpx;
+  font-size: 17rpx;
+  font-weight: 600;
+  letter-spacing: 0.6rpx;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow:
+    0 8rpx 20rpx rgba(226, 130, 171, 0.26),
+    0 0 0 3rpx rgba(255, 242, 248, 0.8);
+  z-index: 4;
+  animation: summaryTryBubbleFloat 1.9s ease-in-out infinite, summaryTryBubbleGlow 2.4s ease-in-out infinite;
+}
+.switch-order-bubble::before{
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -14rpx;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 11rpx solid transparent;
+  border-right: 11rpx solid transparent;
+  border-top: 13rpx solid #f5d3e2;
+}
+.switch-order-bubble::after{
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -12rpx;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 9rpx solid transparent;
+  border-right: 9rpx solid transparent;
+  border-top: 11rpx solid #ffeef6;
+  filter: drop-shadow(0 2rpx 2rpx rgba(226, 130, 171, 0.18));
+}
 @keyframes switch-right-bounce{
   0%, 100% { transform: translateX(0); }
   45% { transform: translateX(8rpx); }
   60% { transform: translateX(3rpx); }
+}
+@keyframes summaryTryBubbleFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-6rpx); }
+}
+@keyframes summaryTryBubbleGlow {
+  0%, 100% {
+    box-shadow:
+      0 8rpx 20rpx rgba(226, 130, 171, 0.26),
+      0 0 0 3rpx rgba(255, 242, 248, 0.8);
+  }
+  50% {
+    box-shadow:
+      0 10rpx 24rpx rgba(226, 130, 171, 0.34),
+      0 0 0 6rpx rgba(255, 236, 245, 0.55);
+  }
 }
 
 /* 查看更多 */

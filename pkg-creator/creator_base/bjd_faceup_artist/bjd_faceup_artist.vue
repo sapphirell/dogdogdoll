@@ -562,30 +562,40 @@ function resetLists() {
   hasOrderDot.value = false
 }
 
+function resolveBrandIdFromRouteParams(raw = {}) {
+  return Number(raw.brand_id || raw.id || raw.brandId || 0)
+}
 
-
-// 修改后的 onShow (修复版)
-onShow(() => {
-  // 1. 获取当前页面对象
+function getCurrentRouteParams() {
   const pages = getCurrentPages()
-  const curPage = pages[pages.length - 1]
+  const curPage = pages[pages.length - 1] || {}
+  return curPage.$route?.query || curPage.options || curPage.$page?.options || {}
+}
 
-  // 2. 获取参数（关键点）
-  // H5端参数在 curPage.$route.query 中
-  // 小程序端参数在 curPage.options 中
-  const opts = curPage.$route?.query || curPage.options || {}
-  
-  // 3. 根据你的URL (?id=854) 获取最新ID
-  // 注意：之前的代码用的是 brand_id，现在的 URL 是 id，这里做个兼容
-  const newId = Number(opts.id || opts.brand_id || 0)
+onLoad((options = {}) => {
+  const newId = resolveBrandIdFromRouteParams(options)
+  if (!newId) return
+  if (newId !== brandId.value) {
+    brandId.value = newId
+    resetLists()
+  }
+})
 
-  // 4. 如果ID变化了，才重新请求 (防止重复刷新)
+onShow(() => {
+  const opts = getCurrentRouteParams()
+  const newId = resolveBrandIdFromRouteParams(opts)
+
+  // 如果ID变化了，才重新请求 (防止重复刷新)
   if (newId && newId !== brandId.value) {
     console.log('切换ID:', brandId.value, '->', newId)
     brandId.value = newId
-    
-    // 清空旧数据 + 发起新请求
-    resetLists() 
+    resetLists()
+  }
+
+  if (!brandId.value) return
+
+  // 首次进入或ID不匹配时，保证会触发请求
+  if (faceups.value.length === 0 || Number(info.brand_id || 0) !== Number(brandId.value)) {
     fetchInfo()
     fetchMonthlyBusy()
     fetchFaceups()

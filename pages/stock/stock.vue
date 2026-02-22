@@ -205,6 +205,11 @@ function getStatusText(display){
 }
 
 onShow(() => {
+  // 兜底：从子页面返回时，确保 tabbar 恢复显示
+  try {
+    uni.showTabBar({ animation: false })
+  } catch (e) {}
+
   asyncGetUserInfo().then(() => {
     switch (activeTab.value) {
       case 1: getAccountBookData(); break

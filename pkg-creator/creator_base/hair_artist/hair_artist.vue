@@ -441,7 +441,7 @@ async function fetchInfo() {
   }
 
   const d = res.data.data || {}
-  info.brand_id = d.brand_id || 0
+  info.brand_id = Number(d.brand_id || d.brand?.id || brandId.value || 0)
   info.brand_name = d.brand_name || ''
   info.description = d.description || ''
   info.logo_image = d.logo_image || ''
@@ -615,14 +615,28 @@ function resetLists() {
   hasOrderDot.value = false
 }
 
-onShow(async () => {
-  // 1. 获取当前页面栈
-  const pages = getCurrentPages()
-  const curPage = pages[pages.length - 1]
+function resolveBrandIdFromRouteParams(raw = {}) {
+  return Number(raw.brand_id || raw.id || raw.brandId || 0)
+}
 
-  // 2. 获取参数 (H5用 $route.query, 小程序用 options)
-  const opts = curPage.$route?.query || curPage.options || {}
-  const newId = Number(opts.brand_id || 0)
+function getCurrentRouteParams() {
+  const pages = getCurrentPages()
+  const curPage = pages[pages.length - 1] || {}
+  return curPage.$route?.query || curPage.options || curPage.$page?.options || {}
+}
+
+onLoad((options = {}) => {
+  const newId = resolveBrandIdFromRouteParams(options)
+  if (!newId) return
+  if (newId !== brandId.value) {
+    brandId.value = newId
+    resetLists()
+  }
+})
+
+onShow(async () => {
+  const opts = getCurrentRouteParams()
+  const newId = resolveBrandIdFromRouteParams(opts)
 
   // 3. 关键判断：如果 URL 里的 ID 变了，强制更新本地 ID 并重置列表
   if (newId && newId !== brandId.value) {

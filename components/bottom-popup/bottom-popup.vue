@@ -39,20 +39,22 @@
 	watch: {
 	  show(newVal) {
 	    if (typeof uni === 'undefined') return;
-	    
-	    // 获取运行环境
-	    const platform = uni.getSystemInfoSync().platform;
-	    const isApp = platform === 'android' || platform === 'ios';
-	    
-	      if (newVal) {
-	        // 弹窗显示时隐藏tab-bar
-	        uni.hideTabBar();
-	      } else {
-	        // 弹窗隐藏时显示tab-bar
-	        uni.showTabBar();
-	      }
+	    if (newVal) {
+	      // 弹窗显示时隐藏 tab-bar
+	      uni.hideTabBar();
+	    } else {
+	      // 弹窗隐藏时显示 tab-bar
+	      uni.showTabBar();
+	    }
 	  }
 	},
+    beforeUnmount() {
+      // 防止弹窗处于显示态时被页面切走，导致 tab-bar 未恢复
+      if (typeof uni === 'undefined') return;
+      try {
+        uni.showTabBar({ animation: false });
+      } catch (e) {}
+    },
     methods: {
       closePopup() {
         this.$emit('close');
