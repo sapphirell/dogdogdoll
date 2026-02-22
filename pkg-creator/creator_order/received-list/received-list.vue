@@ -333,8 +333,27 @@ function toolbarIconColor(op) {
 function handleToolbarTap(op) {
   if (!op) return
   if (op.key === 'schedule') {
+    const firstFiltered = Array.isArray(filteredSubmissions.value) && filteredSubmissions.value.length
+      ? filteredSubmissions.value[0]
+      : null
+    const firstAll = Array.isArray(allSubmissions.value) && allSubmissions.value.length
+      ? allSubmissions.value[0]
+      : null
+    const currentPlanId = Number(
+      planId.value ||
+      getSubmission(firstFiltered)?.plan_id ||
+      getSubmission(firstAll)?.plan_id ||
+      0
+    )
+    if (!currentPlanId) {
+      uni.showToast({
+        title: '暂无可排期的计划',
+        icon: 'none',
+      })
+      return
+    }
     uni.navigateTo({
-      url: '/pkg-creator/creator_base/order_plan/order_plan',
+      url: `/pkg-creator/creator_order/schedule_board/schedule_board?plan_id=${currentPlanId}`,
     })
     return
   }

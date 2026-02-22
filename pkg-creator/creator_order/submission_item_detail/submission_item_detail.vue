@@ -17,7 +17,7 @@
         <text class="state-desc">未找到对应的投递内容</text>
       </view>
 
-      <view v-else class="content">
+      <view v-else class="content" :class="{ 'with-bottom-actions': hasBottomActions }">
         <view class="card status-card">
           <view class="status-row">
             <text class="status-label">投递编号</text>
@@ -146,6 +146,87 @@
         </view>
       </view>
     </scroll-view>
+
+    <view v-if="hasBottomActions" class="bottom-action-bar">
+      <view v-if="showBuyerDecisionActions" class="bottom-action-row buyer-triple">
+        <button
+          class="bottom-action-btn secondary ghost"
+          :class="{ disabled: buyerActionBusy }"
+          :disabled="buyerActionBusy"
+          @tap="openBuyerActionModal('cancel')"
+        >
+          取消订单
+        </button>
+        <button
+          class="bottom-action-btn secondary"
+          :class="{ disabled: buyerActionBusy }"
+          :disabled="buyerActionBusy"
+          @tap="openBuyerActionModal('reject')"
+        >
+          拒绝状态
+        </button>
+        <button
+          class="bottom-action-btn primary"
+          :class="{ disabled: buyerActionBusy }"
+          :disabled="buyerActionBusy"
+          @tap="openBuyerActionModal('confirm')"
+        >
+          {{ buyerConfirmButtonText }}
+        </button>
+      </view>
+
+      <view
+        v-else-if="showArtistActionBar"
+        class="bottom-action-row"
+        :class="showArtistSubmitStep && showArtistMarkFinished ? 'dual' : 'single'"
+      >
+        <button
+          v-if="showArtistSubmitStep"
+          class="bottom-action-btn secondary"
+          @tap="goStepSubmit"
+        >
+          提交节点状态
+        </button>
+        <button
+          v-if="showArtistMarkFinished"
+          class="bottom-action-btn primary"
+          :class="{ disabled: markFinishedSubmitting }"
+          :disabled="markFinishedSubmitting"
+          @tap="handleArtistMarkFinished"
+        >
+          {{ markFinishedSubmitting ? '提交中...' : '我已画完' }}
+        </button>
+      </view>
+    </view>
+
+    <common-modal
+      v-model:visible="buyerActionModalVisible"
+      width="620rpx"
+      :closeable="!buyerActionBusy"
+      :center="true"
+    >
+      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+        <text class="custom-modal-title">{{ buyerActionModalTitle }}</text>
+        <text class="custom-modal-desc">{{ buyerActionModalDesc }}</text>
+        <view class="custom-modal-actions">
+          <button
+            class="custom-modal-btn cancel"
+            :disabled="buyerActionBusy"
+            @tap="buyerActionModalVisible = false"
+          >
+            取消
+          </button>
+          <button
+            class="custom-modal-btn confirm"
+            :class="{ disabled: buyerActionBusy }"
+            :disabled="buyerActionBusy"
+            @tap="confirmBuyerActionModal"
+          >
+            {{ buyerActionBusy ? '提交中...' : buyerActionModalConfirmText }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
   </view>
 </template>
 
@@ -153,6 +234,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { websiteUrl, initLoginState } from '@/common/config.js'
+import CommonModal from '@/components/common-modal/common-modal.vue'
 
 const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
@@ -171,6 +253,12 @@ const loading = ref(false)
 const errorMsg = ref('')
 const queueInfo = ref(null)
 const paymentStatusInfo = ref(null)
+const stepActioning = ref(false)
+const finalConfirmSubmitting = ref(false)
+const markFinishedSubmitting = ref(false)
+const cancelSubmitting = ref(false)
+const buyerActionModalVisible = ref(false)
+const buyerActionType = ref('')
 
 const items = computed(() => {
   const list = queueInfo.value?.items
@@ -246,6 +334,159 @@ const latestPaymentTransferNo = computed(() => String(latestPayment.value?.trans
 const latestPaymentMessage = computed(() => String(latestPayment.value?.message || '').trim())
 const latestPaymentCreatedAt = computed(() => Number(latestPayment.value?.created_at || 0))
 const latestPaymentAmount = computed(() => Number(latestPayment.value?.amount || 0))
+
+const viewerIsBuyer = computed(() => {
+  const v = queueInfo.value?.viewer_is_buyer
+  if (typeof v === 'boolean') return v
+  return true
+})
+
+const viewerIsArtist = computed(() => {
+  const v = queueInfo.value?.viewer_is_artist
+  if (typeof v === 'boolean') return v
+  return false
+})
+
+const finalStepID = computed(() => {
+  const steps = Array.isArray(queueInfo.value?.step_configs) ? queueInfo.value.step_configs : []
+  let maxID = 0
+  steps.forEach((row) => {
+    const id = Number(row?.id || row?.ID || 0)
+    if (id > maxID) maxID = id
+  })
+  return maxID
+})
+
+const itemFinalStateMap = computed(() => {
+  const list = Array.isArray(queueInfo.value?.item_final_states) ? queueInfo.value.item_final_states : []
+  const out = {}
+  list.forEach((row) => {
+    const id = Number(row?.item_id || 0)
+    if (id > 0) out[id] = row
+  })
+  return out
+})
+
+const currentItemFinalState = computed(() => {
+  const id = currentItemId.value
+  if (!id) return {}
+  return itemFinalStateMap.value[id] || {}
+})
+
+const submissionStatus = computed(() => Number(queueInfo.value?.status || 0))
+
+const pendingStepLog = computed(() => {
+  const logs = Array.isArray(queueInfo.value?.progress_logs) ? queueInfo.value.progress_logs : []
+  const itemID = currentItemId.value
+  if (!itemID) return null
+  let picked = null
+  logs.forEach((row) => {
+    const logType = Number(row?.log_type || 0)
+    const status = Number(row?.status || 0)
+    const logItemID = Number(row?.submission_item_id || 0)
+    if (logType !== 1 || status !== 0 || logItemID !== itemID) return
+    if (!picked) {
+      picked = row
+      return
+    }
+    const ts = Number(row?.created_at || 0)
+    const pts = Number(picked?.created_at || 0)
+    const id = Number(row?.id || 0)
+    const pid = Number(picked?.id || 0)
+    if (ts > pts || (ts === pts && id > pid)) picked = row
+  })
+  return picked
+})
+
+const pendingFinalRequestLog = computed(() => {
+  const logs = Array.isArray(queueInfo.value?.progress_logs) ? queueInfo.value.progress_logs : []
+  const itemID = currentItemId.value
+  if (!itemID) return null
+  let picked = null
+  logs.forEach((row) => {
+    const status = Number(row?.status || 0)
+    const logItemID = Number(row?.submission_item_id || 0)
+    const eventCode = String(row?.event_code || '').trim()
+    if (status !== 0 || logItemID !== itemID || eventCode !== 'final_confirm_request') return
+    if (!picked) {
+      picked = row
+      return
+    }
+    const ts = Number(row?.created_at || 0)
+    const pts = Number(picked?.created_at || 0)
+    const id = Number(row?.id || 0)
+    const pid = Number(picked?.id || 0)
+    if (ts > pts || (ts === pts && id > pid)) picked = row
+  })
+  return picked
+})
+
+const pendingStepIsFinal = computed(() => {
+  const row = pendingStepLog.value
+  if (!row) return false
+  const stepID = Number(row?.step_id || 0)
+  if (stepID > 0 && finalStepID.value > 0 && stepID === finalStepID.value) return true
+  const stepName = String(row?.step_name || '').trim()
+  return stepName.includes('成品')
+})
+
+const pendingStepConfirmText = computed(() => (pendingStepIsFinal.value ? '确认成品' : '确认节点'))
+
+const showBuyerStepActions = computed(() => viewerIsBuyer.value && !!pendingStepLog.value)
+const showBuyerFinalConfirm = computed(() => {
+  if (!viewerIsBuyer.value) return false
+  if (showBuyerStepActions.value) return false
+  return !!currentItemFinalState.value?.can_confirm_final
+})
+const showBuyerDecisionActions = computed(() => showBuyerStepActions.value || showBuyerFinalConfirm.value)
+const showArtistActionBar = computed(() => viewerIsArtist.value && submissionStatus.value === SubmissionStatusPaid)
+const showArtistSubmitStep = computed(() => showArtistActionBar.value && currentItemId.value > 0)
+const showArtistMarkFinished = computed(() => showArtistActionBar.value && !!currentItemFinalState.value?.can_mark_finished)
+const hasBottomActions = computed(() => {
+  return showBuyerDecisionActions.value || showArtistSubmitStep.value || showArtistMarkFinished.value
+})
+
+const buyerConfirmIsFinal = computed(() => {
+  if (showBuyerStepActions.value) return pendingStepIsFinal.value
+  return showBuyerFinalConfirm.value
+})
+
+const buyerActionBusy = computed(() => (
+  stepActioning.value ||
+  finalConfirmSubmitting.value ||
+  cancelSubmitting.value
+))
+
+const buyerConfirmButtonText = computed(() => {
+  if (buyerActionBusy.value) return '提交中...'
+  return buyerConfirmIsFinal.value ? '确认最终状态' : pendingStepConfirmText.value
+})
+
+const buyerActionModalTitle = computed(() => {
+  if (buyerActionType.value === 'cancel') return '取消订单'
+  if (buyerActionType.value === 'reject') return '拒绝状态'
+  if (buyerConfirmIsFinal.value) return '确认最终状态'
+  return '确认节点状态'
+})
+
+const buyerActionModalDesc = computed(() => {
+  if (buyerActionType.value === 'cancel') {
+    return '取消此订单，会扣除订单定金并擦除部分妆面寄回；'
+  }
+  if (buyerActionType.value === 'reject') {
+    return '表示此节点不通过，需要您与对方协商解决方案；'
+  }
+  if (buyerConfirmIsFinal.value) {
+    return '确认当前已达到最终状态，确认后将进入结单流程。'
+  }
+  return '确认该节点通过后，创作者将继续推进下一节点。'
+})
+
+const buyerActionModalConfirmText = computed(() => {
+  if (buyerActionType.value === 'cancel') return '确认取消'
+  if (buyerActionType.value === 'reject') return '确认拒绝'
+  return buyerConfirmIsFinal.value ? '确认最终状态' : '确认节点'
+})
 
 const historyEvents = computed(() => {
   const logs = Array.isArray(queueInfo.value?.progress_logs) ? queueInfo.value.progress_logs : []
@@ -362,6 +603,238 @@ function previewImages(list, index = 0) {
   })
 }
 
+function goStepSubmit() {
+  const id = currentItemId.value
+  if (!id) {
+    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/step_submit/step_submit?submission_id=${submissionId.value}&item_id=${id}`
+  })
+}
+
+async function submitStepDecision(action) {
+  const row = pendingStepLog.value || pendingFinalRequestLog.value
+  const logID = Number(row?.id || 0)
+  if (!logID || stepActioning.value) return
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  stepActioning.value = true
+  uni.showLoading({ title: '提交中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/step/${action === 'confirm' ? 'confirm' : 'reject'}`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: action === 'confirm'
+        ? { log_id: logID }
+        : { log_id: logID, reason: '' }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+      return
+    }
+    uni.showToast({ title: action === 'confirm' ? '已确认' : '已驳回', icon: 'success' })
+    await fetchAll()
+  } catch (_) {
+    uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+  } finally {
+    stepActioning.value = false
+    uni.hideLoading()
+  }
+}
+
+async function handleConfirmItemFinal() {
+  const state = currentItemFinalState.value || {}
+  if (!state?.can_confirm_final) {
+    uni.showToast({ title: '当前不可确认', icon: 'none' })
+    return false
+  }
+  const id = currentItemId.value
+  if (!id) {
+    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    return false
+  }
+  if (finalConfirmSubmitting.value) return false
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return false
+  }
+  finalConfirmSubmitting.value = true
+  uni.showLoading({ title: '确认中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/confirm-final`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: { item_id: id }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
+      return false
+    }
+    uni.showToast({ title: '已确认', icon: 'success' })
+    await fetchAll()
+    return true
+  } catch (_) {
+    uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+    return false
+  } finally {
+    finalConfirmSubmitting.value = false
+    uni.hideLoading()
+  }
+}
+
+async function submitCancelOrder() {
+  if (cancelSubmitting.value) return
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  if (!submissionId.value) {
+    uni.showToast({ title: '缺少 submission_id', icon: 'none' })
+    return
+  }
+
+  const isArtist = !!viewerIsArtist.value
+  cancelSubmitting.value = true
+  uni.showLoading({ title: '提交中' })
+  try {
+    const res = await uni.request({
+      url: isArtist
+        ? `${websiteUrl.value}/with-state/artist-order/submission/operate`
+        : `${websiteUrl.value}/with-state/artist-order/cancel`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: isArtist
+        ? { submission_id: submissionId.value, action: 'cancel_order' }
+        : { submission_id: submissionId.value }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '取消失败', icon: 'none' })
+      return
+    }
+    uni.showToast({ title: '订单已取消', icon: 'success' })
+    await fetchAll()
+  } catch (_) {
+    uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+  } finally {
+    cancelSubmitting.value = false
+    uni.hideLoading()
+  }
+}
+
+function openBuyerActionModal(action) {
+  if (!showBuyerDecisionActions.value) return
+  if (buyerActionBusy.value) return
+  if (action === 'reject' && !pendingStepLog.value && !pendingFinalRequestLog.value) {
+    uni.showToast({ title: '当前不可拒绝', icon: 'none' })
+    return
+  }
+  if (action === 'confirm') {
+    if (showBuyerStepActions.value && !pendingStepLog.value) {
+      uni.showToast({ title: '当前不可确认', icon: 'none' })
+      return
+    }
+    if (!showBuyerStepActions.value && !showBuyerFinalConfirm.value) {
+      uni.showToast({ title: '当前不可确认', icon: 'none' })
+      return
+    }
+  }
+  buyerActionType.value = action
+  buyerActionModalVisible.value = true
+}
+
+async function confirmBuyerActionModal() {
+  if (buyerActionBusy.value) return
+  const action = buyerActionType.value
+  if (!action) return
+  if (action === 'confirm') {
+    if (showBuyerStepActions.value) {
+      await submitStepDecision('confirm')
+    } else {
+      await handleConfirmItemFinal()
+    }
+  } else if (action === 'reject') {
+    await submitStepDecision('reject')
+  } else if (action === 'cancel') {
+    await submitCancelOrder()
+  }
+  if (!buyerActionBusy.value) {
+    buyerActionModalVisible.value = false
+    buyerActionType.value = ''
+  }
+}
+
+function handleArtistMarkFinished() {
+  const state = currentItemFinalState.value || {}
+  if (!state?.can_mark_finished) {
+    uni.showToast({ title: '请先提交一次节点状态', icon: 'none' })
+    return
+  }
+  const id = currentItemId.value
+  if (!id) {
+    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '我已画完',
+    content: '提交后将向买家发起最终状态确认，是否继续？',
+    confirmText: '确认提交',
+    success: async ({ confirm }) => {
+      if (!confirm || markFinishedSubmitting.value) return
+      const token = uni.getStorageSync('token') || ''
+      if (!token) {
+        uni.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+      markFinishedSubmitting.value = true
+      uni.showLoading({ title: '提交中' })
+      try {
+        const res = await uni.request({
+          url: `${websiteUrl.value}/with-state/artist-order/item/mark-finished`,
+          method: 'POST',
+          header: {
+            Authorization: token,
+            'Content-Type': 'application/json'
+          },
+          data: { item_id: id }
+        })
+        const body = res?.data || {}
+        if (String(body.status).toLowerCase() !== 'success') {
+          uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+          return
+        }
+        uni.showToast({ title: '已发送确认请求', icon: 'success' })
+        await fetchAll()
+      } catch (_) {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      } finally {
+        markFinishedSubmitting.value = false
+        uni.hideLoading()
+      }
+    }
+  })
+}
+
 async function ensureLogin() {
   await initLoginState()
   const token = uni.getStorageSync('token') || ''
@@ -447,6 +920,10 @@ onShow(() => {
 
 .content {
   padding: 12rpx 0 26rpx;
+}
+
+.content.with-bottom-actions {
+  padding-bottom: 190rpx;
 }
 
 .card {
@@ -763,5 +1240,127 @@ onShow(() => {
 
 .btn-retry::after {
   border: none;
+}
+
+.bottom-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -8rpx 24rpx rgba(23, 34, 53, 0.08);
+  padding: 14rpx 20rpx calc(14rpx + constant(safe-area-inset-bottom));
+  padding: 14rpx 20rpx calc(14rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.bottom-action-row {
+  display: flex;
+  gap: 14rpx;
+}
+
+.bottom-action-row.single .bottom-action-btn {
+  width: 100%;
+}
+
+.bottom-action-row.dual .bottom-action-btn {
+  flex: 1;
+}
+
+.bottom-action-row.buyer-triple {
+  gap: 10rpx;
+}
+
+.bottom-action-row.buyer-triple .bottom-action-btn {
+  flex: 1;
+  min-width: 0;
+  font-size: 23rpx;
+}
+
+.bottom-action-btn {
+  height: 78rpx;
+  line-height: 78rpx;
+  border-radius: 999rpx;
+  border: none;
+  text-align: center;
+  font-size: 25rpx;
+  font-weight: 600;
+}
+
+.bottom-action-btn::after {
+  border: none;
+}
+
+.bottom-action-btn.primary {
+  background: linear-gradient(135deg, #9ab8ff 0%, #7ea0ef 100%);
+  color: #fff;
+}
+
+.bottom-action-btn.secondary {
+  background: #ebeff6;
+  color: #5c6c83;
+}
+
+.bottom-action-btn.secondary.ghost {
+  background: #f3f4f8;
+  color: #7a859a;
+}
+
+.bottom-action-btn.disabled {
+  background: #d9e1ef;
+  color: #96a5bf;
+}
+
+.custom-modal-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #2b3445;
+  text-align: center;
+}
+
+.custom-modal-desc {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  line-height: 1.68;
+  color: #58657a;
+  text-align: center;
+}
+
+.custom-modal-actions {
+  margin-top: 28rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
+.custom-modal-btn {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  border-radius: 999rpx;
+  border: none;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.custom-modal-btn::after {
+  border: none;
+}
+
+.custom-modal-btn.cancel {
+  background: #eef2f8;
+  color: #6b7890;
+}
+
+.custom-modal-btn.confirm {
+  background: linear-gradient(135deg, #9ab8ff 0%, #7ea0ef 100%);
+  color: #fff;
+}
+
+.custom-modal-btn.confirm.disabled {
+  background: #d9e1ef;
+  color: #96a5bf;
 }
 </style>

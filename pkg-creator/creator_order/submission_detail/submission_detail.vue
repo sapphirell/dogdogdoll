@@ -63,7 +63,7 @@
           </view>
         </view>
 
-        <view class="section-info-list">
+	        <view class="section-info-list">
           <view class="info-row-item">
             <text class="info-label font-alimamashuhei">投递编号</text>
             <text class="info-val font-title">#{{ submission.submission_id }}</text>
@@ -81,16 +81,32 @@
             <text class="info-val font-title">{{ queuePositionText }}</text>
           </view>
 
-          <view class="info-row-item info-row-link" @tap="openProgressOverview">
-            <text class="info-label font-alimamashuhei">前方订单动态</text>
-            <view class="info-link-right">
-              <text class="info-link-text font-title">查看</text>
-              <uni-icons type="right" size="16" color="#969696" />
-            </view>
-          </view>
-        </view>
+	          <view class="info-row-item info-row-link" @tap="openProgressOverview">
+	            <text class="info-label font-alimamashuhei">前方订单动态</text>
+	            <view class="info-link-right">
+	              <text class="info-link-text font-title">查看</text>
+	              <uni-icons type="right" size="16" color="#969696" />
+	            </view>
+	          </view>
+	        </view>
 
-        <view class="tab-header-wrapper">
+	        <view v-if="canFillReturnAddress" class="return-address-tip-card" @tap="goFillReturnAddress">
+	          <view class="return-address-tip-main">
+	            <text class="return-address-tip-title font-alimamashuhei">妆师已发起结单</text>
+	            <text class="return-address-tip-desc">请填写寄回地址</text>
+	          </view>
+	          <uni-icons type="arrow-right" size="16" color="#73849a" />
+	        </view>
+	        <view v-else-if="returnAddressInfo" class="return-address-preview-card">
+	          <text class="return-address-preview-title">寄回地址已填写</text>
+	          <text class="return-address-preview-line">
+	            {{ returnAddressInfo.receiver_name || '' }} {{ returnAddressInfo.receiver_phone || '' }}
+	          </text>
+	          <text class="return-address-preview-line">{{ returnAddressInfo.full_address || '' }}</text>
+	          <text v-if="returnShipped" class="return-address-preview-line">寄回单号：{{ returnExpressNoText || '-' }}</text>
+	        </view>
+
+	        <view class="tab-header-wrapper">
           <view class="custom-tab-bar">
             <view 
               class="tab-slider"
@@ -121,10 +137,10 @@
         <view class="tab-content-wrapper">
           
           <view v-if="currentItem" class="content-item-view anim-fade-up" :key="currentTabIndex">
-            <view
-              class="item-detail-card"
-              :class="{ editable: canEditSubmissionItems, viewable: canViewItemDetail }"
-              @click="goEditItem(currentItem)"
+	            <view
+	              class="item-detail-card"
+	              :class="{ editable: canEditSubmissionItems, viewable: canViewItemDetail }"
+	              @click="goEditItem(currentItem)"
             >
               <image 
                 :src="getFirstRefImage(currentItem.ref_images)" 
@@ -132,10 +148,17 @@
                 mode="aspectFill"
               />
               
-              <view class="item-info-col">
-                <view class="info-section-title">
-                  <text class="item-title text-truncate">{{ currentItem.work_subject || '未命名作品' }}</text>
-                </view>
+                <view class="item-info-col">
+                  <view class="info-section-title">
+                    <text class="item-title text-truncate">{{ currentItem.work_subject || '未命名作品' }}</text>
+                    <view
+                      v-if="currentItemAlertTag"
+                      class="item-alert-bubble font-alimamashuhei"
+                      :class="`item-alert-bubble-${currentItemAlertTag.type}`"
+                    >
+                      {{ currentItemAlertTag.text }}
+                    </view>
+                  </view>
                 
                 <view class="info-section-tags">
                   <view class="item-tags-row">
@@ -157,17 +180,17 @@
                   </view>
                 </view>
                 
-                <view class="info-section-price">
-                  <view class="item-price-row font-din">
-                    <text class="currency">¥</text>
-                    <text class="amount font-title">{{ Number(currentItem.price_total || 0) }}</text>
-                  </view>
-                  <text v-if="canViewItemDetail" class="item-view-detail">查看详情</text>
-                </view>
-              </view>
-            </view>
+	                <view class="info-section-price">
+	                  <view class="item-price-row font-din">
+	                    <text class="currency">¥</text>
+	                    <text class="amount font-title">{{ Number(currentItem.price_total || 0) }}</text>
+	                  </view>
+	                  <view v-if="canViewItemDetail" class="item-view-detail-btn">查看详情</view>
+	                </view>
+	              </view>
+	            </view>
 
-            <view class="timeline-area">
+	            <view class="timeline-area">
               <view class="timeline-header">进度详情</view>
               <view v-if="timelineEvents.length" class="timeline-list">
                 <view
@@ -309,6 +332,7 @@
               v-for="(entry, idx) in overviewCurrentPlanItems"
               :key="`plan-${overviewEntryKey(entry)}`"
               class="overview-item-row"
+              :class="{ current: isOverviewCurrentSubmission(entry) }"
             >
               <view class="overview-item-main">
                 <text class="overview-item-order-id">顺序ID {{ overviewEntrySequence(entry, idx) }}</text>
@@ -321,8 +345,8 @@
               <view class="overview-item-side">
                 <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
                 <view v-if="isOverviewCurrentSubmission(entry)" class="overview-current-marker">
+                  <text class="overview-current-arrow">←</text>
                   <text class="overview-current-label">您的位置</text>
-                  <text class="overview-current-arrow">→</text>
                 </view>
               </view>
             </view>
@@ -519,6 +543,7 @@ const PlanPaymentMethodAlipay = 2
 
 // ====== 状态数据 ======
 const submissionId = ref(0)
+const focusItemID = ref(0)
 const loading = ref(false)
 const hasFirstLoaded = ref(false)
 const fetchSeq = ref(0)
@@ -536,7 +561,14 @@ const submission = reactive({
   artist_type: 0, // 修改点：新增 artist_type
   step_configs: [],
   progress_logs: [],
-  items: []
+  items: [],
+  item_final_states: [],
+  can_fill_return_address: false,
+  return_address_requested: false,
+  return_address_ready: false,
+  return_address_info: null,
+  return_shipped: false,
+  return_express_no: ''
 })
 const draftItems = ref([])
 const plan = reactive({
@@ -614,6 +646,88 @@ const queuePositionText = computed(() => {
   return `No.${String(count).padStart(3, '0')}`
 })
 
+const itemFinalStateMap = computed(() => {
+  const list = Array.isArray(submission.item_final_states) ? submission.item_final_states : []
+  const out = {}
+  list.forEach((row) => {
+    const itemID = Number(row?.item_id || 0)
+    if (itemID > 0) out[itemID] = row
+  })
+  return out
+})
+
+function getItemFinalState(item) {
+  const itemID = Number(item?.id || item?.ID || 0)
+  if (!itemID) return {}
+  return itemFinalStateMap.value[itemID] || {}
+}
+
+const latestActionableLogMap = computed(() => {
+  const logs = Array.isArray(submission.progress_logs) ? submission.progress_logs : []
+  const out = {}
+  logs.forEach((row) => {
+    const itemID = Number(row?.submission_item_id || 0)
+    if (itemID <= 0) return
+
+    const logType = Number(row?.log_type || 0)
+    const eventCode = String(row?.event_code || '').trim()
+    let kind = ''
+    if (logType === 1 || eventCode === 'step_request' || eventCode === 'step_confirmed' || eventCode === 'step_rejected') {
+      kind = 'step'
+    } else if (
+      logType === 8 ||
+      eventCode === 'final_confirm_request' ||
+      eventCode === 'final_confirm_request_approved'
+    ) {
+      kind = 'final'
+    }
+    if (!kind) return
+
+    const status = Number(row?.status || 0)
+    const current = out[itemID]
+    const ts = Number(row?.created_at || 0)
+    const id = Number(row?.id || 0)
+    if (
+      !current ||
+      ts > current.ts ||
+      (ts === current.ts && id > current.id)
+    ) {
+      out[itemID] = {
+        id,
+        ts,
+        kind,
+        status,
+      }
+    }
+  })
+  return out
+})
+
+function getLatestActionableLog(item) {
+  const itemID = Number(item?.id || item?.ID || 0)
+  if (!itemID) return null
+  return latestActionableLogMap.value[itemID] || null
+}
+
+function buildItemAlertTag(item) {
+  if (!item) return null
+  const latest = getLatestActionableLog(item)
+  if (!latest) return null
+
+  if (latest.kind === 'final' && latest.status === 0) {
+    return { text: '待状态确认', type: 'final' }
+  }
+  if (latest.kind === 'step' && latest.status === 0) {
+    return { text: '待节点确认', type: 'step' }
+  }
+  return null
+}
+
+const canFillReturnAddress = computed(() => !!submission.can_fill_return_address)
+const returnAddressInfo = computed(() => submission.return_address_info || null)
+const returnShipped = computed(() => !!submission.return_shipped)
+const returnExpressNoText = computed(() => String(submission.return_express_no || '').trim())
+
 const statusColorClass = computed(() => {
   const s = submission.status
   if (s === SubmissionStatusQueued) return 'bg-blue'
@@ -671,6 +785,8 @@ const currentItem = computed(() => {
   }
   return null
 })
+
+const currentItemAlertTag = computed(() => buildItemAlertTag(currentItem.value))
 
 const finalStepID = computed(() => {
   // 基于节点配置推导“最后节点ID”，用于区分普通通过与成品确认。
@@ -957,7 +1073,14 @@ function resetSubmissionRuntimeState() {
     artist_type: 0,
     step_configs: [],
     progress_logs: [],
-    items: []
+    items: [],
+    item_final_states: [],
+    can_fill_return_address: false,
+    return_address_requested: false,
+    return_address_ready: false,
+    return_address_info: null,
+    return_shipped: false,
+    return_express_no: ''
   })
   draftItems.value = []
   currentTabIndex.value = 0
@@ -979,6 +1102,10 @@ function resetSubmissionRuntimeState() {
 function applyRouteOptionsAndRefresh(opts = {}, reason = '') {
   const nextSubmissionID = Number(opts.submission_id || 0)
   if (!nextSubmissionID) return false
+  const nextFocusItemID = Number(opts.focus_item_id || opts.item_id || 0)
+  if (nextFocusItemID > 0) {
+    focusItemID.value = nextFocusItemID
+  }
 
   const changed = nextSubmissionID !== submissionId.value
   if (changed) {
@@ -997,6 +1124,7 @@ function applyRouteOptionsAndRefresh(opts = {}, reason = '') {
   payDebug('applyRouteOptionsAndRefresh', {
     reason,
     nextSubmissionID,
+    nextFocusItemID,
     changed
   })
   return changed
@@ -1119,9 +1247,46 @@ function isOverviewCurrentSubmission(entry) {
 }
 
 function overviewEntrySequence(entry, idx) {
+  const displayNo = Number(entry?._display_queue_no || 0)
+  if (displayNo > 0) {
+    return `No.${String(displayNo).padStart(3, '0')}`
+  }
   const queueNo = Number(entry?.item?.queue_no || 0)
   const orderNo = queueNo > 0 ? queueNo : (Number(idx) + 1)
   return `No.${String(orderNo).padStart(3, '0')}`
+}
+
+function pickOverviewEntryBySubmission(rows, currentSubmissionID, preferredItemID) {
+  const groupMap = new Map()
+  rows.forEach((row) => {
+    const submissionID = Number(row?.submission?.id || row?.submission?.ID || 0)
+    if (submissionID <= 0) return
+    if (!groupMap.has(submissionID)) {
+      groupMap.set(submissionID, [])
+    }
+    groupMap.get(submissionID).push(row)
+  })
+
+  const normalized = []
+  Array.from(groupMap.keys())
+    .sort((a, b) => a - b)
+    .forEach((submissionID) => {
+      const list = groupMap.get(submissionID) || []
+      if (!list.length) return
+
+      let picked = list[0]
+      if (submissionID === currentSubmissionID && preferredItemID > 0) {
+        const hit = list.find((row) => Number(row?.item?.id || row?.item?.ID || 0) === preferredItemID)
+        if (hit) picked = hit
+      }
+
+      normalized.push({
+        ...picked,
+        _submission_item_count: list.length,
+      })
+    })
+
+  return normalized
 }
 
 function resetProgressOverviewState() {
@@ -1169,20 +1334,18 @@ async function fetchProgressOverview(force = false) {
     }
     const d = body.data || {}
     const rows = Array.isArray(d.current_plan_items) ? d.current_plan_items.slice() : []
+    const currentItemID = Number(currentItem.value?.id || focusItemID.value || 0)
     const currentQueueNo = Number(submission.ahead_count || 0) + 1
-    const filteredRows = rows.filter((row) => {
-      const queueNo = Number(row?.item?.queue_no || 0)
-      if (queueNo <= 0) return true
-      if (currentQueueNo <= 0) return true
-      return queueNo <= currentQueueNo
-    })
-    filteredRows.sort((a, b) => {
-      const qa = Number(a?.item?.queue_no || 0)
-      const qb = Number(b?.item?.queue_no || 0)
-      if (qa > 0 && qb > 0 && qa !== qb) return qa - qb
-      return Number(b?.item?.updated_at || 0) - Number(a?.item?.updated_at || 0)
-    })
-    overviewCurrentPlanItems.value = filteredRows
+    const normalizedRows = pickOverviewEntryBySubmission(rows, currentSubmissionID, currentItemID)
+
+    const startQueueNo = currentQueueNo > 0
+      ? Math.max(1, currentQueueNo - Math.max(0, normalizedRows.length - 1))
+      : 1
+
+    overviewCurrentPlanItems.value = normalizedRows.map((row, idx) => ({
+      ...row,
+      _display_queue_no: startQueueNo + idx,
+    }))
     progressOverviewLoaded.value = true
   } catch (e) {
     progressOverviewError.value = e?.message || '加载订单动态失败'
@@ -1206,6 +1369,10 @@ function timelineTitle(row) {
   const stepName = String(row?.step_name || '').trim()
   const eventCode = String(row?.event_code || '').trim()
   if (eventCode === 'final_product_confirmed') return '成品确认（已通过）'
+  if (eventCode === 'final_confirm_request') return status === 0 ? '最终状态确认（待处理）' : '最终状态确认'
+  if (eventCode === 'return_address_request') return '等待填写寄回地址'
+  if (eventCode === 'return_address_submitted') return '寄回地址已填写'
+  if (eventCode === 'return_shipped') return '创作者已寄回'
   if (logType === 1) {
     const name = stepName || `节点#${Number(row?.step_id || 0)}`
     if (status === 1) return `${name}（已确认）`
@@ -1225,6 +1392,10 @@ function timelineDesc(row) {
   if (eventCode === 'payment_completed') return '买家已完成付款。'
   if (eventCode === 'step_request') return '创作者已上传节点内容，等待买家确认。'
   if (eventCode === 'final_product_confirmed') return '买家已确认最终成品。'
+  if (eventCode === 'final_confirm_request') return '创作者已提交最终状态，请买家确认。'
+  if (eventCode === 'return_address_request') return '创作者发起结单，请买家填写寄回地址。'
+  if (eventCode === 'return_address_submitted') return '买家已填写寄回地址，等待创作者寄回。'
+  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家查收。'
   return ''
 }
 
@@ -1300,6 +1471,23 @@ function handleStepReject(event) {
       if (!confirm) return
       submitStepDecision(event.logId, 'reject')
     }
+  })
+}
+
+function applyFocusItemByID(itemID) {
+  const targetID = Number(itemID || 0)
+  if (!targetID) return
+  const idx = submission.items.findIndex((item) => Number(item?.id || item?.ID || 0) === targetID)
+  if (idx >= 0) {
+    currentTabIndex.value = idx
+    focusItemID.value = 0
+  }
+}
+
+function goFillReturnAddress() {
+  if (!submission.submission_id) return
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/return_address/return_address?submission_id=${submission.submission_id}`
   })
 }
 
@@ -1414,9 +1602,17 @@ async function fetchDetail(force = false) {
         artist_type: d.artist_type, // 修改点：赋值 artist_type
         step_configs: Array.isArray(d.step_configs) ? d.step_configs : [],
         progress_logs: Array.isArray(d.progress_logs) ? d.progress_logs : [],
-        items: d.items || []
+        items: d.items || [],
+        item_final_states: Array.isArray(d.item_final_states) ? d.item_final_states : [],
+        can_fill_return_address: !!d.can_fill_return_address,
+        return_address_requested: !!d.return_address_requested,
+        return_address_ready: !!d.return_address_ready,
+        return_address_info: d.return_address_info || null,
+        return_shipped: !!d.return_shipped,
+        return_express_no: d.return_express_no || ''
       })
       draftItems.value = d.draft_items || []
+      applyFocusItemByID(focusItemID.value)
       
       if (d.plan_id && (!plan.id || plan.id !== d.plan_id)) {
         fetchPlanInfo(d.plan_id)
@@ -2335,6 +2531,50 @@ $spacing-page: 30rpx;
   gap: 54rpx; /* 增大行间距 */
 }
 
+.return-address-tip-card {
+  margin-top: 30rpx;
+  background: #eef4ff;
+  border-radius: 18rpx;
+  padding: 16rpx 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.return-address-tip-main {
+  min-width: 0;
+}
+.return-address-tip-title {
+  display: block;
+  font-size: 24rpx;
+  color: #2f3e57;
+}
+.return-address-tip-desc {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #69809a;
+}
+
+.return-address-preview-card {
+  margin-top: 30rpx;
+  background: #f4f7fb;
+  border-radius: 18rpx;
+  padding: 16rpx 18rpx;
+}
+.return-address-preview-title {
+  display: block;
+  font-size: 23rpx;
+  color: #4b5b74;
+}
+.return-address-preview-line {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #6f8197;
+}
+
 .info-row-item {
   display: flex;
   justify-content: space-between;
@@ -2479,7 +2719,8 @@ $spacing-page: 30rpx;
 .info-section-title {
   flex: 1; /* 1 */
   display: flex;
-  align-items: flex-start; /* 顶部对齐 */
+  align-items: center;
+  gap: 14rpx;
 }
 .info-section-tags {
   flex: 1; /* 1 */
@@ -2497,12 +2738,65 @@ $spacing-page: 30rpx;
   font-size: 30rpx;
   font-weight: bold;
   color: #333;
-  max-width: 360rpx;
+  max-width: 280rpx;
   /* 限制行数 */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
   overflow: hidden;
+}
+
+.item-alert-bubble {
+  position: relative;
+  flex-shrink: 0;
+  transform: translateY(-12rpx);
+  border-radius: 999rpx;
+  padding: 6rpx 16rpx;
+  font-size: 18rpx;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.5rpx;
+  white-space: nowrap;
+  border: 1rpx solid #f5d3e2;
+  color: #5a4169;
+  background: linear-gradient(135deg, #fff9d8 0%, #ffe9f4 55%, #e8f4ff 100%);
+  box-shadow:
+    0 8rpx 20rpx rgba(226, 130, 171, 0.2),
+    0 0 0 3rpx rgba(255, 242, 248, 0.7);
+  animation: itemAlertBubbleFloat 1.9s ease-in-out infinite;
+}
+
+.item-alert-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8rpx;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7rpx solid transparent;
+  border-right: 7rpx solid transparent;
+  border-top: 9rpx solid #ffeef6;
+}
+
+.item-alert-bubble-final {
+  border-color: #f2b5cf;
+}
+
+.item-alert-bubble-step {
+  border-color: #c7dff6;
+  background: linear-gradient(135deg, #eef8ff 0%, #e9f0ff 55%, #f6eeff 100%);
+  color: #3f5671;
+}
+
+@keyframes itemAlertBubbleFloat {
+  0%,
+  100% {
+    transform: translateY(-12rpx);
+  }
+  50% {
+    transform: translateY(-16rpx);
+  }
 }
 
 .item-tags-row {
@@ -2535,11 +2829,18 @@ $spacing-page: 30rpx;
   .amount { font-size: 40rpx; line-height: 1; }
 }
 
-.item-view-detail {
-  font-size: 22rpx;
-  color: #7f8a97;
-  line-height: 1.2;
+.item-view-detail-btn {
+  min-width: 132rpx;
+  height: 48rpx;
+  line-height: 48rpx;
+  border-radius: 999rpx;
+  text-align: center;
+  font-size: 21rpx;
+  color: #5d6f88;
+  background: #edf2f9;
+  border: none;
   margin-bottom: 8rpx;
+  padding: 0 16rpx;
 }
 
 /* 进度 */
@@ -2863,15 +3164,20 @@ $spacing-page: 30rpx;
 
 .overview-item-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 14rpx;
-  padding: 16rpx 0;
+  padding: 18rpx 14rpx;
+  border-radius: 16rpx;
   border-top: 1rpx solid #eef2f5;
 }
 
 .overview-item-row:first-of-type {
   border-top: none;
+}
+
+.overview-item-row.current {
+  background: #f4f8ff;
 }
 
 .overview-item-main {
@@ -2899,15 +3205,17 @@ $spacing-page: 30rpx;
 .overview-item-status {
   display: block;
   margin-top: 6rpx;
-  font-size: 21rpx;
-  color: #7d888f;
+  font-size: 22rpx;
+  color: #6f7c87;
+  line-height: 1.5;
 }
 
 .overview-item-progress {
   display: block;
   margin-top: 4rpx;
   font-size: 21rpx;
-  color: #9aa4ab;
+  color: #919ca6;
+  line-height: 1.45;
 }
 
 .overview-item-side {
@@ -2927,17 +3235,21 @@ $spacing-page: 30rpx;
 .overview-current-marker {
   display: inline-flex;
   align-items: center;
-  gap: 4rpx;
+  gap: 6rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 999rpx;
+  background: #e7efff;
 }
 
 .overview-current-label {
   font-size: 20rpx;
-  color: #7b8792;
+  color: #516581;
+  font-weight: 600;
 }
 
 .overview-current-arrow {
-  font-size: 24rpx;
-  color: #5d6b77;
+  font-size: 22rpx;
+  color: #516581;
   animation: overviewArrowMove 1.1s ease-in-out infinite;
 }
 
@@ -2954,7 +3266,7 @@ $spacing-page: 30rpx;
     opacity: 0.65;
   }
   50% {
-    transform: translateX(8rpx);
+    transform: translateX(-8rpx);
     opacity: 1;
   }
   100% {

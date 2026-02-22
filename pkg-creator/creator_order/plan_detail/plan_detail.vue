@@ -642,7 +642,7 @@ async function fetchPlan() {
   }
   const d = res.data.data || {}
   plan.id = d.id || planId.value
-  plan.brand_id = d.brand_id || 0
+  plan.brand_id = Number(d.brand_id || d.brand?.id || d.artist_info?.brand_id || 0)
   plan.artist_name = d.artist_name || ''
   plan.artist_type = d.artist_type || 0
   plan.order_type = d.order_type || 1
@@ -971,13 +971,18 @@ function onPremiumSwitchChange(e) {
 }
 
 function goArtistHome() {
-  const url = `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${plan.brand_id}`
-  // #ifdef H5
-  window.location.hash = url
-  // #endif
-  // #ifndef H5
+  const brandId = Number(plan.brand_id || plan.brand?.id || plan.artist_info?.brand_id || 0)
+  if (!brandId) {
+    uni.showToast({ title: '作者信息加载中', icon: 'none' })
+    return
+  }
+
+  const artistType = Number(plan.artist_type || 0)
+  const targetPath = artistType === 2
+    ? '/pkg-creator/creator_base/hair_artist/hair_artist'
+    : '/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist'
+  const url = `${targetPath}?brand_id=${brandId}&id=${brandId}`
   uni.navigateTo({ url })
-  // #endif
 }
 
 /**

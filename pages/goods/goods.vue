@@ -186,6 +186,7 @@
 
       <view class="info-item info-item-price">
         <text class="label font-title">初贩定价</text>
+		
         <view class="price-value-wrap">
           <image
             :src="goods.goods_price_image"

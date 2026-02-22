@@ -333,6 +333,11 @@ function mapBizToPreview (biz) {
     artist_order_buyer_confirm: '买家已确认订单内容',
     artist_order_seller_confirm: '卖家已确认，请付款',
     artist_order_payment_submitted: '买家已提交付款凭证',
+    artist_order_final_request: '妆师提交最终状态，请确认',
+    artist_order_final_confirmed: '买家已确认最终状态',
+    artist_order_fill_return_addr: '请填写寄回地址',
+    artist_order_return_addr_ready: '买家已填写寄回地址',
+    artist_order_return_shipped: '妆师已寄回',
     artist_order_operate: '订单状态更新'
   }
   if (map[key]) return map[key]

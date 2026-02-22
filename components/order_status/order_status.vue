@@ -19,13 +19,31 @@ const props = defineProps({
   size: {
     type: String,
     default: 'normal'
+  },
+  // 视角：
+  // - buyer: 买家视角（订单集）
+  // - seller: 接单者/创作者视角（接单列表）
+  perspective: {
+    type: String,
+    default: 'seller'
   }
 })
 
-const statusLabelMap = Object.freeze({
+const statusLabelSellerMap = Object.freeze({
   0: '排队中',
   1: '待买家确认',
   2: '待你确认',
+  3: '待付款',
+  4: '已付款',
+  5: '排队失败',
+  6: '已取消',
+  7: '已超时'
+})
+
+const statusLabelBuyerMap = Object.freeze({
+  0: '排队中',
+  1: '待你确认',
+  2: '待卖家确认',
   3: '待付款',
   4: '已付款',
   5: '排队失败',
@@ -40,7 +58,11 @@ const statusClass = computed(() => {
 
 const displayText = computed(() => {
   if ((props.text || '').trim()) return props.text.trim()
-  return statusLabelMap[Number(props.status)] || '未知状态'
+  const st = Number(props.status)
+  if (props.perspective === 'buyer') {
+    return statusLabelBuyerMap[st] || '未知状态'
+  }
+  return statusLabelSellerMap[st] || '未知状态'
 })
 
 const sizeClass = computed(() => (props.size === 'small' ? 'small' : 'normal'))

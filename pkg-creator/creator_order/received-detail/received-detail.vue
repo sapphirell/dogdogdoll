@@ -18,21 +18,20 @@
         <button class="btn-retry" @tap="reload">重试</button>
       </view>
 
-      <view v-else class="content">
-        <view class="card status-card">
-          <view class="status-row">
-            <view class="status-left-group">
-                <view 
-                  class="status-chip" 
-                  :class="['s-' + queueInfo.status, { 'font-title': queueInfo.status === 2 }]"
-                >
-                  <text class="status-text">{{ queueInfo.status_text || '未知状态' }}</text>
-                </view>
-                <view v-if="queueInfo.premium_queue_status === 1" class="tag-premium">
-                    <text class="tag-text">钞能力</text>
-                </view>
-            </view>
-          </view>
+	      <view v-else class="content">
+	        <view class="card status-card">
+	          <view class="status-row">
+	            <view class="status-left-group">
+	                <order-status
+	                  :status="queueInfo.status"
+	                  :text="queueInfo.status_text || '未知状态'"
+	                  size="small"
+	                />
+	                <view v-if="queueInfo.premium_queue_status === 1" class="tag-premium">
+	                    <text class="tag-text">钞能力</text>
+	                </view>
+	            </view>
+	          </view>
 
           <view class="status-row">
             <text class="status-label">排队位置</text>
@@ -54,14 +53,17 @@
           <view
             class="status-row payment-status-row"
             :class="{ clickable: isQrPayment }"
-            @tap="openPaymentStatusModal"
-          >
-            <text class="status-label">付款状态</text>
-            <view class="payment-status-right">
-              <text class="status-normal-text">{{ paymentStatusText }}</text>
-              <uni-icons v-if="isQrPayment" type="right" size="16" color="#98a2b3" />
-            </view>
-          </view>
+	            @tap="openPaymentStatusModal"
+	          >
+	            <text class="status-label">付款状态</text>
+	            <view class="payment-status-right">
+	              <text class="status-normal-text">{{ paymentStatusText }}</text>
+	              <view v-if="paymentMethodTagText" class="payment-method-tag">
+	                <text class="payment-method-tag-text">{{ paymentMethodTagText }}</text>
+	              </view>
+	              <uni-icons v-if="isQrPayment" type="right" size="16" color="#98a2b3" />
+	            </view>
+	          </view>
           
           <view class="status-actions">
             <view 
@@ -169,29 +171,84 @@
                 </view>
               </view>
 
-              <view class="item-actions">
-                <button
-                  class="btn-mini"
-                  @tap="openChangePricePanel(activeItem)"
-                >
-                  修改金额
-                </button>
-                <button
-                  class="btn-mini step-submit"
-                  :class="{ disabled: !canSubmitStep(activeItem) }"
-                  :disabled="!canSubmitStep(activeItem)"
-                  @tap="handleSubmitStep(activeItem)"
-                >
-                  提交节点状态
-                </button>
-              </view>
-            </view>
-          </view>
-        </view>
+	              <view class="item-actions">
+	                <button
+	                  class="btn-mini"
+	                  @tap="openChangePricePanel(activeItem)"
+	                >
+	                  修改金额
+	                </button>
+	                <button
+	                  class="btn-mini step-submit"
+	                  :class="{ disabled: !canSubmitStep(activeItem) }"
+	                  :disabled="!canSubmitStep(activeItem)"
+	                  @tap="handleSubmitStep(activeItem)"
+	                >
+	                  提交节点状态
+	                </button>
+	                <button
+	                  class="btn-mini mark-finished"
+	                  :class="{ disabled: !canMarkFinished(activeItem) }"
+	                  :disabled="!canMarkFinished(activeItem)"
+	                  @tap="handleMarkItemFinished(activeItem)"
+	                >
+	                  我已画完
+	                </button>
+	              </view>
+	              <view
+	                v-if="getItemFinalState(activeItem).final_confirmed"
+	                class="item-final-state done"
+	              >
+	                买家已确认最终状态
+	              </view>
+	              <view
+	                v-else-if="getItemFinalState(activeItem).final_request_pending"
+	                class="item-final-state pending"
+	              >
+	                已提交最终状态，等待买家确认
+	              </view>
+	            </view>
+	          </view>
+	        </view>
 
-        <view class="card history-card">
-          <view class="card-header">
-            <text class="card-title">创作历史</text>
+	        <view v-if="showDeliveryFlowCard" class="card delivery-card">
+	          <view class="card-header">
+	            <text class="card-title">订单收尾</text>
+	          </view>
+	          <view class="delivery-state-line" v-if="returnAddressRequested && !returnAddressReady">
+	            <text class="delivery-state-text">已发起结单，等待买家填写寄回地址</text>
+	          </view>
+	          <view class="delivery-address-block" v-if="returnAddressInfo">
+	            <text class="delivery-label">寄回地址</text>
+	            <text class="delivery-address-name">
+	              {{ returnAddressInfo.receiver_name || '' }} {{ returnAddressInfo.receiver_phone || '' }}
+	            </text>
+	            <text class="delivery-address-line">{{ returnAddressInfo.full_address || '' }}</text>
+	          </view>
+	          <view class="delivery-state-line" v-if="returnShipped">
+	            <text class="delivery-state-text">已寄回：{{ returnExpressNoText || '-' }}</text>
+	          </view>
+	          <view class="delivery-actions">
+	            <button
+	              v-if="canCloseSubmissionAction"
+	              class="delivery-action-btn close"
+	              @tap="handleCloseSubmission"
+	            >
+	              结单
+	            </button>
+	            <button
+	              v-if="canShipBackAction"
+	              class="delivery-action-btn ship"
+	              @tap="openShipBackPanel"
+	            >
+	              寄回
+	            </button>
+	          </view>
+	        </view>
+
+	        <view class="card history-card">
+	          <view class="card-header">
+	            <text class="card-title">创作历史</text>
             <text v-if="activeItemName" class="history-current-item">{{ activeItemName }}</text>
           </view>
 
@@ -300,11 +357,11 @@
       </view>
     </view>
 
-    <uni-popup
-      ref="pricePopupRef"
-      type="bottom"
-      :mask-click="true"
-      @change="onPricePopupChange"
+	    <uni-popup
+	      ref="pricePopupRef"
+	      type="bottom"
+	      :mask-click="true"
+	      @change="onPricePopupChange"
     >
       <view class="price-sheet" :style="{ paddingBottom: footerPadding }">
         <view class="price-header">
@@ -354,11 +411,41 @@
             提交修改金额
           </button>
         </view>
-      </view>
-    </uni-popup>
+	      </view>
+	    </uni-popup>
 
-    <common-modal v-model:visible="auditModalVisible" width="600rpx">
-      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+	    <uni-popup
+	      ref="shipPopupRef"
+	      type="bottom"
+	      :mask-click="true"
+	      @change="onShipPopupChange"
+	    >
+	      <view class="ship-sheet" :style="{ paddingBottom: footerPadding }">
+	        <view class="ship-header">
+	          <text class="ship-title">填写寄回单号</text>
+	          <text class="ship-close" @tap="closeShipBackPanel">关闭</text>
+	        </view>
+	        <view class="ship-body">
+	          <input
+	            v-model="shipExpressNo"
+	            class="ship-input"
+	            placeholder="请输入快递单号"
+	          />
+	        </view>
+	        <view class="ship-footer">
+	          <button
+	            class="ship-submit-btn"
+	            :disabled="shipSubmitting"
+	            @tap="submitShipBack"
+	          >
+	            {{ shipSubmitting ? '提交中...' : '提交寄回' }}
+	          </button>
+	        </view>
+	      </view>
+	    </uni-popup>
+
+	    <common-modal v-model:visible="auditModalVisible" width="600rpx">
+	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
         <text class="custom-modal-title">{{ auditModalTitle }}</text>
         <text class="custom-modal-desc">{{ auditModalDesc }}</text>
         <view class="custom-modal-actions">
@@ -368,9 +455,33 @@
       </view>
     </common-modal>
 
-    <common-modal v-model:visible="paymentStatusModalVisible" width="660rpx">
-      <view class="payment-modal-content" style="padding-bottom: 40rpx;">
-        <text class="payment-modal-title">扫码付款状态</text>
+	    <common-modal v-model:visible="markFinishModalVisible" width="620rpx" :closeable="!markFinishSubmitting">
+	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+	        <text class="custom-modal-title">我已画完</text>
+	        <text class="custom-modal-desc">提交后将向买家发起最终状态确认，是否继续？</text>
+	        <view class="custom-modal-actions">
+	          <button
+	            class="custom-modal-btn cancel"
+	            :disabled="markFinishSubmitting"
+	            @tap="markFinishModalVisible = false"
+	          >
+	            取消
+	          </button>
+	          <button
+	            class="custom-modal-btn confirm"
+	            :class="{ disabled: markFinishSubmitting }"
+	            :disabled="markFinishSubmitting"
+	            @tap="confirmMarkItemFinished"
+	          >
+	            {{ markFinishSubmitting ? '提交中...' : '确认提交' }}
+	          </button>
+	        </view>
+	      </view>
+	    </common-modal>
+
+	    <common-modal v-model:visible="paymentStatusModalVisible" width="660rpx">
+	      <view class="payment-modal-content" style="padding-bottom: 40rpx;">
+	        <text class="payment-modal-title">扫码付款状态</text>
 
         <view v-if="paymentStatusLoading" class="payment-modal-state">
           <text class="state-desc">正在加载付款凭证...</text>
@@ -486,6 +597,7 @@
 import { ref, computed, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import CommonModal from '@/components/common-modal/common-modal.vue' 
+import OrderStatus from '@/components/order_status/order_status.vue'
 import {
   websiteUrl,
   global,
@@ -636,8 +748,6 @@ const payStatus = computed(() => Number(queueInfo.value?.pay_status || queueInfo
 const isQrPayment = computed(() => paymentMethod.value === PAYMENT_METHOD_QRCODE)
 const paymentStatusText = computed(() => {
   if (submissionStatus.value === SUBMISSION_STATUS_PAID) {
-    if (paymentMethod.value === PAYMENT_METHOD_QRCODE) return '已付款（扫码转账）'
-    if (paymentMethod.value === PAYMENT_METHOD_PLATFORM) return '已付款（在线支付）'
     return '已付款'
   }
   if (submissionStatus.value === SUBMISSION_STATUS_SELECTED_PAY) return '待付款'
@@ -649,6 +759,52 @@ const paymentStatusText = computed(() => {
     case PAY_STATUS_PAID: return '已结清'
     default: return '未支付'
   }
+})
+const paymentMethodTagText = computed(() => {
+  if (paymentMethod.value === PAYMENT_METHOD_QRCODE) return '扫码转账'
+  if (paymentMethod.value === PAYMENT_METHOD_PLATFORM) return '在线支付'
+  return ''
+})
+
+const itemFinalStateMap = computed(() => {
+  const list = Array.isArray(queueInfo.value?.item_final_states) ? queueInfo.value.item_final_states : []
+  const out = {}
+  list.forEach((row) => {
+    const itemID = Number(row?.item_id || 0)
+    if (itemID > 0) out[itemID] = row
+  })
+  return out
+})
+
+function getItemFinalState(item) {
+  const itemID = Number(item?.id || item?.ID || 0)
+  if (!itemID) return {}
+  return itemFinalStateMap.value[itemID] || {}
+}
+
+function canMarkFinished(item) {
+  return !!getItemFinalState(item).can_mark_finished
+}
+
+const allItemsFinalConfirmed = computed(() => !!queueInfo.value?.all_items_final_confirmed)
+const canCloseSubmissionAction = computed(() => !!queueInfo.value?.can_close_submission && !isBuyer.value)
+const returnAddressRequested = computed(() => !!queueInfo.value?.return_address_requested)
+const returnAddressReady = computed(() => !!queueInfo.value?.return_address_ready)
+const canShipBackAction = computed(() => !!queueInfo.value?.can_ship_back && !isBuyer.value)
+const returnShipped = computed(() => !!queueInfo.value?.return_shipped)
+const returnExpressNoText = computed(() => String(queueInfo.value?.return_express_no || '').trim())
+const returnAddressInfo = computed(() => queueInfo.value?.return_address_info || null)
+const showDeliveryFlowCard = computed(() => {
+  if (isBuyer.value) return false
+  if (submissionStatus.value !== SUBMISSION_STATUS_PAID) return false
+  return (
+    canCloseSubmissionAction.value ||
+    canShipBackAction.value ||
+    returnAddressRequested.value ||
+    returnAddressReady.value ||
+    returnShipped.value ||
+    allItemsFinalConfirmed.value
+  )
 })
 
 const progressLogs = computed(() => {
@@ -737,6 +893,9 @@ const pricePopupRef = ref(null)
 const editingItem = ref(null)
 const priceInput = ref('')
 const reasonInput = ref('')
+const shipPopupRef = ref(null)
+const shipExpressNo = ref('')
+const shipSubmitting = ref(false)
 const skipFirstOnShowRefresh = ref(true)
 const paymentStatusModalVisible = ref(false)
 const paymentStatusLoading = ref(false)
@@ -755,6 +914,15 @@ const auditModalVisible = ref(false)
 const auditModalTitle = ref('')
 const auditModalDesc = ref('')
 const currentActionType = ref('')
+const markFinishModalVisible = ref(false)
+const markFinishTargetItemID = ref(0)
+const markFinishSubmitting = ref(false)
+
+watch(markFinishModalVisible, (show) => {
+  if (!show && !markFinishSubmitting.value) {
+    markFinishTargetItemID.value = 0
+  }
+})
 
 const latestPayment = computed(() => paymentStatusInfo.value?.latest_payment || null)
 const latestDispute = computed(() => paymentStatusInfo.value?.latest_dispute || null)
@@ -1464,6 +1632,175 @@ function handleSubmitStep(item) {
   })
 }
 
+function handleMarkItemFinished(item) {
+  const state = getItemFinalState(item)
+  if (!canMarkFinished(item)) {
+    if (state?.final_confirmed) {
+      uni.showToast({ title: '该子单已完成最终确认', icon: 'none' })
+      return
+    }
+    if (state?.final_request_pending) {
+      uni.showToast({ title: '已提交确认，等待买家处理', icon: 'none' })
+      return
+    }
+    uni.showToast({ title: '请先提交一次节点状态', icon: 'none' })
+    return
+  }
+  const itemID = Number(item?.id || item?.ID || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子项ID', icon: 'none' })
+    return
+  }
+  markFinishTargetItemID.value = itemID
+  markFinishModalVisible.value = true
+}
+
+function confirmMarkItemFinished() {
+  if (markFinishSubmitting.value) return
+  const itemID = Number(markFinishTargetItemID.value || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子项ID', icon: 'none' })
+    return
+  }
+  markFinishSubmitting.value = true
+  ensureLogin().then((ok) => {
+    if (!ok) {
+      markFinishSubmitting.value = false
+      return
+    }
+    const token = uni.getStorageSync('token') || ''
+    uni.showLoading({ title: '提交中' })
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/mark-finished`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: { item_id: itemID },
+      success: (res) => {
+        const body = res.data || {}
+        if (body.status !== 'success') {
+          uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+          return
+        }
+        markFinishModalVisible.value = false
+        markFinishTargetItemID.value = 0
+        uni.showToast({ title: '已发送确认请求', icon: 'success' })
+        fetchQueueInfo()
+      },
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      },
+      complete: () => {
+        markFinishSubmitting.value = false
+        uni.hideLoading()
+      },
+    })
+  })
+}
+
+function handleCloseSubmission() {
+  if (!canCloseSubmissionAction.value) {
+    uni.showToast({ title: '当前不可结单', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '结单',
+    content: '将提醒买家填写寄回地址，确认继续吗？',
+    confirmText: '确认结单',
+    success: ({ confirm }) => {
+      if (!confirm) return
+      ensureLogin().then((ok) => {
+        if (!ok) return
+        const token = uni.getStorageSync('token') || ''
+        uni.showLoading({ title: '处理中' })
+        uni.request({
+          url: `${websiteUrl.value}/with-state/artist-order/submission/close`,
+          method: 'POST',
+          header: { Authorization: token, 'Content-Type': 'application/json' },
+          data: { submission_id: submissionId.value },
+          success: (res) => {
+            const body = res.data || {}
+            if (body.status !== 'success') {
+              uni.showToast({ title: body.msg || '结单失败', icon: 'none' })
+              return
+            }
+            uni.showToast({ title: '已提醒买家填写地址', icon: 'success' })
+            fetchQueueInfo()
+          },
+          fail: () => {
+            uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+          },
+          complete: () => uni.hideLoading(),
+        })
+      })
+    }
+  })
+}
+
+function openShipBackPanel() {
+  if (!canShipBackAction.value) {
+    uni.showToast({ title: '买家尚未填写寄回地址', icon: 'none' })
+    return
+  }
+  shipExpressNo.value = ''
+  setTimeout(() => {
+    try {
+      shipPopupRef.value?.open?.()
+    } catch (_) {}
+  }, 0)
+}
+
+function closeShipBackPanel() {
+  try {
+    shipPopupRef.value?.close?.()
+  } catch (_) {}
+}
+
+function onShipPopupChange(e) {
+  if (!e?.show) {
+    shipExpressNo.value = ''
+    shipSubmitting.value = false
+  }
+}
+
+function submitShipBack() {
+  if (shipSubmitting.value) return
+  const expressNo = String(shipExpressNo.value || '').trim()
+  if (!expressNo) {
+    uni.showToast({ title: '请填写快递单号', icon: 'none' })
+    return
+  }
+  ensureLogin().then((ok) => {
+    if (!ok) return
+    shipSubmitting.value = true
+    const token = uni.getStorageSync('token') || ''
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/ship-back`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: {
+        submission_id: submissionId.value,
+        express_no: expressNo,
+      },
+      success: (res) => {
+        const body = res.data || {}
+        if (body.status !== 'success') {
+          uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+          return
+        }
+        uni.showToast({ title: '已提交寄回单号', icon: 'success' })
+        closeShipBackPanel()
+        fetchQueueInfo()
+      },
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      },
+      complete: () => {
+        shipSubmitting.value = false
+      }
+    })
+  })
+}
+
 onLoad((options) => {
   uni.setNavigationBarTitle({ title: '投递订单详情' })
   
@@ -1578,6 +1915,16 @@ onShow(() => {
   display: flex;
   align-items: center;
   gap: 6rpx;
+}
+.payment-method-tag {
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  background: #eaf2ff;
+}
+.payment-method-tag-text {
+  font-size: 20rpx;
+  color: #4a6fa8;
+  line-height: 1.2;
 }
 
 
@@ -1879,10 +2226,139 @@ onShow(() => {
   background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
   color: #ffffff;
 }
+.btn-mini.mark-finished {
+  background: linear-gradient(135deg, #b39ddb 0%, #8f7fd9 100%);
+  color: #ffffff;
+}
 .btn-mini.disabled {
   background-color: #e9edf3 !important;
   color: #a2acbb !important;
   box-shadow: none;
+}
+
+.item-final-state {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+.item-final-state.pending {
+  color: #6b5a97;
+}
+.item-final-state.done {
+  color: #3d8d6e;
+}
+
+.delivery-card {
+  padding-top: 20rpx;
+}
+.delivery-state-line {
+  padding: 8rpx 0;
+}
+.delivery-state-text {
+  font-size: 24rpx;
+  color: #5f6c81;
+}
+.delivery-address-block {
+  margin-top: 10rpx;
+  padding: 14rpx;
+  border-radius: 14rpx;
+  background: #f6f9ff;
+}
+.delivery-label {
+  display: block;
+  font-size: 22rpx;
+  color: #8793a8;
+}
+.delivery-address-name {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #2f3a4d;
+}
+.delivery-address-line {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 23rpx;
+  line-height: 1.5;
+  color: #5f6c81;
+}
+.delivery-actions {
+  margin-top: 14rpx;
+  display: flex;
+  gap: 12rpx;
+}
+.delivery-action-btn {
+  height: 66rpx;
+  line-height: 66rpx;
+  border-radius: 999rpx;
+  border: none;
+  margin: 0;
+  flex: 1;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.delivery-action-btn::after {
+  border: none;
+}
+.delivery-action-btn.close {
+  background: linear-gradient(135deg, #7ec8eb 0%, #6db5df 100%);
+  color: #fff;
+}
+.delivery-action-btn.ship {
+  background: linear-gradient(135deg, #9fd5b3 0%, #74bb95 100%);
+  color: #fff;
+}
+
+.ship-sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+.ship-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ship-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #263247;
+}
+.ship-close {
+  font-size: 24rpx;
+  color: #8a95a8;
+}
+.ship-body {
+  margin-top: 18rpx;
+}
+.ship-input {
+  width: 100%;
+  height: 78rpx;
+  border-radius: 14rpx;
+  background: #f4f7fb;
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  color: #2d3748;
+  box-sizing: border-box;
+}
+.ship-footer {
+  margin-top: 18rpx;
+}
+.ship-submit-btn {
+  width: 100%;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #9fd5b3 0%, #74bb95 100%);
+  color: #fff;
+  font-size: 25rpx;
+  font-weight: 600;
+  border: none;
+}
+.ship-submit-btn::after {
+  border: none;
 }
 
 .history-card {
@@ -2570,6 +3046,11 @@ onShow(() => {
   background: linear-gradient(135deg, #ffd9e9, #ffe8c6);
   color: #4a3131;
   font-weight: 600;
+}
+
+.custom-modal-btn.confirm.disabled {
+  background: #f2d6dc;
+  color: #8f7277;
 }
 
 @media screen and (max-width: 370px) {

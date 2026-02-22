@@ -50,6 +50,7 @@ import {
   bindWechat,
   asyncGetUserInfo,
   dogdogdollVersion,
+  getAppShellVersion,
 } from "../../common/config.js";
 
 uni.setNavigationBarTitle({ title: '设置' });
@@ -187,8 +188,9 @@ const checkUpdate = async (...args) => {
  */
 async function lightweightQueryForDisplay() {
   try {
+    const currentVersion = (typeof getAppShellVersion === 'function' ? getAppShellVersion() : '') || dogdogdollVersion
     const res = await uni.request({
-      url: `${websiteUrl.value}/latest-version?version=${dogdogdollVersion}`,
+      url: `${websiteUrl.value}/latest-version?version=${encodeURIComponent(currentVersion)}`,
       method: 'GET'
     })
     if (res && res.data) {

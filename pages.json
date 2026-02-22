@@ -262,15 +262,27 @@
 			}
 		},
 		{
-			"path": "creator_order/received-detail/received-detail",
+			"path": "creator_order/schedule_board/schedule_board",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "日历排期"
 			}
 		},
-		{
-			"path": "creator_order/step_submit/step_submit",
-			"style": {
-				"navigationBarTitleText": "提交节点状态"
+			{
+				"path": "creator_order/received-detail/received-detail",
+				"style": {
+					"navigationBarTitleText": ""
+				}
+			},
+			{
+				"path": "creator_order/return_address/return_address",
+				"style": {
+					"navigationBarTitleText": "寄回地址"
+				}
+			},
+			{
+				"path": "creator_order/step_submit/step_submit",
+				"style": {
+					"navigationBarTitleText": "提交节点状态"
 			}
 		},
 		{

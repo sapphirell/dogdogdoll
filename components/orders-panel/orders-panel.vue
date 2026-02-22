@@ -82,6 +82,7 @@
                 class="status-pill"
                 size="small"
                 :status="getSubmissionStatus(row.submission)"
+                perspective="buyer"
               />
               <text class="sub-main-title font-alimamashuhei">
                 {{ mainTitle(row) }}
