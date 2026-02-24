@@ -77,6 +77,45 @@
 				</picker>
 			</view>
 
+			<view class="form-item">
+				<text class="label">头围(cm)</text>
+				<input v-model="goodsInfo.head_circumference" placeholder="例如 18 或 18.5cm" class="input" />
+			</view>
+
+			<view class="form-item">
+				<text class="label">脖围(cm)</text>
+				<input v-model="goodsInfo.neck_circumference" placeholder="例如 7.8 或 8cm" class="input" />
+			</view>
+
+			<view class="form-item">
+				<text class="label">插口</text>
+				<view class="multi-select-chips">
+					<view
+						v-for="(item, index) in headSocketOptions"
+						:key="'socket-' + index"
+						:class="['chip-tag', { active: goodsInfo.socket_sizes_arr.includes(item) }]"
+						@click="toggleSocketSize(item)"
+					>
+						{{ item }}
+					</view>
+				</view>
+				<text class="hint">娃头建议适配哪些大尺寸身体，可多选。</text>
+			</view>
+
+			<view class="form-item">
+				<text class="label">眼珠建议</text>
+				<view class="multi-select-chips">
+					<view
+						v-for="(item, index) in eyeRecommendationOptions"
+						:key="'eye-' + index"
+						:class="['chip-tag', { active: goodsInfo.eye_recommendations_arr.includes(item) }]"
+						@click="toggleEyeRecommendation(item)"
+					>
+						{{ item }}
+					</view>
+				</view>
+			</view>
+
 			<!-- 			<view class="form-item">
 				<text class="label">跳转口令</text>
 				<input v-model="goodsInfo.short_link" placeholder="请自定义跳转口令" class="input" />
@@ -161,6 +200,12 @@
 		type: '',
 		desc_content: '',
 		doll_material: '',
+		head_circumference: '',
+		neck_circumference: '',
+		socket_sizes: '',
+		socket_sizes_arr: [],
+		eye_recommendations: '',
+		eye_recommendations_arr: [],
 		goods_images: [],
 		sizes: [] // 尺寸数组
 	});
@@ -194,6 +239,10 @@
 	const showSkinQuickSelector = computed(() => {
 		return ['整体', '单体', '单头'].includes(goodsInfo.value.type);
 	});
+
+	// 娃头相关尺寸建议（来源：/sizes）
+	const headSocketOptions = ref([]);
+	const eyeRecommendationOptions = ref([]);
 
 
 	// 初始尺寸选择
@@ -274,6 +323,12 @@
 					...data,
 					// 确保 sizes 数组存在
 					sizes: data.sizes || [],
+					head_circumference: data.head_circumference || '',
+					neck_circumference: data.neck_circumference || '',
+					socket_sizes: data.socket_sizes || '',
+					socket_sizes_arr: normalizeMultiSelectList(data.socket_sizes),
+					eye_recommendations: data.eye_recommendations || '',
+					eye_recommendations_arr: normalizeMultiSelectList(data.eye_recommendations),
 					goods_images: data.goods_images.map(img => ({
 						id: img.id,
 						src: img.url,
@@ -337,9 +392,35 @@
 				}
 
 				sizeOptions.value = formattedSizes;
+
+				const preferredHeadSocketOrder = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分', '其它大尺寸'];
+				const sizeKeys = Object.keys(sizeData.value || {});
+				const disallow = new Set(['棉花娃', '眼珠', '眼珠（二次元）', '眼珠（三次元）']);
+				const orderedHeadSocket = preferredHeadSocketOrder.filter(item => sizeKeys.includes(item) && !disallow.has(item));
+				const restHeadSocket = sizeKeys.filter(item => !disallow.has(item) && !orderedHeadSocket.includes(item));
+				headSocketOptions.value = [...orderedHeadSocket, ...restHeadSocket];
+
+				const eyeList = [];
+				const eyeSeen = new Set();
+				['眼珠（二次元）', '眼珠（三次元）'].forEach((category) => {
+					const arr = Array.isArray(sizeData.value[category]) ? sizeData.value[category] : [];
+					arr.forEach((item) => {
+						const val = String(item || '').trim();
+						if (!val || eyeSeen.has(val)) return;
+						eyeSeen.add(val);
+						eyeList.push(val);
+					});
+				});
+				eyeRecommendationOptions.value = eyeList;
+				goodsInfo.value.socket_sizes_arr = normalizeSocketSelections(goodsInfo.value.socket_sizes_arr.length ? goodsInfo.value.socket_sizes_arr : goodsInfo.value.socket_sizes);
+				goodsInfo.value.eye_recommendations_arr = normalizeEyeSelections(goodsInfo.value.eye_recommendations_arr.length ? goodsInfo.value.eye_recommendations_arr : goodsInfo.value.eye_recommendations);
 			}
 		} catch (err) {
 			console.error('获取尺寸数据失败:', err);
+			headSocketOptions.value = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分', '其它大尺寸'];
+			eyeRecommendationOptions.value = ['8mm', '10mm', '12mm', '14mm', '16mm', '18mm', '20mm', '22mm', '24mm'];
+			goodsInfo.value.socket_sizes_arr = normalizeSocketSelections(goodsInfo.value.socket_sizes_arr.length ? goodsInfo.value.socket_sizes_arr : goodsInfo.value.socket_sizes);
+			goodsInfo.value.eye_recommendations_arr = normalizeEyeSelections(goodsInfo.value.eye_recommendations_arr.length ? goodsInfo.value.eye_recommendations_arr : goodsInfo.value.eye_recommendations);
 			uni.showToast({
 				title: '获取尺寸数据失败',
 				icon: 'none'
@@ -479,6 +560,59 @@
 		}
 	};
 
+	// 规格多选字段统一处理
+	const normalizeMultiSelectList = (raw) => {
+		if (Array.isArray(raw)) {
+			const seen = new Set();
+			return raw.map(v => String(v || '').trim()).filter(v => {
+				if (!v || seen.has(v)) return false;
+				seen.add(v);
+				return true;
+			});
+		}
+		const text = String(raw || '').trim();
+		if (!text) return [];
+		return normalizeMultiSelectList(text.split(/[、,，/|\\\s]+/));
+	};
+
+	const joinMultiSelectList = (raw) => normalizeMultiSelectList(raw).join(' ');
+
+	const normalizeSocketSelections = (raw) => {
+		const list = normalizeMultiSelectList(raw);
+		const options = (headSocketOptions.value || []).map(v => String(v || '').trim()).filter(Boolean);
+		if (!options.length) return list;
+		const optionSet = new Set(options);
+		return list.filter(v => optionSet.has(v));
+	};
+
+	const normalizeEyeSelections = (raw) => {
+		const list = normalizeMultiSelectList(raw);
+		const options = (eyeRecommendationOptions.value || []).map(v => String(v || '').trim()).filter(Boolean);
+		if (!options.length) return list;
+		const optionSet = new Set(options);
+		return list.filter(v => optionSet.has(v));
+	};
+
+	const toggleSocketSize = (size) => {
+		const val = String(size || '').trim();
+		if (!val) return;
+		const list = normalizeSocketSelections(goodsInfo.value.socket_sizes_arr);
+		const idx = list.indexOf(val);
+		if (idx >= 0) list.splice(idx, 1);
+		else list.push(val);
+		goodsInfo.value.socket_sizes_arr = list;
+	};
+
+	const toggleEyeRecommendation = (size) => {
+		const val = String(size || '').trim();
+		if (!val) return;
+		const list = normalizeEyeSelections(goodsInfo.value.eye_recommendations_arr);
+		const idx = list.indexOf(val);
+		if (idx >= 0) list.splice(idx, 1);
+		else list.push(val);
+		goodsInfo.value.eye_recommendations_arr = list;
+	};
+
 
 	// 处理图片排序变化
 	const handleImageSortChange = (sortedIds) => {
@@ -526,6 +660,10 @@
 			// 准备要提交的数据
 			const submitData = {
 				...goodsInfo.value,
+				head_circumference: String(goodsInfo.value.head_circumference || '').trim(),
+				neck_circumference: String(goodsInfo.value.neck_circumference || '').trim(),
+				socket_sizes: joinMultiSelectList(goodsInfo.value.socket_sizes_arr),
+				eye_recommendations: joinMultiSelectList(goodsInfo.value.eye_recommendations_arr),
 				// 转换图片格式为后端需要的格式
 				goods_images: goodsInfo.value.goods_images.map(img => ({
 					id: img.id,
@@ -906,6 +1044,28 @@
 			&:active {
 				background-color: #d1e8f0;
 			}
+		}
+	}
+
+	.multi-select-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10rpx;
+		margin-top: 10rpx;
+	}
+
+	.chip-tag {
+		padding: 8rpx 20rpx;
+		background-color: #f6f7fb;
+		border-radius: 40rpx;
+		font-size: 24rpx;
+		color: #5b6475;
+		border: 1rpx solid #d9dfeb;
+
+		&.active {
+			background-color: #e8f6ff;
+			color: #2d8ab8;
+			border-color: #7dc7e7;
 		}
 	}
 

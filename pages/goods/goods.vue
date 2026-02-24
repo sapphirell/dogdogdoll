@@ -265,6 +265,26 @@
         <text class="value">{{ goods.body_size || '未知' }}</text>
       </view>
 
+      <view v-if="goods.head_circumference" class="info-item">
+        <text class="label font-title">头围(cm)</text>
+        <text class="value">{{ goods.head_circumference }}</text>
+      </view>
+
+      <view v-if="goods.neck_circumference" class="info-item">
+        <text class="label font-title">脖围(cm)</text>
+        <text class="value">{{ goods.neck_circumference }}</text>
+      </view>
+
+      <view v-if="goods.socket_sizes" class="info-item">
+        <text class="label font-title">插口建议</text>
+        <text class="value">{{ goods.socket_sizes }}</text>
+      </view>
+
+      <view v-if="goods.eye_recommendations" class="info-item">
+        <text class="label font-title">眼珠建议</text>
+        <text class="value">{{ goods.eye_recommendations }}</text>
+      </view>
+
       <view class="info-item">
         <text class="label font-title">可选颜色</text>
         <text class="value">{{ goods.skin }}</text>
