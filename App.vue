@@ -107,8 +107,7 @@ function loadFonts() {
 	}
 	
 	/* 通用正文排版（提取自树洞正文） */
-	.app-readable-text,
-	.common-text {
+	.app-readable-text {
 		font-size: 32rpx;
 		color: #333333;
 		line-height: 1.7;
@@ -117,6 +116,11 @@ function loadFonts() {
 	}
 	/* 兼容旧用法 */
 	.common-text {
+		font-size: 30rpx;
+		color: #333333;
+		line-height: 1.7;
+		letter-spacing: 0.5rpx;
+		word-break: break-all;
 		margin-bottom: 24rpx;
 	}
 

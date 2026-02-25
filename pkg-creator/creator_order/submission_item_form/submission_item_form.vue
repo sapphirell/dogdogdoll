@@ -743,7 +743,7 @@ function goPickHead () {
   })
 
   uni.navigateTo({
-    url: '/pkg-common/brand-pick/brand-pick',
+    url: '/pkg-common/brand-pick/brand-pick?scene=head',
     success (res) {
       res.eventChannel && res.eventChannel.emit('associate:init', {
         preselect: {

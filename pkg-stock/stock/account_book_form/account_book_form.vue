@@ -1,7 +1,12 @@
 <template>
   <view-logs />
-  <view class="container" @tap="showPayPopup = false">
+  <view class="container" @tap="handlePageTap">
     <meta name="theme-color" content="#F8F8F8"></meta>
+    <view
+      v-if="goodsSearchPanelVisible"
+      class="goods-search-mask"
+      @tap.stop="closeGoodsSearchPanel"
+    ></view>
 
     <!-- 分类管理组件 -->
     <item-category-manager
@@ -35,18 +40,80 @@
       <!-- 名称 -->
       <view class="form-item">
         <text class="form-label">名称</text>
-        <view class="form-input" style="padding:0;">
-          <view class="custom-search-container">
-            <goods-search
-              :font-size="'24rpx'"
-              mode="fill"
-              @select="handleGoodsSelect"
-              v-model="name"
-              :background="'#fff'"
-              :width="'620rpx'"
-              :show-icon="false"
-              class="custom-search"
+        <view class="goods-picker-row" @tap.stop>
+          <input
+            class="form-input goods-name-input"
+            v-model="name"
+            @input="onNameInput"
+            @confirm="openGoodsSearch"
+            confirm-type="search"
+            placeholder="请输入名称或从商品库选择"
+            placeholder-class="placeholder-style"
+          />
+        </view>
+        <view class="goods-search-tip">从商品库选择可自动填充价格与首图</view>
+        <view
+          v-if="goodsSearchPanelVisible"
+          class="goods-search-panel"
+          @tap.stop
+        >
+          <view class="goods-search-panel-head" v-if="goodsSearchHint || goodsSearchLoading">
+            <text v-if="goodsSearchHint" class="goods-search-hint">{{ goodsSearchHint }}</text>
+            <text v-if="goodsSearchLoading" class="goods-search-loading">搜索中…</text>
+          </view>
+          <scroll-view
+            v-if="goodsSearchCandidates.length > 0"
+            class="goods-search-list"
+            scroll-y
+          >
+            <view
+              v-for="it in goodsSearchCandidates"
+              :key="`goods-candidate-${it.id}`"
+              class="goods-search-item"
+              @tap="pickGoodsCandidate(it)"
+            >
+              <text v-if="it.brand_name" class="goods-search-brand">{{ it.brand_name }}</text>
+              <text class="goods-search-name">{{ it.name }}</text>
+            </view>
+          </scroll-view>
+          <view
+            v-else-if="!goodsSearchLoading"
+            class="goods-search-empty"
+          >
+            暂无匹配商品
+          </view>
+          <view class="goods-search-close-wrap">
+            <view class="goods-search-close-btn font-title" @tap="closeGoodsSearchPanel">
+              关闭联想
+            </view>
+          </view>
+        </view>
+        <view
+          v-if="selectedGoods.id"
+          class="selected-goods-card"
+        >
+          <view class="selected-goods-main">
+            <image
+              class="selected-goods-cover"
+              :src="selectedGoods.cover || '/static/default-avatar.png'"
+              mode="aspectFill"
             />
+            <view class="selected-goods-meta">
+              <text class="selected-goods-name font-alimamashuhei">
+                {{ selectedGoods.name }}
+              </text>
+              <text class="selected-goods-brand">
+                {{ selectedGoods.brandName || '未识别品牌' }}
+              </text>
+            </view>
+          </view>
+          <view class="selected-goods-actions">
+            <view class="selected-goods-action-btn selected-goods-repick" @tap.stop="openGoodsSearch">
+              重选
+            </view>
+            <view class="selected-goods-action-btn selected-goods-clear" @tap.stop="clearSelectedGoods">
+              清空
+            </view>
           </view>
         </view>
       </view>
@@ -368,9 +435,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow, onLoad } from '@dcloudio/uni-app'
+import { onShow, onLoad, onUnload } from '@dcloudio/uni-app'
 import { websiteUrl, image1Url, asyncGetUserInfo } from '../../../common/config.js'
 import { getQiniuToken, uploadImageToQiniu } from '../../../common/image.js'
+import { searchBrands, searchGoods } from '@/api/associate.js'
 
 const props = defineProps(['account_book_id'])
 const isEdit = props.account_book_id ? true : false
@@ -405,6 +473,17 @@ const count = ref(1)
 const imageList = ref([])
 const name = ref('')
 const price = ref('') // 字符串控制展示格式（整数或一位小数）
+const selectedGoods = ref({
+  id: 0,
+  name: '',
+  brandName: '',
+  cover: '',
+})
+const goodsSearchCandidates = ref([])
+const goodsSearchLoading = ref(false)
+const goodsSearchPanelVisible = ref(false)
+const goodsSearchHint = ref('')
+let goodsSearchTimer = null
 const form = ref({ isRemind: false, finalPrice: 0, finalTime: '' })
 
 // 上传状态
@@ -612,23 +691,211 @@ function getAccountBookById(id) {
 
 // —— 选择商品自动填充 —— 
 const handleGoodsSelect = async (goods) => {
+  const goodsId = Number(goods?.id || 0)
+  if (!goodsId) return
   try {
     const res = await uni.request({
-      url: websiteUrl.value + `/goods?id=${goods.id}`,
+      url: websiteUrl.value + `/goods?id=${goodsId}`,
       method: 'GET',
     })
     if (res.data.status === 'success') {
       const detail = res.data.data
-      name.value = detail.name
+      name.value = detail.name || goods?.name || ''
       const sub = Number(detail.sub_amount) || 0
       const fin = Number(detail.fin_amount) || 0
       price.value = formatPriceDisplay(sub + fin)
-      if (detail.goods_images?.[0]) {
-        imageList.value = [detail.goods_images[0]]
+      const cover = detail.goods_images?.[0] || detail.goods_image || ''
+      if (cover) {
+        imageList.value = [cover]
+      }
+      selectedGoods.value = {
+        id: goodsId,
+        name: detail.name || goods?.name || '',
+        brandName:
+          detail?.brand?.brand_name ||
+          detail?.brand_name ||
+          goods?.brand_name ||
+          '',
+        cover,
       }
     }
   } catch (e) {
     uni.showToast({ title: '获取商品信息失败', icon: 'none' })
+  }
+}
+
+function handlePageTap() {
+  showPayPopup.value = false
+  goodsSearchPanelVisible.value = false
+}
+
+function closeGoodsSearchPanel() {
+  goodsSearchPanelVisible.value = false
+}
+
+function normalizeQueryKey(text) {
+  return String(text || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+}
+
+function splitGoodsTokens(text) {
+  return String(text || '')
+    .split(/[\s,，、/|]+/g)
+    .map(v => v.trim())
+    .filter(Boolean)
+}
+
+function pickHighConfidenceBrand(candidates, brandKeyword) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null
+  const kwNorm = normalizeQueryKey(brandKeyword)
+  if (!kwNorm) return null
+
+  const exact = candidates.find(item => normalizeQueryKey(item?.name) === kwNorm)
+  if (exact) return exact
+
+  if (candidates.length === 1) {
+    const only = candidates[0]
+    const nameNorm = normalizeQueryKey(only?.name)
+    if (nameNorm && (nameNorm.includes(kwNorm) || kwNorm.includes(nameNorm))) {
+      return only
+    }
+  }
+
+  const top = candidates[0]
+  const second = candidates[1]
+  const topNorm = normalizeQueryKey(top?.name)
+  const secondNorm = normalizeQueryKey(second?.name)
+  const topStrong = topNorm && (topNorm === kwNorm || topNorm.startsWith(kwNorm))
+  const secondStrong = secondNorm && (secondNorm === kwNorm || secondNorm.startsWith(kwNorm))
+  if (topStrong && !secondStrong) return top
+  return null
+}
+
+async function fetchBrandCandidates(keywordInput) {
+  const q = String(keywordInput || '').trim()
+  if (!q) return []
+  try {
+    const res = await searchBrands(q)
+    const list = res?.data?.status === 'success' ? (res?.data?.data || []) : []
+    return Array.isArray(list) ? list : []
+  } catch (err) {
+    console.warn('[account-book] fetchBrandCandidates failed:', err)
+    return []
+  }
+}
+
+async function buildGoodsSearchPlan(rawKeyword) {
+  const raw = String(rawKeyword || '').trim()
+  const tokens = splitGoodsTokens(raw)
+  if (tokens.length < 2) {
+    return {
+      search: raw,
+      brandId: 0,
+      brandName: '',
+    }
+  }
+
+  const tried = new Set()
+  for (let split = tokens.length - 1; split >= 1; split--) {
+    const brandProbe = tokens.slice(0, split).join(' ').trim()
+    const goodsKeyword = tokens.slice(split).join(' ').trim()
+    const probeKey = normalizeQueryKey(brandProbe)
+    if (!brandProbe || !goodsKeyword || !probeKey || tried.has(probeKey)) continue
+    tried.add(probeKey)
+
+    const candidates = await fetchBrandCandidates(brandProbe)
+    const matched = pickHighConfidenceBrand(candidates, brandProbe)
+    if (matched && Number(matched?.id || 0) > 0) {
+      return {
+        search: goodsKeyword,
+        brandId: Number(matched.id || 0),
+        brandName: String(matched.name || ''),
+      }
+    }
+  }
+
+  return {
+    search: raw,
+    brandId: 0,
+    brandName: '',
+  }
+}
+
+async function fetchGoodsCandidates(forceOpen = false) {
+  const q = String(name.value || '').trim()
+  if (!q) {
+    goodsSearchCandidates.value = []
+    goodsSearchHint.value = ''
+    goodsSearchPanelVisible.value = false
+    return
+  }
+  goodsSearchLoading.value = true
+  if (forceOpen) goodsSearchPanelVisible.value = true
+  try {
+    const plan = await buildGoodsSearchPlan(q)
+    goodsSearchHint.value = plan.brandId > 0 ? `品牌限定：${plan.brandName}` : ''
+    const res = await searchGoods(plan.search || '', Number(plan.brandId || 0))
+    const list = res?.data?.status === 'success' ? (res?.data?.data || []) : []
+    goodsSearchCandidates.value = Array.isArray(list) ? list : []
+    goodsSearchPanelVisible.value = true
+  } catch (err) {
+    console.error('[account-book] fetchGoodsCandidates failed:', err)
+    goodsSearchCandidates.value = []
+    goodsSearchPanelVisible.value = true
+  } finally {
+    goodsSearchLoading.value = false
+  }
+}
+
+function scheduleFetchGoodsCandidates(forceOpen = false) {
+  if (goodsSearchTimer) clearTimeout(goodsSearchTimer)
+  goodsSearchTimer = setTimeout(() => {
+    fetchGoodsCandidates(forceOpen)
+  }, 180)
+}
+
+function pickGoodsCandidate(item) {
+  handleGoodsSelect(item)
+  goodsSearchPanelVisible.value = false
+  goodsSearchCandidates.value = []
+  goodsSearchHint.value = ''
+}
+
+function onNameInput(e) {
+  const nextName = String(e?.detail?.value || '')
+  if (selectedGoods.value.id && nextName !== selectedGoods.value.name) {
+    selectedGoods.value = {
+      id: 0,
+      name: '',
+      brandName: '',
+      cover: '',
+    }
+  }
+  if (!nextName.trim()) {
+    goodsSearchPanelVisible.value = false
+    goodsSearchCandidates.value = []
+    goodsSearchHint.value = ''
+    return
+  }
+  scheduleFetchGoodsCandidates()
+}
+
+function openGoodsSearch() {
+  if (!String(name.value || '').trim()) {
+    uni.showToast({ title: '请先输入关键词', icon: 'none' })
+    return
+  }
+  fetchGoodsCandidates(true)
+}
+
+function clearSelectedGoods() {
+  selectedGoods.value = {
+    id: 0,
+    name: '',
+    brandName: '',
+    cover: '',
   }
 }
 
@@ -954,6 +1221,12 @@ onLoad(async (options) => {
     }
   }
 })
+onUnload(() => {
+  if (goodsSearchTimer) {
+    clearTimeout(goodsSearchTimer)
+    goodsSearchTimer = null
+  }
+})
 const getGoodsInfo = (id) =>
   new Promise((resolve, reject) => {
     uni.request({
@@ -977,6 +1250,12 @@ const fillFormWithGoodsInfo = (g) => {
       (Number(g.fin_amount) || 0)
   price.value = formatPriceDisplay(totalPrice)
   if (g.goods_images?.length) imageList.value = [g.goods_images[0]]
+  selectedGoods.value = {
+    id: Number(g.id || 0),
+    name: g.name || '',
+    brandName: g?.brand?.brand_name || g?.brand_name || '',
+    cover: g.goods_images?.[0] || g.goods_image || '',
+  }
   if (g.size) {
     selectedSizePath.value = [g.size, g.size_detail || '']
     moreInfo.value.sizeDetail = g.size_detail || ''
@@ -994,12 +1273,15 @@ $radius: 24rpx;
 .container {
   background-color: $bg-color;
   min-height: 100vh;
+  position: relative;
 }
 .form-card {
   background: white;
   border-radius: $radius;
   padding: 40rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 10;
 }
 .form-item {
   margin-bottom: 48rpx;
@@ -1185,11 +1467,205 @@ $radius: 24rpx;
     flex: 1;
   }
 }
-.custom-search-container {
+
+.goods-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.goods-name-input {
+  flex: 1;
+}
+
+.goods-search-tip {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #9ba7ba;
+  padding-left: 6rpx;
+}
+
+.goods-search-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.16);
+  z-index: 20;
+}
+
+.goods-search-panel {
+  margin-top: 14rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(101, 195, 214, 0.25);
+  background: #fff;
+  overflow: hidden;
   position: relative;
-  top: 15rpx;
-  left: 5rpx;
-  width: 90%;
+  z-index: 30;
+}
+
+.goods-search-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 12rpx 16rpx 10rpx;
+}
+
+.goods-search-hint {
+  font-size: 22rpx;
+  color: #5e89a6;
+}
+
+.goods-search-loading {
+  font-size: 22rpx;
+  color: #8fa5bb;
+}
+
+.goods-search-list {
+  max-height: 360rpx;
+}
+
+.goods-search-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-height: 78rpx;
+  padding: 0 16rpx;
+  background: #fff;
+  border-bottom: none;
+}
+
+.goods-search-item:active {
+  background: #f5f9fd;
+}
+
+.goods-search-brand {
+  max-width: 240rpx;
+  flex-shrink: 0;
+  height: 38rpx;
+  line-height: 38rpx;
+  padding: 0 12rpx;
+  border-radius: 19rpx;
+  font-size: 20rpx;
+  color: #5f7389;
+  background: #e7eef5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goods-search-name {
+  min-width: 0;
+  flex: 1;
+  font-size: 24rpx;
+  color: #2b3b55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goods-search-empty {
+  padding: 20rpx 16rpx;
+  font-size: 22rpx;
+  color: #95a6b9;
+  text-align: center;
+}
+
+.goods-search-close-wrap {
+  padding: 14rpx 16rpx 18rpx;
+  background: #fff;
+}
+
+.goods-search-close-btn {
+  height: 68rpx;
+  border-radius: 14rpx;
+  background: #e9f1f8;
+  color: #4f6781;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-goods-card {
+  margin-top: 18rpx;
+  border-radius: 18rpx;
+  padding: 14rpx;
+  border: 1rpx solid rgba(101, 195, 214, 0.24);
+  background: linear-gradient(180deg, #f7fcff, #f2f8fc);
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.selected-goods-main {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.selected-goods-cover {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 14rpx;
+  flex-shrink: 0;
+  background: #eef2f6;
+}
+
+.selected-goods-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.selected-goods-name {
+  font-size: 27rpx;
+  color: #2b3b55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected-goods-brand {
+  font-size: 23rpx;
+  color: #8da0b7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected-goods-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.selected-goods-action-btn {
+  flex: 1;
+  height: 66rpx;
+  border-radius: 14rpx;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid rgba(130, 165, 193, 0.26);
+  background: #fff;
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.selected-goods-repick {
+  color: #5ca8be;
+}
+
+.selected-goods-clear {
+  color: #7c93ad;
 }
 
 .submit-button {

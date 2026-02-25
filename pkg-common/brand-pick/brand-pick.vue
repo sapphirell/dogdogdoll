@@ -56,6 +56,7 @@
 
 <script setup>
 import { ref, getCurrentInstance, onUnmounted, nextTick } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { searchBrands, getBrandInfo } from '@/api/associate.js'
 
 const brand = ref({
@@ -68,9 +69,35 @@ const results = ref([])
 const focusing = ref(false) // 仅做状态记录
 const liftPx = ref(0)       // JS 计算的抬起像素（px）
 const inputFocus = ref(false)  
+const defaultGoodsType = ref('')
+const allowClearType = ref(true)
+const hideTypeFilter = ref(false)
+const goodsTypes = ref('')
+const scene = ref('')
 
 // 父级 eventChannel（用于完成时回传）
 const parentEC = getCurrentInstance()?.proxy?.getOpenerEventChannel?.()
+
+onLoad((opts) => {
+  scene.value = String(opts?.scene || '').trim()
+  defaultGoodsType.value = decodeURIComponent(opts?.default_goods_type || '')
+  goodsTypes.value = decodeURIComponent(opts?.goods_types || '')
+  // 1=true, 0=false（默认 true）
+  if (opts?.allow_clear_type === '0') {
+    allowClearType.value = false
+  }
+  if (opts?.hide_type_filter === '1') {
+    hideTypeFilter.value = true
+  }
+
+  // 娃头分步选择场景：固定只搜 单头+整体，且不展示品类切换
+  if (scene.value === 'head') {
+    goodsTypes.value = '单头,整体'
+    defaultGoodsType.value = ''
+    allowClearType.value = false
+    hideTypeFilter.value = true
+  }
+})
 
 
 function focusInput() {
@@ -134,8 +161,25 @@ async function pickBrand(item) {
 }
 
 function goNext() {
+  const query = [
+    `brand_id=${brand.value.id}`,
+    `brand_name=${encodeURIComponent(brand.value.brand_name)}`,
+    `brand_logo=${encodeURIComponent(brand.value.logo_image || '')}`
+  ]
+  if (defaultGoodsType.value) {
+    query.push(`default_goods_type=${encodeURIComponent(defaultGoodsType.value)}`)
+  }
+  if (goodsTypes.value) {
+    query.push(`goods_types=${encodeURIComponent(goodsTypes.value)}`)
+  }
+  if (scene.value) {
+    query.push(`scene=${encodeURIComponent(scene.value)}`)
+  }
+  query.push(`allow_clear_type=${allowClearType.value ? '1' : '0'}`)
+  query.push(`hide_type_filter=${hideTypeFilter.value ? '1' : '0'}`)
+
   uni.navigateTo({
-    url: `/pkg-common/goods-pick/goods-pick?brand_id=${brand.value.id}&brand_name=${encodeURIComponent(brand.value.brand_name)}&brand_logo=${encodeURIComponent(brand.value.logo_image || '')}`,
+    url: `/pkg-common/goods-pick/goods-pick?${query.join('&')}`,
     'associate:done': (payload) => {
       parentEC && parentEC.emit('associate:done', payload)
       uni.navigateBack()

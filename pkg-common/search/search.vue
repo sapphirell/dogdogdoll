@@ -352,7 +352,44 @@ async function onInput() {
 }
 
 async function onSubmit() {
-  if (results.value[0]) choose(results.value[0])
+  const q = String(kw.value || '').trim()
+  if (!q) return
+
+  if (routeMode.value === 'return') {
+    if (results.value[0]) choose(results.value[0])
+    return
+  }
+
+  if (activeType.value === 'goods') {
+    const token = uni.getStorageSync('token')
+    if (!token) {
+      uni.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+    const query = [`q=${encodeURIComponent(q)}`]
+    const parsed = parseGoodsQuery(q)
+    if (parsed.categories.length > 0) {
+      query.push(`categories=${encodeURIComponent(parsed.categories.join(','))}`)
+    }
+    const queryKey = normalizeQueryKey(q)
+    const hasManualBrand = !!(
+      manualStructuredBrand.value &&
+      manualStructuredBrand.value.queryKey === queryKey &&
+      +manualStructuredBrand.value.id > 0
+    )
+    if (hasManualBrand) {
+      query.push(`brand_id=${encodeURIComponent(String(+manualStructuredBrand.value.id))}`)
+      query.push(`brand_name=${encodeURIComponent(String(manualStructuredBrand.value.name || ''))}`)
+    }
+    uni.navigateTo({
+      url: `/pkg-common/search/result?${query.join('&')}`,
+    })
+    return
+  }
+
+  if (results.value[0]) {
+    choose(results.value[0])
+  }
 }
 
 async function fetchGoods(q) {

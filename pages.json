@@ -311,17 +311,24 @@
       "pages": [
         { "path": "brand-pick/brand-pick", "style": { "navigationBarTitleText": "请选择品牌" } },
         { "path": "goods-pick/goods-pick", "style": { "navigationBarTitleText": "请选择商品" } },
-		{
-		  "path": "search/search",
-		  "style": {
-		    "navigationBarTitleText": "",
-		    "navigationStyle": "custom"
-		  }
-		},
-		{
-		  "path": "register/register",
-		  "style": { "navigationBarTitleText": "" }
-		},
+			{
+			  "path": "search/search",
+			  "style": {
+			    "navigationBarTitleText": "",
+			    "navigationStyle": "custom"
+			  }
+			},
+			{
+			  "path": "search/result",
+			  "style": {
+			    "navigationBarTitleText": "",
+			    "navigationStyle": "custom"
+			  }
+			},
+			{
+			  "path": "register/register",
+			  "style": { "navigationBarTitleText": "" }
+			},
 		{
 		  "path": "sale_news/sale_news",
 		  "style": {

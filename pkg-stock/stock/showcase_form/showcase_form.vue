@@ -373,7 +373,7 @@ function showRelationPicker () {
 
   // 跳转新版关联页（品牌→商品二段式）
   uni.navigateTo({
-    url: '/pkg-common/brand-pick/brand-pick',
+    url: '/pkg-common/brand-pick/brand-pick?allow_clear_type=1',
     // 可选：预选最近一次关联的品牌/商品（若你希望带入）
     success(res) {
       const last = saveCollocationDataList.value.slice(-1)[0]

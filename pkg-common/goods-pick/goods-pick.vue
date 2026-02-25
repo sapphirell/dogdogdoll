@@ -15,7 +15,7 @@
       <view v-if="!hasGoods" class="brand-center">
         <image v-if="brand.logo_image" :src="brand.logo_image" class="brand-logo" mode="aspectFill" />
         <view class="brand-name">{{ brand.brand_name || '未选择品牌' }}</view>
-        <view class="brand-sub">仅在该品牌下搜索娃头</view>
+        <view class="brand-sub">{{ brandSubText }}</view>
       </view>
     </view>
 
@@ -36,7 +36,30 @@
         />
         <text class="count">{{ (keyword||'').length }}/30</text>
       </view>
-      <view class="hint">（仅搜索该品牌下的商品）</view>
+      <view class="hint">（{{ hintText }}）</view>
+
+      <!-- 品类过滤：可默认指定，也可手动清除 -->
+      <view v-if="!shouldHideTypeFilter" class="type-filter-wrap">
+        <view class="type-filter-scroll">
+          <text
+            v-if="allowClearType"
+            class="type-chip"
+            :class="{ active: !selectedGoodsType }"
+            @tap="selectGoodsType('')"
+          >
+            全部
+          </text>
+          <text
+            v-for="type in goodsTypeOptions"
+            :key="type"
+            class="type-chip"
+            :class="{ active: selectedGoodsType === type }"
+            @tap="selectGoodsType(type)"
+          >
+            {{ type }}
+          </text>
+        </view>
+      </view>
 
       <!-- 联想列表（与输入框同宽） -->
       <scroll-view v-if="results.length" class="assoc" scroll-y>
@@ -57,7 +80,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { searchGoods, getGoodsDetail } from '@/api/associate.js'
+import { searchGoods, getGoodsDetail, getGoodsTypes } from '@/api/associate.js'
 
 // ------- state -------
 const brand = ref({ id: 0, brand_name: '', logo_image: '' })
@@ -66,15 +89,93 @@ const keyword = ref('')
 const results = ref([])
 const hasGoods = computed(() => !!goods.value.id)
 const liftPx = ref(0) // JS 计算抬起像素（px）
+const selectedGoodsType = ref('')
+const allowClearType = ref(true)
+const hideTypeFilter = ref(false)
+const scene = ref('')
+const fixedGoodsTypes = ref([])
+const defaultGoodsTypeOptions = [
+  '单头', '整体', '单体', '眼珠', '假发', '娃衣', '娃鞋', '袜子', '配饰', '支架', '耳朵', '背饰', 'BJD家具', '娃包痛包'
+]
+const goodsTypeOptions = ref([...defaultGoodsTypeOptions])
+const shouldHideTypeFilter = computed(() => hideTypeFilter.value || fixedGoodsTypes.value.length > 0)
+const isHeadScope = computed(() => {
+  const headTypes = ['单头', '整体']
+  if (scene.value === 'head') return true
+  if (fixedGoodsTypes.value.length !== headTypes.length) return false
+  return headTypes.every(type => fixedGoodsTypes.value.includes(type))
+})
+const brandSubText = computed(() => (isHeadScope.value ? '仅在该品牌下搜索娃头' : '仅在该品牌下搜索商品'))
+const hintText = computed(() => {
+  if (isHeadScope.value) return '仅搜索该品牌下的娃头（单头/整体）'
+  if (fixedGoodsTypes.value.length > 0) return `仅搜索该品牌下的商品（${fixedGoodsTypes.value.join(' / ')}）`
+  return '仅搜索该品牌下的商品'
+})
 
 // ★ 新增：根据是否已选中商品，动态控制 hero 高度（rpx）
 const heroHeight = computed(() => (hasGoods.value ? '650rpx' : '400rpx'))
 
+function normalizeTypeList(list) {
+  if (!Array.isArray(list)) return []
+  const seen = new Set()
+  return list
+    .map(v => String(v || '').trim())
+    .filter(v => !!v)
+    .filter(v => {
+      if (seen.has(v)) return false
+      seen.add(v)
+      return true
+    })
+}
+
+function ensureSelectedTypeVisible() {
+  const selected = String(selectedGoodsType.value || '').trim()
+  if (!selected) return
+  if (goodsTypeOptions.value.includes(selected)) return
+  goodsTypeOptions.value = [selected, ...goodsTypeOptions.value]
+}
+
+async function fetchGoodsTypeOptions() {
+  try {
+    const { data } = await getGoodsTypes()
+    const remote = data?.status === 'success' ? normalizeTypeList(data?.data) : []
+    goodsTypeOptions.value = remote.length > 0 ? remote : [...defaultGoodsTypeOptions]
+  } catch (err) {
+    console.warn('[goods-pick] fetch goods types failed, use fallback:', err)
+    goodsTypeOptions.value = [...defaultGoodsTypeOptions]
+  } finally {
+    ensureSelectedTypeVisible()
+  }
+}
+
 // 接收上个页面传来的 brand 参数
-onLoad((opts) => {
+onLoad(async (opts) => {
+  scene.value = String(opts?.scene || '').trim()
   brand.value.id = Number(opts?.brand_id || 0)
   brand.value.brand_name = decodeURIComponent(opts?.brand_name || '')
   brand.value.logo_image = decodeURIComponent(opts?.brand_logo || '')
+  selectedGoodsType.value = decodeURIComponent(opts?.default_goods_type || '')
+  allowClearType.value = opts?.allow_clear_type !== '0'
+  hideTypeFilter.value = opts?.hide_type_filter === '1'
+  const parsedGoodsTypes = decodeURIComponent(opts?.goods_types || '')
+    .split(/[\s,，、/|]+/g)
+    .map(v => v.trim())
+    .filter(Boolean)
+  fixedGoodsTypes.value = Array.from(new Set(parsedGoodsTypes))
+  // 娃头场景兜底：固定类型；兼容旧链接（仅传 default_goods_type=单头/整体）
+  const isHeadByDefaultType = ['单头', '整体'].includes(selectedGoodsType.value)
+  if (fixedGoodsTypes.value.length === 0 && (scene.value === 'head' || isHeadByDefaultType)) {
+    fixedGoodsTypes.value = ['单头', '整体']
+    selectedGoodsType.value = ''
+    hideTypeFilter.value = true
+    allowClearType.value = false
+  }
+
+  await fetchGoodsTypeOptions()
+
+  if (brand.value.id && (selectedGoodsType.value || fixedGoodsTypes.value.length > 0)) {
+    fetchList()
+  }
 })
 
 // ------- keyboard lift -------
@@ -101,11 +202,22 @@ function fetchList(){
   clearTimeout(timer)
   timer = setTimeout(async () => {
     if (!brand.value.id) return
-    const { data } = await searchGoods(keyword.value.trim(), brand.value.id)
+    const requestType = fixedGoodsTypes.value.length > 0
+      ? fixedGoodsTypes.value.join(',')
+      : selectedGoodsType.value
+    const { data } = await searchGoods(keyword.value.trim(), brand.value.id, requestType)
     results.value = data?.status === 'success' ? (data?.data || []) : []
   }, 150)
 }
 onUnmounted(() => clearTimeout(timer))
+
+function selectGoodsType(type) {
+  if (!allowClearType.value && !type) return
+  if (selectedGoodsType.value === type) return
+  selectedGoodsType.value = type
+  if (!brand.value.id) return
+  fetchList()
+}
 
 async function pickGoods(item){
   keyword.value = item.name
@@ -203,6 +315,31 @@ function confirm(){
 .input-row input{ flex:1; font-size:28rpx; }
 .input-row .count{ color:#c0c4cc; margin-left:8rpx; font-size:24rpx; }
 .hint{ text-align:center; color:#c0c4cc; font-size:24rpx; margin-top:42rpx;margin-bottom: 60rpx; }
+
+.type-filter-wrap{
+  margin-bottom: 18rpx;
+}
+.type-filter-scroll{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.type-chip{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 94rpx;
+  height: 52rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #66758a;
+  background: #f3f6fb;
+}
+.type-chip.active{
+  color: #2f6fa0;
+  background: #dff0ff;
+}
 
 /* 联想列表：与输入同宽 */
 .assoc{
