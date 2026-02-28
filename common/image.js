@@ -32,8 +32,9 @@ export function chooseImageList(count = 9) {
 //裁切图片
 export function jumpToCroper() {
 	chooseImage().then(src => {
+		const encodedSrc = encodeURIComponent(src)
 		uni.navigateTo({
-			url: `/pages/pop_croper/pop_croper?src=${decodeURIComponent(src)}`
+			url: `/pages/pop_croper/pop_croper?src=${encodedSrc}`
 		})
 	})
 }

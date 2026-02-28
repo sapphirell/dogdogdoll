@@ -224,7 +224,7 @@
               mode="aspectFill"
             />
             <text class="price-note-text">
-              {{ approvedPriceSubmission.submit_username || ('UID ' + approvedPriceSubmission.submit_uid) }}
+              {{ approvedPriceSubmitterName }}
               补充：{{ approvedPriceSubmission.price }} {{ approvedPriceSubmission.currency || goods.currency || '' }}
             </text>
           </view>
@@ -238,7 +238,7 @@
         </text>
       </view>
 
-      <view class="info-item" @click="selectSize(goods.size)">
+      <view class="info-item">
         <text class="label font-title">尺寸</text>
         <view class="value">
           <view v-if="goods.sizes && goods.sizes.length > 0">
@@ -247,42 +247,69 @@
               :key="index"
               class="size-group"
             >
-              <text class="size-category">{{ group.category }}：</text>
-              <text class="size-details">{{ group.details.join('、') }}</text>
+              <text
+                class="size-category size-clickable"
+                @tap.stop="selectSize(group.category)"
+              >
+                {{ group.category }}
+              </text>
+              <text v-if="group.details.length > 0" class="size-separator">：</text>
+              <view v-if="group.details.length > 0" class="size-detail-list">
+                <text
+                  v-for="detail in group.details"
+                  :key="`${group.category}-${detail}`"
+                  class="size-details size-clickable"
+                  @tap.stop="selectSize(detail)"
+                >
+                  {{ detail }}
+                </text>
+              </view>
             </view>
           </view>
-          <text v-else>
-            {{ goods.size }} / {{ goods.size_detail }}
-          </text>
+          <view v-else class="size-fallback">
+            <text
+              v-if="goods.size"
+              class="size-details size-clickable"
+              @tap.stop="selectSize(goods.size)"
+            >
+              {{ goods.size }}
+            </text>
+            <text v-if="goods.size && goods.size_detail" class="size-separator"> / </text>
+            <text
+              v-if="goods.size_detail"
+              class="size-details size-clickable"
+              @tap.stop="selectSize(goods.size_detail)"
+            >
+              {{ goods.size_detail }}
+            </text>
+            <text v-if="!goods.size && !goods.size_detail" class="size-details">未知</text>
+          </view>
         </view>
       </view>
 
-      <view
-        v-if="goods.type === '单体' || goods.type === '整体' || goods.type === '单头'"
-        class="info-item"
-      >
+      <view v-if="showBodySizeInfo" class="info-item">
         <text class="label font-title">可选体型</text>
         <text class="value">{{ goods.body_size || '未知' }}</text>
       </view>
 
-      <view v-if="goods.head_circumference" class="info-item">
+      <view v-if="isHeadOrWholeGoods" class="info-item">
         <text class="label font-title">头围(cm)</text>
-        <text class="value">{{ goods.head_circumference }}</text>
+        <text class="value">{{ goods.head_circumference || '未填写' }}</text>
       </view>
 
-      <view v-if="goods.neck_circumference" class="info-item">
+      <view v-if="isHeadOrWholeGoods" class="info-item">
         <text class="label font-title">脖围(cm)</text>
-        <text class="value">{{ goods.neck_circumference }}</text>
+        <text class="value">{{ goods.neck_circumference || '未填写' }}</text>
       </view>
 
-      <view v-if="goods.socket_sizes" class="info-item">
+      <view v-if="isHeadOrWholeGoods" class="info-item">
         <text class="label font-title">插口建议</text>
-        <text class="value">{{ goods.socket_sizes }}</text>
+        <text class="value">{{ formatMultiSpecText(goods.socket_sizes) }}</text>
       </view>
 
-      <view v-if="goods.eye_recommendations" class="info-item">
+      <view v-if="isHeadOrWholeGoods" class="info-item">
         <text class="label font-title">眼珠建议</text>
-        <text class="value">{{ goods.eye_recommendations }}</text>
+        <text class="value">{{ formatMultiSpecText(goods.eye_recommendations) }}</text>
       </view>
 
       <view class="info-item">
@@ -611,11 +638,21 @@ const maxHeight = ref(uni.upx2px(1000))
 
 const faceupList = ref([])
 const faceupLoading = ref(false)
-const showFaceupSection = computed(
-  () => goods.value.type === '单头' || goods.value.type === '整体'
-)
+const BODY_SIZE_VISIBLE_TYPES = Object.freeze(['单体', '单头', '整体'])
+const HEAD_OR_WHOLE_TYPES = Object.freeze(['单头', '整体'])
+const normalizedGoodsType = computed(() => String(goods.value?.type || '').trim())
+const showBodySizeInfo = computed(() => BODY_SIZE_VISIBLE_TYPES.includes(normalizedGoodsType.value))
+const isHeadOrWholeGoods = computed(() => HEAD_OR_WHOLE_TYPES.includes(normalizedGoodsType.value))
+const showFaceupSection = computed(() => isHeadOrWholeGoods.value)
 const pendingPriceSubmission = computed(() => goods.value?.pending_price_submission || null)
 const approvedPriceSubmission = computed(() => goods.value?.approved_price_submission || null)
+const approvedPriceSubmitterName = computed(() => {
+  const username = String(approvedPriceSubmission.value?.submit_username || '').trim()
+  if (username) return username
+  const nickname = String(approvedPriceSubmission.value?.submit_nickname || '').trim()
+  if (nickname) return nickname
+  return '用户'
+})
 const resolvedMainPrice = computed(() => {
   const firstSale = goods.value?.goods_sales?.[0]
   const saleAmount = Number(firstSale?.sub_amount || 0) + Number(firstSale?.fin_amount || 0)
@@ -690,6 +727,17 @@ const appearanceAvgText = computed(() => formatScoreText(scoreSummary.value?.app
 const priceAvgText = computed(() => formatScoreText(scoreSummary.value?.price?.avg, scoreSummary.value?.price?.count))
 const qualityAvgText = computed(() => formatScoreText(scoreSummary.value?.quality?.avg, scoreSummary.value?.quality?.count))
 const overallAvgText = computed(() => formatScoreText(scoreSummary.value?.overall_avg, scoreSummary.value?.overall_count))
+
+function formatMultiSpecText(raw) {
+  const txt = String(raw || '').trim()
+  if (!txt) return '未填写'
+  const list = txt
+    .split(/[,\s，、;；|]+/g)
+    .map(v => v.trim())
+    .filter(Boolean)
+  if (!list.length) return '未填写'
+  return list.join('、')
+}
 
 async function fetchMyVoteScoreByType (goodsId, voteType) {
   const token = uni.getStorageSync('token')
@@ -1009,9 +1057,11 @@ const groupedSizes = computed(() => {
   if (!goods.value.sizes || goods.value.sizes.length === 0) return []
   const groups = {}
   goods.value.sizes.forEach(i => {
-    const cat = i.goods_size
+    const cat = String(i.goods_size || '').trim()
+    const detail = String(i.size_detail || '').trim()
+    if (!cat) return
     if (!groups[cat]) groups[cat] = []
-    if (i.size_detail) groups[cat].push(i.size_detail)
+    if (detail && !groups[cat].includes(detail)) groups[cat].push(detail)
   })
   return Object.keys(groups).map(category => ({
     category,
@@ -1464,8 +1514,19 @@ watch(
 )
 
 /* ============ 占位：你项目里的原逻辑可继续往里加 =========== */
-function selectType () {}
-function selectSize () {}
+function selectType (typeText) {
+  const type = String(typeText || '').trim()
+  if (!type) return
+  const categories = encodeURIComponent(type)
+  uni.navigateTo({ url: `/pkg-common/search/result?categories=${categories}` })
+}
+
+function selectSize (sizeText) {
+  const size = String(sizeText || '').trim()
+  if (!size) return
+  const sizes = encodeURIComponent(size)
+  uni.navigateTo({ url: `/pkg-common/search/result?sizes=${sizes}` })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -2214,8 +2275,33 @@ function selectSize () {}
 
 /* 尺寸分组 */
 .size-group { margin-bottom: 8rpx; }
-.size-category { font-weight: bold; color: #333; }
+.size-category {
+  font-weight: bold;
+  color: #333;
+}
 .size-details { color: #666; }
+.size-detail-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.size-detail-list .size-details + .size-details::before {
+  content: '、';
+  color: #8ea0b3;
+  margin: 0 4rpx;
+}
+.size-fallback {
+  display: inline-flex;
+  align-items: center;
+}
+.size-separator {
+  color: #8ea0b3;
+}
+.size-clickable {
+  color: #4d7fa8;
+  text-decoration: underline;
+  text-decoration-color: rgba(77, 127, 168, 0.45);
+}
 
 /* 实底态的品牌图片（与 .img_info 视觉一致：蓝底+内边距） */
 .nav-brand-wrap{

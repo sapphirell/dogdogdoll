@@ -910,9 +910,39 @@ const pad2 = n => (n < 10 ? '0' + n : '' + n)
 
 function toUnix(dateStr, timeStr) {
   if (!dateStr || !timeStr) return 0
-  const ts = new Date(`${dateStr} ${timeStr}`).getTime()
-  if (Number.isNaN(ts)) return 0
-  return Math.floor(ts / 1000)
+  const dateText = String(dateStr).trim()
+  const timeText = String(timeStr).trim()
+  const dateMatch = dateText.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  const timeMatch = timeText.match(/^(\d{1,2}):(\d{1,2})$/)
+  if (!dateMatch || !timeMatch) return 0
+
+  const year = Number(dateMatch[1])
+  const month = Number(dateMatch[2])
+  const day = Number(dateMatch[3])
+  const hour = Number(timeMatch[1])
+  const minute = Number(timeMatch[2])
+
+  if (
+    month < 1 || month > 12 ||
+    day < 1 || day > 31 ||
+    hour < 0 || hour > 23 ||
+    minute < 0 || minute > 59
+  ) {
+    return 0
+  }
+
+  const dt = new Date(year, month - 1, day, hour, minute, 0, 0)
+  if (Number.isNaN(dt.getTime())) return 0
+  if (
+    dt.getFullYear() !== year ||
+    dt.getMonth() !== month - 1 ||
+    dt.getDate() !== day ||
+    dt.getHours() !== hour ||
+    dt.getMinutes() !== minute
+  ) {
+    return 0
+  }
+  return Math.floor(dt.getTime() / 1000)
 }
 
 function displayPrice(v) {

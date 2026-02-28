@@ -61,6 +61,22 @@ const isError = ref(false)
 // 获取当前组件实例，用于 IntersectionObserver 的作用域绑定
 const instance = getCurrentInstance()
 let observer = null
+let appShowHandler = null
+
+const ensureVisibleLoad = () => {
+  if (!props.lazy || !props.src || showImg.value) return
+  const query = uni.createSelectorQuery().in(instance?.proxy)
+  query.select('.common-image-wrapper').boundingClientRect((rect) => {
+    if (!rect) return
+    const winH = Number(uni.getSystemInfoSync()?.windowHeight || 0)
+    const extra = Number(props.threshold || 0)
+    const inViewport = rect.top <= winH + extra && rect.bottom >= -extra
+    if (inViewport) {
+      loadImmediately()
+      disconnectObserver()
+    }
+  }).exec()
+}
 
 // 核心逻辑：初始化观察器
 const initObserver = () => {
@@ -88,6 +104,8 @@ const initObserver = () => {
         disconnectObserver()
       }
     })
+    // 兜底：某些端从后台恢复后 observer 回调不触发，这里主动检测一次可视区域。
+    ensureVisibleLoad()
   })
 }
 
@@ -125,10 +143,27 @@ watch(() => props.src, (newVal) => {
 // 生命周期
 onMounted(() => {
   initObserver()
+  appShowHandler = () => {
+    if (!props.lazy || !props.src) return
+    if (!showImg.value) {
+      initObserver()
+      return
+    }
+    if (showImg.value && !isLoaded.value && !isError.value) {
+      ensureVisibleLoad()
+    }
+  }
+  if (typeof uni.onAppShow === 'function') {
+    uni.onAppShow(appShowHandler)
+  }
 })
 
 onUnmounted(() => {
   disconnectObserver()
+  if (appShowHandler && typeof uni.offAppShow === 'function') {
+    uni.offAppShow(appShowHandler)
+  }
+  appShowHandler = null
 })
 
 // 事件处理

@@ -80,7 +80,12 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { searchGoods, getGoodsDetail, getGoodsTypes } from '@/api/associate.js'
+import { searchGoods, getGoodsDetail } from '@/api/associate.js'
+import {
+  DEFAULT_GOODS_TYPE_OPTIONS,
+  HEAD_SCOPE_GOODS_TYPES,
+  requestGoodsTypes
+} from '@/common/goods-meta.js'
 
 // ------- state -------
 const brand = ref({ id: 0, brand_name: '', logo_image: '' })
@@ -94,13 +99,10 @@ const allowClearType = ref(true)
 const hideTypeFilter = ref(false)
 const scene = ref('')
 const fixedGoodsTypes = ref([])
-const defaultGoodsTypeOptions = [
-  '单头', '整体', '单体', '眼珠', '假发', '娃衣', '娃鞋', '袜子', '配饰', '支架', '耳朵', '背饰', 'BJD家具', '娃包痛包'
-]
-const goodsTypeOptions = ref([...defaultGoodsTypeOptions])
+const goodsTypeOptions = ref([...DEFAULT_GOODS_TYPE_OPTIONS])
 const shouldHideTypeFilter = computed(() => hideTypeFilter.value || fixedGoodsTypes.value.length > 0)
 const isHeadScope = computed(() => {
-  const headTypes = ['单头', '整体']
+  const headTypes = [...HEAD_SCOPE_GOODS_TYPES]
   if (scene.value === 'head') return true
   if (fixedGoodsTypes.value.length !== headTypes.length) return false
   return headTypes.every(type => fixedGoodsTypes.value.includes(type))
@@ -137,12 +139,11 @@ function ensureSelectedTypeVisible() {
 
 async function fetchGoodsTypeOptions() {
   try {
-    const { data } = await getGoodsTypes()
-    const remote = data?.status === 'success' ? normalizeTypeList(data?.data) : []
-    goodsTypeOptions.value = remote.length > 0 ? remote : [...defaultGoodsTypeOptions]
+    const remote = normalizeTypeList(await requestGoodsTypes())
+    goodsTypeOptions.value = remote.length > 0 ? remote : [...DEFAULT_GOODS_TYPE_OPTIONS]
   } catch (err) {
     console.warn('[goods-pick] fetch goods types failed, use fallback:', err)
-    goodsTypeOptions.value = [...defaultGoodsTypeOptions]
+    goodsTypeOptions.value = [...DEFAULT_GOODS_TYPE_OPTIONS]
   } finally {
     ensureSelectedTypeVisible()
   }
@@ -163,9 +164,9 @@ onLoad(async (opts) => {
     .filter(Boolean)
   fixedGoodsTypes.value = Array.from(new Set(parsedGoodsTypes))
   // 娃头场景兜底：固定类型；兼容旧链接（仅传 default_goods_type=单头/整体）
-  const isHeadByDefaultType = ['单头', '整体'].includes(selectedGoodsType.value)
+  const isHeadByDefaultType = HEAD_SCOPE_GOODS_TYPES.includes(selectedGoodsType.value)
   if (fixedGoodsTypes.value.length === 0 && (scene.value === 'head' || isHeadByDefaultType)) {
-    fixedGoodsTypes.value = ['单头', '整体']
+    fixedGoodsTypes.value = [...HEAD_SCOPE_GOODS_TYPES]
     selectedGoodsType.value = ''
     hideTypeFilter.value = true
     allowClearType.value = false

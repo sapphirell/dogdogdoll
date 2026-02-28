@@ -99,6 +99,13 @@
               >
                 {{ c }}
               </text>
+              <text
+                v-for="s in effectiveSizes"
+                :key="`active-size-${s}`"
+                class="active-tag"
+              >
+                尺寸：{{ s }}
+              </text>
             </view>
           </scroll-view>
         </view>
@@ -188,6 +195,12 @@
 import { computed, ref } from 'vue'
 import { onLoad, onPageScroll } from '@dcloudio/uni-app'
 import { websiteUrl, getStatusBarHeight, getNavBarHeight, toPx } from '@/common/config.js'
+import {
+  DEFAULT_GOODS_TYPE_OPTIONS,
+  buildGoodsCategoryAliasMap,
+  buildGoodsCategoryDefsFromTypes,
+  requestGoodsTypes
+} from '@/common/goods-meta.js'
 
 const pageSize = 20
 const pagingRef = ref(null)
@@ -201,6 +214,7 @@ const scrollInited = ref(false)
 const showFilterModal = ref(false)
 const filterCategories = ref([])
 const filterDraftCategories = ref([])
+const filterSizes = ref([])
 const manualBrandId = ref(0)
 const manualBrandName = ref('')
 const token = ref('')
@@ -235,37 +249,17 @@ const effectiveCategories = computed(() => {
   const merged = [...(searchPlan.value.categories || []), ...(filterCategories.value || [])]
   return Array.from(new Set(merged.filter(Boolean)))
 })
+const effectiveSizes = computed(() => {
+  return Array.from(new Set((filterSizes.value || []).filter(Boolean)))
+})
 
-const GOODS_CATEGORY_DEFS = [
-  { value: '整体', aliases: ['整体', '整娃', '全娃'] },
-  { value: '单体', aliases: ['单体', '身体'] },
-  { value: '单头', aliases: ['单头', '头', '娃头'] },
-  { value: '手型', aliases: ['手型', '手'] },
-  { value: '脚型', aliases: ['脚型', '脚'] },
-  { value: '胸型', aliases: ['胸型', '胸'] },
-  { value: '胸台', aliases: ['胸台'] },
-  { value: '眼珠', aliases: ['眼珠', '眼'] },
-  { value: '假发', aliases: ['假发', '毛', '毛件'] },
-  { value: '娃衣', aliases: ['娃衣', '衣服', '服装'] },
-  { value: '娃鞋', aliases: ['娃鞋', '鞋子', '鞋'] },
-  { value: '袜子', aliases: ['袜子', '袜'] },
-  { value: '配饰', aliases: ['配饰', '饰品', '配件'] },
-  { value: '支架', aliases: ['支架'] },
-  { value: '耳朵', aliases: ['耳朵', '耳'] },
-  { value: '背饰', aliases: ['背饰', '背件'] },
-  { value: 'BJD家具', aliases: ['bjd家具', '家具'] },
-  { value: '娃包痛包', aliases: ['娃包痛包', '娃包', '痛包'] },
-]
+const GOODS_CATEGORY_DEFS = ref(buildGoodsCategoryDefsFromTypes(DEFAULT_GOODS_TYPE_OPTIONS))
+const GOODS_CATEGORY_ALIAS_MAP = computed(() => buildGoodsCategoryAliasMap(GOODS_CATEGORY_DEFS.value))
 
-const GOODS_CATEGORY_ALIAS_MAP = GOODS_CATEGORY_DEFS.reduce((acc, item) => {
-  const aliases = Array.isArray(item.aliases) ? item.aliases : []
-  aliases.concat([item.value]).forEach((alias) => {
-    const key = String(alias || '').trim().toLowerCase()
-    if (!key) return
-    acc[key] = item.value
-  })
-  return acc
-}, {})
+async function initGoodsCategoryDefs() {
+  const types = await requestGoodsTypes()
+  GOODS_CATEGORY_DEFS.value = buildGoodsCategoryDefsFromTypes(types)
+}
 
 function updateNavByScrollTop(nextTop) {
   const top = Math.max(0, Number(nextTop || 0))
@@ -316,6 +310,21 @@ function splitGoodsTokens(text) {
     .filter(Boolean)
 }
 
+function decodeAndSplitMultiValue(input) {
+  const raw = String(input || '').trim()
+  if (!raw) return []
+  let decoded = raw
+  try {
+    decoded = decodeURIComponent(raw)
+  } catch (_) {
+    decoded = raw
+  }
+  return decoded
+    .split(/[\s,，、/|]+/g)
+    .map(v => v.trim())
+    .filter(Boolean)
+}
+
 function parseGoodsQuery(text) {
   const tokens = splitGoodsTokens(text)
   const categories = []
@@ -323,7 +332,7 @@ function parseGoodsQuery(text) {
   const others = []
 
   tokens.forEach(token => {
-    const canonical = GOODS_CATEGORY_ALIAS_MAP[String(token || '').toLowerCase()]
+    const canonical = GOODS_CATEGORY_ALIAS_MAP.value[String(token || '').toLowerCase()]
     if (canonical) {
       if (!categorySeen.has(canonical)) {
         categorySeen.add(canonical)
@@ -665,6 +674,9 @@ async function onPagingQuery(pageNo, sizeFromPaging) {
     if (effectiveCategories.value.length > 0) {
       query.category = effectiveCategories.value.join(',')
     }
+    if (effectiveSizes.value.length > 0) {
+      query.size = effectiveSizes.value.join(',')
+    }
 
     const res = await uni.request({
       url: websiteUrl.value + '/with-state/search-goods-result',
@@ -715,11 +727,10 @@ onLoad(async (options) => {
   keyword.value = decodeURIComponent(options?.q || '').trim()
   manualBrandId.value = Number(options?.brand_id || 0)
   manualBrandName.value = decodeURIComponent(options?.brand_name || '').trim()
-  filterCategories.value = decodeURIComponent(options?.categories || '')
-    .split(/[\s,，、/|]+/g)
-    .map(v => v.trim())
-    .filter(Boolean)
+  filterCategories.value = decodeAndSplitMultiValue(options?.categories)
+  filterSizes.value = decodeAndSplitMultiValue(options?.sizes || options?.size || options?.goods_size)
 
+  await initGoodsCategoryDefs()
   await prepareSearchPlan()
   reloadList()
 })

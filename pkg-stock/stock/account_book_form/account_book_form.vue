@@ -1281,7 +1281,6 @@ $radius: 24rpx;
   padding: 40rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
   position: relative;
-  z-index: 10;
 }
 .form-item {
   margin-bottom: 48rpx;
@@ -1492,7 +1491,7 @@ $radius: 24rpx;
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.16);
-  z-index: 20;
+  z-index: 16;
 }
 
 .goods-search-panel {

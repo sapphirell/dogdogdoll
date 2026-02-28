@@ -23,6 +23,10 @@
                 :src="global.userInfo.avatar || defaultAvatar"
               />
             </view>
+            <view class="profile-level-badge" @click="jumpToLevelCenter">
+              <text class="level-prefix font-title">Lv</text>
+              <text class="level-num font-title">{{ userLevel }}</text>
+            </view>
             <text class="profile-name font-alimama" @click="jumpToSetName">
               {{ global.userInfo.username || '未设置昵称' }}
             </text>
@@ -216,6 +220,7 @@ const mainTabs = [
   { key: 'settings', label: '设置我' }
 ]
 const activeMainTab = ref('inbox')
+const userLevel = ref(1)
 
 const isLogin = computed(() => !!global.isLogin)
 const systemInfo = uni.getSystemInfoSync()
@@ -261,8 +266,9 @@ function chooseImage () {
 
 function jumpToCroper () {
   chooseImage().then(src => {
+    const encodedSrc = encodeURIComponent(src)
     uni.navigateTo({
-      url: `/pages/pop_croper/pop_croper?src=${decodeURIComponent(src)}`
+      url: `/pages/pop_croper/pop_croper?src=${encodedSrc}`
     })
   }).catch(() => {})
 }
@@ -314,6 +320,7 @@ function updateUserInfo (key, value) {
 
 function jumpSetting () { uni.navigateTo({ url: '/pages/setting/setting' }) }
 function jumpToSetName () { uni.navigateTo({ url: '/pages/setting/username/username' }) }
+function jumpToLevelCenter () { uni.navigateTo({ url: '/pages/setting/user_level/user_level' }) }
 function handleSettingsAction (type) {
   if (type === 'profile') jumpSetting()
   else if (type === 'address') uni.navigateTo({ url: '/pkg-common/address/address-list' })
@@ -321,12 +328,33 @@ function handleSettingsAction (type) {
 }
 function handleLoginSuccess () { asyncGetUserInfo() }
 
+async function loadUserLevel () {
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    userLevel.value = 1
+    return
+  }
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/user-level/overview`,
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    if (res?.data?.status === 'success') {
+      userLevel.value = Number(res?.data?.data?.profile?.current_level || 1)
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
 onShow(async () => {
   await asyncGetUserInfo()
   if (global.isLogin) uni.showTabBar({ animation: false })
   else uni.hideTabBar({ animation: false })
 
   await loadActiveSkin()
+  await loadUserLevel()
 
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
@@ -396,6 +424,25 @@ onShow(async () => {
 }
 
 .avatar-img { width: 100%; height: 100%; }
+
+.profile-level-badge {
+  margin-top: 14rpx;
+  padding: 9rpx 22rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #ff8db6 0%, #ffbfd3 55%, #ffd7e6 100%);
+  box-shadow: 0 8rpx 18rpx rgba(255, 149, 186, 0.28);
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.level-prefix,
+.level-num {
+  font-size: 26rpx;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
 
 .profile-name {
   margin-top: 24rpx;

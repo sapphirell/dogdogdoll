@@ -54,8 +54,14 @@
 
 						<view class="info-container" v-if="props.showItemInfo">
 							<text class="name">{{ item.name }}</text>
-							<text class="price">{{ getDisplayPrice(item.price) }}</text>
+							<text v-if="props.showPriceTag" class="price">{{ getDisplayPrice(item.price) }}</text>
 							<text class="type">{{ item.type }}</text>
+						</view>
+						<view
+							v-if="props.showSizeTag && item.sizeText"
+							class="size-badge"
+						>
+							{{ item.sizeText }}
 						</view>
 
 						<view
@@ -157,6 +163,8 @@
 		},
 		/* 付款状态标签（新增能力） */
 		showPaymentTag: { type: Boolean, default: false },
+		showSizeTag: { type: Boolean, default: true },
+		showPriceTag: { type: Boolean, default: true },
 		paymentField: { type: String, default: 'payment_status' },
 		paymentMap: {
 			type: Object,
@@ -233,8 +241,9 @@
 			id: item.id,
 			src: getSrc(item),
 			name: item.name,
-			price: item.price,
+			price: item.display_price ?? item.price,
 			type: item.type,
+			sizeText: String(item.size || '').trim(),
 			// 预计算，拖拽时不会变
 			payStatus: ps,
 			_payText: props.paymentMap?.[Number(ps)] || props.paymentMap?.[1] || '已全款'
@@ -923,6 +932,20 @@
 .s-1{ background: linear-gradient(135deg, #e3e3e3, #d6ecdf); color: #686868; box-shadow: 0 2rpx 10rpx rgba(26,155,86,.18); }
 .s-2{ background: linear-gradient(135deg,#ffe9d6,#ffd2ad); color: #686868; box-shadow: 0 2rpx 10rpx rgba(201,116,0,.18); }
 .s-3{ background: linear-gradient(135deg,#ffe0ea,#ffc2d4); color: #686868; box-shadow: 0 2rpx 10rpx rgba(216,58,86,.18); }
+
+.size-badge {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 18rpx;
+  background: rgba(55, 73, 105, 0.78);
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 1.1;
+  letter-spacing: 0.4rpx;
+  z-index: 12;
+}
 
 /* 删除按钮 */
 .delete-btn{

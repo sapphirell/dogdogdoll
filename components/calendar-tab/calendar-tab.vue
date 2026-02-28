@@ -305,6 +305,13 @@
 import { ref, computed, watch, nextTick, getCurrentInstance, onMounted } from 'vue'
 import { onLoad, onShow, onHide, onUnload, onPullDownRefresh, onPageScroll, onReady } from '@dcloudio/uni-app'
 import { websiteUrl, getStatusBarHeight, getNavBarHeight, toPx } from '@/common/config.js'
+import {
+  DEFAULT_GOODS_TYPE_OPTIONS,
+  DEFAULT_SALE_SIZE_CATEGORIES,
+  normalizeSizeCategoryName,
+  requestGoodsTypes,
+  requestSaleSizeCategories
+} from '@/common/goods-meta.js'
 
 /* ========== 基础状态 ========== */
 const scrollTop = ref(0)
@@ -344,10 +351,31 @@ const switchTab = async (t) => {
 }
 
 /* 贩售筛选 */
-const tabList = ref(['全部','整体','单头','单体','娃衣','眼珠','娃鞋','手型','脚型','袜子','配饰'])
-const sizeList = ref(['全部尺寸','四分','六分','三分','其它大尺寸','八分','十二分','一分','二分','五分','棉花娃','眼珠'])
+const tabList = ref(['全部', ...DEFAULT_GOODS_TYPE_OPTIONS])
+const sizeList = ref(['全部尺寸', ...DEFAULT_SALE_SIZE_CATEGORIES])
 let activeType = ref('全部')
 let activeSize = ref('全部尺寸')
+const saleFilterOptionsLoaded = ref(false)
+
+function ensureSaleFilterSelectionValid() {
+  if (!tabList.value.includes(activeType.value)) activeType.value = '全部'
+  if (!sizeList.value.includes(activeSize.value)) activeSize.value = '全部尺寸'
+}
+
+async function initSaleFilterOptions() {
+  if (saleFilterOptionsLoaded.value) {
+    ensureSaleFilterSelectionValid()
+    return
+  }
+  const [remoteTypes, remoteSizes] = await Promise.all([
+    requestGoodsTypes(),
+    requestSaleSizeCategories('hot')
+  ])
+  tabList.value = ['全部', ...(remoteTypes || [])]
+  sizeList.value = ['全部尺寸', ...(remoteSizes || [])]
+  saleFilterOptionsLoaded.value = true
+  ensureSaleFilterSelectionValid()
+}
 
 /* 日历数据 */
 const saleCalendar = ref({})
@@ -571,8 +599,11 @@ const filteredSaleCalendar = computed(()=>{
       c.goods = c.goods.filter(g=>{
         const typeOk = activeType.value==='全部' || g.type===activeType.value
         let sizeOk = (activeSize.value==='全部尺寸')
-        if (!sizeOk && g.sizes && g.sizes.length) sizeOk = g.sizes.some(s=>s.goods_size===activeSize.value)
-        else if (!sizeOk) sizeOk = g.size===activeSize.value
+        if (!sizeOk && g.sizes && g.sizes.length) {
+          sizeOk = g.sizes.some(s => normalizeSizeCategoryName(s?.goods_size) === normalizeSizeCategoryName(activeSize.value))
+        } else if (!sizeOk) {
+          sizeOk = normalizeSizeCategoryName(g?.size) === normalizeSizeCategoryName(activeSize.value)
+        }
         return typeOk && sizeOk
       })
       c.goods_number = c.goods.length
@@ -963,6 +994,7 @@ onShow(async ()=>{
     targetDateOnEnter: targetDateOnEnter.value
   })
   if (spyTimer) { clearTimeout(spyTimer); spyTimer = null }
+  await initSaleFilterOptions()
   await refreshAll()
 })
 
