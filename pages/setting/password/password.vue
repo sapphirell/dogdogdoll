@@ -9,14 +9,16 @@
 					<uni-icons class="input-icon" type="locked" size="18" color="#999" />
 				</view>
 				<view class="input-item">
-					<input class="input" type="password" placeholder=" " v-model="newPassword" />
+					<input class="input" :class="{ error: passwordSameAsOldError }" type="password" placeholder=" " v-model="newPassword" />
 					<label class="floating-label">新密码</label>
 					<uni-icons class="input-icon" type="gear" size="18" color="#999" />
+					<text v-if="passwordSameAsOldError" class="error-text">{{ passwordSameAsOldError }}</text>
 				</view>
 				<view class="input-item">
-					<input class="input" type="password" placeholder=" " v-model="newPassword2" />
+					<input class="input" :class="{ error: passwordMismatchError }" type="password" placeholder=" " v-model="newPassword2" />
 					<label class="floating-label">确认新密码</label>
 					<uni-icons class="input-icon" type="checkmarkempty" size="18" color="#999" />
+					<text v-if="passwordMismatchError" class="error-text">{{ passwordMismatchError }}</text>
 				</view>
 			</view>
 			<view v-else class="input-group">
@@ -26,9 +28,10 @@
 					<uni-icons class="input-icon" type="locked" size="18" color="#999" />
 				</view>
 				<view class="input-item">
-					<input class="input" type="password" placeholder=" " v-model="newPassword2" />
+					<input class="input" :class="{ error: passwordMismatchError }" type="password" placeholder=" " v-model="newPassword2" />
 					<label class="floating-label">确认密码</label>
 					<uni-icons class="input-icon" type="checkmarkempty" size="18" color="#999" />
+					<text v-if="passwordMismatchError" class="error-text">{{ passwordMismatchError }}</text>
 				</view>
 			</view>
 
@@ -71,10 +74,19 @@
 	let oldPassword = ref("")
 	let newPassword = ref("")
 	let newPassword2 = ref("")
+	const passwordSameAsOldError = computed(() => {
+		if (!global.userInfo.password) return ''
+		if (!oldPassword.value || !newPassword.value) return ''
+		return oldPassword.value === newPassword.value ? '新密码不能与原密码一致' : ''
+	})
+	const passwordMismatchError = computed(() => {
+		if (!newPassword.value || !newPassword2.value) return ''
+		return newPassword.value === newPassword2.value ? '' : '两次密码输入不一致'
+	})
 
 	// 根据当前状态验证表单有效性
 	const isFormValid = computed(() => {
-		return newPassword.value && newPassword2.value && newPassword.value === newPassword2.value
+		return !!newPassword.value && !!newPassword2.value && !passwordMismatchError.value && !passwordSameAsOldError.value
 	})
 
 	// 密码强度计算 	  // 根据密码复杂度返回提示文本
@@ -105,6 +117,13 @@
 
 	// 修改密码
 	function updatePassword() {
+		if (passwordSameAsOldError.value) {
+			uni.showToast({
+				title: passwordSameAsOldError.value,
+				icon: 'none'
+			})
+			return
+		}
 		if (newPassword.value != newPassword2.value) {
 			uni.showToast({
 				title: '两次密码输入不一致',
@@ -206,6 +225,11 @@
 		}
 	}
 
+	.input.error {
+		border-color: @error-color;
+		box-shadow: 0 4rpx 12rpx rgba(255, 82, 82, 0.12);
+	}
+
 	.floating-label {
 		position: absolute;
 		left: 40rpx;
@@ -229,6 +253,14 @@
 		right: 30rpx;
 		top: 50%;
 		transform: translateY(-50%);
+	}
+
+	.error-text {
+		position: absolute;
+		left: 12rpx;
+		bottom: -34rpx;
+		font-size: 24rpx;
+		color: @error-color;
 	}
 
 	.password-strength {

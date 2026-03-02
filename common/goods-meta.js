@@ -90,6 +90,70 @@ export async function requestSaleSizeCategories(showType = 'hot') {
   }
 }
 
+export async function requestSizeMap(showType = '') {
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/sizes`,
+      method: 'GET',
+      data: showType ? { show_type: showType } : {}
+    })
+    const data = res?.data?.status === 'success' ? res?.data?.data : {}
+    return data && typeof data === 'object' ? data : {}
+  } catch (err) {
+    console.warn('[goods-meta] requestSizeMap failed:', err)
+    return {}
+  }
+}
+
+export async function requestMaterialOptions(goodsType = '') {
+  const isHair = String(goodsType || '').trim() === '假发'
+  const path = isHair ? '/hair-materials' : '/materials'
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}${path}`,
+      method: 'GET'
+    })
+    return uniqTrimmed(res?.data?.status === 'success' ? res?.data?.data : [])
+  } catch (err) {
+    console.warn('[goods-meta] requestMaterialOptions failed:', err)
+    return []
+  }
+}
+
+export function buildHeadSocketOptions(sizeMap = {}) {
+  const preferredOrder = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分', '其它大尺寸']
+  const sizeKeys = Object.keys(sizeMap || {})
+  const disallow = new Set(['棉花娃', '眼珠', '眼珠（二次元）', '眼珠（三次元）'])
+  const ordered = preferredOrder.filter(item => sizeKeys.includes(item) && !disallow.has(item))
+  const rest = sizeKeys.filter(item => !disallow.has(item) && !ordered.includes(item))
+  return uniqTrimmed([...ordered, ...rest])
+}
+
+export function buildEyeRecommendationOptions(sizeMap = {}) {
+  const eyeList = []
+  const seen = new Set()
+  ;['眼珠（二次元）', '眼珠（三次元）'].forEach((category) => {
+    const arr = Array.isArray(sizeMap?.[category]) ? sizeMap[category] : []
+    arr.forEach((item) => {
+      const val = String(item || '').trim()
+      if (!val || seen.has(val)) return
+      seen.add(val)
+      eyeList.push(val)
+    })
+  })
+  return eyeList
+}
+
+export function buildSizeCategoryOptions(sizeMap = {}) {
+  return uniqTrimmed(Object.keys(sizeMap || {}).map(normalizeSizeCategoryName))
+}
+
+export function buildSizeDetailOptions(sizeMap = {}, category = '') {
+  const key = normalizeSizeCategoryName(category)
+  if (!key) return []
+  return uniqTrimmed(Array.isArray(sizeMap?.[key]) ? sizeMap[key] : [])
+}
+
 export function buildGoodsCategoryDefsFromTypes(types = []) {
   const canonicalTypes = normalizeGoodsTypeList(types)
   if (!canonicalTypes.length) {

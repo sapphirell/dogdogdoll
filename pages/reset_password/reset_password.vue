@@ -63,7 +63,8 @@
 <script setup>
 	import {
 		ref,
-		computed
+		computed,
+		watch
 	} from 'vue'
 	import {
 		websiteUrl
@@ -152,6 +153,10 @@
 
 	// 验证确认密码
 	const validateReNewPassword = () => {
+		if (!formData.value.reNewPassword) {
+			errors.value.reNewPassword = ''
+			return false
+		}
 		if (formData.value.newPassword !== formData.value.reNewPassword) {
 			errors.value.reNewPassword = '两次密码输入不一致'
 			return false
@@ -240,6 +245,17 @@
 	const navigateToLogin = () => {
 		uni.navigateBack()
 	}
+
+	watch(
+		() => [formData.value.newPassword, formData.value.reNewPassword],
+		() => {
+			if (!formData.value.reNewPassword) {
+				errors.value.reNewPassword = ''
+				return
+			}
+			validateReNewPassword()
+		}
+	)
 </script>
 
 <style lang="scss" scoped>
