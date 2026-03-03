@@ -308,12 +308,12 @@ onShow(() => {
 	 		transform: translateX(-50%);
 	 		width: 100rpx;
 	 		height: 100rpx;
-	 		background: linear-gradient(135deg, #a6e9f7, #1ed1e1);
+	 		background: var(--app-recommend-color);
 	 		border-radius: 50%;
 	 		display: flex;
 	 		align-items: center;
 	 		justify-content: center;
-	 		box-shadow: 0 6rpx 20rpx rgba(30, 209, 225, 0.4);
+	 		box-shadow: 0 6rpx 20rpx rgba(73, 202, 238, 0.42);
 	 		z-index: 555;
 	 		transition: all 0.3s ease;
 	 		
@@ -325,14 +325,15 @@ onShow(() => {
 				left: 50%;
 				width: 0;
 				height: 0.125rem;
-				background: #74c9e5;
+				background: var(--app-recommend-color);
 				transition: all 0.3s ease;
 				transform: translateX(-50%);
 	 		}
 	 		
 	 		&:active {
 	 			transform: translateX(-50%) scale(0.95);
-	 			box-shadow: 0 4rpx 12rpx rgba(30, 209, 225, 0.3);
+	 			background: var(--app-recommend-color-press);
+	 			box-shadow: 0 4rpx 12rpx rgba(73, 202, 238, 0.34);
 	 		}
 	 	}
 

@@ -151,6 +151,12 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
+import {
+  DEFAULT_GOODS_TYPE_OPTIONS,
+  buildGoodsCategoryAliasMap,
+  buildGoodsCategoryDefsFromTypes,
+  requestGoodsTypes
+} from '@/common/goods-meta.js'
 
 /** Tab 映射：1=娃物 2=店铺 3=妆师 4=毛娘 */
 const TAB_MAP = {
@@ -197,36 +203,13 @@ const placeholder = computed(() =>
     : `搜索${activeLabel.value}（可拼音/别名）`
 )
 
-const GOODS_CATEGORY_DEFS = [
-  { value: '整体', aliases: ['整体', '整娃', '全娃'] },
-  { value: '单体', aliases: ['单体', '身体'] },
-  { value: '单头', aliases: ['单头', '头', '娃头'] },
-  { value: '手型', aliases: ['手型', '手'] },
-  { value: '脚型', aliases: ['脚型', '脚'] },
-  { value: '胸型', aliases: ['胸型', '胸'] },
-  { value: '胸台', aliases: ['胸台'] },
-  { value: '眼珠', aliases: ['眼珠', '眼'] },
-  { value: '假发', aliases: ['假发', '毛', '毛件'] },
-  { value: '娃衣', aliases: ['娃衣', '衣服', '服装'] },
-  { value: '娃鞋', aliases: ['娃鞋', '鞋子', '鞋'] },
-  { value: '袜子', aliases: ['袜子', '袜'] },
-  { value: '配饰', aliases: ['配饰', '饰品', '配件'] },
-  { value: '支架', aliases: ['支架'] },
-  { value: '耳朵', aliases: ['耳朵', '耳'] },
-  { value: '背饰', aliases: ['背饰', '背件'] },
-  { value: 'BJD家具', aliases: ['bjd家具', '家具'] },
-  { value: '娃包痛包', aliases: ['娃包痛包', '娃包', '痛包'] },
-]
+const GOODS_CATEGORY_DEFS = ref(buildGoodsCategoryDefsFromTypes(DEFAULT_GOODS_TYPE_OPTIONS))
+const GOODS_CATEGORY_ALIAS_MAP = computed(() => buildGoodsCategoryAliasMap(GOODS_CATEGORY_DEFS.value))
 
-const GOODS_CATEGORY_ALIAS_MAP = GOODS_CATEGORY_DEFS.reduce((acc, item) => {
-  const aliases = Array.isArray(item.aliases) ? item.aliases : []
-  aliases.concat([item.value]).forEach(alias => {
-    const key = String(alias || '').trim().toLowerCase()
-    if (!key) return
-    acc[key] = item.value
-  })
-  return acc
-}, {})
+async function initGoodsCategoryDefs() {
+  const types = await requestGoodsTypes()
+  GOODS_CATEGORY_DEFS.value = buildGoodsCategoryDefsFromTypes(types)
+}
 
 /* 历史 */
 const chipsRef = ref(null)
@@ -537,7 +520,7 @@ function parseGoodsQuery(text) {
   const others = []
 
   tokens.forEach(token => {
-    const canonical = GOODS_CATEGORY_ALIAS_MAP[String(token || '').toLowerCase()]
+    const canonical = GOODS_CATEGORY_ALIAS_MAP.value[String(token || '').toLowerCase()]
     if (canonical) {
       if (!categorySeen.has(canonical)) {
         categorySeen.add(canonical)
@@ -758,7 +741,7 @@ function goBack() {
 }
 
 /* 生命周期：读路由、初始化 */
-onLoad(opt => {
+onLoad(async (opt) => {
   const m = (opt?.mode || '').toLowerCase()
   if (m === 'return') routeMode.value = 'return'
 
@@ -771,6 +754,7 @@ onLoad(opt => {
     if (keys.length) orderedKeys.value = keys
   }
   activeKey.value = orderedKeys.value[0] || 1
+  await initGoodsCategoryDefs()
   loadHistory()
 })
 

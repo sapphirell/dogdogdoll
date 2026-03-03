@@ -15,9 +15,13 @@
         </view>
 
         <text class="manage-btn" @tap="openTypeToolsPopup">
-          <uni-icons type="more-filled" size="18" color="#4f6279" />
+          <uni-icons type="more-filled" size="18" color="#fff" />
           <text class="font-title">分类工具</text>
         </text>
+
+        <view class="setting-icon-btn" @click="openDisplaySettingPage">
+          <uni-icons type="gear-filled" size="18" color="#fff" />
+        </view>
 
         <!-- 🔎 搜索：跳转独立页面 -->
         <view class="search-icon-btn" @click="openSearch">
@@ -49,12 +53,14 @@
     <!-- 内容 -->
     <view class="content" v-if="baseList.length > 0">
 		<shmily-drag-image
-		  v-model="props.accountBookData.account_books"
+		  :modelValue="displayList"
 		  :padding="0"
 		  :item-margin="10"
 		  border-radius="20"
 		  @sort-change="handleSortChange"
-		  :show-payment-tag="true"
+		  :show-payment-tag="displaySetting.show_payment_tag"
+      :show-size-tag="displaySetting.show_size_tag"
+      :show-price-tag="displaySetting.show_price_tag"
 		  payment-field="payment_status"
 		/>
 
@@ -139,6 +145,15 @@ const props = defineProps({
 })
 const emit = defineEmits(['go2editor','update-type','init-request','update:accountBookData'])
 
+const DEFAULT_DISPLAY_SETTING = Object.freeze({
+  show_size_tag: true,
+  show_price_tag: true,
+  show_payment_tag: true,
+  include_additional_in_item_price: false,
+  include_additional_in_total: false
+})
+const displaySetting = ref({ ...DEFAULT_DISPLAY_SETTING })
+
 /* ===== 显示金额 ===== */
 const isPriceVisible = ref(true)
 const PRICE_VISIBLE_KEY = 'accountBookPriceVisible'
@@ -157,13 +172,77 @@ const showTypeToolsPopup = ref(false)
 /* ===== 列表数据（当前分类） ===== */
 const baseList = computed(() => props.accountBookData?.account_books || [])
 
+function parseAdditionalNumeric(raw) {
+  if (raw === null || raw === undefined) return 0
+  const matches = String(raw).match(/-?\d+(?:\.\d+)?/g)
+  if (!matches || !matches.length) return 0
+  return matches.reduce((sum, txt) => {
+    const n = Number(txt)
+    return Number.isFinite(n) ? sum + n : sum
+  }, 0)
+}
+
+function normalizePriceText(n) {
+  const safe = Number.isFinite(n) ? Math.round(n * 100) / 100 : 0
+  return Number.isInteger(safe) ? String(safe) : safe.toFixed(2)
+}
+
+const displayList = computed(() => {
+  const includeAdditional = !!displaySetting.value.include_additional_in_item_price
+  return (baseList.value || []).map((item) => {
+    const basePrice = Number(item?.price || 0)
+    const additional = includeAdditional ? parseAdditionalNumeric(item?.additional_value) : 0
+    const merged = basePrice + additional
+    return {
+      ...item,
+      display_price: normalizePriceText(merged),
+      size: item?.size || item?.size_detail || ''
+    }
+  })
+})
+
 /* ===== 合计：不受搜索影响 ===== */
 const totalPrice = computed(() => {
   if (!props.accountBookData?.account_books) return '0.00'
-  return props.accountBookData.account_books
-    .reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0)
-    .toFixed(2)
+  const includeAdditional = !!displaySetting.value.include_additional_in_total
+  return props.accountBookData.account_books.reduce((sum, item) => {
+    const basePrice = Number(item?.price || 0)
+    const additional = includeAdditional ? parseAdditionalNumeric(item?.additional_value) : 0
+    return sum + basePrice + additional
+  }, 0).toFixed(2)
 })
+
+function normalizeDisplaySetting(payload) {
+  const p = payload || {}
+  return {
+    show_size_tag: p.show_size_tag !== false,
+    show_price_tag: p.show_price_tag !== false,
+    show_payment_tag: p.show_payment_tag !== false,
+    include_additional_in_item_price: !!p.include_additional_in_item_price,
+    include_additional_in_total: !!p.include_additional_in_total
+  }
+}
+
+async function fetchDisplaySetting() {
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    displaySetting.value = { ...DEFAULT_DISPLAY_SETTING }
+    return
+  }
+  try {
+    const res = await uni.request({
+      url: websiteUrl.value + '/with-state/account-book-display-setting',
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    if (String(res?.data?.status || '').toLowerCase() !== 'success') {
+      return
+    }
+    displaySetting.value = normalizeDisplaySetting(res?.data?.data || {})
+  } catch (e) {
+    console.error('[stock-myitems] get display setting fail:', e)
+  }
+}
 
 /* 拉取分类 */
 async function getAccountTypes() {
@@ -194,6 +273,12 @@ watch([customTypes, selectedTypeName], () => {
 function openTypeManagerPage() {
   uni.navigateTo({
     url: '/pkg-stock/stock-type-manager/stock-type-manager'
+  })
+}
+
+function openDisplaySettingPage() {
+  uni.navigateTo({
+    url: '/pkg-stock/stock-myitems-setting/stock-myitems-setting'
   })
 }
 function closeTypeSelectPopup() { showTypeSelectPopup.value = false }
@@ -287,6 +372,7 @@ onShow(async ()=>{
   if (saved !== '') isPriceVisible.value = (saved === 'true')
 
   selectedTypeName.value = uni.getStorageSync(SELECTED_TYPE_KEY) || '全部'
+  await fetchDisplaySetting()
   await getAccountTypes()
   emit('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
 
@@ -375,21 +461,22 @@ onShow(async ()=>{
   height: 80rpx;
   padding: 0 16rpx;
   font-size: 22rpx;
-  color: #4f6279;
+  color: #fff;
   border-radius: 14rpx;
-  border: 1rpx solid #dbe7f4;
-  background: #f8fbff;
-  box-shadow: 0 4rpx 10rpx rgba(84, 108, 132, 0.07);
+  border: none;
+  background: var(--app-recommend-color);
+  box-shadow: 0 4rpx 10rpx rgba(73, 202, 238, 0.24);
   white-space: nowrap;
   transition: all .25s;
   text {
-	  color: #4f6279;
+	  color: #fff;
     letter-spacing: 0.4rpx;
   }
 
   &:active {
     transform: translateY(1rpx);
-    box-shadow: 0 2rpx 6rpx rgba(84, 108, 132, 0.1);
+    background: var(--app-recommend-color-press);
+    box-shadow: 0 2rpx 6rpx rgba(73, 202, 238, 0.3);
   }
 }
 
@@ -401,20 +488,43 @@ onShow(async ()=>{
   line-height: 80rpx;
   border: none;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, #8bb2d7, #7f9fc7);
+  background: var(--app-recommend-color);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 10rpx rgba(84, 108, 132, 0.18);
+  box-shadow: 0 4rpx 10rpx rgba(73, 202, 238, 0.24);
   transition: all .25s;
 
   &:active {
     transform: translateY(1rpx);
-    box-shadow: 0 2rpx 6rpx rgba(84, 108, 132, 0.22);
+    background: var(--app-recommend-color-press);
+    box-shadow: 0 2rpx 6rpx rgba(73, 202, 238, 0.3);
   }
 }
 .search-icon-btn::after { border: none; }
+
+.setting-icon-btn {
+  margin: 0;
+  padding: 0 22rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  border: none;
+  border-radius: 14rpx;
+  background: var(--app-recommend-color);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 10rpx rgba(73, 202, 238, 0.24);
+  transition: all .25s;
+}
+.setting-icon-btn:active {
+  transform: translateY(1rpx);
+  background: var(--app-recommend-color-press);
+  box-shadow: 0 2rpx 6rpx rgba(73, 202, 238, 0.3);
+}
+.setting-icon-btn::after { border: none; }
 
 /* 合计卡片 */
 .summary-container {

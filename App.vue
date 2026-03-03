@@ -62,6 +62,12 @@ function loadFonts() {
 	/*每个页面公共css */
 	@import 'common/font.css';
 
+	:root {
+		/* 全局建议色：用于主要操作按钮 */
+		--app-recommend-color: #49caee;
+		--app-recommend-color-press: #34bee4;
+	}
+
 	.backbody {
 		background-color: #C0EDE9;
 		height: 100vh;
