@@ -13,8 +13,8 @@
     "vue": "^3.4.0"
   },
   "devDependencies": {
-    "@dcloudio/uni-app": "^3.0.0",
-    "@dcloudio/vite-plugin-uni": "^3.0.0",
+    "@dcloudio/uni-app": "vue3",
+    "@dcloudio/vite-plugin-uni": "vue3",
     "sass": "^1.77.0",
     "vite": "^5.4.0"
   }
