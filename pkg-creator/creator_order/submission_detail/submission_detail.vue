@@ -662,6 +662,32 @@ function getItemFinalState(item) {
   return itemFinalStateMap.value[itemID] || {}
 }
 
+function parseProgressLogExtra(row) {
+  const raw = row?.extra_json ?? row?.extra
+  if (!raw) return {}
+  if (typeof raw === 'object') return raw || {}
+  const txt = String(raw).trim()
+  if (!txt) return {}
+  try {
+    const parsed = JSON.parse(txt)
+    return (parsed && typeof parsed === 'object') ? parsed : {}
+  } catch (_) {
+    return {}
+  }
+}
+
+function isRejectNegotiationPending(row) {
+  if (!row) return false
+  const status = Number(row?.status || 0)
+  if (status !== 0) return false
+  const eventCode = String(row?.event_code || '').trim()
+  if (eventCode === 'step_reject_negotiating' || eventCode === 'final_confirm_reject_negotiating') {
+    return true
+  }
+  const extra = parseProgressLogExtra(row)
+  return String(extra?.negotiation_state || '').trim() === 'pending_artist_decision'
+}
+
 const latestActionableLogMap = computed(() => {
   const logs = Array.isArray(submission.progress_logs) ? submission.progress_logs : []
   const out = {}
@@ -697,6 +723,7 @@ const latestActionableLogMap = computed(() => {
         ts,
         kind,
         status,
+        negotiationPending: isRejectNegotiationPending(row),
       }
     }
   })
@@ -714,6 +741,11 @@ function buildItemAlertTag(item) {
   const latest = getLatestActionableLog(item)
   if (!latest) return null
 
+  if (latest.negotiationPending) {
+    return latest.kind === 'final'
+      ? { text: '终态协商中', type: 'final' }
+      : { text: '节点协商中', type: 'step' }
+  }
   if (latest.kind === 'final' && latest.status === 0) {
     return { text: '待状态确认', type: 'final' }
   }
@@ -836,7 +868,12 @@ const timelineEvents = computed(() => {
       let dotClass = 'done'
       if (status === 0) dotClass = idx === 0 ? 'active' : 'pending'
       if (status === 2) dotClass = 'rejected'
-      const canOperate = logType === 1 && status === 0 && currentItemID > 0 && itemID === currentItemID
+      const canOperate =
+        logType === 1 &&
+        status === 0 &&
+        currentItemID > 0 &&
+        itemID === currentItemID &&
+        !isRejectNegotiationPending(row)
       return {
         key: `${row?.id || idx}-${row?.event_code || ''}`,
         logId: logID,
@@ -1368,6 +1405,10 @@ function timelineTitle(row) {
   const status = Number(row?.status || 0)
   const stepName = String(row?.step_name || '').trim()
   const eventCode = String(row?.event_code || '').trim()
+  if (eventCode === 'step_reject_negotiating') return '节点协商中'
+  if (eventCode === 'final_confirm_reject_negotiating') return '最终状态协商中'
+  if (eventCode === 'step_reject_agree_modify') return '创作者同意修改'
+  if (eventCode === 'final_confirm_reject_agree_modify') return '创作者同意修改最终状态'
   if (eventCode === 'final_product_confirmed') return '成品确认（已通过）'
   if (eventCode === 'final_confirm_request') return status === 0 ? '最终状态确认（待处理）' : '最终状态确认'
   if (eventCode === 'return_address_request') return '等待填写寄回地址'
@@ -1391,6 +1432,11 @@ function timelineDesc(row) {
   if (eventCode === 'seller_confirm_submission') return '创作者已确认订单，订单进入待付款状态。'
   if (eventCode === 'payment_completed') return '买家已完成付款。'
   if (eventCode === 'step_request') return '创作者已上传节点内容，等待买家确认。'
+  if (eventCode === 'step_reject_negotiating') return '买家驳回了该节点，等待创作者处理协商。'
+  if (eventCode === 'final_confirm_reject_negotiating') return '买家拒绝了最终状态，等待创作者处理协商。'
+  if (eventCode === 'step_reject_agree_modify' || eventCode === 'final_confirm_reject_agree_modify') {
+    return '创作者已同意修改，后续会重新提交状态。'
+  }
   if (eventCode === 'final_product_confirmed') return '买家已确认最终成品。'
   if (eventCode === 'final_confirm_request') return '创作者已提交最终状态，请买家确认。'
   if (eventCode === 'return_address_request') return '创作者发起结单，请买家填写寄回地址。'
