@@ -255,6 +255,10 @@
 			emit('cancel')
 		}
 	})
+
+	defineExpose({
+		openReport: handleClick
+	})
 </script>
 
 <style lang="less" scoped>

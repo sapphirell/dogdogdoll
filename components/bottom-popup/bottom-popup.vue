@@ -30,6 +30,11 @@
 <script>
   export default {
     name: 'BottomPopup',
+    data() {
+      return {
+        ignoreMaskTapUntil: 0,
+      };
+    },
     props: {
       show: {
         type: Boolean,
@@ -40,6 +45,7 @@
 	  show(newVal) {
 	    if (typeof uni === 'undefined') return;
 	    if (newVal) {
+	      this.ignoreMaskTapUntil = Date.now() + 320;
 	      // 弹窗显示时隐藏 tab-bar
 	      uni.hideTabBar();
 	    } else {
@@ -57,6 +63,7 @@
     },
     methods: {
       closePopup() {
+        if (Date.now() < this.ignoreMaskTapUntil) return;
         this.$emit('close');
       },
 	  moveHandle() {
@@ -74,7 +81,7 @@
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 995;
+    z-index: 10090;
     opacity: 0;
     transition: opacity 0.3s ease;
     
@@ -91,7 +98,7 @@
     background-color: #fff;
     border-radius: 24rpx 24rpx 0 0;
     padding: 30rpx;
-    z-index: 996;
+    z-index: 10091;
     box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.1);
     transition: bottom 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     
@@ -111,6 +118,6 @@
     align-items: center;
     justify-content: center;
     background-color: #f5f5f5;
-    z-index: 1000;
+    z-index: 10092;
   }
 </style>

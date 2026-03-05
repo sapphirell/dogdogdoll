@@ -35,7 +35,7 @@
 
     <view class="section-card post-card">
       <view class="post-content">
-        <text class="app-readable-text" user-select>{{ detailData.content }}</text>
+        <text class="common-text treehole-content-text" user-select>{{ detailData.content }}</text>
       </view>
 
       <view 
@@ -80,7 +80,7 @@
           
           <view class="action-btn share-btn" @tap="copyUrl(detailData)" hover-class="btn-press">
             <uni-icons type="redo" size="24" color="#666" />
-            <text class="action-text font-doll">分享</text>
+            <text class="action-text font-alimamashuhei">分享</text>
           </view>
         </view>
         
@@ -417,6 +417,11 @@ $radius-img: 12rpx;
 .post-card {
   .post-content {
     margin-bottom: 24rpx;
+
+    .treehole-content-text {
+      font-size: 28rpx;
+      margin-bottom: 0;
+    }
   }
 
   .divider {
