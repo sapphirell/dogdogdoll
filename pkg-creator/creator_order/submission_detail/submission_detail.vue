@@ -90,22 +90,6 @@
 	          </view>
 	        </view>
 
-	        <view v-if="canFillReturnAddress" class="return-address-tip-card" @tap="goFillReturnAddress">
-	          <view class="return-address-tip-main">
-	            <text class="return-address-tip-title font-alimamashuhei">妆师已发起结单</text>
-	            <text class="return-address-tip-desc">请填写寄回地址</text>
-	          </view>
-	          <uni-icons type="arrow-right" size="16" color="#73849a" />
-	        </view>
-	        <view v-else-if="returnAddressInfo" class="return-address-preview-card">
-	          <text class="return-address-preview-title">寄回地址已填写</text>
-	          <text class="return-address-preview-line">
-	            {{ returnAddressInfo.receiver_name || '' }} {{ returnAddressInfo.receiver_phone || '' }}
-	          </text>
-	          <text class="return-address-preview-line">{{ returnAddressInfo.full_address || '' }}</text>
-	          <text v-if="returnShipped" class="return-address-preview-line">寄回单号：{{ returnExpressNoText || '-' }}</text>
-	        </view>
-
 	        <view class="tab-header-wrapper">
           <view class="custom-tab-bar">
             <view 
@@ -747,18 +731,13 @@ function buildItemAlertTag(item) {
       : { text: '节点协商中', type: 'step' }
   }
   if (latest.kind === 'final' && latest.status === 0) {
-    return { text: '待状态确认', type: 'final' }
+    return { text: '待你确认终态', type: 'final' }
   }
   if (latest.kind === 'step' && latest.status === 0) {
-    return { text: '待节点确认', type: 'step' }
+    return { text: '待你确认节点', type: 'step' }
   }
   return null
 }
-
-const canFillReturnAddress = computed(() => !!submission.can_fill_return_address)
-const returnAddressInfo = computed(() => submission.return_address_info || null)
-const returnShipped = computed(() => !!submission.return_shipped)
-const returnExpressNoText = computed(() => String(submission.return_express_no || '').trim())
 
 const statusColorClass = computed(() => {
   const s = submission.status
@@ -1409,10 +1388,13 @@ function timelineTitle(row) {
   if (eventCode === 'final_confirm_reject_negotiating') return '最终状态协商中'
   if (eventCode === 'step_reject_agree_modify') return '创作者同意修改'
   if (eventCode === 'final_confirm_reject_agree_modify') return '创作者同意修改最终状态'
-  if (eventCode === 'final_product_confirmed') return '成品确认（已通过）'
-  if (eventCode === 'final_confirm_request') return status === 0 ? '最终状态确认（待处理）' : '最终状态确认'
-  if (eventCode === 'return_address_request') return '等待填写寄回地址'
-  if (eventCode === 'return_address_submitted') return '寄回地址已填写'
+  if (eventCode === 'final_product_confirmed') return '买家已确认最终状态'
+  if (eventCode === 'final_confirm_request') return status === 0 ? '最终状态确认（待你确认）' : '最终状态确认'
+  if (eventCode === 'return_address_request') {
+    if (stepName) return stepName
+    if (submission.return_address_ready) return '订单收尾'
+    return '等待填写寄回地址'
+  }
   if (eventCode === 'return_shipped') return '创作者已寄回'
   if (logType === 1) {
     const name = stepName || `节点#${Number(row?.step_id || 0)}`
@@ -1438,9 +1420,11 @@ function timelineDesc(row) {
     return '创作者已同意修改，后续会重新提交状态。'
   }
   if (eventCode === 'final_product_confirmed') return '买家已确认最终成品。'
-  if (eventCode === 'final_confirm_request') return '创作者已提交最终状态，请买家确认。'
-  if (eventCode === 'return_address_request') return '创作者发起结单，请买家填写寄回地址。'
-  if (eventCode === 'return_address_submitted') return '买家已填写寄回地址，等待创作者寄回。'
+  if (eventCode === 'final_confirm_request') return '创作者已提交最终状态，请你确认（确认时需选择寄回地址）。'
+  if (eventCode === 'return_address_request') {
+    if (submission.return_address_ready) return '创作者已进入订单收尾，可填写寄回单号。'
+    return '创作者发起结单，请买家填写寄回地址。'
+  }
   if (eventCode === 'return_shipped') return '创作者已寄回，等待买家查收。'
   return ''
 }
@@ -1528,13 +1512,6 @@ function applyFocusItemByID(itemID) {
     currentTabIndex.value = idx
     focusItemID.value = 0
   }
-}
-
-function goFillReturnAddress() {
-  if (!submission.submission_id) return
-  uni.navigateTo({
-    url: `/pkg-creator/creator_order/return_address/return_address?submission_id=${submission.submission_id}`
-  })
 }
 
 function switchTab(index) {

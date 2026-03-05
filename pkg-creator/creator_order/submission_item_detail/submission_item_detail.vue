@@ -400,6 +400,7 @@ const StepLogEventFinalConfirmRequest = 'final_confirm_request'
 const StepLogEventStepRejectNegotiating = 'step_reject_negotiating'
 const StepLogEventFinalRejectNegotiating = 'final_confirm_reject_negotiating'
 const NegotiationStatePendingArtist = 'pending_artist_decision'
+const FinalConfirmResumeStorageKey = 'artist_order:final_confirm_resume'
 
 const submissionId = ref(0)
 const itemId = ref(0)
@@ -666,6 +667,7 @@ const showBuyerFinalConfirm = computed(() => {
   if (showBuyerStepActions.value) return false
   return !!currentItemFinalState.value?.can_confirm_final
 })
+const returnAddressReady = computed(() => !!queueInfo.value?.return_address_ready)
 const showBuyerDecisionActions = computed(() => showBuyerStepActions.value || showBuyerFinalConfirm.value)
 const showArtistNegotiationActions = computed(() => {
   return viewerIsArtist.value && submissionStatus.value === SubmissionStatusPaid && !!artistPendingNegotiationLog.value
@@ -716,6 +718,9 @@ const buyerActionModalDesc = computed(() => {
     if (needBalancePayBeforeFinal.value) {
       return '该订单为扫码转账，确认最终状态前需先支付尾款，系统将弹出收款二维码。'
     }
+    if (!returnAddressReady.value) {
+      return '确认最终状态前，请先选择收件地址作为寄回地址。'
+    }
     return '确认当前已达到最终状态，确认后将进入结单流程。'
   }
   return '确认该节点通过后，创作者将继续推进下一节点。'
@@ -724,6 +729,7 @@ const buyerActionModalDesc = computed(() => {
 const buyerActionModalConfirmText = computed(() => {
   if (buyerActionType.value === 'cancel') return '确认取消'
   if (buyerActionType.value === 'reject') return '确认拒绝'
+  if (buyerConfirmIsFinal.value && !returnAddressReady.value) return '去选地址'
   return buyerConfirmIsFinal.value ? '确认最终状态' : '确认节点'
 })
 
@@ -860,7 +866,7 @@ function timelineTitle(row) {
   if (eventCode === 'buyer_confirm_content') return '买家确认投递内容'
   if (eventCode === 'seller_confirm_submission') return '创作者确认订单'
   if (eventCode === 'payment_completed') return '付款完成'
-  if (eventCode === 'final_product_confirmed') return '成品确认'
+  if (eventCode === 'final_product_confirmed') return '买家已确认最终状态'
   return stepName || '进度更新'
 }
 
@@ -1242,10 +1248,81 @@ function confirmArtistNegotiationModal() {
   submitArtistNegotiationDecision()
 }
 
+function goChooseReturnAddress() {
+  if (!submissionId.value) {
+    uni.showToast({ title: '缺少 submission_id', icon: 'none' })
+    return
+  }
+  const params = [`submission_id=${submissionId.value}`]
+  const currentID = Number(currentItemId.value || 0)
+  if (currentID > 0) {
+    params.push('auto_confirm_final=1')
+    params.push(`item_id=${currentID}`)
+  }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/return_address/return_address?${params.join('&')}`
+  })
+}
+
+function ensureReturnAddressReadyForFinalConfirm() {
+  if (!viewerIsBuyer.value) return true
+  if (returnAddressReady.value) return true
+  uni.showToast({ title: '请先选择收件地址', icon: 'none' })
+  goChooseReturnAddress()
+  return false
+}
+
+function readFinalConfirmResumeTask() {
+  const raw = uni.getStorageSync(FinalConfirmResumeStorageKey)
+  if (!raw) return null
+  if (typeof raw === 'object') return raw || null
+  const txt = String(raw || '').trim()
+  if (!txt) return null
+  try {
+    const parsed = JSON.parse(txt)
+    if (parsed && typeof parsed === 'object') return parsed
+  } catch (_) {}
+  return null
+}
+
+function clearFinalConfirmResumeTask() {
+  uni.removeStorageSync(FinalConfirmResumeStorageKey)
+}
+
+async function tryResumeFinalConfirmAfterAddress() {
+  const task = readFinalConfirmResumeTask()
+  if (!task || Number(task?.submission_id || 0) !== Number(submissionId.value || 0)) return
+  if (!viewerIsBuyer.value) return
+
+  const taskItemID = Number(task?.item_id || 0)
+  if (taskItemID > 0 && taskItemID !== Number(currentItemId.value || 0)) {
+    const exists = items.value.some((row) => Number(row?.id || 0) === taskItemID)
+    if (exists) itemId.value = taskItemID
+  }
+  const state = currentItemFinalState.value || {}
+  if (state?.final_confirmed) {
+    clearFinalConfirmResumeTask()
+    return
+  }
+  if (!returnAddressReady.value) return
+  if (!state?.can_confirm_final) {
+    clearFinalConfirmResumeTask()
+    return
+  }
+  if (finalConfirmSubmitting.value || stepActioning.value || cancelSubmitting.value) return
+  buyerActionModalVisible.value = false
+  buyerActionType.value = ''
+  const ok = await handleConfirmItemFinal()
+  if (ok) clearFinalConfirmResumeTask()
+}
+
 async function doConfirmItemFinalRequest() {
   const state = currentItemFinalState.value || {}
   if (!state?.can_confirm_final) {
     uni.showToast({ title: '当前不可确认', icon: 'none' })
+    return false
+  }
+  if (!ensureReturnAddressReadyForFinalConfirm()) {
     return false
   }
   const id = currentItemId.value
@@ -1289,6 +1366,9 @@ async function doConfirmItemFinalRequest() {
 }
 
 async function handleConfirmItemFinal() {
+  if (!ensureReturnAddressReadyForFinalConfirm()) {
+    return false
+  }
   if (needBalancePayBeforeFinal.value) {
     finalPayPendingConfirm.value = true
     await openFinalBalancePayModal()
@@ -1503,7 +1583,9 @@ onLoad((options) => {
 })
 
 onShow(() => {
-  if (submissionId.value > 0) fetchAll()
+  if (submissionId.value > 0) {
+    fetchAll().then(() => tryResumeFinalConfirmAfterAddress())
+  }
 })
 </script>
 

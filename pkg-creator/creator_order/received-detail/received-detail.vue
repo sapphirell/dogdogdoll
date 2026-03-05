@@ -171,32 +171,58 @@
                 </view>
               </view>
 
-	              <view class="item-actions">
+	              <view v-if="!activeItemFinalConfirmed" class="item-actions">
 	                <button
 	                  class="btn-mini"
 	                  @tap="openChangePricePanel(activeItem)"
 	                >
 	                  修改金额
 	                </button>
-	                <button
-	                  class="btn-mini step-submit"
-	                  :class="{ disabled: !canSubmitStep(activeItem) }"
-	                  :disabled="!canSubmitStep(activeItem)"
-	                  @tap="handleSubmitStep(activeItem)"
-	                >
-	                  提交节点状态
-	                </button>
-	                <button
-	                  class="btn-mini mark-finished"
-	                  :class="{ disabled: !canMarkFinished(activeItem) }"
-	                  :disabled="!canMarkFinished(activeItem)"
-	                  @tap="handleMarkItemFinished(activeItem)"
-	                >
-	                  我已画完
-	                </button>
+	                <template v-if="showItemNegotiationActions">
+	                  <button
+	                    class="btn-mini negotiation-agree"
+	                    :class="{ disabled: negotiationSubmitting }"
+	                    :disabled="negotiationSubmitting"
+	                    @tap="openNegotiationModal('agree')"
+	                  >
+	                    同意修改
+	                  </button>
+	                  <button
+	                    class="btn-mini negotiation-reject"
+	                    :class="{ disabled: negotiationSubmitting }"
+	                    :disabled="negotiationSubmitting"
+	                    @tap="openNegotiationModal('reject')"
+	                  >
+	                    拒绝修改
+	                  </button>
+	                </template>
+	                <template v-else>
+	                  <button
+	                    class="btn-mini step-submit"
+	                    :class="{ disabled: !canSubmitStep(activeItem) }"
+	                    :disabled="!canSubmitStep(activeItem)"
+	                    @tap="handleSubmitStep(activeItem)"
+	                  >
+	                    提交节点状态
+	                  </button>
+	                  <button
+	                    class="btn-mini mark-finished"
+	                    :class="{ disabled: !canMarkFinished(activeItem) }"
+	                    :disabled="!canMarkFinished(activeItem)"
+	                    @tap="handleMarkItemFinished(activeItem)"
+	                  >
+	                    我已画完
+	                  </button>
+	                </template>
 	              </view>
 	              <view
-	                v-if="getItemFinalState(activeItem).final_confirmed"
+	                v-if="showItemNegotiationActions"
+	                class="item-final-state pending"
+	              >
+	                买家已发起协商，请先处理协商请求
+	              </view>
+	              <view
+	                v-else-if="getItemFinalState(activeItem).final_confirmed"
 	                class="item-final-state done"
 	              >
 	                买家已确认最终状态
@@ -215,15 +241,21 @@
 	          <view class="card-header">
 	            <text class="card-title">订单收尾</text>
 	          </view>
-	          <view class="delivery-state-line" v-if="returnAddressRequested && !returnAddressReady">
+	          <view class="delivery-state-line" v-if="returnAddressRequested && !effectiveReturnAddressReady">
 	            <text class="delivery-state-text">已发起结单，等待买家填写寄回地址</text>
 	          </view>
-	          <view class="delivery-address-block" v-if="returnAddressInfo">
-	            <text class="delivery-label">寄回地址</text>
-	            <text class="delivery-address-name">
-	              {{ returnAddressInfo.receiver_name || '' }} {{ returnAddressInfo.receiver_phone || '' }}
-	            </text>
-	            <text class="delivery-address-line">{{ returnAddressInfo.full_address || '' }}</text>
+	          <view class="delivery-address-block" v-if="effectiveReturnAddressInfo">
+	            <text class="delivery-copy-btn" @tap="copyReturnAddress">复制地址</text>
+	            <view class="delivery-address-main">
+	              <view class="delivery-address-badge">寄</view>
+	              <view class="delivery-address-content">
+	                <view class="delivery-address-top">
+	                  <text class="delivery-address-name">{{ effectiveReturnAddressInfo.receiver_name || '-' }}</text>
+	                  <text class="delivery-address-phone">{{ effectiveReturnAddressInfo.receiver_phone || '-' }}</text>
+	                </view>
+	                <text class="delivery-address-line">{{ effectiveReturnAddressInfo.full_address || '' }}</text>
+	              </view>
+	            </view>
 	          </view>
 	          <view class="delivery-state-line" v-if="returnShipped">
 	            <text class="delivery-state-text">已寄回：{{ returnExpressNoText || '-' }}</text>
@@ -241,7 +273,7 @@
 	              class="delivery-action-btn ship"
 	              @tap="openShipBackPanel"
 	            >
-	              寄回
+	              订单收尾
 	            </button>
 	          </view>
 	        </view>
@@ -414,36 +446,6 @@
 	      </view>
 	    </uni-popup>
 
-	    <uni-popup
-	      ref="shipPopupRef"
-	      type="bottom"
-	      :mask-click="true"
-	      @change="onShipPopupChange"
-	    >
-	      <view class="ship-sheet" :style="{ paddingBottom: footerPadding }">
-	        <view class="ship-header">
-	          <text class="ship-title">填写寄回单号</text>
-	          <text class="ship-close" @tap="closeShipBackPanel">关闭</text>
-	        </view>
-	        <view class="ship-body">
-	          <input
-	            v-model="shipExpressNo"
-	            class="ship-input"
-	            placeholder="请输入快递单号"
-	          />
-	        </view>
-	        <view class="ship-footer">
-	          <button
-	            class="ship-submit-btn"
-	            :disabled="shipSubmitting"
-	            @tap="submitShipBack"
-	          >
-	            {{ shipSubmitting ? '提交中...' : '提交寄回' }}
-	          </button>
-	        </view>
-	      </view>
-	    </uni-popup>
-
 	    <common-modal v-model:visible="auditModalVisible" width="600rpx">
 	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
         <text class="custom-modal-title">{{ auditModalTitle }}</text>
@@ -479,8 +481,79 @@
 	      </view>
 	    </common-modal>
 
+	    <common-modal v-model:visible="shipModalVisible" width="660rpx" :closeable="!shipSubmitting">
+	      <view class="ship-form-modal">
+	        <text class="ship-form-tip">{{ shipModalDescText }}</text>
+	        <view class="ship-form-address-card" @tap="copyReturnAddress">
+	          <view class="ship-form-address-badge">寄</view>
+	          <view class="ship-form-address-content">
+	            <view class="ship-form-address-top">
+	              <text class="ship-form-address-name">{{ shipModalAddressName }}</text>
+	              <text class="ship-form-address-phone">{{ shipModalAddressPhone }}</text>
+	            </view>
+	            <text class="ship-form-address-line">{{ shipModalAddressLine }}</text>
+	          </view>
+	          <uni-icons type="right" size="18" color="#c0c8d7" />
+	        </view>
+
+	        <view v-if="shipModalNeedExpress" class="ship-form-row">
+	          <text class="ship-form-label">快递单号</text>
+	          <view class="ship-form-row-right">
+	            <input
+	              v-model.trim="shipExpressNo"
+	              class="ship-form-input"
+	              placeholder="请填写"
+	            />
+	          </view>
+	        </view>
+
+	        <view v-if="shipModalNeedExpress" class="ship-form-row" @tap="chooseShipExpressCompany">
+	          <text class="ship-form-label">快递公司</text>
+	          <view class="ship-form-row-right">
+	            <text class="ship-form-value" :class="{ placeholder: !shipExpressCompany }">
+	              {{ shipExpressCompany || '请选择' }}
+	            </text>
+	            <uni-icons type="right" size="16" color="#c0c8d7" />
+	          </view>
+	        </view>
+
+	        <button
+	          class="ship-form-submit"
+	          :class="{ disabled: shipModalConfirmDisabled }"
+	          :disabled="shipModalConfirmDisabled"
+	          @tap="submitShipBack"
+	        >
+	          {{ shipModalConfirmText }}
+	        </button>
+	      </view>
+	    </common-modal>
+
+	    <common-modal v-model:visible="negotiationModalVisible" width="620rpx" :closeable="!negotiationSubmitting">
+	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+	        <text class="custom-modal-title">{{ negotiationModalTitle }}</text>
+	        <text class="custom-modal-desc">{{ negotiationModalDesc }}</text>
+	        <view class="custom-modal-actions">
+	          <button
+	            class="custom-modal-btn cancel"
+	            :disabled="negotiationSubmitting"
+	            @tap="negotiationModalVisible = false"
+	          >
+	            取消
+	          </button>
+	          <button
+	            class="custom-modal-btn confirm"
+	            :class="{ disabled: negotiationSubmitting }"
+	            :disabled="negotiationSubmitting"
+	            @tap="confirmNegotiationModal"
+	          >
+	            {{ negotiationSubmitting ? '提交中...' : negotiationModalConfirmText }}
+	          </button>
+	        </view>
+	      </view>
+	    </common-modal>
+
 	    <common-modal v-model:visible="paymentStatusModalVisible" width="660rpx">
-	      <view class="payment-modal-content" style="padding-bottom: 40rpx;">
+	      <view class="payment-modal-content">
 	        <text class="payment-modal-title">扫码付款状态</text>
 
         <view v-if="paymentStatusLoading" class="payment-modal-state">
@@ -490,7 +563,7 @@
           <text class="state-desc">{{ paymentStatusError }}</text>
           <view class="payment-modal-refresh" @tap="fetchPaymentStatusInfo">重试</view>
         </view>
-        <scroll-view v-else class="payment-modal-scroll" scroll-y>
+        <view v-else class="payment-modal-scroll">
           <view class="payment-section">
             <view class="payment-info-row">
               <text class="payment-info-label">状态</text>
@@ -531,11 +604,7 @@
             <text v-if="latestDispute.result_note" class="payment-dispute-desc">处理说明：{{ latestDispute.result_note }}</text>
           </view>
 
-          <view class="payment-section" v-if="canApplyDispute">
-            <button class="payment-unreceived-btn" @tap="toggleUnreceivedActions">
-              我未收到款
-            </button>
-
+          <view class="payment-section" v-if="canApplyDispute && (showUnreceivedActions || showDisputeForm)">
             <view v-if="showUnreceivedActions" class="payment-unreceived-actions">
               <view class="payment-unreceived-action" @tap="contactOrderOwner">
                 与单主沟通
@@ -586,7 +655,18 @@
               </button>
             </view>
           </view>
-        </scroll-view>
+        </view>
+
+        <view class="payment-modal-footer">
+          <button
+            v-if="canApplyDispute && !paymentStatusLoading && !paymentStatusError"
+            class="payment-modal-mini-btn"
+            @tap="toggleUnreceivedActions"
+          >
+            我未收到款
+          </button>
+          <button class="payment-modal-ok-btn" @tap="closePaymentStatusModal">我知道了</button>
+        </view>
       </view>
     </common-modal>
 
@@ -716,6 +796,9 @@ const PAY_STATUS_DEPOSIT_CONFIRMING = 1
 const PAY_STATUS_DEPOSIT_PAID = 2
 const PAY_STATUS_BALANCE_CONFIRMING = 3
 const PAY_STATUS_PAID = 4
+const STEP_LOG_EVENT_STEP_REJECT_NEGOTIATING = 'step_reject_negotiating'
+const STEP_LOG_EVENT_FINAL_REJECT_NEGOTIATING = 'final_confirm_reject_negotiating'
+const NEGOTIATION_STATE_PENDING_ARTIST = 'pending_artist_decision'
 
 const submissionStatus = computed(() => Number(queueInfo.value?.status || 0))
 
@@ -793,7 +876,74 @@ const returnAddressReady = computed(() => !!queueInfo.value?.return_address_read
 const canShipBackAction = computed(() => !!queueInfo.value?.can_ship_back && !isBuyer.value)
 const returnShipped = computed(() => !!queueInfo.value?.return_shipped)
 const returnExpressNoText = computed(() => String(queueInfo.value?.return_express_no || '').trim())
-const returnAddressInfo = computed(() => queueInfo.value?.return_address_info || null)
+const returnAddressInfo = computed(() => {
+  const raw = queueInfo.value?.return_address_info || queueInfo.value?.returnAddressInfo || null
+  if (!raw || typeof raw !== 'object') return null
+  const addressID = Number(raw.address_id ?? raw.addressId ?? raw.AddressID ?? 0)
+  const receiverName = String(raw.receiver_name ?? raw.receiverName ?? raw.ReceiverName ?? '').trim()
+  const receiverPhone = String(raw.receiver_phone ?? raw.receiverPhone ?? raw.ReceiverPhone ?? '').trim()
+  const fullAddress = String(raw.full_address ?? raw.fullAddress ?? raw.FullAddress ?? '').trim()
+  if (!receiverName && !receiverPhone && !fullAddress) return null
+  return {
+    address_id: addressID > 0 ? addressID : 0,
+    receiver_name: receiverName,
+    receiver_phone: receiverPhone,
+    full_address: fullAddress
+  }
+})
+const progressLogs = computed(() => {
+  const q = queueInfo.value || {}
+  if (Array.isArray(q.progress_logs)) return q.progress_logs
+  if (Array.isArray(q.progressLogs)) return q.progressLogs
+  return []
+})
+const fallbackReturnAddressInfo = computed(() => {
+  const logs = progressLogs.value
+  if (!logs.length) return null
+  let picked = null
+  logs.forEach((row) => {
+    const eventCode = String(row?.event_code || '').trim()
+    const status = Number(row?.status || 0)
+    if (eventCode !== 'return_address_submitted' || status !== 1) return
+    if (!picked) {
+      picked = row
+      return
+    }
+    const ts = Number(row?.created_at || 0)
+    const pts = Number(picked?.created_at || 0)
+    const id = Number(row?.id || 0)
+    const pid = Number(picked?.id || 0)
+    if (ts > pts || (ts === pts && id > pid)) picked = row
+  })
+  if (!picked) return null
+  const content = String(picked?.content || '').trim()
+  if (!content) return { receiver_name: '', receiver_phone: '', full_address: '' }
+  const reg = /买家已填写寄回地址[:：]\s*([^，,]+)[，,]\s*(.+?)[。.]?$/
+  const m = content.match(reg)
+  if (m && m.length >= 3) {
+    return {
+      receiver_name: String(m[1] || '').trim(),
+      receiver_phone: '',
+      full_address: String(m[2] || '').trim()
+    }
+  }
+  return {
+    receiver_name: '',
+    receiver_phone: '',
+    full_address: content.replace(/^买家已填写寄回地址[:：]?\s*/, '').replace(/[。.]$/, '').trim()
+  }
+})
+const effectiveReturnAddressInfo = computed(() => {
+  const direct = returnAddressInfo.value
+  if (direct && (direct.receiver_name || direct.receiver_phone || direct.full_address)) return direct
+  const fallback = fallbackReturnAddressInfo.value
+  if (fallback && (fallback.receiver_name || fallback.receiver_phone || fallback.full_address)) return fallback
+  return null
+})
+const effectiveReturnAddressReady = computed(() => {
+  if (returnAddressReady.value) return true
+  return !!effectiveReturnAddressInfo.value
+})
 const showDeliveryFlowCard = computed(() => {
   if (isBuyer.value) return false
   if (submissionStatus.value !== SUBMISSION_STATUS_PAID) return false
@@ -801,17 +951,104 @@ const showDeliveryFlowCard = computed(() => {
     canCloseSubmissionAction.value ||
     canShipBackAction.value ||
     returnAddressRequested.value ||
-    returnAddressReady.value ||
+    effectiveReturnAddressReady.value ||
     returnShipped.value ||
     allItemsFinalConfirmed.value
   )
 })
 
-const progressLogs = computed(() => {
-  const q = queueInfo.value || {}
-  if (Array.isArray(q.progress_logs)) return q.progress_logs
-  if (Array.isArray(q.progressLogs)) return q.progressLogs
-  return []
+function parseLogExtra(row) {
+  if (!row) return {}
+  const raw = row?.extra_json ?? row?.extra
+  if (!raw) return {}
+  if (typeof raw === 'object') return raw || {}
+  const txt = String(raw).trim()
+  if (!txt) return {}
+  try {
+    const parsed = JSON.parse(txt)
+    return (parsed && typeof parsed === 'object') ? parsed : {}
+  } catch (_) {
+    return {}
+  }
+}
+
+function isRejectNegotiatingLog(row) {
+  if (!row) return false
+  const status = Number(row?.status || 0)
+  if (status !== 0) return false
+  const eventCode = String(row?.event_code || '').trim()
+  if (
+    eventCode === STEP_LOG_EVENT_STEP_REJECT_NEGOTIATING ||
+    eventCode === STEP_LOG_EVENT_FINAL_REJECT_NEGOTIATING
+  ) return true
+  const extra = parseLogExtra(row)
+  return String(extra?.negotiation_state || '').trim() === NEGOTIATION_STATE_PENDING_ARTIST
+}
+
+const activeItemPendingNegotiationLog = computed(() => {
+  const itemID = Number(activeItem.value?.id || activeItem.value?.ID || 0)
+  if (!itemID) return null
+  let picked = null
+  progressLogs.value.forEach((row) => {
+    const logItemID = Number(row?.submission_item_id || row?.submissionItemID || row?.submissionItemId || 0)
+    if (logItemID !== itemID || !isRejectNegotiatingLog(row)) return
+    if (!picked) {
+      picked = row
+      return
+    }
+    const ts = Number(row?.created_at || 0)
+    const pts = Number(picked?.created_at || 0)
+    const id = Number(row?.id || 0)
+    const pid = Number(picked?.id || 0)
+    if (ts > pts || (ts === pts && id > pid)) picked = row
+  })
+  return picked
+})
+
+const showItemNegotiationActions = computed(() => {
+  if (isBuyer.value) return false
+  if (submissionStatus.value !== SUBMISSION_STATUS_PAID) return false
+  return !!activeItemPendingNegotiationLog.value
+})
+
+const activeItemFinalConfirmed = computed(() => {
+  if (!activeItem.value) return false
+  return !!getItemFinalState(activeItem.value).final_confirmed
+})
+
+const activeItemNegotiationIsFinal = computed(() => {
+  const row = activeItemPendingNegotiationLog.value
+  if (!row) return false
+  const eventCode = String(row?.event_code || '').trim()
+  if (eventCode === STEP_LOG_EVENT_FINAL_REJECT_NEGOTIATING) return true
+  return Number(row?.log_type || 0) === 8
+})
+
+const negotiationModalVisible = ref(false)
+const negotiationAction = ref('')
+const negotiationSubmitting = ref(false)
+
+const negotiationModalTitle = computed(() => {
+  if (negotiationAction.value === 'reject') return '拒绝修改'
+  return '同意修改'
+})
+
+const negotiationModalDesc = computed(() => {
+  if (negotiationAction.value === 'reject') {
+    if (activeItemNegotiationIsFinal.value) {
+      return '确认拒绝修改最终状态吗？确认后将进入擦花寄回并扣定金流程。'
+    }
+    return '确认拒绝本次修改请求吗？确认后将按节点规则进入拒绝流程。'
+  }
+  if (activeItemNegotiationIsFinal.value) {
+    return '确认同意修改最终状态吗？后续可重新提交最终状态给买家确认。'
+  }
+  return '确认同意按买家意见修改吗？后续可重新提交节点状态。'
+})
+
+const negotiationModalConfirmText = computed(() => {
+  if (negotiationAction.value === 'reject') return '确认拒绝'
+  return '确认同意'
 })
 
 function getStepLogItemID(row) {
@@ -893,9 +1130,11 @@ const pricePopupRef = ref(null)
 const editingItem = ref(null)
 const priceInput = ref('')
 const reasonInput = ref('')
-const shipPopupRef = ref(null)
+const shipModalVisible = ref(false)
 const shipExpressNo = ref('')
+const shipExpressCompany = ref('')
 const shipSubmitting = ref(false)
+const shipFromCloseAction = ref(false)
 const skipFirstOnShowRefresh = ref(true)
 const paymentStatusModalVisible = ref(false)
 const paymentStatusLoading = ref(false)
@@ -922,6 +1161,59 @@ watch(markFinishModalVisible, (show) => {
   if (!show && !markFinishSubmitting.value) {
     markFinishTargetItemID.value = 0
   }
+})
+
+watch(negotiationModalVisible, (show) => {
+  if (!show && !negotiationSubmitting.value) {
+    negotiationAction.value = ''
+  }
+})
+
+watch(shipModalVisible, (show) => {
+  if (!show && !shipSubmitting.value) {
+    shipExpressNo.value = ''
+    shipExpressCompany.value = ''
+    shipFromCloseAction.value = false
+  }
+})
+
+const shipModalNeedExpress = computed(() => !shipFromCloseAction.value || !!effectiveReturnAddressReady.value)
+const shipModalTitleText = computed(() => {
+  if (shipFromCloseAction.value) return '结单'
+  return '订单收尾'
+})
+const shipModalDescText = computed(() => {
+  if (shipFromCloseAction.value) {
+    if (!effectiveReturnAddressReady.value) {
+      return '买家尚未填写寄回地址，确认后将先发送填写地址提醒。'
+    }
+    return '为了保障您的交易安全，请确认您的寄件信息'
+  }
+  return '为了保障您的交易安全，请确认您的寄件信息'
+})
+const shipModalAddressName = computed(() => {
+  const info = effectiveReturnAddressInfo.value || {}
+  return String(info?.receiver_name || '').trim() || '-'
+})
+const shipModalAddressPhone = computed(() => {
+  const info = effectiveReturnAddressInfo.value || {}
+  return String(info?.receiver_phone || '').trim() || '-'
+})
+const shipModalAddressLine = computed(() => {
+  const info = effectiveReturnAddressInfo.value || {}
+  return String(info?.full_address || '').trim() || '买家尚未填写寄回地址'
+})
+const shipModalConfirmDisabled = computed(() => {
+  if (shipSubmitting.value) return true
+  if (!shipModalNeedExpress.value) return false
+  if (!String(shipExpressNo.value || '').trim()) return true
+  if (!String(shipExpressCompany.value || '').trim()) return true
+  return false
+})
+const shipModalConfirmText = computed(() => {
+  if (shipSubmitting.value) return '提交中...'
+  if (shipFromCloseAction.value && !effectiveReturnAddressReady.value) return '发送提醒'
+  return '提交'
 })
 
 const latestPayment = computed(() => paymentStatusInfo.value?.latest_payment || null)
@@ -1034,7 +1326,7 @@ function historyTitle(row) {
   if (eventCode === 'buyer_confirm_content') return '买家确认投递内容'
   if (eventCode === 'seller_confirm_submission') return '创作者确认订单'
   if (eventCode === 'payment_completed') return '付款完成'
-  if (eventCode === 'final_product_confirmed') return '成品确认'
+  if (eventCode === 'final_product_confirmed') return '买家已确认最终状态'
   return '进度更新'
 }
 
@@ -1216,6 +1508,12 @@ function openPaymentStatusModal() {
   fetchPaymentStatusInfo()
 }
 
+function closePaymentStatusModal() {
+  paymentStatusModalVisible.value = false
+  showUnreceivedActions.value = false
+  showDisputeForm.value = false
+}
+
 async function fetchPaymentStatusInfo() {
   if (paymentStatusLoading.value) return
   const ok = await ensureLogin()
@@ -1307,9 +1605,7 @@ function openPlatformDisputeForm() {
 }
 
 async function contactOrderOwner() {
-  paymentStatusModalVisible.value = false
-  showUnreceivedActions.value = false
-  showDisputeForm.value = false
+  closePaymentStatusModal()
   await handleChatWithSeller()
 }
 
@@ -1697,43 +1993,175 @@ function confirmMarkItemFinished() {
   })
 }
 
+function openNegotiationModal(action) {
+  if (!showItemNegotiationActions.value) {
+    uni.showToast({ title: '当前无待处理协商', icon: 'none' })
+    return
+  }
+  if (negotiationSubmitting.value) return
+  if (!activeItemPendingNegotiationLog.value) {
+    uni.showToast({ title: '当前无待处理协商', icon: 'none' })
+    return
+  }
+  negotiationAction.value = action === 'reject' ? 'reject' : 'agree'
+  negotiationModalVisible.value = true
+}
+
+function confirmNegotiationModal() {
+  if (negotiationSubmitting.value) return
+  submitNegotiationDecision()
+}
+
+function buildReturnAddressText() {
+  const info = effectiveReturnAddressInfo.value || {}
+  const name = String(info?.receiver_name || '').trim()
+  const phone = String(info?.receiver_phone || '').trim()
+  const addr = String(info?.full_address || '').trim()
+  return [name, phone, addr].filter(Boolean).join(' ')
+}
+
+function copyReturnAddress() {
+  const text = buildReturnAddressText()
+  if (!text) {
+    uni.showToast({ title: '暂无地址可复制', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '地址已复制', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+    }
+  })
+}
+
+const shipCompanyOptions = [
+  '顺丰速运',
+  '京东快递',
+  '中通快递',
+  '圆通速递',
+  '韵达快递',
+  '申通快递',
+  '极兔速递',
+  'EMS',
+  '邮政快递包裹'
+]
+
+function chooseShipExpressCompany() {
+  if (!shipModalNeedExpress.value || shipSubmitting.value) return
+  uni.showActionSheet({
+    itemList: shipCompanyOptions,
+    success: ({ tapIndex }) => {
+      const idx = Number(tapIndex || 0)
+      if (idx >= 0 && idx < shipCompanyOptions.length) {
+        shipExpressCompany.value = shipCompanyOptions[idx]
+      }
+    }
+  })
+}
+
+function requestCloseSubmission(token) {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/close`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: { submission_id: submissionId.value },
+      success: (res) => {
+        const body = res?.data || {}
+        if (body.status !== 'success') {
+          reject(new Error(body.msg || '结单失败'))
+          return
+        }
+        resolve(body)
+      },
+      fail: () => reject(new Error('网络异常，请稍后重试'))
+    })
+  })
+}
+
+function requestShipBack(token, expressNo) {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/ship-back`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: {
+        submission_id: submissionId.value,
+        express_no: expressNo
+      },
+      success: (res) => {
+        const body = res?.data || {}
+        if (body.status !== 'success') {
+          reject(new Error(body.msg || '提交失败'))
+          return
+        }
+        resolve(body)
+      },
+      fail: () => reject(new Error('网络异常，请稍后重试'))
+    })
+  })
+}
+
+function submitNegotiationDecision() {
+  const row = activeItemPendingNegotiationLog.value
+  const logID = Number(row?.id || 0)
+  if (!logID) {
+    uni.showToast({ title: '缺少协商记录', icon: 'none' })
+    return
+  }
+  const isReject = negotiationAction.value === 'reject'
+  const action = isReject ? 'reject_modify' : 'agree_modify'
+  ensureLogin().then((ok) => {
+    if (!ok) return
+    negotiationSubmitting.value = true
+    const token = uni.getStorageSync('token') || ''
+    uni.showLoading({ title: '提交中' })
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/step/reject-decision`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        log_id: logID,
+        action
+      },
+      success: (res) => {
+        const body = res.data || {}
+        if (body.status !== 'success') {
+          uni.showToast({ title: body.msg || '处理失败', icon: 'none' })
+          return
+        }
+        uni.showToast({ title: isReject ? '已拒绝修改' : '已同意修改', icon: 'success' })
+        negotiationModalVisible.value = false
+        negotiationAction.value = ''
+        fetchQueueInfo()
+      },
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      },
+      complete: () => {
+        negotiationSubmitting.value = false
+        uni.hideLoading()
+      },
+    })
+  })
+}
+
 function handleCloseSubmission() {
   if (!canCloseSubmissionAction.value) {
     uni.showToast({ title: '当前不可结单', icon: 'none' })
     return
   }
-  uni.showModal({
-    title: '结单',
-    content: '将提醒买家填写寄回地址，确认继续吗？',
-    confirmText: '确认结单',
-    success: ({ confirm }) => {
-      if (!confirm) return
-      ensureLogin().then((ok) => {
-        if (!ok) return
-        const token = uni.getStorageSync('token') || ''
-        uni.showLoading({ title: '处理中' })
-        uni.request({
-          url: `${websiteUrl.value}/with-state/artist-order/submission/close`,
-          method: 'POST',
-          header: { Authorization: token, 'Content-Type': 'application/json' },
-          data: { submission_id: submissionId.value },
-          success: (res) => {
-            const body = res.data || {}
-            if (body.status !== 'success') {
-              uni.showToast({ title: body.msg || '结单失败', icon: 'none' })
-              return
-            }
-            uni.showToast({ title: '已提醒买家填写地址', icon: 'success' })
-            fetchQueueInfo()
-          },
-          fail: () => {
-            uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
-          },
-          complete: () => uni.hideLoading(),
-        })
-      })
-    }
-  })
+  shipFromCloseAction.value = true
+  if (effectiveReturnAddressReady.value && !String(shipExpressNo.value || '').trim()) {
+    shipExpressNo.value = String(returnExpressNoText.value || '').trim()
+  }
+  shipModalVisible.value = true
 }
 
 function openShipBackPanel() {
@@ -1741,64 +2169,57 @@ function openShipBackPanel() {
     uni.showToast({ title: '买家尚未填写寄回地址', icon: 'none' })
     return
   }
+  shipFromCloseAction.value = false
   shipExpressNo.value = ''
-  setTimeout(() => {
-    try {
-      shipPopupRef.value?.open?.()
-    } catch (_) {}
-  }, 0)
+  shipModalVisible.value = true
 }
 
 function closeShipBackPanel() {
-  try {
-    shipPopupRef.value?.close?.()
-  } catch (_) {}
-}
-
-function onShipPopupChange(e) {
-  if (!e?.show) {
-    shipExpressNo.value = ''
-    shipSubmitting.value = false
-  }
-}
-
-function submitShipBack() {
   if (shipSubmitting.value) return
+  shipModalVisible.value = false
+}
+
+async function submitShipBack() {
+  if (shipSubmitting.value) return
+  const needExpress = shipModalNeedExpress.value
   const expressNo = String(shipExpressNo.value || '').trim()
-  if (!expressNo) {
+  if (needExpress && !expressNo) {
     uni.showToast({ title: '请填写快递单号', icon: 'none' })
     return
   }
-  ensureLogin().then((ok) => {
-    if (!ok) return
-    shipSubmitting.value = true
+  if (needExpress && !String(shipExpressCompany.value || '').trim()) {
+    uni.showToast({ title: '请选择快递公司', icon: 'none' })
+    return
+  }
+  const ok = await ensureLogin()
+  if (!ok) return
+  shipSubmitting.value = true
+  uni.showLoading({ title: '提交中' })
+  try {
     const token = uni.getStorageSync('token') || ''
-    uni.request({
-      url: `${websiteUrl.value}/with-state/artist-order/submission/ship-back`,
-      method: 'POST',
-      header: { Authorization: token, 'Content-Type': 'application/json' },
-      data: {
-        submission_id: submissionId.value,
-        express_no: expressNo,
-      },
-      success: (res) => {
-        const body = res.data || {}
-        if (body.status !== 'success') {
-          uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
-          return
-        }
-        uni.showToast({ title: '已提交寄回单号', icon: 'success' })
-        closeShipBackPanel()
-        fetchQueueInfo()
-      },
-      fail: () => {
-        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
-      },
-      complete: () => {
-        shipSubmitting.value = false
+    if (shipFromCloseAction.value) {
+      await requestCloseSubmission(token)
+      if (!effectiveReturnAddressReady.value) {
+        uni.showToast({ title: '已提醒买家填写地址', icon: 'success' })
+        shipModalVisible.value = false
+        await fetchQueueInfo()
+        return
       }
+    }
+    await requestShipBack(token, expressNo)
+    uni.showToast({
+      title: shipFromCloseAction.value ? '结单并提交寄回成功' : '已提交寄回单号',
+      icon: 'success'
     })
-  })
+    shipModalVisible.value = false
+    shipExpressNo.value = ''
+    await fetchQueueInfo()
+  } catch (e) {
+    uni.showToast({ title: e?.message || '提交失败', icon: 'none' })
+  } finally {
+    shipSubmitting.value = false
+    uni.hideLoading()
+  }
 }
 
 onLoad((options) => {
@@ -1877,6 +2298,18 @@ onShow(() => {
   flex-wrap: wrap;
   gap: 12rpx;
 }
+:deep(.status-left-group .order-status.size-small) {
+  height: 46rpx;
+  min-height: 46rpx;
+  padding: 0 14rpx;
+  border-radius: 12rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+:deep(.status-left-group .order-status.size-small .order-status-text) {
+  line-height: 1;
+}
 .status-label {
   width: 132rpx;
   flex-shrink: 0;
@@ -1907,6 +2340,7 @@ onShow(() => {
 .status-normal-text {
   font-size: 26rpx;
   color: #5f6775;
+  line-height: 1.2;
 }
 .payment-status-row.clickable:active {
   opacity: 0.68;
@@ -1914,17 +2348,28 @@ onShow(() => {
 .payment-status-right {
   display: flex;
   align-items: center;
-  gap: 6rpx;
+  gap: 10rpx;
+}
+.payment-status-right .status-normal-text {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 .payment-method-tag {
-  padding: 4rpx 14rpx;
+  min-height: 38rpx;
+  padding: 0 14rpx;
   border-radius: 999rpx;
-  background: #eaf2ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffd9ef 0%, #dbe8ff 100%);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.55);
 }
 .payment-method-tag-text {
   font-size: 20rpx;
-  color: #4a6fa8;
-  line-height: 1.2;
+  font-weight: 600;
+  color: #6f6ac8;
+  line-height: 1;
 }
 
 
@@ -1942,16 +2387,21 @@ onShow(() => {
 
 /* 钞单标签样式 */
 .tag-premium {
-  background: linear-gradient(135deg, #ffd667, #f7ad2f);
-  padding: 5rpx 12rpx;
-  border-radius: 10rpx;
-  box-shadow: 0 4rpx 10rpx rgba(231, 177, 58, 0.32);
+  height: 46rpx;
+  padding: 0 14rpx;
+  border-radius: 12rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffd98c 0%, #f4b54a 100%);
+  box-shadow: 0 2rpx 6rpx rgba(226, 173, 78, 0.22);
 }
 .tag-text {
   font-size: 20rpx;
   color: #fff;
   font-weight: 700;
-  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
+  line-height: 1;
+  text-shadow: 0 1rpx 1rpx rgba(0, 0, 0, 0.08);
 }
 
 /* 状态 Chip 颜色 */
@@ -1994,14 +2444,14 @@ onShow(() => {
 
 /* 用户信息组样式 */
 .user-info-group {
-  flex: 1;
-  min-width: 0;
-  max-width: 65%;
+  flex: 0 1 auto;
+  width: auto;
+  max-width: calc(100% - 220rpx);
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
   background-color: #f7f9fd;
-  padding: 8rpx 20rpx 8rpx 8rpx;
+  padding: 8rpx 16rpx 8rpx 8rpx;
   border-radius: 999rpx;
   border: 1rpx solid #ebeff6;
 }
@@ -2018,14 +2468,15 @@ onShow(() => {
   font-size: 26rpx;
   color: #2d3442;
   font-weight: 500;
-  flex: 1;
+  flex: 0 1 auto;
+  max-width: 340rpx;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .user-info-placeholder {
-  flex: 1;
+  flex: 0 1 auto;
 }
 
 
@@ -2230,6 +2681,14 @@ onShow(() => {
   background: linear-gradient(135deg, #b39ddb 0%, #8f7fd9 100%);
   color: #ffffff;
 }
+.btn-mini.negotiation-agree {
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
+  color: #ffffff;
+}
+.btn-mini.negotiation-reject {
+  background: linear-gradient(135deg, #f4b8b8 0%, #e89898 100%);
+  color: #ffffff;
+}
 .btn-mini.disabled {
   background-color: #e9edf3 !important;
   color: #a2acbb !important;
@@ -2260,27 +2719,71 @@ onShow(() => {
 }
 .delivery-address-block {
   margin-top: 10rpx;
-  padding: 14rpx;
+  padding: 16rpx 16rpx 14rpx;
   border-radius: 14rpx;
   background: #f6f9ff;
+  position: relative;
 }
-.delivery-label {
-  display: block;
-  font-size: 22rpx;
-  color: #8793a8;
+.delivery-address-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding-top: 20rpx;
+}
+.delivery-address-badge {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: #fb8e68;
+  color: #ffefa8;
+  font-size: 30rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2rpx;
+}
+.delivery-address-content {
+  flex: 1;
+  min-width: 0;
+}
+.delivery-address-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.delivery-copy-btn {
+  position: absolute;
+  top: 14rpx;
+  right: 16rpx;
+  z-index: 2;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #ff9a3d;
+  line-height: 1.2;
 }
 .delivery-address-name {
   display: block;
-  margin-top: 6rpx;
-  font-size: 24rpx;
-  color: #2f3a4d;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1f2735;
+  line-height: 1.2;
+}
+.delivery-address-phone {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1f2735;
+  line-height: 1.2;
 }
 .delivery-address-line {
   display: block;
-  margin-top: 4rpx;
-  font-size: 23rpx;
-  line-height: 1.5;
-  color: #5f6c81;
+  margin-top: 10rpx;
+  font-size: 31rpx;
+  line-height: 1.46;
+  color: #8f97a6;
 }
 .delivery-actions {
   margin-top: 14rpx;
@@ -2488,15 +2991,16 @@ onShow(() => {
   width: 100%;
   display: flex;
   flex-direction: column;
+  padding-bottom: 2rpx;
 }
 
 .payment-modal-title {
   display: block;
   text-align: center;
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 700;
   color: #1f2735;
-  margin-bottom: 20rpx;
+  margin-bottom: 14rpx;
 }
 
 .payment-modal-state {
@@ -2516,16 +3020,18 @@ onShow(() => {
 }
 
 .payment-modal-scroll {
-  height: 68vh;
-  max-height: 68vh;
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2rpx;
 }
 
 .payment-section {
-  margin-top: 16rpx;
-  border-radius: 18rpx;
+  margin-top: 12rpx;
+  border-radius: 16rpx;
   border: 1rpx solid #ebeff6;
   background: #f9fbff;
-  padding: 18rpx;
+  padding: 16rpx;
 }
 
 .payment-section-title {
@@ -2535,18 +3041,50 @@ onShow(() => {
   font-weight: 700;
 }
 
-.payment-unreceived-btn {
-  height: 72rpx;
-  line-height: 72rpx;
+.payment-modal-footer {
+  margin-top: 16rpx;
+  padding-top: 10rpx;
+  border-top: 1rpx dashed #e9eef7;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+  padding-bottom: 8rpx;
+}
+
+.payment-modal-mini-btn {
+  width: 196rpx;
+  height: 64rpx;
+  line-height: 64rpx;
   border-radius: 999rpx;
   border: 1rpx solid #f3cfd4;
   background: #fff4f6;
   color: #b96572;
-  font-size: 25rpx;
+  font-size: 23rpx;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+}
+
+.payment-modal-mini-btn::after {
+  border: none;
+}
+
+.payment-modal-ok-btn {
+  flex: 1;
+  height: 68rpx;
+  line-height: 68rpx;
+  border-radius: 999rpx;
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #87c6ec 0%, #6eaede 100%);
+  color: #fff;
+  font-size: 27rpx;
   font-weight: 700;
 }
 
-.payment-unreceived-btn::after {
+.payment-modal-ok-btn::after {
   border: none;
 }
 
@@ -3017,6 +3555,163 @@ onShow(() => {
   line-height: 1.5;
   margin-bottom: 40rpx;
   padding: 0 20rpx;
+}
+
+.ship-modal-input {
+  width: 100%;
+  height: 78rpx;
+  border-radius: 14rpx;
+  background: #f4f7fb;
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  color: #2d3748;
+  box-sizing: border-box;
+  margin-bottom: 26rpx;
+}
+
+.ship-form-modal {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 6rpx 18rpx;
+  padding-bottom: calc(18rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.ship-form-tip {
+  font-size: 22rpx;
+  color: #9ca7bb;
+  line-height: 1.6;
+  margin-bottom: 10rpx;
+}
+
+.ship-form-address-card {
+  margin-top: 8rpx;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 10rpx 0 18rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  border-bottom: 1rpx solid #edf2fa;
+}
+
+.ship-form-address-badge {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 16rpx;
+  background: #fb8e68;
+  color: #ffefa8;
+  font-size: 29rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 6rpx;
+}
+
+.ship-form-address-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ship-form-address-top {
+  display: flex;
+  align-items: baseline;
+  gap: 14rpx;
+  flex-wrap: wrap;
+}
+
+.ship-form-address-name,
+.ship-form-address-phone {
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #1f2735;
+  line-height: 1.2;
+}
+
+.ship-form-address-line {
+  margin-top: 10rpx;
+  display: block;
+  font-size: 24rpx;
+  color: #8f99ad;
+  line-height: 1.5;
+  word-break: break-word;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.ship-form-row {
+  margin-top: 0;
+  border-top: 1rpx solid #eef2f8;
+  min-height: 94rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  padding: 0 4rpx;
+}
+
+.ship-form-label {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2735;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.ship-form-row-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10rpx;
+}
+
+.ship-form-input {
+  flex: 1;
+  min-width: 0;
+  height: 64rpx;
+  text-align: right;
+  font-size: 30rpx;
+  color: #344154;
+}
+
+.ship-form-value {
+  font-size: 30rpx;
+  color: #535f74;
+}
+
+.ship-form-value.placeholder {
+  color: #b7bfce;
+}
+
+.ship-form-submit {
+  margin-top: 24rpx;
+  margin-bottom: 10rpx;
+  width: 100%;
+  height: 84rpx;
+  line-height: 84rpx;
+  border-radius: 42rpx;
+  background: linear-gradient(135deg, #8bc6ed 0%, #6daee0 100%);
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 700;
+  border: none;
+}
+
+.ship-form-submit::after {
+  border: none;
+}
+
+.ship-form-submit.disabled {
+  background: #e5ebf5;
+  color: #aab4c7;
 }
 
 .custom-modal-actions {
