@@ -16,8 +16,8 @@
         <!--
           使用提示：
           1) common-modal 只负责通用容器与滚动能力；
-          2) 业务侧请在插槽根节点自行预留下边距（建议 >= 24rpx + safe-area-inset-bottom），
-             避免底部按钮贴边或被手势区域挤压。
+          2) 组件已内置底部安全留白（基础留白 + safe-area-inset-bottom）；
+          3) 若业务弹窗按钮较多，仍可在插槽根节点追加额外下边距。
         -->
         <slot></slot>
       </view>
@@ -197,6 +197,8 @@ onBeforeUnmount(() => {
 }
 
 .modal-container {
+  --modal-base-pad: 40rpx;
+  --modal-bottom-extra: 18rpx;
   position: relative;
   background-color: #fff;
   border-radius: 24rpx;
@@ -217,13 +219,15 @@ onBeforeUnmount(() => {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   
-  padding: 40rpx;
+  padding: var(--modal-base-pad);
   align-items: center;
 }
 
 /* 底部安全区适配 */
 .safe-bottom {
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* 不能只写 safe-area，否则会覆盖 modal-container 的基础底部内边距 */
+  padding-bottom: calc(var(--modal-base-pad) + var(--modal-bottom-extra));
+  padding-bottom: calc(var(--modal-base-pad) + var(--modal-bottom-extra) + constant(safe-area-inset-bottom));
+  padding-bottom: calc(var(--modal-base-pad) + var(--modal-bottom-extra) + env(safe-area-inset-bottom));
 }
 </style>
