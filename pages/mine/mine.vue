@@ -6,7 +6,6 @@
     <view class="my-center-page" :style="pageBackgroundStyle">
       <skin-background
         class="mine-skin-fx"
-        style="position: fixed; inset: 0; z-index: 99; pointer-events: none;"
         :animation-type="activeSkin.background_animation"
         :animation-config="activeSkin.animation_config"
       />
@@ -376,6 +375,9 @@ onShow(async () => {
 }
 
 .mine-skin-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
 }
 
