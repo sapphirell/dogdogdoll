@@ -1,9 +1,7 @@
 // /common/share.js
 import { ref } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { USE_HASH_ROUTER } from '@/common/config.js'
-
-const H5_BASE_DOMAIN = 'https://m.dogdogdoll.com'
+import { USE_HASH_ROUTER, SHARE_H5_BASE } from '@/common/config.js'
 
 function getAppScene() {
   const platform = process.env.UNI_PLATFORM
@@ -62,7 +60,7 @@ export function useCrossShare(payloadFactory) {
     if (p.path && /^https?:\/\//i.test(p.path)) return p.path
 
     // 2) 固定域名 + H5 路由拼接
-    const domain = String(H5_BASE_DOMAIN || '').replace(/\/$/, '')
+    const domain = String(SHARE_H5_BASE || '').replace(/\/$/, '')
     const h5Path = toH5Path(p.path, p.useHashRouter)
     return domain + h5Path
   }

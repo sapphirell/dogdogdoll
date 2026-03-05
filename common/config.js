@@ -2,22 +2,162 @@ import {
 	reactive,ref
 } from 'vue';
 
-// 网站域名
-// export const websiteUrl = ref('https://api.fantuanpu.com');
-export const websiteUrl = ref('http://localhost:8080');
+const DEFAULT_DOMAIN_CONFIG = {
+  api: {
+    cn: 'https://api.dogdogdoll.com',
+    us: 'https://us-api.dogdogdoll.com',
+    dev: 'http://localhost:8080',
+    // 预留其他区域
+    eu: '',
+    jp: '',
+    sg: ''
+  },
+  web: {
+    www: 'https://www.dogdogdoll.com',
+    h5: 'https://m.dogdogdoll.com'
+  },
+  image: {
+    image1: 'https://images1.fantuanpu.com/'
+  }
+}
+
+function trimSlash(url) {
+  const str = String(url || '').trim()
+  return str ? str.replace(/\/+$/, '') : ''
+}
+
+function withTailSlash(url) {
+  const s = trimSlash(url)
+  return s ? `${s}/` : ''
+}
+
+function pickFirstString(...values) {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  }
+  return ''
+}
+
+function getStorageConfig() {
+  if (typeof uni === 'undefined' || typeof uni.getStorageSync !== 'function') return {}
+  const raw = uni.getStorageSync('domainConfig') || uni.getStorageSync('runtimeDomainConfig')
+  if (!raw) return {}
+  if (typeof raw === 'object') return raw
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) } catch (e) { return {} }
+  }
+  return {}
+}
+
+function getGlobalConfig() {
+  if (typeof globalThis === 'undefined') return {}
+  return globalThis.__DOGDOGDOLL_DOMAIN_CONFIG__ || {}
+}
+
+function getEnvConfig() {
+  const env = (typeof process !== 'undefined' && process.env) ? process.env : {}
+  return {
+    api: {
+      cn: env.VUE_APP_API_CN || env.VUE_APP_CN_API || '',
+      us: env.VUE_APP_API_US || env.VUE_APP_US_API || '',
+      dev: env.VUE_APP_API_DEV || '',
+      eu: env.VUE_APP_API_EU || '',
+      jp: env.VUE_APP_API_JP || '',
+      sg: env.VUE_APP_API_SG || ''
+    },
+    web: {
+      www: env.VUE_APP_WEB_WWW || '',
+      h5: env.VUE_APP_WEB_H5 || env.VUE_APP_SHARE_H5_BASE || ''
+    },
+    image: {
+      image1: env.VUE_APP_IMAGE1_URL || ''
+    }
+  }
+}
+
+function buildDomainConfig() {
+  // 配置优先级（高 -> 低）：
+  // 1) globalThis.__DOGDOGDOLL_DOMAIN_CONFIG__
+  //    适合在运行时由宿主/注入脚本动态下发。
+  // 2) 本地存储 domainConfig / runtimeDomainConfig
+  //    适合远程拉取配置后本地缓存。
+  // 3) process.env (VUE_APP_*)
+  //    来自 .env.development / .env.production（由运行/发行模式决定）。
+  // 4) DEFAULT_DOMAIN_CONFIG
+  //    最终兜底，避免未配置时崩溃。
+  const g = getGlobalConfig()
+  const s = getStorageConfig()
+  const e = getEnvConfig()
+  const api = DEFAULT_DOMAIN_CONFIG.api
+  const web = DEFAULT_DOMAIN_CONFIG.web
+  const image = DEFAULT_DOMAIN_CONFIG.image
+  return {
+    api: {
+      cn: trimSlash(pickFirstString(g?.api?.cn, s?.api?.cn, e?.api?.cn, api.cn)),
+      us: trimSlash(pickFirstString(g?.api?.us, s?.api?.us, e?.api?.us, api.us)),
+      dev: trimSlash(pickFirstString(g?.api?.dev, s?.api?.dev, e?.api?.dev, api.dev)),
+      eu: trimSlash(pickFirstString(g?.api?.eu, s?.api?.eu, e?.api?.eu, api.eu)),
+      jp: trimSlash(pickFirstString(g?.api?.jp, s?.api?.jp, e?.api?.jp, api.jp)),
+      sg: trimSlash(pickFirstString(g?.api?.sg, s?.api?.sg, e?.api?.sg, api.sg))
+    },
+    web: {
+      www: trimSlash(pickFirstString(g?.web?.www, s?.web?.www, e?.web?.www, web.www)),
+      h5: trimSlash(pickFirstString(g?.web?.h5, s?.web?.h5, e?.web?.h5, web.h5))
+    },
+    image: {
+      image1: trimSlash(pickFirstString(g?.image?.image1, s?.image?.image1, e?.image?.image1, image.image1))
+    }
+  }
+}
+
+export const DOMAIN_CONFIG = buildDomainConfig()
+export const ENV_NAME = pickFirstString(
+  (typeof process !== 'undefined' && process.env && process.env.VUE_APP_ENV_NAME) || '',
+  'unknown'
+)
+
 // 测试环境
-export const devUrl = 'http://localhost:8080';
+export const devUrl = DOMAIN_CONFIG.api.dev;
 // 中国服务器API
-export const cnURL = 'https://api.fantuanpu.com';	
+export const cnURL = DOMAIN_CONFIG.api.cn;
 // US API
-export const usURL = 'https://us-api.dogdogdoll.com'
+export const usURL = DOMAIN_CONFIG.api.us;
+// 其他区域 API 预留
+export const euURL = DOMAIN_CONFIG.api.eu;
+export const jpURL = DOMAIN_CONFIG.api.jp;
+export const sgURL = DOMAIN_CONFIG.api.sg;
+export const apiRegionURLs = Object.freeze({
+  cn: cnURL,
+  us: usURL,
+  dev: devUrl,
+  eu: euURL,
+  jp: jpURL,
+  sg: sgURL
+});
+
+const savedServer = (typeof uni !== 'undefined' && typeof uni.getStorageSync === 'function')
+  ? uni.getStorageSync('selectedServer')
+  : '';
+// 默认 API 选择规则：
+// 1) 若存在 selectedServer（用户通过服务器切换组件选过），优先使用它；
+// 2) 否则按 cnURL -> usURL -> devUrl 回退。
+//
+// 所以你即便改了 .env 的 VUE_APP_API_CN，只要本机仍保存 selectedServer，
+// 实际请求地址仍可能不是新配置值。排查时请看控制台 [Config] 日志。
+const defaultApiUrl = trimSlash(pickFirstString(savedServer, cnURL, usURL, devUrl));
+// 网站域名（动态取配置 + 本地已选服务器）
+export const websiteUrl = ref(defaultApiUrl);
+
+if (typeof console !== 'undefined' && typeof console.info === 'function') {
+  console.info('[Config] env=%s api=%s h5=%s selectedServer=%s', ENV_NAME, websiteUrl.value, DOMAIN_CONFIG.web.h5, savedServer || '(none)')
+}
 
 // 图片域名
-export const image1Url = 'https://images1.fantuanpu.com/';
+export const image1Url = withTailSlash(DOMAIN_CONFIG.image.image1);
 
 
 // H5 访问域名
-export const SHARE_H5_BASE = 'https://m.dogdogdoll.com'
+export const SHARE_H5_BASE = DOMAIN_CONFIG.web.h5
 
 // 大多数 uni-app H5 默认是 hash 路由（/#/pages/...）
 export const USE_HASH_ROUTER = true
