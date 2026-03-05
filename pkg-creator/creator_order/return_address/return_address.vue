@@ -28,22 +28,37 @@
             <text class="receiver-name">{{ item.receiver_name || '-' }}</text>
             <text class="receiver-phone">{{ item.receiver_phone || '-' }}</text>
           </view>
-          <view v-if="item.is_default === 1" class="default-tag">默认</view>
+          <view class="head-right">
+            <view v-if="item.is_default === 1" class="default-tag">默认</view>
+            <view class="edit-tag" @tap.stop="goEditAddress(item.id)">编辑</view>
+          </view>
         </view>
         <text class="address-line">{{ formatArea(item) }} {{ item.detail || '' }}</text>
+        <view v-if="item.suggested_express && item.suggested_express.length" class="express-row">
+          <text class="express-label">勾选快递</text>
+          <view class="express-tags">
+            <text
+              v-for="(name, idx) in item.suggested_express"
+              :key="`${item.id}-${name}-${idx}`"
+              class="express-tag"
+            >
+              {{ name }}
+            </text>
+          </view>
+        </view>
       </view>
       <view class="list-bottom-gap"></view>
     </scroll-view>
 
     <view class="footer-bar">
-      <button class="footer-btn plain" @tap="goManageAddress">管理地址</button>
+      <button class="footer-btn plain" @tap="goAddAddress">新增地址</button>
       <button
         class="footer-btn submit"
         :class="{ disabled: !canSubmit || submitting }"
         :disabled="!canSubmit || submitting"
         @tap="submitReturnAddress"
       >
-        {{ submitting ? '提交中...' : '保存地址' }}
+        {{ submitting ? '提交中...' : '选择此地址' }}
       </button>
     </view>
   </view>
@@ -54,11 +69,15 @@ import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 
+const FinalConfirmResumeStorageKey = 'artist_order:final_confirm_resume'
+
 const submissionID = ref(0)
 const loading = ref(false)
 const submitting = ref(false)
 const addressList = ref([])
 const selectedAddressID = ref(0)
+const autoConfirmFinal = ref(false)
+const autoConfirmItemID = ref(0)
 
 const canSubmit = computed(() => Number(submissionID.value) > 0 && Number(selectedAddressID.value) > 0)
 
@@ -70,17 +89,52 @@ function formatArea(item) {
   ].filter(Boolean).join(' ')
 }
 
+function normalizeSuggestedExpressList(list) {
+  if (!Array.isArray(list) || !list.length) return []
+  const uniq = []
+  list.forEach((item) => {
+    const txt = String(item || '').trim()
+    if (!txt) return
+    if (uniq.includes(txt)) return
+    uniq.push(txt)
+  })
+  return uniq
+}
+
+function parseSuggestedExpressField(value) {
+  if (Array.isArray(value)) return normalizeSuggestedExpressList(value)
+  const txt = String(value || '').trim()
+  if (!txt) return []
+  if (txt.startsWith('[') && txt.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(txt)
+      if (Array.isArray(parsed)) return normalizeSuggestedExpressList(parsed)
+    } catch (_) {}
+  }
+  return normalizeSuggestedExpressList(txt.split(','))
+}
+
+function normalizeAddressItem(item) {
+  if (!item || typeof item !== 'object') return item
+  return {
+    ...item,
+    suggested_express: parseSuggestedExpressField(item.suggested_express)
+  }
+}
+
 function pickAddress(id) {
   const n = Number(id || 0)
   if (n > 0) selectedAddressID.value = n
 }
 
-function goManageAddress() {
-  uni.navigateTo({ url: '/pkg-common/address/address-list' })
-}
-
 function goAddAddress() {
   uni.navigateTo({ url: '/pkg-common/address/address-form' })
+}
+
+function goEditAddress(id) {
+  const n = Number(id || 0)
+  if (!n) return
+  uni.navigateTo({ url: `/pkg-common/address/address-form?id=${n}` })
 }
 
 async function fetchAddressList() {
@@ -102,7 +156,7 @@ async function fetchAddressList() {
       uni.showToast({ title: body.msg || '地址加载失败', icon: 'none' })
       return
     }
-    const list = Array.isArray(body.data) ? body.data : []
+    const list = Array.isArray(body.data) ? body.data.map(normalizeAddressItem) : []
     addressList.value = list
     if (!list.length) {
       selectedAddressID.value = 0
@@ -148,7 +202,40 @@ async function submitReturnAddress() {
       uni.showToast({ title: body.msg || '保存失败', icon: 'none' })
       return
     }
-    uni.showToast({ title: '已保存', icon: 'success' })
+    let finalConfirmDone = false
+    if (autoConfirmFinal.value && Number(autoConfirmItemID.value || 0) > 0) {
+      try {
+        const finalRes = await uni.request({
+          url: `${websiteUrl.value}/with-state/artist-order/item/confirm-final`,
+          method: 'POST',
+          header: {
+            Authorization: token,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            item_id: Number(autoConfirmItemID.value || 0)
+          }
+        })
+        const finalBody = finalRes?.data || {}
+        if (String(finalBody.status).toLowerCase() === 'success') {
+          finalConfirmDone = true
+          uni.removeStorageSync(FinalConfirmResumeStorageKey)
+        } else {
+          uni.setStorageSync(FinalConfirmResumeStorageKey, {
+            submission_id: Number(submissionID.value || 0),
+            item_id: Number(autoConfirmItemID.value || 0),
+            ts: Date.now()
+          })
+        }
+      } catch (_) {
+        uni.setStorageSync(FinalConfirmResumeStorageKey, {
+          submission_id: Number(submissionID.value || 0),
+          item_id: Number(autoConfirmItemID.value || 0),
+          ts: Date.now()
+        })
+      }
+    }
+    uni.showToast({ title: finalConfirmDone ? '已确认最终状态' : '已选择寄回地址', icon: 'success' })
     setTimeout(() => {
       uni.navigateBack({ delta: 1 })
     }, 350)
@@ -163,6 +250,8 @@ async function submitReturnAddress() {
 onLoad((options) => {
   uni.setNavigationBarTitle({ title: '寄回地址' })
   submissionID.value = Number(options?.submission_id || 0)
+  autoConfirmFinal.value = String(options?.auto_confirm_final || '') === '1'
+  autoConfirmItemID.value = Number(options?.item_id || 0)
   if (!submissionID.value) {
     uni.showToast({ title: '缺少 submission_id', icon: 'none' })
   }
@@ -178,6 +267,8 @@ onShow(() => {
   min-height: 100vh;
   background: #f6f8fc;
   padding: 20rpx;
+  padding-bottom: calc(constant(safe-area-inset-bottom) + 170rpx);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 170rpx);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -222,7 +313,7 @@ onShow(() => {
   line-height: 70rpx;
   border-radius: 999rpx;
   border: none;
-  background: #7ea0ef;
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
   color: #fff;
   font-size: 24rpx;
 }
@@ -241,8 +332,8 @@ onShow(() => {
 }
 
 .address-card.active {
-  border-color: #9ab8ff;
-  box-shadow: 0 8rpx 20rpx rgba(122, 154, 223, 0.16);
+  border-color: #acedff;
+  box-shadow: 0 8rpx 20rpx rgba(114, 199, 236, 0.2);
 }
 
 .card-head {
@@ -255,6 +346,12 @@ onShow(() => {
   display: flex;
   align-items: center;
   gap: 12rpx;
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
 }
 
 .receiver-name {
@@ -273,6 +370,15 @@ onShow(() => {
   background: #eef4ff;
   color: #6d88bb;
   font-size: 20rpx;
+  border: 1rpx solid #72c7ec;
+}
+
+.edit-tag {
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f1f5fb;
+  color: #5f7291;
+  font-size: 20rpx;
 }
 
 .address-line {
@@ -283,12 +389,50 @@ onShow(() => {
   color: #6f7f98;
 }
 
+.express-row {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+}
+
+.express-label {
+  flex-shrink: 0;
+  margin-top: 2rpx;
+  font-size: 21rpx;
+  color: #7f8ea6;
+}
+
+.express-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.express-tag {
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: #7accef;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 1.2;
+}
+
 .list-bottom-gap {
-  height: 120rpx;
+  height: 180rpx;
 }
 
 .footer-bar {
+  position: fixed;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: calc(constant(safe-area-inset-bottom) + 16rpx);
+  bottom: calc(env(safe-area-inset-bottom) + 16rpx);
   padding-top: 12rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  z-index: 30;
   display: flex;
   gap: 12rpx;
 }
@@ -309,12 +453,12 @@ onShow(() => {
 }
 
 .footer-btn.plain {
-  background: #e9eff9;
-  color: #5f7291;
+  background: #f8d6e7;
+  color: #fff;
 }
 
 .footer-btn.submit {
-  background: linear-gradient(135deg, #9ab8ff 0%, #7ea0ef 100%);
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
   color: #fff;
 }
 
