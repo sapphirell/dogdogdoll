@@ -274,6 +274,11 @@
 			}
 		},
 		{
+			"path": "creator_order/received-creation/received-creation",
+			"style": {
+			}
+		},
+		{
 			"path": "creator_order/schedule_board/schedule_board",
 			"style": {
 				"navigationBarTitleText": "日历排期"

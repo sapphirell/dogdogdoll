@@ -5,56 +5,7 @@
     @touchend.stop="onRootTouchEnd"
     @touchcancel.stop="onRootTouchCancel"
   >
-    <view class="month-header">
-      <view class="month-btn" @tap="shiftMonth(-1)">
-        <uni-icons type="left" size="16" color="#5f6b7c" />
-      </view>
-      <text class="month-title font-title">{{ monthLabel }}</text>
-      <view class="month-btn" @tap="shiftMonth(1)">
-        <uni-icons type="right" size="16" color="#5f6b7c" />
-      </view>
-    </view>
-
-    <view class="weekday-row">
-      <text v-for="name in weekNames" :key="name" class="weekday-text">{{ name }}</text>
-    </view>
-
-    <view class="month-grid">
-      <view
-        v-for="(day, idx) in calendarDays"
-        :key="`${day.date}-${idx}`"
-        class="schedule-day-cell"
-        :class="{
-          muted: !day.inMonth,
-          today: day.date === todayText,
-          hover: dragState.active && dragState.hoverDate === day.date
-        }"
-        @tap="handleDayTap(day)"
-      >
-        <text class="day-num" :class="{ muted: !day.inMonth }">{{ day.day }}</text>
-        <view class="day-order-list">
-          <view
-            v-for="(order, laneIndex) in getDayOrders(day.date)"
-            :key="`${day.date}-${order.submission_item_id}`"
-            class="day-order-pill"
-            :class="getDayOrderPillClass(order, day, idx, laneIndex)"
-            @tap.stop="selectOrder(order.submission_item_id)"
-            @touchstart.stop.prevent="startMoveDrag(order, $event)"
-          >
-            <image
-              v-if="getOrderCover(order)"
-              class="pill-avatar"
-              :src="getOrderCover(order)"
-              mode="aspectFill"
-            />
-            <view v-else class="pill-avatar placeholder"></view>
-            <text class="pill-text">{{ shortOrderTitle(order) }}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <view class="selected-panel">
+    <view class="selected-panel" @tap="focusSelectedOrderCalendar">
       <text class="selected-title font-alimamashuhei">当前选择订单</text>
       <view v-if="selectedOrder" class="selected-main">
         <view class="selected-head">
@@ -70,15 +21,23 @@
             <text class="selected-meta">
               {{ selectedRangeText }}
             </text>
+            <text class="selected-status">
+              创作状态：{{ selectedStatusText }}
+            </text>
           </view>
         </view>
-        <view class="selected-actions">
-          <view class="selected-action-chip drag-chip" @touchstart.stop.prevent="startPlaceDrag(selectedOrder, $event)">
+        <view class="selected-actions" @tap.stop>
+          <view
+            class="selected-action-chip drag-chip"
+            @tap.stop
+            @touchstart.stop.prevent="startPlaceDrag(selectedOrder, $event)"
+          >
             拖拽放置
           </view>
           <view
             class="selected-action-chip resize-chip"
             :class="{ disabled: !selectedHasRange }"
+            @tap.stop
             @touchstart.stop.prevent="startResizeDrag('resize-start', $event)"
           >
             拖拽起始
@@ -86,21 +45,25 @@
           <view
             class="selected-action-chip resize-chip"
             :class="{ disabled: !selectedHasRange }"
+            @tap.stop
             @touchstart.stop.prevent="startResizeDrag('resize-end', $event)"
           >
             拖拽结束
           </view>
+          <view class="selected-action-chip detail-chip" @tap.stop="goSelectedOrderDetail">
+            订单详情
+          </view>
           <view
             class="selected-action-chip clear-chip"
             :class="{ disabled: !selectedHasRange }"
-            @tap="clearOrderRange(selectedOrder.submission_item_id)"
+            @tap.stop="clearOrderRange(selectedOrder.submission_item_id)"
           >
             清空区间
           </view>
         </view>
       </view>
       <view v-else class="selected-empty">
-        <text>请先在下方点选一个订单</text>
+        <text>请先在下方订单列表点选一个订单</text>
       </view>
     </view>
 
@@ -131,6 +94,56 @@
       </view>
     </scroll-view>
 
+    <view class="month-header">
+      <view class="month-btn" @tap="shiftMonth(-1)">
+        <uni-icons type="left" size="16" color="#5f6b7c" />
+      </view>
+      <text class="month-title font-title">{{ monthLabel }}</text>
+      <view class="month-btn" @tap="shiftMonth(1)">
+        <uni-icons type="right" size="16" color="#5f6b7c" />
+      </view>
+    </view>
+
+    <view class="weekday-row">
+      <text v-for="name in weekNames" :key="name" class="weekday-text">{{ name }}</text>
+    </view>
+
+    <view class="month-grid">
+      <view
+        v-for="(day, idx) in calendarDays"
+        :key="`${day.date}-${idx}`"
+        class="schedule-day-cell"
+        :class="{
+          muted: !day.inMonth,
+          today: day.date === todayText,
+          hover: dragState.active && dragState.hoverDate === day.date,
+          flash: isDayFlashing(day.date)
+        }"
+        @tap="handleDayTap(day)"
+      >
+        <text class="day-num" :class="{ muted: !day.inMonth }">{{ day.day }}</text>
+        <view class="day-order-list">
+          <view
+            v-for="(order, laneIndex) in getDayOrders(day.date)"
+            :key="`${day.date}-${order.submission_item_id}`"
+            class="day-order-pill"
+            :class="getDayOrderPillClass(order, day, idx, laneIndex)"
+            @tap.stop="selectOrder(order.submission_item_id)"
+            @touchstart.stop.prevent="startMoveDrag(order, $event)"
+          >
+            <image
+              v-if="getOrderCover(order)"
+              class="pill-avatar"
+              :src="getOrderCover(order)"
+              mode="aspectFill"
+            />
+            <view v-else class="pill-avatar placeholder"></view>
+            <text class="pill-text">{{ shortOrderTitle(order) }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <view
       v-if="dragState.active"
       class="drag-float"
@@ -144,7 +157,7 @@
 </template>
 
 <script setup>
-import { computed, getCurrentInstance, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 const props = defineProps({
   orders: {
@@ -159,6 +172,10 @@ const props = defineProps({
     type: Number,
     default: 7,
   },
+  maxPerDay: {
+    type: Number,
+    default: 2,
+  },
   today: {
     type: String,
     default: '',
@@ -168,10 +185,22 @@ const props = defineProps({
 const emit = defineEmits(['change', 'update:selectedOrderId', 'invalid'])
 
 const weekNames = ['一', '二', '三', '四', '五', '六', '日']
+const submissionStatusTextMap = {
+  0: '排队中',
+  1: '已抢到待买家确认',
+  2: '买家已确认，待卖家确认',
+  3: '已确认待付款',
+  4: '已付款',
+  5: '排队失败',
+  6: '已撤销',
+  7: '支付超时',
+}
 const localOrders = ref([])
 const currentMonth = ref('')
 const dayCellRects = ref([])
+const flashingDates = ref([])
 const instance = getCurrentInstance()
+let flashResetTimer = 0
 
 const dragState = reactive({
   active: false,
@@ -410,6 +439,15 @@ const selectedRangeText = computed(() => {
   return formatHumanRange(row.start_date, row.end_date, row.duration_days || 1)
 })
 
+const selectedStatusText = computed(() => {
+  const row = selectedOrder.value
+  if (!row) return '未知状态'
+  const text = String(row?.submission_status_text || '').trim()
+  if (text) return text
+  const code = Number(row?.submission_status || 0)
+  return submissionStatusTextMap[code] || `状态${code}`
+})
+
 const dragHintText = computed(() => {
   if (!dragState.active) return ''
   const name = selectedOrder.value?.work_subject || `子单#${dragState.orderId}`
@@ -461,7 +499,8 @@ const dayOrderMap = computed(() => {
 
 function getDayOrders(dateText) {
   const list = dayOrderMap.value[dateText] || []
-  return list.slice(0, 2)
+  const maxPerDay = Math.max(1, Number(props.maxPerDay || 2))
+  return list.slice(0, maxPerDay)
 }
 
 function getOrderTone(order) {
@@ -502,6 +541,76 @@ function shortOrderTitle(order) {
   const txt = String(order?.work_subject || '').trim()
   if (!txt) return `#${order?.submission_item_id || ''}`
   return txt.length > 8 ? `${txt.slice(0, 8)}…` : txt
+}
+
+function collectOrderRangeDates(order) {
+  const start = normalizeDateText(order?.start_date || '')
+  const end = normalizeDateText(order?.end_date || '')
+  if (start && end) {
+    const dates = []
+    eachDate(start, end, (d) => dates.push(d))
+    return dates
+  }
+  if (start) return [start]
+  if (end) return [end]
+  return []
+}
+
+function isDayFlashing(dateText) {
+  if (!dateText) return false
+  return flashingDates.value.includes(dateText)
+}
+
+function triggerOrderFlash(order) {
+  if (!order) return
+  const dates = collectOrderRangeDates(order)
+  if (!dates.length) return
+  if (flashResetTimer) {
+    clearTimeout(flashResetTimer)
+    flashResetTimer = 0
+  }
+  flashingDates.value = []
+  nextTick(() => {
+    flashingDates.value = dates
+    flashResetTimer = setTimeout(() => {
+      flashingDates.value = []
+      flashResetTimer = 0
+    }, 1200)
+  })
+}
+
+async function focusSelectedOrderCalendar() {
+  const row = selectedOrder.value
+  if (!row) return
+  const anchorDate = normalizeDateText(row?.start_date || row?.end_date || '')
+  if (!anchorDate) {
+    emitInvalid('该订单还未排期')
+    return
+  }
+  const targetMonth = normalizeMonth(anchorDate.slice(0, 7))
+  if (currentMonth.value !== targetMonth) {
+    currentMonth.value = targetMonth
+  }
+  await nextTick()
+  refreshDayRects()
+  triggerOrderFlash(row)
+}
+
+function goSelectedOrderDetail() {
+  const row = selectedOrder.value
+  if (!row) {
+    emitInvalid('请先选择订单')
+    return
+  }
+  const submissionID = Number(row?.submission_id || 0)
+  const itemID = Number(row?.submission_item_id || 0)
+  if (!submissionID || !itemID) {
+    emitInvalid('缺少订单详情参数')
+    return
+  }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/submission_item_detail/submission_item_detail?submission_id=${submissionID}&item_id=${itemID}`,
+  })
 }
 
 function ensureValidSelection() {
@@ -557,6 +666,7 @@ function clearOrderRange(itemID) {
 }
 
 function canApplyRange(orderID, startDate, endDate) {
+  const maxPerDay = Math.max(1, Number(props.maxPerDay || 2))
   const dayCounter = {}
   localOrders.value.forEach((order) => {
     const id = Number(order.submission_item_id || 0)
@@ -571,7 +681,7 @@ function canApplyRange(orderID, startDate, endDate) {
   let ok = true
   eachDate(startDate, endDate, (d) => {
     const count = Number(dayCounter[d] || 0)
-    if (count >= 2) ok = false
+    if (count >= maxPerDay) ok = false
   })
   return ok
 }
@@ -588,7 +698,8 @@ function applyRange(orderID, startDate, endDate) {
   const start = formatDate(s)
   const end = formatDate(e)
   if (!canApplyRange(orderID, start, end)) {
-    emitInvalid('该日期已达到重叠上限（最多同时2单）')
+    const maxPerDay = Math.max(1, Number(props.maxPerDay || 2))
+    emitInvalid(`该日期已达到重叠上限（最多同时${maxPerDay}单）`)
     return false
   }
   const days = daysBetweenInclusive(start, end)
@@ -606,11 +717,9 @@ function applyRange(orderID, startDate, endDate) {
 function handleDayTap(day) {
   if (!day?.date) return
   if (dragState.active && dragState.mode) return
-  const row = selectedOrder.value
-  if (!row) return
-  const dur = Number(row.duration_days || props.defaultDurationDays || 1)
-  const end = addDays(day.date, Math.max(0, dur - 1))
-  applyRange(row.submission_item_id, day.date, end)
+  const list = getDayOrders(day.date)
+  if (!list.length) return
+  selectOrder(list[0].submission_item_id)
 }
 
 function startDrag(mode, orderID, event) {
@@ -749,6 +858,13 @@ onMounted(() => {
   nextTick(refreshDayRects)
 })
 
+onBeforeUnmount(() => {
+  if (flashResetTimer) {
+    clearTimeout(flashResetTimer)
+    flashResetTimer = 0
+  }
+})
+
 watch(
   () => currentMonth.value,
   () => {
@@ -767,7 +883,7 @@ watch(
   --status-c4: #b3c7d8;
   --status-c5: #a8bfd1;
   --status-c6: #88a4ba;
-  --bridge-width: 20rpx;
+  --bridge-width: 10rpx;
 }
 
 .month-header {
@@ -809,22 +925,32 @@ watch(
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 148rpx;
   gap: 8rpx;
-  overflow: visible;
-  padding: 0 calc(var(--bridge-width) + 2rpx);
-  margin: 0 calc((var(--bridge-width) + 2rpx) * -1);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 14rpx;
+  padding: 0;
+  margin: 0;
 }
 
 .schedule-day-cell {
   position: relative;
-  z-index: 1;
-  min-height: 136rpx;
+  width: 100%;
+  min-width: 0;
+  height: 148rpx;
+  min-height: 148rpx;
   border-radius: 14rpx;
   background: #f8fbfe;
   padding: 8rpx 6rpx;
   box-sizing: border-box;
   border: 1rpx solid #e2e8f0;
   overflow: visible;
+}
+
+.schedule-day-cell.flash {
+  animation: day-cell-flash 360ms ease-in-out 3;
 }
 
 .schedule-day-cell.today {
@@ -859,16 +985,21 @@ watch(
   gap: 6rpx;
   overflow: visible;
   padding: 0 1rpx;
+  position: relative;
+  z-index: 10;
 }
 
 .day-order-pill {
   position: relative;
   border-radius: 10rpx;
   padding: 2rpx 10rpx;
-  min-height: 34rpx;
+  min-height: 30rpx;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  z-index: 20;
+  overflow: visible;
+  z-index: 24;
 }
 
 .day-order-pill > image,
@@ -876,10 +1007,6 @@ watch(
 .day-order-pill > text {
   position: relative;
   z-index: 2;
-}
-
-.day-order-pill.selected {
-  box-shadow: inset 0 0 0 2rpx rgba(95, 110, 131, 0.26);
 }
 
 .day-order-pill.link-left {
@@ -959,16 +1086,17 @@ watch(
 }
 
 .selected-panel {
-  margin-top: 18rpx;
+  margin-bottom: 16rpx;
   border-radius: 16rpx;
-  background: linear-gradient(180deg, rgba(236, 243, 249, 0.95) 0%, rgba(241, 244, 247, 0.95) 100%);
+  background: #ffffff;
+  border: 1rpx solid #e4e8ef;
   padding: 16rpx;
 }
 
 .selected-title {
   display: block;
   font-size: 24rpx;
-  color: #5f6e83;
+  color: #1f2937;
   margin-bottom: 10rpx;
 }
 
@@ -994,7 +1122,7 @@ watch(
 .selected-name {
   display: block;
   font-size: 26rpx;
-  color: #384353;
+  color: #202938;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -1005,8 +1133,15 @@ watch(
   display: block;
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: #6f7f92;
+  color: #6d7788;
   line-height: 1.45;
+}
+
+.selected-status {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #8c98aa;
 }
 
 .selected-actions {
@@ -1022,32 +1157,38 @@ watch(
   min-height: 54rpx;
   line-height: 54rpx;
   font-size: 22rpx;
-  color: #fff;
+  color: #1f2937;
+  background: #ffffff;
+  border: 1rpx solid #d7dde6;
+  font-weight: 500;
 }
 
 .selected-action-chip.drag-chip {
-  background: var(--status-c6);
+  background: #ffffff;
 }
 
 .selected-action-chip.resize-chip {
-  background: #8da0b4;
+  background: #ffffff;
 }
 
 .selected-action-chip.clear-chip {
-  background: #9aa4b2;
+  background: #ffffff;
 }
 
 .selected-action-chip.disabled {
-  opacity: 0.42;
+  color: #9aa4b2;
+  background: #f4f6f8;
+  border-color: #e4e9f0;
+  opacity: 1;
 }
 
 .selected-empty {
   font-size: 22rpx;
-  color: #8f9caf;
+  color: #8d97a8;
 }
 
 .order-strip {
-  margin-top: 16rpx;
+  margin-bottom: 16rpx;
   white-space: nowrap;
 }
 
@@ -1060,37 +1201,38 @@ watch(
 .order-item {
   width: 260rpx;
   border-radius: 14rpx;
-  background: #f5f8fb;
+  background: #ffffff;
+  border: 1rpx solid #e5e9f0;
   padding: 12rpx;
   box-sizing: border-box;
 }
 
 .order-item.selected {
-  background: #ecf3f9;
+  background: #f6f8fb;
 }
 
 .order-item.tone-0 {
-  background: rgba(216, 232, 247, 0.75);
+  background: #f8f9fb;
 }
 
 .order-item.tone-1 {
-  background: rgba(200, 219, 239, 0.74);
+  background: #f6f8fa;
 }
 
 .order-item.tone-2 {
-  background: rgba(185, 208, 231, 0.74);
+  background: #f4f6f9;
 }
 
 .order-item.tone-3 {
-  background: rgba(171, 197, 223, 0.74);
+  background: #f3f5f8;
 }
 
 .order-item.tone-4 {
-  background: rgba(158, 187, 216, 0.74);
+  background: #f1f4f7;
 }
 
 .order-item.tone-5 {
-  background: rgba(146, 177, 208, 0.72);
+  background: #edf2f6;
 }
 
 .order-item-head {
@@ -1132,8 +1274,10 @@ watch(
   line-height: 46rpx;
   text-align: center;
   font-size: 21rpx;
-  color: #5f6e83;
-  background: rgba(157, 176, 195, 0.22);
+  color: #1f2937;
+  background: #ffffff;
+  border: 1rpx solid #d7dde6;
+  font-weight: 500;
 }
 
 .drag-float {
@@ -1153,5 +1297,15 @@ watch(
 
 .order-item.selected {
   box-shadow: inset 0 0 0 2rpx rgba(136, 164, 186, 0.28);
+}
+
+@keyframes day-cell-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 2rpx rgba(135, 149, 168, 0.06);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2rpx rgba(86, 106, 133, 0.42);
+  }
 }
 </style>
