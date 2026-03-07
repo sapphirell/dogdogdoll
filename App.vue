@@ -1,14 +1,20 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
-import { initLoginState } from '@/common/config.js'
+import { initLoginState, getScene } from '@/common/config.js'
 import { initIMGlobalLifecycle, ensureIMConnected } from '@/common/im.js'
 
 const PRIVACY_KEY = 'privacyAgreementStatus'
 let imLifecycleInited = false
 let privacyEventBound = false
 
+function shouldRequireNativePrivacyAgreement() {
+  const scene = getScene()
+  return scene === 2 || scene === 3
+}
+
 function hasPrivacyAgreed() {
+  if (!shouldRequireNativePrivacyAgreement()) return true
   try {
     if (uni.getStorageSync(PRIVACY_KEY) === 'agreed') return true
   } catch (e) {

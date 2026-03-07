@@ -260,6 +260,29 @@
 	          <view class="delivery-state-line" v-if="returnShipped">
 	            <text class="delivery-state-text">已寄回：{{ returnExpressNoText || '-' }}</text>
 	          </view>
+	          <view class="delivery-state-line" v-if="returnReceived">
+	            <text class="delivery-state-text">买家已签收</text>
+	          </view>
+	          <view class="delivery-state-line" v-if="reviewSubmitted">
+	            <text class="delivery-state-text">买家已完成评价</text>
+	          </view>
+	          <view v-if="reviewInfo" class="delivery-review-block">
+	            <view class="delivery-review-head">
+	              <text class="delivery-review-title">订单评价</text>
+	              <text v-if="reviewInfo.score > 0" class="delivery-review-score">{{ reviewInfo.score }} 星</text>
+	            </view>
+	            <text v-if="reviewInfo.content" class="delivery-review-content">{{ reviewInfo.content }}</text>
+	            <view v-if="reviewInfo.images.length" class="delivery-review-images">
+	              <image
+	                v-for="(img, idx) in reviewInfo.images"
+	                :key="`review-${idx}`"
+	                class="delivery-review-image"
+	                :src="img"
+	                mode="aspectFill"
+	                @tap="previewHistoryImages(reviewInfo.images, idx)"
+	              />
+	            </view>
+	          </view>
 	          <view class="delivery-actions">
 	            <button
 	              v-if="canCloseSubmissionAction"
@@ -875,7 +898,27 @@ const returnAddressRequested = computed(() => !!queueInfo.value?.return_address_
 const returnAddressReady = computed(() => !!queueInfo.value?.return_address_ready)
 const canShipBackAction = computed(() => !!queueInfo.value?.can_ship_back && !isBuyer.value)
 const returnShipped = computed(() => !!queueInfo.value?.return_shipped)
+const returnReceived = computed(() => !!queueInfo.value?.return_received)
+const reviewSubmitted = computed(() => !!queueInfo.value?.review_submitted)
 const returnExpressNoText = computed(() => String(queueInfo.value?.return_express_no || '').trim())
+const reviewInfo = computed(() => {
+  const raw = queueInfo.value?.review_info || queueInfo.value?.reviewInfo || null
+  if (!raw || typeof raw !== 'object') return null
+  const id = Number(raw.id || 0)
+  const score = Number(raw.score || 0)
+  const content = String(raw.content || '').trim()
+  const createdAt = Number(raw.created_at || raw.createdAt || 0)
+  const sourceImages = Array.isArray(raw.images) ? raw.images : []
+  const images = sourceImages.map((item) => String(item || '').trim()).filter(Boolean)
+  if (!id && !content && !images.length && score <= 0) return null
+  return {
+    id,
+    score,
+    content,
+    created_at: createdAt,
+    images,
+  }
+})
 const returnAddressInfo = computed(() => {
   const raw = queueInfo.value?.return_address_info || queueInfo.value?.returnAddressInfo || null
   if (!raw || typeof raw !== 'object') return null
@@ -953,6 +996,9 @@ const showDeliveryFlowCard = computed(() => {
     returnAddressRequested.value ||
     effectiveReturnAddressReady.value ||
     returnShipped.value ||
+    returnReceived.value ||
+    reviewSubmitted.value ||
+    !!reviewInfo.value ||
     allItemsFinalConfirmed.value
   )
 })
@@ -1327,6 +1373,11 @@ function historyTitle(row) {
   if (eventCode === 'seller_confirm_submission') return '创作者确认订单'
   if (eventCode === 'payment_completed') return '付款完成'
   if (eventCode === 'final_product_confirmed') return '买家已确认最终状态'
+  if (eventCode === 'return_address_request') return '订单收尾'
+  if (eventCode === 'return_address_submitted') return '寄回地址已填写'
+  if (eventCode === 'return_shipped') return '创作者已寄回'
+  if (eventCode === 'return_received') return '买家已签收'
+  if (eventCode === 'trade_reviewed') return '买家已评价'
   return '进度更新'
 }
 
@@ -1335,6 +1386,11 @@ function historyDesc(row) {
   if (content) return content
   const eventCode = String(row?.event_code || '').trim()
   if (eventCode === 'step_request') return '创作者上传了进度图片。'
+  if (eventCode === 'return_address_request') return '订单进入收尾阶段，等待买家填写寄回地址。'
+  if (eventCode === 'return_address_submitted') return '买家已填写寄回地址。'
+  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家签收。'
+  if (eventCode === 'return_received') return '买家已确认收到寄回件。'
+  if (eventCode === 'trade_reviewed') return '买家已完成评价。'
   return ''
 }
 
@@ -2784,6 +2840,47 @@ onShow(() => {
   font-size: 31rpx;
   line-height: 1.46;
   color: #8f97a6;
+}
+.delivery-review-block {
+  margin-top: 12rpx;
+  padding: 18rpx 18rpx 16rpx;
+  border-radius: 16rpx;
+  background: #f5f7fb;
+}
+.delivery-review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.delivery-review-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #243042;
+}
+.delivery-review-score {
+  font-size: 22rpx;
+  color: #49caee;
+  font-weight: 700;
+}
+.delivery-review-content {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #5f6c81;
+}
+.delivery-review-images {
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+.delivery-review-image {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 16rpx;
+  background: #edf1f7;
 }
 .delivery-actions {
   margin-top: 14rpx;

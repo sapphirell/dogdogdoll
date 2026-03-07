@@ -867,6 +867,11 @@ function timelineTitle(row) {
   if (eventCode === 'seller_confirm_submission') return '创作者确认订单'
   if (eventCode === 'payment_completed') return '付款完成'
   if (eventCode === 'final_product_confirmed') return '买家已确认最终状态'
+  if (eventCode === 'return_address_request') return '订单收尾'
+  if (eventCode === 'return_address_submitted') return '寄回地址已填写'
+  if (eventCode === 'return_shipped') return '创作者已寄回'
+  if (eventCode === 'return_received') return '买家已签收'
+  if (eventCode === 'trade_reviewed') return '买家已评价'
   return stepName || '进度更新'
 }
 
@@ -880,6 +885,11 @@ function timelineDesc(row) {
   if (eventCode === 'step_reject_agree_modify' || eventCode === 'final_confirm_reject_agree_modify') {
     return '创作者已同意修改，后续将重新提交状态。'
   }
+  if (eventCode === 'return_address_request') return '订单进入收尾阶段，等待寄回地址。'
+  if (eventCode === 'return_address_submitted') return '买家已填写寄回地址。'
+  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家签收。'
+  if (eventCode === 'return_received') return '买家已确认收到寄回件。'
+  if (eventCode === 'trade_reviewed') return '买家已完成评价并提交返图。'
   return ''
 }
 

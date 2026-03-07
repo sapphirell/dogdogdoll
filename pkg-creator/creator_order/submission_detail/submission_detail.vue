@@ -234,6 +234,61 @@
                 </view>
               </view>
             </view>
+
+	            <view v-if="showDeliveryFlowCard" class="timeline-area delivery-flow-area">
+	              <view class="timeline-header">订单收尾</view>
+	              <text
+	                v-if="submission.return_address_requested && !effectiveReturnAddressReady"
+	                class="delivery-flow-text"
+	              >
+	                创作者已发起收尾，请先填写寄回地址。
+	              </text>
+	              <view v-if="effectiveReturnAddressInfo" class="return-address-preview-card">
+	                <text class="return-address-preview-title">寄回地址</text>
+	                <text class="return-address-preview-line">
+	                  {{ effectiveReturnAddressInfo.receiver_name || '-' }} {{ effectiveReturnAddressInfo.receiver_phone || '' }}
+	                </text>
+	                <text class="return-address-preview-line">
+	                  {{ effectiveReturnAddressInfo.full_address || '-' }}
+	                </text>
+	              </view>
+	              <view v-if="submission.return_shipped" class="delivery-status-chip">
+	                <text class="delivery-status-label">寄回进度</text>
+	                <text class="delivery-status-value">已寄回 · {{ submission.return_express_no || '待补充单号' }}</text>
+	              </view>
+	              <view v-if="submission.return_received" class="delivery-status-chip success">
+	                <text class="delivery-status-label">签收状态</text>
+	                <text class="delivery-status-value">你已确认签收</text>
+	              </view>
+	              <view v-if="reviewInfo" class="review-preview-card">
+	                <view class="review-preview-head">
+	                  <text class="review-preview-title">订单评价</text>
+	                  <text v-if="reviewInfo.score > 0" class="review-preview-score">{{ reviewInfo.score }} 星</text>
+	                </view>
+	                <text v-if="reviewInfo.content" class="review-preview-content">{{ reviewInfo.content }}</text>
+	                <view v-if="reviewInfo.images.length" class="review-preview-images">
+	                  <image
+	                    v-for="(img, idx) in reviewInfo.images"
+	                    :key="`review-img-${idx}`"
+	                    class="review-preview-image"
+	                    :src="img"
+	                    mode="aspectFill"
+	                    @tap.stop="previewTimelineImages(reviewInfo.images, idx)"
+	                  />
+	                </view>
+	              </view>
+	              <view v-if="deliveryActionList.length" class="delivery-action-row">
+	                <view
+	                  v-for="action in deliveryActionList"
+	                  :key="action.key"
+	                  class="delivery-action-btn"
+	                  :class="action.tone"
+	                  @tap="handleDeliveryAction(action.key)"
+	                >
+	                  {{ action.label }}
+	                </view>
+	              </view>
+	            </view>
           </view>
 
           <view v-else class="content-empty-view anim-fade-up" :key="'empty'">
@@ -275,7 +330,7 @@
       <view class="safe-area-bottom"></view>
     </view>
 
-    <view class="fixed-bottom-bar" v-if="isLogin && submission.submission_id && bottomAction && !payPopupVisible && !payCodeModalVisible">
+    <view class="fixed-bottom-bar" v-if="isLogin && submission.submission_id && bottomAction && !payPopupVisible && !payCodeModalVisible && !reviewModalVisible">
        <button 
          class="action-btn" 
          :class="{ 'disabled': !isContentReady }"
@@ -505,6 +560,68 @@
         <view class="pay-code-bottom-gap"></view>
       </view>
     </common-modal>
+
+    <common-modal
+      v-model:visible="reviewModalVisible"
+      width="680rpx"
+      :closeable="!reviewSubmitting"
+      :center="true"
+    >
+      <view class="review-modal">
+        <text class="review-modal-title">写评价</text>
+        <text class="review-modal-desc">可以写下体验，也可以附上返图。</text>
+
+        <textarea
+          v-model.trim="reviewContent"
+          class="review-textarea"
+          maxlength="300"
+          placeholder="这次返妆或返毛体验怎么样？"
+        />
+        <text class="review-count">{{ reviewContentLength }}/300</text>
+
+        <view class="review-upload-head">
+          <text class="review-upload-title">返图</text>
+          <text class="review-upload-sub">{{ reviewImages.length }}/{{ reviewMaxImages }}</text>
+        </view>
+        <view class="review-image-list">
+          <view
+            v-for="(img, idx) in reviewImages"
+            :key="`${img}-${idx}`"
+            class="review-image-item"
+          >
+            <image class="review-image-photo" :src="img" mode="aspectFill" @tap="previewReviewImages(idx)" />
+            <view class="review-image-remove" @tap.stop="removeReviewImage(idx)">×</view>
+          </view>
+          <view
+            v-if="reviewImages.length < reviewMaxImages && !reviewUploading"
+            class="review-image-add"
+            @tap="pickReviewImages"
+          >
+            <text class="review-image-add-icon">+</text>
+            <text class="review-image-add-text">添加返图</text>
+          </view>
+        </view>
+        <text v-if="reviewUploading" class="review-uploading">{{ reviewUploadText }}</text>
+
+        <view class="review-modal-actions">
+          <button
+            class="review-modal-btn cancel"
+            :disabled="reviewSubmitting"
+            @tap="closeReviewModal"
+          >
+            取消
+          </button>
+          <button
+            class="review-modal-btn confirm"
+            :class="{ disabled: !canSubmitReviewForm || reviewSubmitting }"
+            :disabled="!canSubmitReviewForm || reviewSubmitting"
+            @tap="submitReview"
+          >
+            {{ reviewSubmitting ? '提交中...' : '提交评价' }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
   </view>
 </template>
 
@@ -524,6 +641,7 @@ const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
 const PlanPaymentMethodQRCode = 1
 const PlanPaymentMethodAlipay = 2
+const reviewMaxImages = 9
 
 // ====== 状态数据 ======
 const submissionId = ref(0)
@@ -552,6 +670,11 @@ const submission = reactive({
   return_address_ready: false,
   return_address_info: null,
   return_shipped: false,
+  return_received: false,
+  can_confirm_received: false,
+  review_submitted: false,
+  can_submit_review: false,
+  review_info: null,
   return_express_no: ''
 })
 const draftItems = ref([])
@@ -580,6 +703,12 @@ const payProofImages = ref([])
 const payMessage = ref('')
 const payProofUploading = ref(false)
 const payProofUploadText = ref('')
+const reviewModalVisible = ref(false)
+const reviewContent = ref('')
+const reviewImages = ref([])
+const reviewUploading = ref(false)
+const reviewUploadText = ref('')
+const reviewSubmitting = ref(false)
 const stepActioningLogID = ref(0)
 const progressOverviewVisible = ref(false)
 const progressOverviewLoading = ref(false)
@@ -922,6 +1051,102 @@ const totalPrice = computed(() => {
   return submission.items.reduce((sum, item) => sum + Number(item.price_total || 0), 0)
 })
 
+const returnAddressInfo = computed(() => {
+  const raw = submission.return_address_info
+  if (!raw || typeof raw !== 'object') return null
+  const receiverName = String(raw.receiver_name || raw.receiverName || '').trim()
+  const receiverPhone = String(raw.receiver_phone || raw.receiverPhone || '').trim()
+  const fullAddress = String(raw.full_address || raw.fullAddress || '').trim()
+  if (!receiverName && !receiverPhone && !fullAddress) return null
+  return {
+    receiver_name: receiverName,
+    receiver_phone: receiverPhone,
+    full_address: fullAddress
+  }
+})
+
+const effectiveReturnAddressReady = computed(() => {
+  return !!submission.return_address_ready || !!returnAddressInfo.value
+})
+
+const effectiveReturnAddressInfo = computed(() => returnAddressInfo.value)
+
+const reviewInfo = computed(() => {
+  const raw = submission.review_info
+  if (!raw || typeof raw !== 'object') return null
+  const score = Number(raw.score || 0)
+  const content = String(raw.content || '').trim()
+  const createdAt = Number(raw.created_at || raw.createdAt || 0)
+  const sourceImages = Array.isArray(raw.images) ? raw.images : []
+  const images = sourceImages.map((item) => String(item || '').trim()).filter(Boolean)
+  if (!content && !images.length && score <= 0) return null
+  return {
+    score,
+    content,
+    created_at: createdAt,
+    images
+  }
+})
+
+const showDeliveryFlowCard = computed(() => {
+  if (submission.status !== SubmissionStatusPaid) return false
+  return (
+    !!submission.return_address_requested ||
+    effectiveReturnAddressReady.value ||
+    !!submission.return_shipped ||
+    !!submission.return_received ||
+    !!submission.review_submitted ||
+    !!reviewInfo.value
+  )
+})
+
+const canEditReturnAddress = computed(() => {
+  if (submission.status !== SubmissionStatusPaid) return false
+  if (!submission.return_address_requested) return false
+  return !submission.return_shipped && !submission.return_received
+})
+
+const canConfirmReceived = computed(() => {
+  return submission.status === SubmissionStatusPaid && !!submission.can_confirm_received
+})
+
+const canOpenReview = computed(() => {
+  return submission.status === SubmissionStatusPaid && !!submission.can_submit_review
+})
+
+const deliveryActionList = computed(() => {
+  const list = []
+  if (canEditReturnAddress.value) {
+    list.push({
+      key: 'address',
+      label: effectiveReturnAddressReady.value ? '修改寄回地址' : '填写寄回地址',
+      tone: 'secondary'
+    })
+  }
+  if (canConfirmReceived.value) {
+    list.push({
+      key: 'received',
+      label: '确认签收',
+      tone: 'primary'
+    })
+  }
+  if (canOpenReview.value) {
+    list.push({
+      key: 'review',
+      label: '写评价',
+      tone: 'primary'
+    })
+  }
+  return list
+})
+
+const reviewContentLength = computed(() => Array.from(String(reviewContent.value || '')).length)
+
+const canSubmitReviewForm = computed(() => {
+  if (reviewUploading.value || reviewSubmitting.value) return false
+  return reviewContentLength.value > 0 || reviewImages.value.length > 0
+})
+
 // 底部按钮
 const bottomAction = computed(() => {
   const txt = submission.status_text || ''
@@ -1096,11 +1321,18 @@ function resetSubmissionRuntimeState() {
     return_address_ready: false,
     return_address_info: null,
     return_shipped: false,
+    return_received: false,
+    can_confirm_received: false,
+    review_submitted: false,
+    can_submit_review: false,
+    review_info: null,
     return_express_no: ''
   })
   draftItems.value = []
   currentTabIndex.value = 0
   stepActioningLogID.value = 0
+  reviewModalVisible.value = false
+  resetReviewForm()
   Object.assign(plan, {
     id: 0,
     artist_name: '',
@@ -1396,6 +1628,8 @@ function timelineTitle(row) {
     return '等待填写寄回地址'
   }
   if (eventCode === 'return_shipped') return '创作者已寄回'
+  if (eventCode === 'return_received') return '买家已签收'
+  if (eventCode === 'trade_reviewed') return '买家已评价'
   if (logType === 1) {
     const name = stepName || `节点#${Number(row?.step_id || 0)}`
     if (status === 1) return `${name}（已确认）`
@@ -1426,6 +1660,8 @@ function timelineDesc(row) {
     return '创作者发起结单，请买家填写寄回地址。'
   }
   if (eventCode === 'return_shipped') return '创作者已寄回，等待买家查收。'
+  if (eventCode === 'return_received') return '你已确认收到寄回件。'
+  if (eventCode === 'trade_reviewed') return '你已完成订单评价。'
   return ''
 }
 
@@ -1532,6 +1768,11 @@ watch(
   }
 )
 
+watch(reviewModalVisible, (visible) => {
+  if (visible || reviewSubmitting.value) return
+  resetReviewForm()
+})
+
 function getFirstRefImage(str) {
   if (!str) return ''
   return str.split(',')[0]
@@ -1576,6 +1817,170 @@ function handleBrandClick() {
     uni.navigateTo({
       url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&type=hair`
     })
+  }
+}
+
+function goChooseReturnAddress() {
+  if (!submission.submission_id) {
+    uni.showToast({ title: '缺少订单参数', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/return_address/return_address?submission_id=${submission.submission_id}`
+  })
+}
+
+async function confirmReturnReceived() {
+  if (!canConfirmReceived.value) return
+  uni.showLoading({ title: '确认中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/confirm-received`,
+      method: 'POST',
+      header: {
+        Authorization: uni.getStorageSync('token'),
+        'Content-Type': 'application/json'
+      },
+      data: {
+        submission_id: submission.submission_id
+      }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '确认签收失败', icon: 'none' })
+      return
+    }
+    uni.showToast({ title: '已确认签收', icon: 'success' })
+    if (global.lastRefresh) global.lastRefresh.time = 0
+    fetchDetail(true)
+  } catch (e) {
+    uni.showToast({ title: '确认签收失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+function resetReviewForm() {
+  reviewContent.value = ''
+  reviewImages.value = []
+  reviewUploading.value = false
+  reviewUploadText.value = ''
+}
+
+function openReviewModal() {
+  if (!canOpenReview.value) return
+  reviewModalVisible.value = true
+}
+
+function closeReviewModal() {
+  if (reviewSubmitting.value) return
+  reviewModalVisible.value = false
+}
+
+function previewReviewImages(index) {
+  if (!reviewImages.value.length) return
+  uni.previewImage({
+    current: reviewImages.value[index] || reviewImages.value[0],
+    urls: reviewImages.value
+  })
+}
+
+function removeReviewImage(index) {
+  const list = reviewImages.value.slice()
+  if (index < 0 || index >= list.length) return
+  list.splice(index, 1)
+  reviewImages.value = list
+}
+
+async function pickReviewImages() {
+  const remain = reviewMaxImages - reviewImages.value.length
+  if (remain <= 0) {
+    uni.showToast({ title: `最多上传${reviewMaxImages}张返图`, icon: 'none' })
+    return
+  }
+  try {
+    const files = await chooseImageList(remain)
+    if (!Array.isArray(files) || !files.length) return
+    reviewUploading.value = true
+    reviewUploadText.value = '准备上传...'
+    for (let i = 0; i < files.length; i++) {
+      reviewUploadText.value = `上传中 (${i + 1}/${files.length})`
+      const tk = await getQiniuToken()
+      if (!tk?.token || !tk?.path) {
+        throw new Error('获取上传凭证失败')
+      }
+      const ret = await uploadImageToQiniu(files[i], tk.token, tk.path)
+      const url = String(ret?.imageUrl || '').trim()
+      if (!url) {
+        throw new Error('上传失败，请重试')
+      }
+      reviewImages.value.push(url)
+      if (reviewImages.value.length >= reviewMaxImages) break
+    }
+    reviewUploadText.value = ''
+  } catch (e) {
+    uni.showToast({ title: e?.message || '上传失败', icon: 'none' })
+  } finally {
+    reviewUploading.value = false
+  }
+}
+
+async function submitReview() {
+  if (!canSubmitReviewForm.value || reviewSubmitting.value) return
+  reviewSubmitting.value = true
+  uni.showLoading({ title: '提交中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/review`,
+      method: 'POST',
+      header: {
+        Authorization: uni.getStorageSync('token'),
+        'Content-Type': 'application/json'
+      },
+      data: {
+        submission_id: submission.submission_id,
+        content: reviewContent.value,
+        images: reviewImages.value
+      }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '提交评价失败', icon: 'none' })
+      return
+    }
+    uni.showToast({ title: '评价已提交', icon: 'success' })
+    reviewModalVisible.value = false
+    resetReviewForm()
+    if (global.lastRefresh) global.lastRefresh.time = 0
+    fetchDetail(true)
+  } catch (e) {
+    uni.showToast({ title: '提交评价失败', icon: 'none' })
+  } finally {
+    reviewSubmitting.value = false
+    uni.hideLoading()
+  }
+}
+
+function handleDeliveryAction(actionKey) {
+  if (actionKey === 'address') {
+    goChooseReturnAddress()
+    return
+  }
+  if (actionKey === 'received') {
+    uni.showModal({
+      title: '确认签收',
+      content: '确认已经收到创作者寄回的娃头吗？',
+      confirmText: '确认签收',
+      cancelText: '再看看',
+      success: ({ confirm }) => {
+        if (!confirm) return
+        confirmReturnReceived()
+      }
+    })
+    return
+  }
+  if (actionKey === 'review') {
+    openReviewModal()
   }
 }
 
@@ -1630,6 +2035,11 @@ async function fetchDetail(force = false) {
         return_address_ready: !!d.return_address_ready,
         return_address_info: d.return_address_info || null,
         return_shipped: !!d.return_shipped,
+        return_received: !!d.return_received,
+        can_confirm_received: !!d.can_confirm_received,
+        review_submitted: !!d.review_submitted,
+        can_submit_review: !!d.can_submit_review,
+        review_info: d.review_info || null,
         return_express_no: d.return_express_no || ''
       })
       draftItems.value = d.draft_items || []
@@ -2594,6 +3004,231 @@ $spacing-page: 30rpx;
   font-size: 22rpx;
   line-height: 1.5;
   color: #6f8197;
+}
+.delivery-flow-area {
+  margin-top: 24rpx;
+}
+.delivery-flow-text {
+  display: block;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #5f738a;
+}
+.delivery-status-chip {
+  margin-top: 14rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 18rpx;
+  background: #f4f7fb;
+}
+.delivery-status-chip.success {
+  background: #e9f8f2;
+}
+.delivery-status-label {
+  display: block;
+  font-size: 22rpx;
+  color: #70839b;
+}
+.delivery-status-value {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #283446;
+}
+.review-preview-card {
+  margin-top: 14rpx;
+  padding: 18rpx;
+  border-radius: 18rpx;
+  background: #f5f7fb;
+}
+.review-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.review-preview-title {
+  font-size: 24rpx;
+  color: #243246;
+}
+.review-preview-score {
+  font-size: 22rpx;
+  color: #49caee;
+  font-weight: 700;
+}
+.review-preview-content {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #55677f;
+}
+.review-preview-images {
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+.review-preview-image {
+  width: 124rpx;
+  height: 124rpx;
+  border-radius: 18rpx;
+  background: #e9eef5;
+}
+.delivery-action-row {
+  margin-top: 18rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.delivery-action-btn {
+  min-width: 196rpx;
+  height: 74rpx;
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2f7;
+  color: #2d394b;
+  font-size: 24rpx;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+.delivery-action-btn.primary {
+  background: #49caee;
+  color: #fff;
+}
+.review-modal {
+  padding: 14rpx 4rpx 6rpx;
+}
+.review-modal-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #233145;
+  text-align: center;
+}
+.review-modal-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #71839a;
+  text-align: center;
+}
+.review-textarea {
+  width: 100%;
+  min-height: 180rpx;
+  margin-top: 24rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 22rpx;
+  background: #f5f7fb;
+  box-sizing: border-box;
+  font-size: 26rpx;
+  color: #243246;
+}
+.review-count {
+  display: block;
+  margin-top: 10rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: #90a0b5;
+}
+.review-upload-head {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.review-upload-title {
+  font-size: 24rpx;
+  color: #243246;
+}
+.review-upload-sub {
+  font-size: 22rpx;
+  color: #90a0b5;
+}
+.review-image-list {
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.review-image-item,
+.review-image-add {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 20rpx;
+  background: #f3f6fb;
+  position: relative;
+  overflow: hidden;
+}
+.review-image-photo {
+  width: 100%;
+  height: 100%;
+}
+.review-image-remove {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 999rpx;
+  background: rgba(35, 49, 69, 0.72);
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.review-image-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #7f90a8;
+}
+.review-image-add-icon {
+  font-size: 42rpx;
+  line-height: 1;
+}
+.review-image-add-text {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+}
+.review-uploading {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #49caee;
+}
+.review-modal-actions {
+  margin-top: 28rpx;
+  display: flex;
+  gap: 12rpx;
+}
+.review-modal-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 999rpx;
+  border: none;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.review-modal-btn::after {
+  border: none;
+}
+.review-modal-btn.cancel {
+  background: #eef2f7;
+  color: #2d394b;
+}
+.review-modal-btn.confirm {
+  background: #49caee;
+  color: #fff;
+}
+.review-modal-btn.confirm.disabled {
+  opacity: 0.45;
 }
 
 .info-row-item {

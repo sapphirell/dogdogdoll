@@ -266,7 +266,10 @@ const creationOps = Object.freeze([
   { key: 'all', label: '全部', icon: 'list' },
   { key: 'not_started', label: '未开始', icon: 'info-filled' },
   { key: 'in_progress', label: '进行中', icon: 'spinner-cycle' },
-  { key: 'finished', label: '已结束', icon: 'checkbox-filled' },
+  { key: 'finished', label: '待寄回', icon: 'checkbox-filled' },
+  { key: 'returned', label: '已寄回', icon: 'redo' },
+  { key: 'received', label: '已签收', icon: 'checkmarkempty' },
+  { key: 'reviewed', label: '已评论', icon: 'chatbubble' },
   { key: 'schedule', label: '排期', icon: 'calendar' },
 ])
 
@@ -554,16 +557,20 @@ function getItemStageLabel(row, item) {
   const stage = getStageMap(row)[itemID] || ''
   if (stage === 'not_started') return '未开始'
   if (stage === 'in_progress') return '进行中'
-  if (stage === 'finished') return '已结束'
+  if (stage === 'finished') return '待寄回'
   if (stage === 'returned') return '已寄回'
+  if (stage === 'received') return '已签收'
+  if (stage === 'reviewed') return '已评论'
   return ''
 }
 
 function formatCreationStage(stage) {
   if (stage === 'not_started') return '未开始'
   if (stage === 'in_progress') return '进行中'
-  if (stage === 'finished') return '已结束'
+  if (stage === 'finished') return '待寄回'
   if (stage === 'returned') return '已寄回'
+  if (stage === 'received') return '已签收'
+  if (stage === 'reviewed') return '已评论'
   return '未开始'
 }
 
@@ -1162,13 +1169,23 @@ onLoad((options) => {
 }
 
 .stage-finished {
-  color: #3f6e53;
-  background: #e3f4ea;
+  color: #7a5b2f;
+  background: #f8efdc;
 }
 
 .stage-returned {
-  color: #7b6b4f;
-  background: #f7edd8;
+  color: #526f8c;
+  background: #e8f1fb;
+}
+
+.stage-received {
+  color: #2f7a63;
+  background: #def4eb;
+}
+
+.stage-reviewed {
+  color: #5c5ea8;
+  background: #ecebff;
 }
 
 .item-footer {

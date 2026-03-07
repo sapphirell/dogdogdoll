@@ -38,6 +38,18 @@ function pickFirstString(...values) {
   return ''
 }
 
+function getRuntimeEnvValue(...keys) {
+  const importMetaEnv = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {}
+  const processEnv = (typeof process !== 'undefined' && process.env) ? process.env : {}
+  for (const key of keys) {
+    const importMetaValue = importMetaEnv[key]
+    if (typeof importMetaValue === 'string' && importMetaValue.trim()) return importMetaValue.trim()
+    const processValue = processEnv[key]
+    if (typeof processValue === 'string' && processValue.trim()) return processValue.trim()
+  }
+  return ''
+}
+
 function isUnsafeLocalApi(url) {
   const s = String(url || '').trim().toLowerCase()
   if (!s) return false
@@ -65,22 +77,21 @@ function getGlobalConfig() {
 }
 
 function getEnvConfig() {
-  const env = (typeof process !== 'undefined' && process.env) ? process.env : {}
   return {
     api: {
-      cn: env.VUE_APP_API_CN || env.VUE_APP_CN_API || '',
-      us: env.VUE_APP_API_US || env.VUE_APP_US_API || '',
-      dev: env.VUE_APP_API_DEV || '',
-      eu: env.VUE_APP_API_EU || '',
-      jp: env.VUE_APP_API_JP || '',
-      sg: env.VUE_APP_API_SG || ''
+      cn: getRuntimeEnvValue('VITE_APP_API_CN', 'VUE_APP_API_CN', 'VUE_APP_CN_API'),
+      us: getRuntimeEnvValue('VITE_APP_API_US', 'VUE_APP_API_US', 'VUE_APP_US_API'),
+      dev: getRuntimeEnvValue('VITE_APP_API_DEV', 'VUE_APP_API_DEV'),
+      eu: getRuntimeEnvValue('VITE_APP_API_EU', 'VUE_APP_API_EU'),
+      jp: getRuntimeEnvValue('VITE_APP_API_JP', 'VUE_APP_API_JP'),
+      sg: getRuntimeEnvValue('VITE_APP_API_SG', 'VUE_APP_API_SG')
     },
     web: {
-      www: env.VUE_APP_WEB_WWW || '',
-      h5: env.VUE_APP_WEB_H5 || env.VUE_APP_SHARE_H5_BASE || ''
+      www: getRuntimeEnvValue('VITE_APP_WEB_WWW', 'VUE_APP_WEB_WWW'),
+      h5: getRuntimeEnvValue('VITE_APP_WEB_H5', 'VUE_APP_WEB_H5', 'VITE_APP_SHARE_H5_BASE', 'VUE_APP_SHARE_H5_BASE')
     },
     image: {
-      image1: env.VUE_APP_IMAGE1_URL || ''
+      image1: getRuntimeEnvValue('VITE_APP_IMAGE1_URL', 'VUE_APP_IMAGE1_URL')
     }
   }
 }
@@ -122,7 +133,7 @@ function buildDomainConfig() {
 
 export const DOMAIN_CONFIG = buildDomainConfig()
 export const ENV_NAME = pickFirstString(
-  (typeof process !== 'undefined' && process.env && process.env.VUE_APP_ENV_NAME) || '',
+  getRuntimeEnvValue('VITE_APP_ENV_NAME', 'VUE_APP_ENV_NAME'),
   'unknown'
 )
 
