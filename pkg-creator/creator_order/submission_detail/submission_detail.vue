@@ -1569,14 +1569,12 @@ function handleBrandClick() {
   if (!brandId) return
 
   if (submission.artist_type === 1) {
-    // 妆师
     uni.navigateTo({
-      url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${brandId}`
+      url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&type=artist`
     })
   } else if (submission.artist_type === 2) {
-    // 毛娘
     uni.navigateTo({
-      url: `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${brandId}`
+      url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&type=hair`
     })
   }
 }

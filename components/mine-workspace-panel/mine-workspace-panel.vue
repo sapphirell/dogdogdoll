@@ -474,8 +474,9 @@ function goOrderHome () {
     })
     return
   }
+  const roleType = isHairstylist.value && !isArtist.value ? 'hair' : 'artist'
   uni.navigateTo({
-    url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${bid}`
+    url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${bid}&type=${roleType}`
   })
 }
 

@@ -824,10 +824,10 @@ const navigateToArtistDetail = (artist)=> {
   
   if (activeTab.value==='makeup') {
 	  uni.navigateTo({
-	    url: "/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=" + artist.brand_id
+	    url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&type=artist`
 	  });
   } else {
-	    uni.navigateTo({ url: '/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=' + brandId })
+	    uni.navigateTo({ url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&type=hair` })
   }
   
 
@@ -925,9 +925,9 @@ async function goStickyTarget () {
 
   // 约妆 & 约毛都跳作者详情
   if (kind === 'makeup') {
-    uni.navigateTo({ url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${id}` })
+    uni.navigateTo({ url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${id}&type=artist` })
   } else if (kind === 'hair') {
-	  uni.navigateTo({ url: `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${id}` })
+	  uni.navigateTo({ url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${id}&type=hair` })
   } else {
     uni.navigateTo({ url: `/pages/brand/brand?brand_id=${id}` })
   }

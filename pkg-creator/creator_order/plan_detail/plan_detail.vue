@@ -978,10 +978,8 @@ function goArtistHome() {
   }
 
   const artistType = Number(plan.artist_type || 0)
-  const targetPath = artistType === 2
-    ? '/pkg-creator/creator_base/hair_artist/hair_artist'
-    : '/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist'
-  const url = `${targetPath}?brand_id=${brandId}&id=${brandId}`
+  const roleType = artistType === 2 ? 'hair' : 'artist'
+  const url = `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&id=${brandId}&type=${roleType}`
   uni.navigateTo({ url })
 }
 

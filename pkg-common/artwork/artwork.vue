@@ -505,7 +505,7 @@ function navigateToGoods(goodsId) {
 // 跳转到品牌
 function navigateToBrand(brandId) {
   uni.navigateTo({
-    url: `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${brandId}`,
+    url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${brandId}&type=artist`,
   })
 }
 

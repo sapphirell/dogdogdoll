@@ -688,14 +688,12 @@ function choose(item) {
         url: `/pages/brand/brand?brand_id=${item.id}`,
       })
     } else if (activeType.value === 'artist') {
-      // 妆师：跳妆师主页
-      const url = `/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist?brand_id=${item.id}`
+      const url = `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${item.id}&type=artist`
 	   uni.navigateTo({
 		 url: url,
 	   })
     } else if (activeType.value === 'hair') {
-      // 毛娘：跳毛娘主页
-      const url = `/pkg-creator/creator_base/hair_artist/hair_artist?brand_id=${item.id}`
+      const url = `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${item.id}&type=hair`
       uni.navigateTo({ url })
     }
   } else {

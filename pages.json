@@ -303,6 +303,12 @@
 			}
 		},
 		{
+			"path": "creator_base/creator_profile/creator_profile",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "creator_base/custom_wig/custom_wig",
 			"style": {
 				"navigationStyle": "custom" 

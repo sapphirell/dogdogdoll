@@ -289,12 +289,10 @@ const resetFilters = () => {
 }
 
 const navigateToArtistDetail = (artist) => {
-  const baseUrl = roleType.value === 'artist' 
-    ? '/pkg-creator/creator_base/bjd_faceup_artist/bjd_faceup_artist' 
-    : '/pkg-creator/creator_base/hair_artist/hair_artist'
+  const role = roleType.value === 'artist' ? 'artist' : 'hair'
   
   uni.navigateTo({
-    url: `${baseUrl}?brand_id=${artist.brand_id}`,
+    url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${artist.brand_id}&type=${role}`,
   })
 }
 </script>

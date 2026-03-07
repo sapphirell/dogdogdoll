@@ -6,7 +6,10 @@
     @touchcancel.stop="onRootTouchCancel"
   >
     <view class="selected-panel" @tap="focusSelectedOrderCalendar">
-      <text class="selected-title font-alimamashuhei">当前选择订单</text>
+      <view class="selected-title-row">
+        <text class="selected-title font-alimamashuhei">当前选择订单</text>
+        <view class="selected-tip-bubble">单击跳转到日历</view>
+      </view>
       <view v-if="selectedOrder" class="selected-main">
         <view class="selected-head">
           <image
@@ -67,13 +70,20 @@
       </view>
     </view>
 
-    <scroll-view class="order-strip" scroll-x>
+    <scroll-view class="order-strip" scroll-x scroll-with-animation :scroll-into-view="orderStripIntoView">
       <view class="order-strip-inner">
         <view
           v-for="order in localOrders"
           :key="order.submission_item_id"
+          :id="orderAnchorId(order.submission_item_id)"
           class="order-item"
-          :class="[getOrderTone(order), { selected: Number(order.submission_item_id) === Number(selectedOrderId) }]"
+          :class="[
+            getOrderTone(order),
+            {
+              selected: Number(order.submission_item_id) === Number(selectedOrderId),
+              scheduled: isOrderScheduled(order),
+            },
+          ]"
           @tap="selectOrder(order.submission_item_id)"
         >
           <view class="order-item-head">
@@ -199,8 +209,10 @@ const localOrders = ref([])
 const currentMonth = ref('')
 const dayCellRects = ref([])
 const flashingDates = ref([])
+const orderStripIntoView = ref('')
 const instance = getCurrentInstance()
 let flashResetTimer = 0
+let updatingFromSelf = false
 
 const dragState = reactive({
   active: false,
@@ -403,8 +415,13 @@ function normalizeOrderList(list) {
 watch(
   () => props.orders,
   (v) => {
+    const shouldScrollToUnscheduled = !updatingFromSelf
+    updatingFromSelf = false
     localOrders.value = normalizeOrderList(v)
     ensureValidSelection()
+    if (shouldScrollToUnscheduled) {
+      nextTick(scrollToFirstUnscheduled)
+    }
   },
   { deep: true, immediate: true },
 )
@@ -543,6 +560,33 @@ function shortOrderTitle(order) {
   return txt.length > 8 ? `${txt.slice(0, 8)}…` : txt
 }
 
+function isOrderScheduled(order) {
+  const start = normalizeDateText(order?.start_date || '')
+  const end = normalizeDateText(order?.end_date || '')
+  return !!start && !!end
+}
+
+function orderAnchorId(itemID) {
+  const id = Number(itemID || 0)
+  if (!id) return ''
+  return `order-item-${id}`
+}
+
+function scrollToFirstUnscheduled() {
+  if (!localOrders.value.length) {
+    orderStripIntoView.value = ''
+    return
+  }
+  const idx = localOrders.value.findIndex((row) => !isOrderScheduled(row))
+  const target = localOrders.value[idx >= 0 ? idx : 0]
+  const anchor = orderAnchorId(target?.submission_item_id)
+  if (!anchor) return
+  orderStripIntoView.value = ''
+  nextTick(() => {
+    orderStripIntoView.value = anchor
+  })
+}
+
 function collectOrderRangeDates(order) {
   const start = normalizeDateText(order?.start_date || '')
   const end = normalizeDateText(order?.end_date || '')
@@ -641,6 +685,7 @@ function emitInvalid(msg) {
 }
 
 function emitChangeOrders() {
+  updatingFromSelf = true
   emit('change', localOrders.value.map((o) => ({ ...o })))
 }
 
@@ -1093,11 +1138,28 @@ watch(
   padding: 16rpx;
 }
 
+.selected-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+  margin-bottom: 10rpx;
+}
+
 .selected-title {
   display: block;
   font-size: 24rpx;
   color: #1f2937;
-  margin-bottom: 10rpx;
+}
+
+.selected-tip-bubble {
+  flex-shrink: 0;
+  border-radius: 999rpx;
+  padding: 4rpx 12rpx;
+  font-size: 18rpx;
+  color: #6c7788;
+  background: #f3f5f8;
+  border: 1rpx solid #dbe1e9;
 }
 
 .selected-head {
@@ -1233,6 +1295,15 @@ watch(
 
 .order-item.tone-5 {
   background: #edf2f6;
+}
+
+.order-item.scheduled {
+  background: #eef7f1 !important;
+  border-color: #cfe1d7;
+}
+
+.order-item.scheduled .order-item-meta {
+  color: #5e6f65;
 }
 
 .order-item-head {
