@@ -1,6 +1,6 @@
 {
     "name" : "娃圈狗狗助手",
-    "appid" : "__UNI__5D7AAEE",
+    "appid" : "__UNI__79F07F3",
     "description" : "一个关于BJD娃娃的应用",
     "versionName" : "1.2.2",
     "versionCode" : 1204,
@@ -74,11 +74,11 @@
                         "offline" : false,
                         "icons" : {
                             "small" : {
-                                "ldpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/18x18.png",
-                                "mdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/24x24.png",
-                                "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/36x36.png",
-                                "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/48x48.png",
-                                "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/72x72.png"
+                                "ldpi" : "unpackage/res/icons/18x18.png",
+                                "mdpi" : "unpackage/res/icons/24x24.png",
+                                "hdpi" : "unpackage/res/icons/36x36.png",
+                                "xhdpi" : "unpackage/res/icons/48x48.png",
+                                "xxhdpi" : "unpackage/res/icons/72x72.png"
                             }
                         }
                     }
@@ -130,9 +130,9 @@
                     "storyboard" : "/Users/sapphirell/Desktop/工作文档/sc2/storyboard.zip"
                 },
                 "android" : {
-                    "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",
-                    "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/720p.9.png",
-                    "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/1080p.9.png"
+                    "hdpi" : "\\unpackage\\res\\abg\\480.9.png",
+                    "xhdpi" : "\\unpackage\\res\\abg\\720p.9.png",
+                    "xxhdpi" : "\\unpackage\\res\\abg\\1080p.9.png"
                 }
             }
         },
