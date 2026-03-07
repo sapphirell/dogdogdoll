@@ -38,6 +38,16 @@ function pickFirstString(...values) {
   return ''
 }
 
+function isUnsafeLocalApi(url) {
+  const s = String(url || '').trim().toLowerCase()
+  if (!s) return false
+  return (
+    s.includes('://localhost') ||
+    s.includes('://127.0.0.1') ||
+    s.includes('://0.0.0.0')
+  )
+}
+
 function getStorageConfig() {
   if (typeof uni === 'undefined' || typeof uni.getStorageSync !== 'function') return {}
   const raw = uni.getStorageSync('domainConfig') || uni.getStorageSync('runtimeDomainConfig')
@@ -138,18 +148,26 @@ export const apiRegionURLs = Object.freeze({
 const savedServer = (typeof uni !== 'undefined' && typeof uni.getStorageSync === 'function')
   ? uni.getStorageSync('selectedServer')
   : '';
+const safeSelectedServer = isUnsafeLocalApi(savedServer) ? '' : savedServer
 // 默认 API 选择规则：
 // 1) 若存在 selectedServer（用户通过服务器切换组件选过），优先使用它；
 // 2) 否则按 cnURL -> usURL -> devUrl 回退。
 //
 // 所以你即便改了 .env 的 VUE_APP_API_CN，只要本机仍保存 selectedServer，
 // 实际请求地址仍可能不是新配置值。排查时请看控制台 [Config] 日志。
-const defaultApiUrl = trimSlash(pickFirstString(savedServer, cnURL, usURL, devUrl));
+const defaultApiUrl = trimSlash(pickFirstString(safeSelectedServer, cnURL, usURL, devUrl));
 // 网站域名（动态取配置 + 本地已选服务器）
 export const websiteUrl = ref(defaultApiUrl);
 
 if (typeof console !== 'undefined' && typeof console.info === 'function') {
-  console.info('[Config] env=%s api=%s h5=%s selectedServer=%s', ENV_NAME, websiteUrl.value, DOMAIN_CONFIG.web.h5, savedServer || '(none)')
+  console.info(
+    '[Config] env=%s api=%s h5=%s selectedServer=%s selectedServerIgnored=%s',
+    ENV_NAME,
+    websiteUrl.value,
+    DOMAIN_CONFIG.web.h5,
+    savedServer || '(none)',
+    isUnsafeLocalApi(savedServer) ? 'yes(local)' : 'no'
+  )
 }
 
 // 图片域名
