@@ -51,7 +51,17 @@
 	const hasAgreed = () => {
 		let storageContent = uni.getStorageSync(storageKey)
 		console.log(storageContent)
-		return storageContent === 'agreed';
+		if (storageContent === 'agreed') return true
+		try {
+			if (typeof plus !== 'undefined' && plus.runtime && typeof plus.runtime.isAgreePrivacy === 'function') {
+				const nativeAgreed = !!plus.runtime.isAgreePrivacy()
+				if (nativeAgreed) {
+					uni.setStorageSync(storageKey, 'agreed')
+					return true
+				}
+			}
+		} catch (e) {}
+		return false;
 	};
 
 	// 检查环境并显示弹窗
@@ -92,6 +102,9 @@
 	const handleAgree = () => {
 		uni.setStorageSync(storageKey, 'agreed');
 		showModal.value = false;
+		if (typeof uni !== 'undefined' && typeof uni.$emit === 'function') {
+			uni.$emit('privacy-agreed');
+		}
 	};
 
 	// 处理拒绝

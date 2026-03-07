@@ -4,19 +4,58 @@ import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { initLoginState } from '@/common/config.js'
 import { initIMGlobalLifecycle, ensureIMConnected } from '@/common/im.js'
 
+const PRIVACY_KEY = 'privacyAgreementStatus'
+let imLifecycleInited = false
+let privacyEventBound = false
+
+function hasPrivacyAgreed() {
+  try {
+    if (uni.getStorageSync(PRIVACY_KEY) === 'agreed') return true
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    if (typeof plus !== 'undefined' && plus.runtime && typeof plus.runtime.isAgreePrivacy === 'function') {
+      const nativeAgreed = !!plus.runtime.isAgreePrivacy()
+      if (nativeAgreed) {
+        uni.setStorageSync(PRIVACY_KEY, 'agreed')
+        return true
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  return false
+}
+
+function startSdkAfterPrivacyAgreed() {
+  if (!hasPrivacyAgreed()) return
+  if (!imLifecycleInited) {
+    initIMGlobalLifecycle()
+    imLifecycleInited = true
+  }
+  ensureIMConnected()
+}
 
 onLaunch(() => {
   console.log('App Launch')
   // 应用启动时恢复登录状态
   initLoginState()
-  initIMGlobalLifecycle()
-  ensureIMConnected()
+  startSdkAfterPrivacyAgreed()
+
+  if (!privacyEventBound && typeof uni !== 'undefined' && typeof uni.$on === 'function') {
+    privacyEventBound = true
+    uni.$on('privacy-agreed', () => {
+      startSdkAfterPrivacyAgreed()
+    })
+  }
   
 })
 
 onShow(() => {
   console.log('App Show')
-  ensureIMConnected()
+  startSdkAfterPrivacyAgreed()
   setTimeout(() => {
   	  console.log("开始加载字体...")
   	  loadFonts()
