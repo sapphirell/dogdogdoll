@@ -36,7 +36,6 @@
                     "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
                     "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CAMERA\"/>",
-                    "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
                     "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
@@ -74,11 +73,11 @@
                         "offline" : false,
                         "icons" : {
                             "small" : {
-                                "ldpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/18x18.png",
-                                "mdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/24x24.png",
-                                "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/36x36.png",
-                                "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/48x48.png",
-                                "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/72x72.png"
+                                "ldpi" : "D:\\codework\\ggzs\\app/18x18.png",
+                                "mdpi" : "D:\\codework\\ggzs\\app/24x24.png",
+                                "hdpi" : "D:\\codework\\ggzs\\app/36x36.png",
+                                "xhdpi" : "D:\\codework\\ggzs\\app/48x48.png",
+                                "xxhdpi" : "D:\\codework\\ggzs\\app/72x72.png"
                             }
                         }
                     }
@@ -123,16 +122,16 @@
                 }
             },
             "splashscreen" : {
-                "useOriginalMsgbox" : false,
+                "useOriginalMsgbox" : true,
                 "androidStyle" : "default",
                 "iosStyle" : "storyboard",
                 "ios" : {
                     "storyboard" : "/Users/sapphirell/Desktop/工作文档/sc2/storyboard.zip"
                 },
                 "android" : {
-                    "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",
-                    "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/720p.9.png",
-                    "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/1080p.9.png"
+                    "hdpi" : "D:\\codework\\ggzs\\app\\安卓启动\\480.9.png",
+                    "xhdpi" : "D:\\codework\\ggzs\\app\\安卓启动/720p.9.png",
+                    "xxhdpi" : "D:\\codework\\ggzs\\app\\安卓启动/1080p.9.png"
                 }
             }
         },
