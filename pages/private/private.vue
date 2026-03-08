@@ -1,4 +1,4 @@
-<template>
+ <template>
 	<view>
 		<view-logs />
 		<view class="container">

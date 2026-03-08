@@ -129,9 +129,9 @@
                     "storyboard" : "/Users/sapphirell/Desktop/工作文档/sc2/storyboard.zip"
                 },
                 "android" : {
-                    "hdpi" : "D:\\codework\\ggzs\\app\\安卓启动\\480.9.png",
-                    "xhdpi" : "D:\\codework\\ggzs\\app\\安卓启动/720p.9.png",
-                    "xxhdpi" : "D:\\codework\\ggzs\\app\\安卓启动/1080p.9.png"
+                    "hdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/480.9.png",
+                    "xhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/720p.9.png",
+                    "xxhdpi" : "/Users/sapphirell/Desktop/个人信息/app-物料素材/安卓启动/1080p.9.png"
                 }
             }
         },
