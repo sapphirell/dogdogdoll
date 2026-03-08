@@ -258,8 +258,8 @@ const orderOps = Object.freeze([
   { key: 'all', label: '全部', icon: 'list', statuses: [] },
   { key: 'need_confirm', label: '待确认', icon: 'compose', statuses: [1, 2] },
   { key: 'need_pay', label: '待付款', icon: 'info-filled', statuses: [3] },
-  { key: 'processing', label: '进行中', icon: 'spinner-cycle', statuses: [0, 4] },
-  { key: 'closed', label: '已结束', icon: 'checkbox-filled', statuses: [5, 6, 7] },
+  { key: 'processing', label: '进行中', icon: 'spinner-cycle', statuses: [0, 4, 8] },
+  { key: 'closed', label: '已结束', icon: 'checkbox-filled', statuses: [5, 6, 7, 9] },
 ])
 
 const creationOps = Object.freeze([
@@ -268,7 +268,7 @@ const creationOps = Object.freeze([
   { key: 'in_progress', label: '进行中', icon: 'spinner-cycle' },
   { key: 'finished', label: '待寄回', icon: 'checkbox-filled' },
   { key: 'returned', label: '已寄回', icon: 'redo' },
-  { key: 'received', label: '已签收', icon: 'checkmarkempty' },
+  { key: 'received', label: '已完结', icon: 'checkmarkempty' },
   { key: 'reviewed', label: '已评论', icon: 'chatbubble' },
   { key: 'schedule', label: '排期', icon: 'calendar' },
 ])
@@ -559,7 +559,7 @@ function getItemStageLabel(row, item) {
   if (stage === 'in_progress') return '进行中'
   if (stage === 'finished') return '待寄回'
   if (stage === 'returned') return '已寄回'
-  if (stage === 'received') return '已签收'
+  if (stage === 'received') return '已完结'
   if (stage === 'reviewed') return '已评论'
   return ''
 }
@@ -569,7 +569,7 @@ function formatCreationStage(stage) {
   if (stage === 'in_progress') return '进行中'
   if (stage === 'finished') return '待寄回'
   if (stage === 'returned') return '已寄回'
-  if (stage === 'received') return '已签收'
+  if (stage === 'received') return '已完结'
   if (stage === 'reviewed') return '已评论'
   return '未开始'
 }

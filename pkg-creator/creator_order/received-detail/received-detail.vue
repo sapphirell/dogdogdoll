@@ -141,32 +141,51 @@
 
                 <view class="item-body">
                   <view class="item-title-row">
-                    <text class="item-title">
+                    <text class="item-title font-alimamashuhei">
                       {{ getItemTitle(activeItem) }}
                     </text>
+                    <view v-if="activeItemFinalConfirmed" class="item-title-tag item-title-tag-done font-alimamashuhei">
+                      买家已确认
+                    </view>
                   </view>
 
                   <view class="item-meta-row">
-                    <text v-if="activeItem.size" class="item-meta">尺寸：{{ activeItem.size }}</text>
-                    <text v-if="activeItem.tier_title" class="item-meta">档位：{{ activeItem.tier_title }}</text>
-                    <text v-if="getAddonsTitles(activeItem)" class="item-meta">
-                      加购：{{ getAddonsTitles(activeItem) }}
-                    </text>
+                    <view v-if="activeItem.size" class="item-meta">
+                      <text class="item-meta-label font-title">尺寸</text>
+                      <text class="item-meta-value">{{ activeItem.size }}</text>
+                    </view>
+                    <view v-if="activeItem.tier_title" class="item-meta">
+                      <text class="item-meta-label font-title">档位</text>
+                      <text class="item-meta-value">{{ activeItem.tier_title }}</text>
+                    </view>
+                    <view v-if="getAddonsTitles(activeItem)" class="item-meta">
+                      <text class="item-meta-label font-title">加购</text>
+                      <text class="item-meta-value">{{ getAddonsTitles(activeItem) }}</text>
+                    </view>
                   </view>
 
                   <view class="item-meta-row">
-                    <text class="item-meta">
-                      订单状态：{{ formatItemStatus(activeItem.status) }}
-                    </text>
+                    <view class="item-meta">
+                      <text class="item-meta-label font-title">状态</text>
+                      <text class="item-meta-value">{{ formatItemStatus(activeItem.status) }}</text>
+                    </view>
                   </view>
 
-                  <view class="item-meta-row">
-                    <text class="item-meta">
-                      当前金额：¥ {{ formatPrice(calcItemTotal(activeItem)) }}
-                    </text>
-                    <text v-if="Number(activeItem.adjust_price) !== 0" class="item-meta adjust">
-                      调价差额：{{ activeItem.adjust_price > 0 ? '+' : '' }}{{ formatPrice(activeItem.adjust_price) }}
-                    </text>
+                  <view class="item-meta-row item-price-row">
+                    <view class="item-meta item-meta-price">
+                      <text class="item-meta-label font-title">金额</text>
+                      <text class="item-price">
+                        <text class="item-price-currency">¥</text>
+                        <text class="item-price-number font-title">{{ formatPrice(calcItemTotal(activeItem)) }}</text>
+                      </text>
+                    </view>
+                    <view v-if="Number(activeItem.adjust_price) !== 0" class="item-meta item-meta-price adjust">
+                      <text class="item-meta-label font-title">调价</text>
+                      <text class="item-price item-price-adjust">
+                        <text class="item-price-sign">{{ activeItem.adjust_price > 0 ? '+' : '' }}</text>
+                        <text class="item-price-number font-title">{{ formatPrice(activeItem.adjust_price) }}</text>
+                      </text>
+                    </view>
                   </view>
                 </view>
               </view>
@@ -222,12 +241,6 @@
 	                买家已发起协商，请先处理协商请求
 	              </view>
 	              <view
-	                v-else-if="getItemFinalState(activeItem).final_confirmed"
-	                class="item-final-state done"
-	              >
-	                买家已确认最终状态
-	              </view>
-	              <view
 	                v-else-if="getItemFinalState(activeItem).final_request_pending"
 	                class="item-final-state pending"
 	              >
@@ -261,7 +274,7 @@
 	            <text class="delivery-state-text">已寄回：{{ returnExpressNoText || '-' }}</text>
 	          </view>
 	          <view class="delivery-state-line" v-if="returnReceived">
-	            <text class="delivery-state-text">买家已签收</text>
+	            <text class="delivery-state-text">买家已确认结束</text>
 	          </view>
 	          <view class="delivery-state-line" v-if="reviewSubmitted">
 	            <text class="delivery-state-text">买家已完成评价</text>
@@ -300,6 +313,80 @@
 	            </button>
 	          </view>
 	        </view>
+
+          <view v-if="showReturnShipmentCard" class="card return-card">
+            <view class="return-card-head">
+              <view class="return-card-head-main">
+                <text class="return-card-title font-alimamashuhei">寄回信息</text>
+                <text class="return-card-desc">{{ returnShipmentHeadline }}</text>
+              </view>
+              <view class="return-status-pill">
+                <text class="return-status-pill-text">{{ returnShipmentStatusText }}</text>
+              </view>
+            </view>
+
+            <view class="return-express-panel">
+              <view class="return-express-top">
+                <text class="return-express-label font-title">快递单号</text>
+                <text class="return-express-copy" @tap="copyReturnExpressNo">复制单号</text>
+              </view>
+              <view class="return-express-main">
+                <text class="return-express-no font-title">{{ returnExpressNoText || '-' }}</text>
+              </view>
+            </view>
+
+            <view class="return-progress-row">
+              <view class="return-progress-item done">
+                <view class="return-progress-dot"></view>
+                <text class="return-progress-label">已寄回</text>
+              </view>
+              <view class="return-progress-line" :class="{ done: returnReceived }"></view>
+              <view class="return-progress-item" :class="{ done: returnReceived }">
+                <view class="return-progress-dot"></view>
+                <text class="return-progress-label">{{ returnReceived ? '已完结' : '待确认结束' }}</text>
+              </view>
+              <view class="return-progress-line" :class="{ done: reviewSubmitted }"></view>
+              <view class="return-progress-item" :class="{ done: reviewSubmitted }">
+                <view class="return-progress-dot"></view>
+                <text class="return-progress-label">{{ reviewSubmitted ? '已评价' : '待评价' }}</text>
+              </view>
+            </view>
+
+            <view class="return-address-shell" v-if="effectiveReturnAddressInfo">
+              <view class="return-address-head">
+                <text class="return-address-title font-title">收件信息</text>
+                <text class="return-address-copy" @tap="copyReturnAddress">复制地址</text>
+              </view>
+              <view class="return-address-main">
+                <view class="return-address-badge">寄</view>
+                <view class="return-address-body">
+                  <view class="return-address-top">
+                    <text class="return-address-name">{{ effectiveReturnAddressInfo.receiver_name || '-' }}</text>
+                    <text class="return-address-phone font-title">{{ effectiveReturnAddressInfo.receiver_phone || '-' }}</text>
+                  </view>
+                  <text class="return-address-line">{{ effectiveReturnAddressInfo.full_address || '' }}</text>
+                </view>
+              </view>
+            </view>
+
+            <view v-if="reviewInfo" class="delivery-review-block return-review-block">
+              <view class="delivery-review-head">
+                <text class="delivery-review-title">订单评价</text>
+                <text v-if="reviewInfo.score > 0" class="delivery-review-score">{{ reviewInfo.score }} 星</text>
+              </view>
+              <text v-if="reviewInfo.content" class="delivery-review-content">{{ reviewInfo.content }}</text>
+              <view v-if="reviewInfo.images.length" class="delivery-review-images">
+                <image
+                  v-for="(img, idx) in reviewInfo.images"
+                  :key="`review-${idx}`"
+                  class="delivery-review-image"
+                  :src="img"
+                  mode="aspectFill"
+                  @tap="previewHistoryImages(reviewInfo.images, idx)"
+                />
+              </view>
+            </view>
+          </view>
 
 	        <view class="card history-card">
 	          <view class="card-header">
@@ -812,6 +899,8 @@ const SUBMISSION_STATUS_SELECTED_CONFIRM = 1
 const SUBMISSION_STATUS_BUYER_CONFIRMED = 2
 const SUBMISSION_STATUS_SELECTED_PAY = 3
 const SUBMISSION_STATUS_PAID = 4
+const SUBMISSION_STATUS_RETURNED = 8
+const SUBMISSION_STATUS_FINISHED = 9
 const PAYMENT_METHOD_PLATFORM = 1
 const PAYMENT_METHOD_QRCODE = 2
 const PAY_STATUS_PENDING = 0
@@ -853,7 +942,10 @@ const paymentMethod = computed(() => Number(queueInfo.value?.payment_method || q
 const payStatus = computed(() => Number(queueInfo.value?.pay_status || queueInfo.value?.payStatus || 0))
 const isQrPayment = computed(() => paymentMethod.value === PAYMENT_METHOD_QRCODE)
 const paymentStatusText = computed(() => {
-  if (submissionStatus.value === SUBMISSION_STATUS_PAID) {
+  if (submissionStatus.value === SUBMISSION_STATUS_FINISHED) {
+    return '已结清'
+  }
+  if ([SUBMISSION_STATUS_PAID, SUBMISSION_STATUS_RETURNED].includes(submissionStatus.value)) {
     return '已付款'
   }
   if (submissionStatus.value === SUBMISSION_STATUS_SELECTED_PAY) return '待付款'
@@ -990,17 +1082,36 @@ const effectiveReturnAddressReady = computed(() => {
 const showDeliveryFlowCard = computed(() => {
   if (isBuyer.value) return false
   if (submissionStatus.value !== SUBMISSION_STATUS_PAID) return false
+  if (showReturnShipmentCard.value) return false
   return (
     canCloseSubmissionAction.value ||
     canShipBackAction.value ||
     returnAddressRequested.value ||
     effectiveReturnAddressReady.value ||
+    allItemsFinalConfirmed.value
+  )
+})
+
+const showReturnShipmentCard = computed(() => {
+  if (isBuyer.value) return false
+  if (![SUBMISSION_STATUS_PAID, SUBMISSION_STATUS_RETURNED, SUBMISSION_STATUS_FINISHED].includes(submissionStatus.value)) return false
+  return (
     returnShipped.value ||
     returnReceived.value ||
     reviewSubmitted.value ||
-    !!reviewInfo.value ||
-    allItemsFinalConfirmed.value
+    !!reviewInfo.value
   )
+})
+
+const returnShipmentStatusText = computed(() => {
+  if (returnReceived.value) return '已完结'
+  return '已寄回'
+})
+
+const returnShipmentHeadline = computed(() => {
+  if (reviewSubmitted.value) return '这次订单已经完结，买家也留下了评价'
+  if (returnReceived.value) return '买家已经确认这次订单结束'
+  return '作品已经寄出，等待买家确认结束'
 })
 
 function parseLogExtra(row) {
@@ -1182,6 +1293,7 @@ const shipExpressCompany = ref('')
 const shipSubmitting = ref(false)
 const shipFromCloseAction = ref(false)
 const skipFirstOnShowRefresh = ref(true)
+let queueInfoRequestSerial = 0
 const paymentStatusModalVisible = ref(false)
 const paymentStatusLoading = ref(false)
 const paymentStatusError = ref('')
@@ -1376,7 +1488,7 @@ function historyTitle(row) {
   if (eventCode === 'return_address_request') return '订单收尾'
   if (eventCode === 'return_address_submitted') return '寄回地址已填写'
   if (eventCode === 'return_shipped') return '创作者已寄回'
-  if (eventCode === 'return_received') return '买家已签收'
+  if (eventCode === 'return_received') return '订单已完结'
   if (eventCode === 'trade_reviewed') return '买家已评价'
   return '进度更新'
 }
@@ -1388,8 +1500,8 @@ function historyDesc(row) {
   if (eventCode === 'step_request') return '创作者上传了进度图片。'
   if (eventCode === 'return_address_request') return '订单进入收尾阶段，等待买家填写寄回地址。'
   if (eventCode === 'return_address_submitted') return '买家已填写寄回地址。'
-  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家签收。'
-  if (eventCode === 'return_received') return '买家已确认收到寄回件。'
+  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家确认结束。'
+  if (eventCode === 'return_received') return '买家已确认这次订单结束。'
   if (eventCode === 'trade_reviewed') return '买家已完成评价。'
   return ''
 }
@@ -1458,62 +1570,107 @@ async function ensureLogin() {
   return true
 }
 
+function patchQueueInfoAfterCloseRequest() {
+  if (!queueInfo.value) return
+  queueInfo.value = {
+    ...queueInfo.value,
+    can_close_submission: false,
+    return_address_requested: true
+  }
+}
+
+function patchQueueInfoAfterShipBack(expressNo) {
+  if (!queueInfo.value) return
+  const next = {
+    ...queueInfo.value,
+    status: SUBMISSION_STATUS_RETURNED,
+    status_text: '已寄回',
+    can_close_submission: false,
+    can_ship_back: false,
+    return_address_requested: true,
+    return_address_ready: true,
+    return_shipped: true,
+    return_express_no: String(expressNo || '').trim()
+  }
+  if (Array.isArray(queueInfo.value.items)) {
+    next.items = queueInfo.value.items.map((item) => ({
+      ...item,
+      artist_express_no: String(expressNo || '').trim() || item?.artist_express_no || ''
+    }))
+  }
+  queueInfo.value = next
+}
+
 async function fetchQueueInfo() {
   const ok = await ensureLogin()
   if (!ok) {
     loading.value = false
     errorMsg.value = '未登录'
-    return
+    return null
   }
 
   const token = uni.getStorageSync('token') || ''
   if (!submissionId.value) {
     loading.value = false
     errorMsg.value = '缺少 submission_id'
-    return
+    return null
   }
 
+  const requestId = ++queueInfoRequestSerial
   loading.value = true
   errorMsg.value = ''
 
-  uni.request({
-    url: `${websiteUrl.value}/with-state/artist-order/submission/queue-info`,
-    method: 'GET',
-    header: { Authorization: token },
-    data: { submission_id: submissionId.value },
-    success: (res) => {
-      const body = res.data || {}
-      if (body.status !== 'success') {
-        errorMsg.value = body.msg || '获取排队信息失败'
-        queueInfo.value = null
-        return
-      }
-      queueInfo.value = body.data || null
-      // 获取成功后，优先用 submission_user_id 定位买家
-      if (queueInfo.value) {
-          const first = queueInfo.value.items && queueInfo.value.items.length > 0
-            ? queueInfo.value.items[0]
-            : null
-          const uid = Number(
-            queueInfo.value.submission_user_id ||
-            first?.user_id ||
-            first?.userId ||
-            0
-          )
-          if (uid > 0) {
-            fetchTargetUserInfo(uid)
-          } else {
-            targetUserInfo.value = null
-          }
-      }
-    },
-    fail: (err) => {
-      errorMsg.value = '网络错误，请稍后重试'
-      queueInfo.value = null
-    },
-    complete: () => {
-      loading.value = false
-    },
+  return new Promise((resolve) => {
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/submission/queue-info`,
+      method: 'GET',
+      header: { Authorization: token },
+      data: { submission_id: submissionId.value },
+      success: (res) => {
+        const body = res.data || {}
+        if (requestId !== queueInfoRequestSerial) {
+          resolve(body)
+          return
+        }
+        if (body.status !== 'success') {
+          errorMsg.value = body.msg || '获取排队信息失败'
+          queueInfo.value = null
+          resolve(body)
+          return
+        }
+        queueInfo.value = body.data || null
+        // 获取成功后，优先用 submission_user_id 定位买家
+        if (queueInfo.value) {
+            const first = queueInfo.value.items && queueInfo.value.items.length > 0
+              ? queueInfo.value.items[0]
+              : null
+            const uid = Number(
+              queueInfo.value.submission_user_id ||
+              first?.user_id ||
+              first?.userId ||
+              0
+            )
+            if (uid > 0) {
+              fetchTargetUserInfo(uid)
+            } else {
+              targetUserInfo.value = null
+            }
+        }
+        resolve(body)
+      },
+      fail: () => {
+        if (requestId === queueInfoRequestSerial) {
+          errorMsg.value = '网络错误，请稍后重试'
+          queueInfo.value = null
+        }
+        resolve(null)
+      },
+      complete: () => {
+        if (requestId === queueInfoRequestSerial) {
+          loading.value = false
+        }
+      },
+    })
   })
 }
 
@@ -2093,6 +2250,23 @@ function copyReturnAddress() {
   })
 }
 
+function copyReturnExpressNo() {
+  const text = String(returnExpressNoText.value || '').trim()
+  if (!text) {
+    uni.showToast({ title: '暂无单号可复制', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '单号已复制', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+    }
+  })
+}
+
 const shipCompanyOptions = [
   '顺丰速运',
   '京东快递',
@@ -2255,6 +2429,7 @@ async function submitShipBack() {
     const token = uni.getStorageSync('token') || ''
     if (shipFromCloseAction.value) {
       await requestCloseSubmission(token)
+      patchQueueInfoAfterCloseRequest()
       if (!effectiveReturnAddressReady.value) {
         uni.showToast({ title: '已提醒买家填写地址', icon: 'success' })
         shipModalVisible.value = false
@@ -2263,6 +2438,7 @@ async function submitShipBack() {
       }
     }
     await requestShipBack(token, expressNo)
+    patchQueueInfoAfterShipBack(expressNo)
     uni.showToast({
       title: shipFromCloseAction.value ? '结单并提交寄回成功' : '已提交寄回单号',
       icon: 'success'
@@ -2627,10 +2803,7 @@ onShow(() => {
 /* item 行 */
 .item-row {
   margin-top: 14rpx;
-  padding: 20rpx;
-  border-radius: 18rpx;
-  border: 1rpx solid #eef2f8;
-  background: #fafbff;
+  padding: 12rpx 0 6rpx;
 }
 .item-row:first-of-type {
   margin-top: 10rpx;
@@ -2665,14 +2838,17 @@ onShow(() => {
 .item-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10rpx;
 }
 .item-title {
   flex: 1;
-  margin-right: 12rpx;
-  font-size: 29rpx;
+  min-width: 0;
+  margin-right: 0;
+  font-size: 31rpx;
   color: #1f2735;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2681,25 +2857,87 @@ onShow(() => {
   -webkit-box-orient: vertical;
 }
 
+.item-title-tag {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding: 7rpx 16rpx 8rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  line-height: 1;
+  color: #ffffff;
+  background: linear-gradient(135deg, #7fdcc6 0%, #58c5a7 100%);
+  box-shadow: 0 8rpx 18rpx rgba(88, 197, 167, 0.18);
+  animation: itemTagFloat 2.4s ease-in-out infinite;
+}
+
+.item-title-tag-done {
+  font-family: inherit;
+}
+
 .item-meta-row {
-  margin-top: 10rpx;
+  margin-top: 12rpx;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
+  gap: 8rpx 22rpx;
 }
 .item-meta {
-  margin-right: 12rpx;
-  margin-bottom: 8rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 999rpx;
-  background: #f0f3f9;
-  font-size: 22rpx;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin: 0;
+  padding: 0;
+  font-size: 24rpx;
   color: #5e6a7d;
   line-height: 1.6;
 }
+.item-meta-label {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #9aa5b6;
+  letter-spacing: 0.8rpx;
+}
+.item-meta-label::after {
+  content: "·";
+  margin-left: 6rpx;
+  color: #cad2df;
+}
+.item-meta-value {
+  color: #4f5a6a;
+  word-break: break-all;
+}
+.item-price-row {
+  align-items: center;
+}
 .item-meta.adjust {
-  color: #b66232;
-  background: #fff2e9;
+  color: #c07a45;
+}
+.item-meta-price {
+  align-items: center;
+}
+.item-price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4rpx;
+  color: #30394a;
+}
+.item-price-currency,
+.item-price-sign {
+  font-size: 20rpx;
+  color: #8592a6;
+  line-height: 1;
+}
+.item-price-adjust .item-price-sign {
+  color: #c07a45;
+}
+.item-price-number {
+  font-size: 34rpx;
+  line-height: 1;
+  color: #2f3a4c;
+}
+.item-meta.adjust .item-price-number {
+  color: #c07a45;
 }
 
 /* item 操作按钮 */
@@ -2761,6 +2999,16 @@ onShow(() => {
 }
 .item-final-state.done {
   color: #3d8d6e;
+}
+
+@keyframes itemTagFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4rpx);
+  }
 }
 
 .delivery-card {
@@ -2907,6 +3155,268 @@ onShow(() => {
 .delivery-action-btn.ship {
   background: linear-gradient(135deg, #9fd5b3 0%, #74bb95 100%);
   color: #fff;
+}
+
+.return-card {
+  position: relative;
+  overflow: hidden;
+  padding-top: 24rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 16rpx 34rpx rgba(120, 146, 185, 0.08);
+}
+
+.return-card::before {
+  content: "";
+  position: absolute;
+  right: -56rpx;
+  top: -72rpx;
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(73, 202, 238, 0.2) 0%, rgba(73, 202, 238, 0) 72%);
+  pointer-events: none;
+}
+
+.return-card::after {
+  content: "";
+  position: absolute;
+  left: -48rpx;
+  bottom: -84rpx;
+  width: 190rpx;
+  height: 190rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(136, 208, 231, 0.12) 0%, rgba(136, 208, 231, 0) 72%);
+  pointer-events: none;
+}
+
+.return-card-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.return-card-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.return-card-title {
+  display: block;
+  font-size: 32rpx;
+  line-height: 1.2;
+  color: #222d3d;
+}
+
+.return-card-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #7d8da3;
+  max-width: 420rpx;
+}
+
+.return-status-pill {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, rgba(73, 202, 238, 0.18) 0%, rgba(73, 202, 238, 0.34) 100%);
+  box-shadow: 0 12rpx 26rpx rgba(73, 202, 238, 0.14);
+}
+
+.return-status-pill-text {
+  font-size: 22rpx;
+  line-height: 1;
+  color: #2b6e84;
+  font-weight: 700;
+}
+
+.return-express-panel {
+  position: relative;
+  z-index: 1;
+  margin-top: 22rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #edf9ff 0%, #f8fcff 100%);
+  box-shadow: inset 0 0 0 1rpx rgba(73, 202, 238, 0.14);
+}
+
+.return-express-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.return-express-label {
+  font-size: 21rpx;
+  color: #91a0b4;
+  letter-spacing: 1rpx;
+}
+
+.return-express-copy {
+  font-size: 23rpx;
+  color: #49caee;
+  font-weight: 600;
+}
+
+.return-express-main {
+  margin-top: 14rpx;
+}
+
+.return-express-no {
+  display: block;
+  font-size: 42rpx;
+  line-height: 1.08;
+  color: #233146;
+  word-break: break-all;
+}
+
+.return-progress-row {
+  position: relative;
+  z-index: 1;
+  margin-top: 22rpx;
+  display: flex;
+  align-items: center;
+  padding: 4rpx 2rpx 0;
+}
+
+.return-progress-item {
+  width: 110rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.return-progress-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #d7e0ec;
+  box-shadow: 0 0 0 8rpx rgba(215, 224, 236, 0.36);
+}
+
+.return-progress-item.done .return-progress-dot {
+  background: #49caee;
+  box-shadow: 0 0 0 8rpx rgba(73, 202, 238, 0.18);
+}
+
+.return-progress-label {
+  font-size: 21rpx;
+  line-height: 1.3;
+  color: #97a3b5;
+}
+
+.return-progress-item.done .return-progress-label {
+  color: #34445b;
+  font-weight: 600;
+}
+
+.return-progress-line {
+  flex: 1;
+  height: 4rpx;
+  border-radius: 999rpx;
+  background: #e8eef6;
+  margin: 0 10rpx;
+}
+
+.return-progress-line.done {
+  background: linear-gradient(90deg, rgba(73, 202, 238, 0.7) 0%, rgba(73, 202, 238, 0.22) 100%);
+}
+
+.return-address-shell {
+  position: relative;
+  z-index: 1;
+  margin-top: 24rpx;
+  padding: 18rpx 18rpx 20rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(180deg, #f7f9fd 0%, #ffffff 100%);
+}
+
+.return-address-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.return-address-title {
+  font-size: 21rpx;
+  color: #98a4b4;
+  letter-spacing: 1rpx;
+}
+
+.return-address-copy {
+  font-size: 23rpx;
+  color: #49caee;
+  font-weight: 600;
+}
+
+.return-address-main {
+  margin-top: 14rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+}
+
+.return-address-badge {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, #f3a36d 0%, #ea8d63 100%);
+  color: #fff3c7;
+  font-size: 30rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.return-address-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.return-address-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.return-address-name {
+  font-size: 29rpx;
+  line-height: 1.35;
+  color: #273246;
+  font-weight: 700;
+}
+
+.return-address-phone {
+  font-size: 30rpx;
+  line-height: 1;
+  color: #273246;
+}
+
+.return-address-line {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 25rpx;
+  line-height: 1.6;
+  color: #7b8799;
+}
+
+.return-review-block {
+  position: relative;
+  z-index: 1;
+  margin-top: 22rpx;
 }
 
 .ship-sheet {

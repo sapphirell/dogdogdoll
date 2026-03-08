@@ -338,7 +338,7 @@ function mapBizToPreview (biz) {
     artist_order_fill_return_addr: '请填写寄回地址',
     artist_order_return_addr_ready: '买家已填写寄回地址',
     artist_order_return_shipped: '妆师已寄回',
-    artist_order_return_received: '买家已签收',
+    artist_order_return_received: '买家已确认结束',
     artist_order_review_submitted: '买家已完成评价',
     artist_order_operate: '订单状态更新'
   }

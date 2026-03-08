@@ -1,5 +1,7 @@
 <template>
   <view class="level-page">
+    <loading-toast :show="pageLoading" text="加载中..." />
+
     <zhouWei-navBar
       type="transparentFixed"
       :backState="2000"
@@ -24,19 +26,19 @@
 
     <view class="level-body" :style="{ paddingTop: headerPadPx, '--header-pad': headerPadPx }">
       <view class="level-shell">
-
+        <template v-if="!pageLoading">
         <view class="hero">
           <view class="avatar-wrap">
             <image class="avatar-img" mode="aspectFill" :src="global.userInfo.avatar || defaultAvatar" />
           </view>
-          <view class="lv-chip">
-            <text class="font-title">Lv{{ overview?.profile?.current_level || 1 }}</text>
+          <view class="hero-level-row">
+            <view class="lv-chip">
+              <text class="font-title">Lv{{ overview?.profile?.current_level || 1 }}</text>
+            </view>
+            <text class="hero-level-name font-alimamashuhei">{{ overview?.current_rule?.name || '正在成长中' }}</text>
           </view>
 
           <text class="hero-name font-alimamashuhei">{{ global.userInfo.username || '探索者' }}</text>
-          <view class="hero-tag">
-            <text class="hero-tag-text">✨ 探索大师 ✨</text>
-          </view>
         </view>
 
         <view v-if="overview?.next_rule" class="exp-card">
@@ -46,7 +48,9 @@
             <text class="exp-percent font-title">{{ expPercent }}%</text>
           </view>
           <view class="exp-track">
-            <view class="exp-fill" :style="{ width: `${expPercent}%` }" />
+            <view class="exp-fill" :style="{ width: `${expPercent}%` }">
+              <view class="progress-stripe progress-stripe-exp" />
+            </view>
           </view>
           <view class="exp-tip">
             <text>距离 </text>
@@ -55,32 +59,80 @@
           </view>
         </view>
 
-        <view v-if="overview?.next_rule" class="req-section">
-          <view class="req-title-row">
-            <view class="req-dot">
-              <uni-icons type="star-filled" size="13" color="#f2a146" />
+        <view v-if="overview?.next_rule" class="info-section">
+          <view class="info-tabs">
+            <view
+              class="info-tab font-alimamashuhei"
+              :class="{ 'info-tab-active': activeInfoTab === 'requirements' }"
+              @tap="activeInfoTab = 'requirements'"
+            >
+              下一等级要求
             </view>
-            <text class="req-title font-alimamashuhei">下一等级要求</text>
+            <view
+              class="info-tab font-alimamashuhei"
+              :class="{ 'info-tab-active': activeInfoTab === 'rewards' }"
+              @tap="activeInfoTab = 'rewards'"
+            >
+              下一等级奖励
+            </view>
           </view>
 
-          <view
-            v-for="(item, idx) in normalizedProgress"
-            :key="idx"
-            class="req-item"
-            :class="[`req-item-${idx % 3}`]"
-          >
-            <view class="req-icon-wrap">
-              <uni-icons :type="item.icon" size="24" :color="item.iconColor" />
+          <view v-if="activeInfoTab === 'requirements'" class="info-panel">
+            <view
+              v-for="(item, idx) in normalizedProgress"
+              :key="idx"
+              class="req-item"
+            >
+              <view class="req-icon-wrap">
+                <uni-icons :type="item.icon" size="24" :color="item.iconColor" />
+              </view>
+              <view class="req-main">
+                <view class="req-main-top">
+                  <text class="req-label font-alimamashuhei">{{ item.label }}</text>
+                  <text class="req-count font-title">{{ item.current }}/{{ item.target }}</text>
+                </view>
+                <view class="req-track">
+                  <view class="req-fill" :style="{ width: `${item.percent}%`, background: item.fillBg }">
+                    <view class="progress-stripe" :style="{ backgroundImage: item.stripeBg }" />
+                  </view>
+                </view>
+                <text class="req-desc">{{ item.desc }}</text>
+              </view>
             </view>
-            <view class="req-main">
-              <view class="req-main-top">
-                <text class="req-label font-alimamashuhei">{{ item.label }}</text>
-                <text class="req-count font-title">{{ item.current }}/{{ item.target }}</text>
+          </view>
+
+          <view v-else class="info-panel">
+            <view v-if="nextRewards.length" class="reward-list">
+              <view
+                v-for="(reward, idx) in nextRewards"
+                :key="`${reward.type}-${idx}`"
+                class="reward-item"
+              >
+                <view class="reward-media" :class="[`reward-media-${reward.type}`]">
+                  <image
+                    v-if="reward.type === 'skin' && reward.skin_preview_image"
+                    class="reward-skin-image"
+                    mode="aspectFill"
+                    :src="reward.skin_preview_image"
+                  />
+                  <uni-icons
+                    v-else
+                    :type="reward.icon"
+                    size="22"
+                    :color="reward.iconColor"
+                  />
+                </view>
+                <view class="reward-main">
+                  <view class="reward-top">
+                    <text class="reward-label font-alimamashuhei">{{ reward.label }}</text>
+                    <text class="reward-value font-title">{{ reward.valueText }}</text>
+                  </view>
+                  <text class="reward-desc">{{ reward.description }}</text>
+                </view>
               </view>
-              <view class="req-track">
-                <view class="req-fill" :style="{ width: `${item.percent}%`, background: item.fillBg }" />
-              </view>
-              <text class="req-desc">{{ item.desc }}</text>
+            </view>
+            <view v-else class="reward-empty">
+              <text class="reward-empty-text">下一等级奖励正在整理中，稍后会在这里展示。</text>
             </view>
           </view>
         </view>
@@ -103,6 +155,7 @@
           <text v-if="!canUpgradeAction" class="unlock-tip">完成所有要求解锁</text>
           <text v-if="DEBUG_SKIP_UPGRADE_API" class="debug-tip">DEBUG模式：升级按钮不调用接口，可反复测试弹窗</text>
         </view>
+        </template>
       </view>
     </view>
 
@@ -128,27 +181,40 @@
       <view class="upgrade-dialog" @tap.stop>
         <view class="medal-wrap">
           <view class="medal-circle">
-            <uni-icons type="trophy-filled" size="48" color="#ffffff" />
+            <text class="medal-level font-title">Lv{{ upgradeResult.toLevel }}</text>
+            <text class="medal-level-text">升级成功</text>
           </view>
           <view class="medal-chip">LEVEL UP!</view>
         </view>
 
         <text class="dialog-title font-alimamashuhei">恭喜升级！</text>
         <text class="dialog-subtitle">您已达到 Lv.{{ upgradeResult.toLevel }}</text>
-        <text class="dialog-desc">解锁更多专属特权，享受会员礼遇</text>
+        <text class="dialog-desc">新的等级奖励已经解锁，可在下方查看本次升级获得的内容。</text>
 
-        <view class="perk-row">
-          <view class="perk-item">
-            <view class="perk-icon perk-icon-blue"><uni-icons type="star-filled" size="20" color="#5ea7f1" /></view>
-            <text class="perk-text">双倍积分</text>
-          </view>
-          <view class="perk-item">
-            <view class="perk-icon perk-icon-purple"><uni-icons type="gift-filled" size="20" color="#aa78ff" /></view>
-            <text class="perk-text">神秘礼盒</text>
-          </view>
-          <view class="perk-item">
-            <view class="perk-icon perk-icon-orange"><uni-icons type="paperplane-filled" size="20" color="#ee9d4f" /></view>
-            <text class="perk-text">免邮特权</text>
+        <view v-if="dialogRewards.length" class="dialog-reward-list">
+          <view
+            v-for="(reward, idx) in dialogRewards"
+            :key="`${reward.type}-${idx}`"
+            class="dialog-reward-item"
+          >
+            <view class="dialog-reward-icon" :class="[`dialog-reward-icon-${reward.type}`]">
+              <image
+                v-if="reward.type === 'skin' && reward.skin_preview_image"
+                class="dialog-reward-image"
+                mode="aspectFill"
+                :src="reward.skin_preview_image"
+              />
+              <uni-icons
+                v-else
+                :type="reward.icon"
+                size="18"
+                :color="reward.iconColor"
+              />
+            </view>
+            <view class="dialog-reward-main">
+              <text class="dialog-reward-label">{{ reward.label }}</text>
+              <text class="dialog-reward-desc">{{ reward.description }}</text>
+            </view>
           </view>
         </view>
 
@@ -177,7 +243,9 @@ const overview = ref(null)
 const showUpgradeModal = ref(false)
 const upgradeResult = ref({ fromLevel: 1, toLevel: 1 })
 const confettiItems = ref([])
+const activeInfoTab = ref('requirements')
 const scrollTop = ref(0)
+const pageLoading = ref(true)
 const headerPadPx = computed(() => toPx(getStatusBarHeight() + getNavBarHeight()))
 
 const iconMap = {
@@ -187,6 +255,12 @@ const iconMap = {
   post_count: { icon: 'compose', color: '#e5a6a6', fill: 'linear-gradient(90deg, #f0b8b8 0%, #eaa5a5 100%)', desc: '发布内容数量' },
   completed_order_count: { icon: 'checkmarkempty', color: '#e6aa63', fill: 'linear-gradient(90deg, #efbc77 0%, #e3a45c 100%)', desc: '完成订单数量' },
   received_like_count: { icon: 'heart-filled', color: '#e99ab6', fill: 'linear-gradient(90deg, #f2b1c9 0%, #e88eaf 100%)', desc: '累计获得点赞' }
+}
+
+const rewardMap = {
+  account_book_limit: { icon: 'calendar', color: '#49caee', label: '记账上限', unit: '条', prefix: '解锁至' },
+  skin: { icon: 'gift-filled', color: '#fb9ac2', label: '专属皮肤', unit: '', prefix: '' },
+  points: { icon: 'star-filled', color: '#f2b45f', label: '奖励积分', unit: '积分', prefix: '+' }
 }
 
 const normalizedProgress = computed(() => {
@@ -205,6 +279,7 @@ const normalizedProgress = computed(() => {
       icon: meta.icon,
       iconColor: meta.color,
       fillBg: meta.fill,
+      stripeBg: getStripeOverlay(item),
       desc: meta.desc
     }
   })
@@ -222,6 +297,44 @@ const expPercent = computed(() => {
 const expCurrent = computed(() => Math.round((expPercent.value / 100) * 1000))
 const expRemain = computed(() => Math.max(0, 1000 - expCurrent.value))
 const canUpgradeAction = computed(() => DEBUG_SKIP_UPGRADE_API || !!overview.value?.can_upgrade)
+const nextRewards = computed(() => normalizeRewards(overview.value?.next_rule?.rewards || []))
+const dialogRewards = computed(() => {
+  const list = overview.value?.rules || []
+  const targetLevel = Number(upgradeResult.value?.toLevel || 0)
+  const targetRule = list.find((item) => Number(item?.level || 0) === targetLevel)
+  if (targetRule?.rewards?.length) {
+    return normalizeRewards(targetRule.rewards)
+  }
+  return nextRewards.value
+})
+
+function normalizeRewards(list) {
+  return (Array.isArray(list) ? list : []).map((item) => {
+    const type = String(item?.type || '').trim()
+    const meta = rewardMap[type] || { icon: 'gift-filled', color: '#49caee', label: '等级奖励', unit: '', prefix: '' }
+    const amount = Number(item?.amount || 0)
+    const label = String(item?.label || '').trim() || meta.label
+    let valueText = ''
+    if (type === 'account_book_limit') {
+      valueText = `${meta.prefix}${amount}${meta.unit}`
+    } else if (type === 'points') {
+      valueText = `${meta.prefix}${amount} ${meta.unit}`.trim()
+    } else if (type === 'skin') {
+      valueText = String(item?.skin_name || item?.description || '皮肤礼遇').trim()
+    } else {
+      valueText = String(item?.description || '').trim()
+    }
+    return {
+      ...item,
+      type,
+      label,
+      icon: meta.icon,
+      iconColor: meta.color,
+      valueText,
+      description: String(item?.description || valueText || '升级后解锁').trim()
+    }
+  })
+}
 
 function createConfettiItems() {
   const colors = ['#ee7f85', '#6dcdd1', '#ffd86a', '#72b7ff', '#f3a3d3', '#9ee0a9']
@@ -255,13 +368,16 @@ function closeUpgradeModal() {
 }
 
 function viewPerks() {
-  uni.showToast({ title: '特权页开发中', icon: 'none' })
+  activeInfoTab.value = 'rewards'
   closeUpgradeModal()
 }
 
-async function fetchOverview() {
+async function fetchOverview(options = {}) {
+  const { silent = false } = options
+  if (!silent) pageLoading.value = true
   const token = uni.getStorageSync('token')
   if (!token) {
+    if (!silent) pageLoading.value = false
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
@@ -278,6 +394,25 @@ async function fetchOverview() {
     overview.value = res.data.data || null
   } catch (e) {
     uni.showToast({ title: '网络异常，请稍后再试', icon: 'none' })
+  } finally {
+    if (!silent) pageLoading.value = false
+  }
+}
+
+function buildStripeOverlay(colorA, colorB) {
+  return `repeating-linear-gradient(135deg, ${colorA} 0rpx, ${colorA} 18rpx, ${colorB} 18rpx, ${colorB} 36rpx)`
+}
+
+function getStripeOverlay(item) {
+  switch (item.metric) {
+    case 'login_days':
+      return buildStripeOverlay('rgba(255,255,255,0.22)', 'rgba(255,255,255,0.04)')
+    case 'reply_count':
+      return buildStripeOverlay('rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)')
+    case 'showcase_public_count':
+      return buildStripeOverlay('rgba(255,255,255,0.24)', 'rgba(255,255,255,0.06)')
+    default:
+      return buildStripeOverlay('rgba(255,255,255,0.22)', 'rgba(255,255,255,0.05)')
   }
 }
 
@@ -404,19 +539,29 @@ onMounted(() => {
   border-radius: 50%;
 }
 
+.hero-level-row {
+  margin-top: -14rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .lv-chip {
-  margin-top: -16rpx;
-  margin-left: 150rpx;
   background: linear-gradient(135deg, #f5b6cf 0%, #ea95bc 100%);
   border-radius: 999rpx;
   padding: 8rpx 26rpx;
-  transform: rotate(-6deg);
   color: #ffffff;
   box-shadow: 0 8rpx 16rpx rgba(230, 143, 183, 0.33);
 }
 
 .lv-chip .font-title {
   font-size: 30rpx;
+}
+
+.hero-level-name {
+  font-size: 24rpx;
+  color: #8ea0b7;
+  line-height: 1.2;
 }
 
 .hero-name {
@@ -429,19 +574,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.hero-tag {
-  margin-top: 14rpx;
-  background: #f9fcff;
-  border-radius: 999rpx;
-  padding: 12rpx 34rpx;
-  box-shadow: 0 4rpx 12rpx rgba(132, 147, 173, 0.1);
-}
-
-.hero-tag-text {
-  font-size: 24rpx;
-  color: #7aa4bb;
 }
 
 .exp-card {
@@ -490,13 +622,9 @@ onMounted(() => {
 .exp-fill {
   height: 100%;
   border-radius: 999rpx;
-  background: repeating-linear-gradient(
-    135deg,
-    #82b5ea 0rpx,
-    #82b5ea 16rpx,
-    #7eaee2 16rpx,
-    #7eaee2 30rpx
-  );
+  position: relative;
+  background: linear-gradient(90deg, #88b7ea 0%, #79abe4 100%);
+  overflow: hidden;
 }
 
 .exp-tip {
@@ -509,8 +637,43 @@ onMounted(() => {
   padding: 10rpx 16rpx;
 }
 
-.req-section {
+.info-section {
   margin-top: 28rpx;
+  background: #f8fbff;
+  border-radius: 34rpx;
+  padding: 14rpx;
+}
+
+.info-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  background: #edf4f9;
+  border-radius: 999rpx;
+  padding: 8rpx;
+}
+
+.info-tab {
+  flex: 1;
+  height: 70rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25rpx;
+  color: #91a2b6;
+  background: transparent;
+  transition: all 0.22s ease;
+}
+
+.info-tab-active {
+  background: #ffffff;
+  color: #31415a;
+  box-shadow: 0 8rpx 18rpx rgba(73, 202, 238, 0.12);
+}
+
+.info-panel {
+  margin-top: 18rpx;
 }
 
 .req-title-row {
@@ -530,13 +693,17 @@ onMounted(() => {
   margin-right: 12rpx;
 }
 
+.req-dot-blue {
+  background: rgba(73, 202, 238, 0.14);
+}
+
 .req-title {
   font-size: 32rpx;
   color: #354258;
 }
 
 .req-item {
-  background: #fffefe;
+  background: #ffffff;
   border-radius: 34rpx;
   padding: 24rpx;
   margin-bottom: 18rpx;
@@ -545,7 +712,11 @@ onMounted(() => {
 }
 
 .req-item-1 {
-  box-shadow: inset 0 0 0 2rpx #f8dfe8;
+  box-shadow: none;
+}
+
+.req-item-2 {
+  box-shadow: none;
 }
 
 .req-icon-wrap {
@@ -592,6 +763,29 @@ onMounted(() => {
 .req-fill {
   height: 100%;
   border-radius: 999rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-stripe {
+  position: absolute;
+  top: 0;
+  left: -72rpx;
+  width: calc(100% + 144rpx);
+  height: 100%;
+  background-size: 72rpx 72rpx;
+  opacity: 0.9;
+  animation: progress-stripe-flow 1.15s linear infinite;
+}
+
+.progress-stripe-exp {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.22) 0rpx,
+    rgba(255, 255, 255, 0.22) 18rpx,
+    rgba(255, 255, 255, 0.06) 18rpx,
+    rgba(255, 255, 255, 0.06) 36rpx
+  );
 }
 
 .req-desc {
@@ -599,6 +793,89 @@ onMounted(() => {
   display: block;
   font-size: 21rpx;
   color: #98a5b8;
+}
+
+.reward-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.reward-item {
+  background: linear-gradient(180deg, #f8fcff 0%, #fdfefe 100%);
+  border-radius: 34rpx;
+  padding: 24rpx;
+  display: flex;
+  align-items: center;
+}
+
+.reward-media {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 28rpx;
+  background: rgba(73, 202, 238, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 18rpx;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.reward-media-skin {
+  background: rgba(251, 154, 194, 0.14);
+}
+
+.reward-media-points {
+  background: rgba(242, 180, 95, 0.14);
+}
+
+.reward-skin-image {
+  width: 100%;
+  height: 100%;
+}
+
+.reward-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.reward-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.reward-label {
+  font-size: 29rpx;
+  color: #2f3d54;
+}
+
+.reward-value {
+  font-size: 26rpx;
+  color: #49caee;
+  flex-shrink: 0;
+}
+
+.reward-desc {
+  margin-top: 10rpx;
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #8f9db1;
+}
+
+.reward-empty {
+  background: #f7fbff;
+  border-radius: 28rpx;
+  padding: 28rpx 24rpx;
+}
+
+.reward-empty-text {
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #96a6bb;
 }
 
 .max-card {
@@ -718,15 +995,27 @@ onMounted(() => {
 }
 
 .medal-circle {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 50%;
-  background: #f2cb53;
-  border: 8rpx solid #ffffff;
-  box-shadow: 0 10rpx 24rpx rgba(242, 203, 83, 0.4);
+  width: 184rpx;
+  height: 184rpx;
+  border-radius: 50rpx;
+  background: linear-gradient(180deg, #f6d66e 0%, #e6bf57 100%);
+  box-shadow: 0 12rpx 28rpx rgba(230, 191, 87, 0.34);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.medal-level {
+  font-size: 46rpx;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.medal-level-text {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .medal-chip {
@@ -768,37 +1057,65 @@ onMounted(() => {
   color: #8996ab;
 }
 
-.perk-row {
-  margin-top: 22rpx;
-  display: flex;
-  justify-content: space-between;
-  gap: 12rpx;
-}
-
-.perk-item {
-  flex: 1;
+.dialog-reward-list {
+  margin-top: 24rpx;
   display: flex;
   flex-direction: column;
+  gap: 14rpx;
+}
+
+.dialog-reward-item {
+  background: #f7fbff;
+  border-radius: 24rpx;
+  padding: 18rpx 20rpx;
+  display: flex;
   align-items: center;
 }
 
-.perk-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 22rpx;
+.dialog-reward-icon {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 20rpx;
+  background: rgba(73, 202, 238, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 14rpx;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.perk-icon-blue { background: #ecf4ff; }
-.perk-icon-purple { background: #f2edff; }
-.perk-icon-orange { background: #fff2e5; }
+.dialog-reward-icon-skin {
+  background: rgba(251, 154, 194, 0.14);
+}
 
-.perk-text {
-  margin-top: 8rpx;
+.dialog-reward-icon-points {
+  background: rgba(242, 180, 95, 0.14);
+}
+
+.dialog-reward-image {
+  width: 100%;
+  height: 100%;
+}
+
+.dialog-reward-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.dialog-reward-label {
+  display: block;
+  font-size: 24rpx;
+  color: #2d3a52;
+  font-weight: 700;
+}
+
+.dialog-reward-desc {
+  margin-top: 6rpx;
+  display: block;
   font-size: 21rpx;
-  color: #68788f;
+  line-height: 1.45;
+  color: #8a98ac;
 }
 
 .dialog-btn-primary,
@@ -855,6 +1172,15 @@ onMounted(() => {
     opacity: 0.95;
     top: 112%;
     transform: translate3d(var(--drift), 0, 0) rotate(calc(var(--rotate-start) + 720deg));
+  }
+}
+
+@keyframes progress-stripe-flow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(72rpx);
   }
 }
 </style>

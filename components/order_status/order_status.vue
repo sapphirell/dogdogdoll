@@ -35,6 +35,8 @@ const statusLabelSellerMap = Object.freeze({
   2: '待你确认',
   3: '待付款',
   4: '已付款',
+  8: '已寄回',
+  9: '已完结',
   5: '排队失败',
   6: '已取消',
   7: '已超时'
@@ -46,6 +48,8 @@ const statusLabelBuyerMap = Object.freeze({
   2: '待卖家确认',
   3: '待付款',
   4: '已付款',
+  8: '已寄回',
+  9: '已完结',
   5: '排队失败',
   6: '已取消',
   7: '已超时'
@@ -132,6 +136,14 @@ const sizeClass = computed(() => (props.size === 'small' ? 'small' : 'normal'))
 
 .order-status.s-7 {
   background: #4a4492;
+}
+
+.order-status.s-8 {
+  background: #7fcfd3;
+}
+
+.order-status.s-9 {
+  background: #49caee;
 }
 
 .order-status.s-default {

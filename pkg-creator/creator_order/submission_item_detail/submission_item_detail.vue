@@ -385,6 +385,8 @@ import CommonModal from '@/components/common-modal/common-modal.vue'
 
 const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
+const SubmissionStatusReturned = 8
+const SubmissionStatusFinished = 9
 const PaymentMethodPlatform = 1
 const PaymentMethodQRCode = 2
 const PlanPaymentMethodQRCode = 1
@@ -482,9 +484,10 @@ const paymentMethodText = computed(() => {
 
 const paymentStatusText = computed(() => {
   const status = Number(queueInfo.value?.status || 0)
-  if (status === SubmissionStatusPaid) {
+  if ([SubmissionStatusPaid, SubmissionStatusReturned].includes(status)) {
     return paymentMethod.value === PaymentMethodQRCode ? '已付款（扫码转账）' : '已付款（在线支付）'
   }
+  if (status === SubmissionStatusFinished) return '已结清'
   if (status === SubmissionStatusSelectedPay) return '待付款'
 
   switch (payStatus.value) {
@@ -870,7 +873,7 @@ function timelineTitle(row) {
   if (eventCode === 'return_address_request') return '订单收尾'
   if (eventCode === 'return_address_submitted') return '寄回地址已填写'
   if (eventCode === 'return_shipped') return '创作者已寄回'
-  if (eventCode === 'return_received') return '买家已签收'
+  if (eventCode === 'return_received') return '订单已完结'
   if (eventCode === 'trade_reviewed') return '买家已评价'
   return stepName || '进度更新'
 }
@@ -887,8 +890,8 @@ function timelineDesc(row) {
   }
   if (eventCode === 'return_address_request') return '订单进入收尾阶段，等待寄回地址。'
   if (eventCode === 'return_address_submitted') return '买家已填写寄回地址。'
-  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家签收。'
-  if (eventCode === 'return_received') return '买家已确认收到寄回件。'
+  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家确认结束。'
+  if (eventCode === 'return_received') return '买家已确认这次订单结束。'
   if (eventCode === 'trade_reviewed') return '买家已完成评价并提交返图。'
   return ''
 }

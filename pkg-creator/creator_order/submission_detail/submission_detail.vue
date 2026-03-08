@@ -257,8 +257,8 @@
 	                <text class="delivery-status-value">已寄回 · {{ submission.return_express_no || '待补充单号' }}</text>
 	              </view>
 	              <view v-if="submission.return_received" class="delivery-status-chip success">
-	                <text class="delivery-status-label">签收状态</text>
-	                <text class="delivery-status-value">你已确认签收</text>
+	                <text class="delivery-status-label">订单状态</text>
+	                <text class="delivery-status-value">你已确认结束</text>
 	              </view>
 	              <view v-if="reviewInfo" class="review-preview-card">
 	                <view class="review-preview-head">
@@ -639,6 +639,8 @@ const SubmissionStatusQueued = 0
 const SubmissionStatusSelectedConfirm = 1
 const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
+const SubmissionStatusReturned = 8
+const SubmissionStatusFinished = 9
 const PlanPaymentMethodQRCode = 1
 const PlanPaymentMethodAlipay = 2
 const reviewMaxImages = 9
@@ -1089,7 +1091,7 @@ const reviewInfo = computed(() => {
 })
 
 const showDeliveryFlowCard = computed(() => {
-  if (submission.status !== SubmissionStatusPaid) return false
+  if (![SubmissionStatusPaid, SubmissionStatusReturned, SubmissionStatusFinished].includes(Number(submission.status || 0))) return false
   return (
     !!submission.return_address_requested ||
     effectiveReturnAddressReady.value ||
@@ -1107,11 +1109,11 @@ const canEditReturnAddress = computed(() => {
 })
 
 const canConfirmReceived = computed(() => {
-  return submission.status === SubmissionStatusPaid && !!submission.can_confirm_received
+  return [SubmissionStatusPaid, SubmissionStatusReturned].includes(Number(submission.status || 0)) && !!submission.can_confirm_received
 })
 
 const canOpenReview = computed(() => {
-  return submission.status === SubmissionStatusPaid && !!submission.can_submit_review
+  return [SubmissionStatusPaid, SubmissionStatusReturned, SubmissionStatusFinished].includes(Number(submission.status || 0)) && !!submission.can_submit_review
 })
 
 const deliveryActionList = computed(() => {
@@ -1126,7 +1128,7 @@ const deliveryActionList = computed(() => {
   if (canConfirmReceived.value) {
     list.push({
       key: 'received',
-      label: '确认签收',
+      label: '确认结束',
       tone: 'primary'
     })
   }
@@ -1628,7 +1630,7 @@ function timelineTitle(row) {
     return '等待填写寄回地址'
   }
   if (eventCode === 'return_shipped') return '创作者已寄回'
-  if (eventCode === 'return_received') return '买家已签收'
+  if (eventCode === 'return_received') return '订单已完结'
   if (eventCode === 'trade_reviewed') return '买家已评价'
   if (logType === 1) {
     const name = stepName || `节点#${Number(row?.step_id || 0)}`
@@ -1659,8 +1661,8 @@ function timelineDesc(row) {
     if (submission.return_address_ready) return '创作者已进入订单收尾，可填写寄回单号。'
     return '创作者发起结单，请买家填写寄回地址。'
   }
-  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家查收。'
-  if (eventCode === 'return_received') return '你已确认收到寄回件。'
+  if (eventCode === 'return_shipped') return '创作者已寄回，等待买家确认结束。'
+  if (eventCode === 'return_received') return '你已确认这次订单结束。'
   if (eventCode === 'trade_reviewed') return '你已完成订单评价。'
   return ''
 }
@@ -1847,14 +1849,14 @@ async function confirmReturnReceived() {
     })
     const body = res?.data || {}
     if (String(body.status).toLowerCase() !== 'success') {
-      uni.showToast({ title: body.msg || '确认签收失败', icon: 'none' })
+      uni.showToast({ title: body.msg || '确认结束失败', icon: 'none' })
       return
     }
-    uni.showToast({ title: '已确认签收', icon: 'success' })
+    uni.showToast({ title: '订单已完结', icon: 'success' })
     if (global.lastRefresh) global.lastRefresh.time = 0
     fetchDetail(true)
   } catch (e) {
-    uni.showToast({ title: '确认签收失败', icon: 'none' })
+    uni.showToast({ title: '确认结束失败', icon: 'none' })
   } finally {
     uni.hideLoading()
   }
@@ -1968,9 +1970,9 @@ function handleDeliveryAction(actionKey) {
   }
   if (actionKey === 'received') {
     uni.showModal({
-      title: '确认签收',
-      content: '确认已经收到创作者寄回的娃头吗？',
-      confirmText: '确认签收',
+      title: '确认结束',
+      content: '确认这次订单已经完成，可以正式结束了吗？',
+      confirmText: '确认结束',
       cancelText: '再看看',
       success: ({ confirm }) => {
         if (!confirm) return
