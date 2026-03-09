@@ -36,7 +36,7 @@
             <text class="setting-name font-alimamashuhei">显示尺寸标签</text>
             <text class="setting-desc">在物品卡片上显示尺寸（如四分/六分）</text>
           </view>
-          <switch :checked="form.show_size_tag" color="#52b4e8" @change="onSwitch('show_size_tag', $event)" />
+          <switch :checked="form.show_size_tag" color="#49caee" @change="onSwitch('show_size_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -44,7 +44,7 @@
             <text class="setting-name font-alimamashuhei">显示价格标签</text>
             <text class="setting-desc">在物品卡片上显示价格文本</text>
           </view>
-          <switch :checked="form.show_price_tag" color="#52b4e8" @change="onSwitch('show_price_tag', $event)" />
+          <switch :checked="form.show_price_tag" color="#49caee" @change="onSwitch('show_price_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -52,7 +52,7 @@
             <text class="setting-name font-alimamashuhei">显示全款标签</text>
             <text class="setting-desc">显示全款/定金/未买状态标签</text>
           </view>
-          <switch :checked="form.show_payment_tag" color="#52b4e8" @change="onSwitch('show_payment_tag', $event)" />
+          <switch :checked="form.show_payment_tag" color="#49caee" @change="onSwitch('show_payment_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -60,15 +60,31 @@
             <text class="setting-name font-alimamashuhei">列表价格包含附加价值</text>
             <text class="setting-desc">如附加值中包含数值，将计入卡片价格显示</text>
           </view>
-          <switch :checked="form.include_additional_in_item_price" color="#52b4e8" @change="onSwitch('include_additional_in_item_price', $event)" />
+          <switch :checked="form.include_additional_in_item_price" color="#49caee" @change="onSwitch('include_additional_in_item_price', $event)" />
         </view>
 
-        <view class="setting-row no-border">
+        <view class="setting-row">
+          <view class="setting-main">
+            <text class="setting-name font-alimamashuhei">列表价格按数量计算</text>
+            <text class="setting-desc">外层卡片价格按单价乘以个数后显示</text>
+          </view>
+          <switch :checked="form.include_count_in_item_price" color="#49caee" @change="onSwitch('include_count_in_item_price', $event)" />
+        </view>
+
+        <view class="setting-row">
           <view class="setting-main">
             <text class="setting-name font-alimamashuhei">总价包含附加价值</text>
             <text class="setting-desc">将附加值中的数值计入当前分类合计</text>
           </view>
-          <switch :checked="form.include_additional_in_total" color="#52b4e8" @change="onSwitch('include_additional_in_total', $event)" />
+          <switch :checked="form.include_additional_in_total" color="#49caee" @change="onSwitch('include_additional_in_total', $event)" />
+        </view>
+
+        <view class="setting-row no-border">
+          <view class="setting-main">
+            <text class="setting-name font-alimamashuhei">合计按数量计算</text>
+            <text class="setting-desc">当前分类合计按单价乘以个数后统计</text>
+          </view>
+          <switch :checked="form.include_count_in_total" color="#49caee" @change="onSwitch('include_count_in_total', $event)" />
         </view>
       </view>
 
@@ -93,7 +109,9 @@ const DEFAULT_FORM = Object.freeze({
   show_price_tag: true,
   show_payment_tag: true,
   include_additional_in_item_price: false,
-  include_additional_in_total: false
+  include_additional_in_total: false,
+  include_count_in_item_price: false,
+  include_count_in_total: false
 })
 
 const scrollTop = ref(0)
@@ -128,7 +146,9 @@ function normalizePayload(payload) {
     show_price_tag: boolOf(p.show_price_tag, true),
     show_payment_tag: boolOf(p.show_payment_tag, true),
     include_additional_in_item_price: boolOf(p.include_additional_in_item_price, false),
-    include_additional_in_total: boolOf(p.include_additional_in_total, false)
+    include_additional_in_total: boolOf(p.include_additional_in_total, false),
+    include_count_in_item_price: boolOf(p.include_count_in_item_price, false),
+    include_count_in_total: boolOf(p.include_count_in_total, false)
   }
 }
 
@@ -180,7 +200,9 @@ async function saveSetting() {
       show_price_tag: !!form.value.show_price_tag,
       show_payment_tag: !!form.value.show_payment_tag,
       include_additional_in_item_price: !!form.value.include_additional_in_item_price,
-      include_additional_in_total: !!form.value.include_additional_in_total
+      include_additional_in_total: !!form.value.include_additional_in_total,
+      include_count_in_item_price: !!form.value.include_count_in_item_price,
+      include_count_in_total: !!form.value.include_count_in_total
     }
     const res = await uni.request({
       url: websiteUrl.value + '/with-state/account-book-display-setting',
@@ -216,8 +238,8 @@ onShow(() => {
 .setting-page {
   min-height: 100vh;
   background:
-    radial-gradient(1200rpx 620rpx at 100% -8%, rgba(146, 196, 235, 0.28), rgba(146, 196, 235, 0)),
-    linear-gradient(180deg, #d8deff 0%, #d3f5ff 42%, #f4fbff 100%);
+    radial-gradient(1100rpx 560rpx at 100% -8%, rgba(73, 202, 238, 0.18), rgba(73, 202, 238, 0)),
+    linear-gradient(180deg, #dff6ff 0%, #eefaff 44%, #ffffff 100%);
 }
 
 .page-body {
@@ -229,8 +251,7 @@ onShow(() => {
   margin-top: 14rpx;
   border-radius: 24rpx;
   padding: 28rpx 24rpx;
-  background: linear-gradient(145deg, rgba(213, 233, 255, 0.96), rgba(226, 244, 255, 0.96));
-  border: 1rpx solid #d6e8f9;
+  background: linear-gradient(145deg, rgba(229, 247, 255, 0.96), rgba(243, 251, 255, 0.98));
   box-shadow: 0 12rpx 28rpx rgba(76, 129, 170, 0.12);
 }
 
@@ -238,8 +259,8 @@ onShow(() => {
   display: inline-flex;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: rgba(86, 158, 205, 0.16);
-  color: #4b78a3;
+  background: rgba(73, 202, 238, 0.14);
+  color: #4a99b3;
   font-size: 18rpx;
 }
 
@@ -247,14 +268,14 @@ onShow(() => {
   display: block;
   margin-top: 12rpx;
   font-size: 38rpx;
-  color: #1f3f5d;
+  color: #20425e;
 }
 
 .hero-tip {
   display: block;
   margin-top: 10rpx;
   font-size: 23rpx;
-  color: #5f86aa;
+  color: #6a90ac;
   line-height: 1.6;
 }
 
@@ -262,9 +283,8 @@ onShow(() => {
   margin-top: 22rpx;
   border-radius: 24rpx;
   background: rgba(255, 255, 255, 0.95);
-  border: 1rpx solid #dbeaf8;
   box-shadow: 0 10rpx 24rpx rgba(84, 130, 166, 0.08);
-  overflow: hidden;
+  padding: 8rpx 0;
 }
 
 .setting-row {
@@ -273,11 +293,10 @@ onShow(() => {
   align-items: center;
   justify-content: space-between;
   gap: 18rpx;
-  border-bottom: 1rpx solid #e5eef8;
 }
 
 .setting-row.no-border {
-  border-bottom: none;
+  padding-bottom: 30rpx;
 }
 
 .setting-main {
@@ -312,14 +331,13 @@ onShow(() => {
   padding: 14rpx 24rpx calc(16rpx + constant(safe-area-inset-bottom));
   background: rgba(244, 251, 255, 0.92);
   backdrop-filter: blur(10rpx);
-  border-top: 1rpx solid #dce9f6;
 }
 
 .save-btn {
   height: 82rpx;
   border-radius: 16rpx;
   border: none;
-  background: linear-gradient(140deg, #52b4e8 0%, #4aa8de 60%, #59b8ef 100%);
+  background: linear-gradient(140deg, #49caee 0%, #53b8eb 56%, #7bcff2 100%);
   color: #fff;
   font-size: 30rpx;
   line-height: 82rpx;

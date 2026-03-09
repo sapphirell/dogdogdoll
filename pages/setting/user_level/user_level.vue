@@ -769,11 +769,10 @@ onMounted(() => {
 
 .progress-stripe {
   position: absolute;
-  top: 0;
-  left: -72rpx;
-  width: calc(100% + 144rpx);
-  height: 100%;
+  inset: 0;
   background-size: 72rpx 72rpx;
+  background-repeat: repeat;
+  background-position: 0 0;
   opacity: 0.9;
   animation: progress-stripe-flow 1.15s linear infinite;
 }
@@ -1177,10 +1176,10 @@ onMounted(() => {
 
 @keyframes progress-stripe-flow {
   0% {
-    transform: translateX(0);
+    background-position: 0 0;
   }
   100% {
-    transform: translateX(72rpx);
+    background-position: 72rpx 0;
   }
 }
 </style>

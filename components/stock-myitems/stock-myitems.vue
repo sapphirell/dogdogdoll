@@ -150,7 +150,9 @@ const DEFAULT_DISPLAY_SETTING = Object.freeze({
   show_price_tag: true,
   show_payment_tag: true,
   include_additional_in_item_price: false,
-  include_additional_in_total: false
+  include_additional_in_total: false,
+  include_count_in_item_price: false,
+  include_count_in_total: false
 })
 const displaySetting = ref({ ...DEFAULT_DISPLAY_SETTING })
 
@@ -187,12 +189,22 @@ function normalizePriceText(n) {
   return Number.isInteger(safe) ? String(safe) : safe.toFixed(2)
 }
 
+function resolveItemCount(item) {
+  const raw = Number(item?.count)
+  if (!Number.isFinite(raw)) return 1
+  if (raw <= 0) return 0
+  return raw
+}
+
 const displayList = computed(() => {
   const includeAdditional = !!displaySetting.value.include_additional_in_item_price
+  const includeCount = !!displaySetting.value.include_count_in_item_price
   return (baseList.value || []).map((item) => {
     const basePrice = Number(item?.price || 0)
+    const count = resolveItemCount(item)
     const additional = includeAdditional ? parseAdditionalNumeric(item?.additional_value) : 0
-    const merged = basePrice + additional
+    const mergedBase = includeCount ? (basePrice * count) : basePrice
+    const merged = mergedBase + additional
     return {
       ...item,
       display_price: normalizePriceText(merged),
@@ -205,10 +217,13 @@ const displayList = computed(() => {
 const totalPrice = computed(() => {
   if (!props.accountBookData?.account_books) return '0.00'
   const includeAdditional = !!displaySetting.value.include_additional_in_total
+  const includeCount = !!displaySetting.value.include_count_in_total
   return props.accountBookData.account_books.reduce((sum, item) => {
     const basePrice = Number(item?.price || 0)
+    const count = resolveItemCount(item)
     const additional = includeAdditional ? parseAdditionalNumeric(item?.additional_value) : 0
-    return sum + basePrice + additional
+    const mergedBase = includeCount ? (basePrice * count) : basePrice
+    return sum + mergedBase + additional
   }, 0).toFixed(2)
 })
 
@@ -219,7 +234,9 @@ function normalizeDisplaySetting(payload) {
     show_price_tag: p.show_price_tag !== false,
     show_payment_tag: p.show_payment_tag !== false,
     include_additional_in_item_price: !!p.include_additional_in_item_price,
-    include_additional_in_total: !!p.include_additional_in_total
+    include_additional_in_total: !!p.include_additional_in_total,
+    include_count_in_item_price: !!p.include_count_in_item_price,
+    include_count_in_total: !!p.include_count_in_total
   }
 }
 
