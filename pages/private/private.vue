@@ -4,6 +4,13 @@
 		<view class="container">
 
 		        <view class="content">
+					<view class="section policy-meta">
+						<h2 class="section-title"><i class="fas fa-calendar-alt"></i> 政策信息</h2>
+						<text class="policy-text"><strong>政策发布日期：</strong>2026年03月09日</text>
+						<text class="policy-text"><strong>政策生效日期：</strong>2026年03月09日</text>
+						<text class="policy-text"><strong>最近更新日期：</strong>2026年03月09日</text>
+					</view>
+
 		            <view class="section">
 		                <h2 class="section-title"><i class="fas fa-info-circle"></i> 引言</h2>
 		                <text class="policy-text">本应用尊重并保护所有使用服务用户的个人隐私权。</text>
@@ -70,6 +77,9 @@
 		            </view>
 		            
 		            <view class="last-update">
+						<text class="policy-text"><strong>政策发布日期：</strong>2026年03月09日</text>
+						<text class="policy-text"><strong>政策生效日期：</strong>2026年03月09日</text>
+						<text class="policy-text"><strong>最近更新日期：</strong>2026年03月09日</text>
 		                <text class="policy-text"><i class="fas fa-exclamation-circle"></i> 重要提示：请您妥善保护自己的个人信息，仅在必要的情形下向他人提供。如您发现自己的个人信息泄密，尤其是本应用用户名及密码发生泄露，请您立即联络本应用客服，以便本应用采取相应措施。</text>
 		            </view>
 		        </view>
@@ -98,5 +108,9 @@
 		display: block;
 		margin: 15rpx;
 		color: #2f3a3e;
+	}
+	.policy-meta {
+		padding: 10rpx 0;
+		border-bottom: 1rpx solid #e8ecef;
 	}
 </style>
