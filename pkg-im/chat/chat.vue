@@ -40,14 +40,18 @@
     >
       <template #cell="{ item }">
         <view style="transform: scaleY(-1)">
-          <view class="msg-item" :class="{ self: item.from_uid === selfUid }">
-            <image
-              class="avatar"
-              :src="item.from_uid === selfUid ? selfInfo.avatar : peerInfo.avatar"
-            />
+          <view class="msg-item" :class="{ self: item.from_uid === selfUid, 'msg-item--card': isStructuredCardMessage(item) }">
+            <view class="msg-side msg-side--left">
+              <image
+                v-if="item.from_uid !== selfUid"
+                class="avatar"
+                :src="peerInfo.avatar"
+              />
+              <view v-else class="avatar avatar--ghost"></view>
+            </view>
 
-            <view class="content">
-              <view class="bubble">
+            <view class="content" :class="{ 'content--card': isStructuredCardMessage(item) }">
+              <view class="bubble" :class="{ 'bubble--card': isStructuredCardMessage(item) }">
                 <template v-if="item.kind === 'text'">
                   <rich-text :nodes="safeText(item.text)"></rich-text>
                 </template>
@@ -125,6 +129,15 @@
                 <text class="time">{{ fmtTime(item.ts) }}</text>
                 <text class="status" v-if="item.from_uid === selfUid">{{ statusText(item) }}</text>
               </view>
+            </view>
+
+            <view class="msg-side msg-side--right">
+              <image
+                v-if="item.from_uid === selfUid"
+                class="avatar"
+                :src="selfInfo.avatar"
+              />
+              <view v-else class="avatar avatar--ghost"></view>
             </view>
           </view>
         </view>
@@ -832,6 +845,9 @@ function previewImage (url) { uni.previewImage({ urls: [url] }) }
 function scrollToBottomSoon () {
   nextTick(() => { if (pagingRef.value) pagingRef.value.scrollToBottom() })
 }
+function isStructuredCardMessage (item) {
+  return !!(item && item.kind === 'other' && (item.card || (item.payload && item.payload.card)))
+}
 function goBack () { uni.navigateBack() }
 function authHeader () {
   const token = uni.getStorageSync('token') || ''
@@ -1058,22 +1074,39 @@ function handleCardClick (m) {
   align-items: flex-start;
   gap: 24rpx;
   margin-bottom: 26rpx;
-  &.self {
-    flex-direction: row-reverse;
-  }
+}
+.msg-side {
+  width: 88rpx;
+  flex: 0 0 88rpx;
+  display: flex;
+}
+.msg-side--left {
+  justify-content: flex-start;
+}
+.msg-side--right {
+  justify-content: flex-end;
 }
 .msg-item .avatar {
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
   background: #eee;
+  flex-shrink: 0;
+}
+.avatar--ghost {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .content {
-  max-width: 78%;
+  min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+.content--card {
+  align-items: stretch;
 }
 .msg-item.self .content {
   align-items: flex-end;
@@ -1081,12 +1114,19 @@ function handleCardClick (m) {
 
 .bubble {
   position: relative;
-  max-width: 100%;
+  max-width: 78%;
   background: #fff;
   border-radius: 18rpx;
   padding: 16rpx 18rpx;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
   word-break: break-word;
+}
+.bubble--card {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: 10rpx;
+  box-sizing: border-box;
 }
 .msg-item.self .bubble {
   background: #e0f0fb;
@@ -1144,38 +1184,49 @@ function handleCardClick (m) {
 }
 
 .msg-card {
-  min-width: 320rpx;
-  max-width: 520rpx;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   background: #ffffff;
-  border-radius: 16rpx;
-  padding: 16rpx 18rpx;
+  border-radius: 18rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
 }
 .msg-card-header {
   display: flex;
-  align-items: center;
-  margin-bottom: 10rpx;
+  align-items: flex-start;
+  gap: 12rpx;
+  min-height: 72rpx;
 }
 .msg-card-tag {
-  padding: 2rpx 10rpx;
+  flex-shrink: 0;
+  padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  font-size: 20rpx;
-  margin-right: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.2;
+  white-space: nowrap;
   /* 默认兜底 */
   background: #E0F2F1;
   color: #00695C;
 }
 .msg-card-title {
   flex: 1;
-  font-size: 26rpx;
+  min-width: 0;
+  font-size: 28rpx;
   font-weight: 600;
   color: #111827;
+  line-height: 1.4;
 }
 
 .msg-card-price-box {
-  margin: 16rpx 0;
-  padding: 20rpx;
-  background: #F9FAFB;
-  border-radius: 12rpx;
+  margin: 0;
+  min-height: 108rpx;
+  padding: 20rpx 22rpx;
+  background: #f5f7fa;
+  border-radius: 16rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1196,27 +1247,31 @@ function handleCardClick (m) {
   }
 }
 .msg-card-image-wrap {
-  margin-bottom: 12rpx;
-  border-radius: 12rpx;
+  margin: 0;
+  border-radius: 16rpx;
   overflow: hidden;
+  background: #f5f7fa;
 }
 .msg-card-image {
   width: 100%;
-  max-height: 320rpx;
+  height: 240rpx;
   display: block;
 }
 
 .msg-card-body {
-  margin-bottom: 12rpx;
+  margin: 0;
 }
 .msg-card-desc {
   font-size: 24rpx;
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.65;
 }
 .msg-card-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 6rpx;
+  min-height: 34rpx;
 }
 .msg-card-action {
   font-size: 24rpx;
@@ -1237,6 +1292,12 @@ function handleCardClick (m) {
   opacity: 0.95;
   color: #9aa0a6 !important;
   font-size: 20rpx;
+}
+.msg-item--card .meta {
+  width: 100%;
+}
+.msg-item--card.self .meta {
+  justify-content: flex-end;
 }
 
 .chat-inputbar {

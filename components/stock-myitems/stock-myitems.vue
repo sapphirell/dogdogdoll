@@ -141,7 +141,8 @@ import { websiteUrl } from '@/common/config.js'
 
 const props = defineProps({
   accountBookData: Object,
-  activeTab: { type: Number, default: 1 }
+  activeTab: { type: Number, default: 1 },
+  currentType: { type: String, default: '' }
 })
 const emit = defineEmits(['go2editor','update-type','init-request','update:accountBookData'])
 
@@ -164,9 +165,12 @@ watch(isPriceVisible, v => uni.setStorageSync(PRICE_VISIBLE_KEY, String(v)))
 /* ===== 分类 ===== */
 const customTypes = ref([])
 const defaultTypes = ['全部']
-const selectedType = ref(0)
-const selectedTypeName = ref('全部')
 const SELECTED_TYPE_KEY = 'accountBookSelectedType'
+function getStoredTypeName() {
+  return uni.getStorageSync(SELECTED_TYPE_KEY) || '全部'
+}
+const selectedType = ref(0)
+const selectedTypeName = ref(getStoredTypeName())
 const typeOptions = computed(() => [...defaultTypes, ...customTypes.value.map(t => t.name)])
 const showTypeSelectPopup = ref(false)
 const showTypeToolsPopup = ref(false)
@@ -190,7 +194,7 @@ function normalizePriceText(n) {
 }
 
 function resolveItemCount(item) {
-  const raw = Number(item?.count)
+  const raw = Number(item?.count ?? item?.quantity ?? item?.num)
   if (!Number.isFinite(raw)) return 1
   if (raw <= 0) return 0
   return raw
@@ -198,7 +202,7 @@ function resolveItemCount(item) {
 
 const displayList = computed(() => {
   const includeAdditional = !!displaySetting.value.include_additional_in_item_price
-  const includeCount = !!displaySetting.value.include_count_in_item_price
+  const includeCount = !!displaySetting.value.include_count_in_item_price || !!displaySetting.value.include_count_in_total
   return (baseList.value || []).map((item) => {
     const basePrice = Number(item?.price || 0)
     const count = resolveItemCount(item)
@@ -229,14 +233,24 @@ const totalPrice = computed(() => {
 
 function normalizeDisplaySetting(payload) {
   const p = payload || {}
+  const boolOf = (v, fallback) => {
+    if (typeof v === 'boolean') return v
+    if (typeof v === 'number') return v === 1
+    if (typeof v === 'string') {
+      const txt = v.trim().toLowerCase()
+      if (txt === '1' || txt === 'true' || txt === 'yes' || txt === 'on') return true
+      if (txt === '0' || txt === 'false' || txt === 'no' || txt === 'off' || txt === '') return false
+    }
+    return fallback
+  }
   return {
-    show_size_tag: p.show_size_tag !== false,
-    show_price_tag: p.show_price_tag !== false,
-    show_payment_tag: p.show_payment_tag !== false,
-    include_additional_in_item_price: !!p.include_additional_in_item_price,
-    include_additional_in_total: !!p.include_additional_in_total,
-    include_count_in_item_price: !!p.include_count_in_item_price,
-    include_count_in_total: !!p.include_count_in_total
+    show_size_tag: boolOf(p.show_size_tag, true),
+    show_price_tag: boolOf(p.show_price_tag, true),
+    show_payment_tag: boolOf(p.show_payment_tag, true),
+    include_additional_in_item_price: boolOf(p.include_additional_in_item_price, false),
+    include_additional_in_total: boolOf(p.include_additional_in_total, false),
+    include_count_in_item_price: boolOf(p.include_count_in_item_price, false),
+    include_count_in_total: boolOf(p.include_count_in_total, false)
   }
 }
 
@@ -286,6 +300,9 @@ watch([customTypes, selectedTypeName], () => {
   const want = selectedTypeName.value || '全部'
   const idx = list.findIndex(n => n === want)
   selectedType.value = idx >= 0 ? idx : 0
+})
+watch(() => props.currentType, (value) => {
+  selectedTypeName.value = value || '全部'
 })
 function openTypeManagerPage() {
   uni.navigateTo({
@@ -388,10 +405,13 @@ onShow(async ()=>{
   const saved = uni.getStorageSync(PRICE_VISIBLE_KEY)
   if (saved !== '') isPriceVisible.value = (saved === 'true')
 
-  selectedTypeName.value = uni.getStorageSync(SELECTED_TYPE_KEY) || '全部'
+  selectedTypeName.value = getStoredTypeName()
   await fetchDisplaySetting()
   await getAccountTypes()
-  emit('update-type', selectedTypeName.value === '全部' ? '' : selectedTypeName.value)
+  const targetType = selectedTypeName.value === '全部' ? '' : selectedTypeName.value
+  if (targetType !== (props.currentType || '')) {
+    emit('update-type', targetType)
+  }
 
   try {
     const wi = (uni.getWindowInfo && uni.getWindowInfo()) || uni.getSystemInfoSync()

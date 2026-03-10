@@ -162,7 +162,10 @@
               <view class="item-footer">
                 <view class="item-footer-left"></view>
                 <view class="item-footer-right">
-                  <button class="btn-chat" @tap.stop="startChatBySubmission(row)">发起会话</button>
+                  <view class="btn-chat-plain" @tap.stop="startChatBySubmission(row)">
+                    <text class="btn-chat-plain-text">发起会话</text>
+                    <uni-icons type="arrow-right" size="14" color="#4b5563" />
+                  </view>
                 </view>
               </view>
             </view>
@@ -218,7 +221,10 @@
                 <view class="item-footer-left"></view>
                 <view class="item-footer-right">
                   <button class="btn-view" @tap.stop="goCreationDetail(creation)">查看详情</button>
-                  <button class="btn-chat" @tap.stop="startChatByCreation(creation)">发起会话</button>
+                  <view class="btn-chat-plain" @tap.stop="startChatByCreation(creation)">
+                    <text class="btn-chat-plain-text">发起会话</text>
+                    <uni-icons type="arrow-right" size="14" color="#4b5563" />
+                  </view>
                 </view>
               </view>
             </view>
@@ -250,6 +256,10 @@ const pageSize = 20
 
 const rawList = ref([])
 const totalCount = ref(0)
+
+// “我的创作”只统计已经进入创作流程的父单。
+// 待确认、待付款、排队中的投递不应出现在创作阶段筛选里。
+const creationSubmissionStatuses = Object.freeze([4, 8, 9])
 
 const activeMainTab = ref('orders')
 const contentAnimating = ref(false)
@@ -339,6 +349,7 @@ const allCreations = computed(() => {
     const submission = getSubmission(row)
     const submissionID = Number(submission.id || submission.ID || 0)
     if (!submissionID) return
+    if (!creationSubmissionStatuses.includes(getSubmissionStatus(row))) return
 
     const buyerUID = Number(submission.user_id || submission.userId || 0)
     const submissionCreatedAt = Number(submission.created_at || submission.createdAt || 0)
@@ -1200,8 +1211,7 @@ onLoad((options) => {
   align-items: center;
 }
 
-.btn-view,
-.btn-chat {
+.btn-view {
   min-width: 156rpx;
   height: 62rpx;
   line-height: 62rpx;
@@ -1218,13 +1228,22 @@ onLoad((options) => {
   color: #5e6b82;
 }
 
-.btn-chat {
-  background: #7accef;
-  color: #fff;
+.btn-chat-plain {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 0;
+  color: #4b5563;
+}
+
+.btn-chat-plain-text {
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #4b5563;
+  font-weight: 600;
 }
 
 .btn-view::after,
-.btn-chat::after,
 button::after {
   border: none;
 }

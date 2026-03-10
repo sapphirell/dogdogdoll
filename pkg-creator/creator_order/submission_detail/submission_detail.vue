@@ -425,7 +425,7 @@
 
         <view class="pay-method-tip">
           <text v-if="selectedMethodIsQRCode">已选择扫码转账，点击“去付款”后查看并保存收款码。</text>
-          <text v-else>已选择支付宝，点击“去付款”继续。</text>
+          <text v-else>已选择支付宝，点击“去付款”后直接完成支付。</text>
         </view>
 
         <view class="pay-action-row">
@@ -2584,14 +2584,10 @@ async function confirmPayFromPopup() {
     return
   }
 
-  resetPayProofForm()
-  openingPayCodeModal.value = true
-  payDebug('confirmPayFromPopup:online_flow_start')
-  closePayPopup()
-  await new Promise(resolve => setTimeout(resolve, 180))
-  payCodeModalVisible.value = true
-  openingPayCodeModal.value = false
-  payDebug('confirmPayFromPopup:online_modal_opened')
+  payDebug('confirmPayFromPopup:platform_pay_start', {
+    selectedPayMethodId: selectedPayMethodId.value
+  })
+  await submitPayRequest(Number(selectedPayMethodId.value || 0), '')
 }
 
 async function confirmPayFromCodeModal() {

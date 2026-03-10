@@ -4,6 +4,7 @@
   <bottom-popup :show="false"></bottom-popup>
 
   <common-page head_color="#d8deff">
+    <loading-toast :show="activeTab === 1 && stockLoading" text="物品整理中..." />
     <view class="container" style="overflow: hidden;">
       <view class="head_container">
         <view class="switch_tab">
@@ -25,6 +26,7 @@
           <stock-myitems
             :accountBookData="accountBookData"
             :active-tab="activeTab"
+            :current-type="selectedAccountBookType"
             @go2editor="go2editor"
             @update-type="handleTypeUpdate"
           />
@@ -117,15 +119,26 @@ import {
 
 // ===== 原有状态 =====
 const activeTab = ref(1)
+const SELECTED_TYPE_KEY = 'accountBookSelectedType'
+function getSavedAccountBookType() {
+  const saved = uni.getStorageSync(SELECTED_TYPE_KEY) || ''
+  if (!saved || saved === '全部') return ''
+  return saved
+}
+const stockLoading = ref(true)
+const selectedAccountBookType = ref(getSavedAccountBookType())
 
 function transitionName() {
   return activeTab.value > 1 ? ['fade', 'slide-left'] : ['fade', 'slide-right']
+}
+function getCurrentAccountBookType() {
+  return selectedAccountBookType.value || getSavedAccountBookType()
 }
 function switch_tab(index) {
   activeTab.value = index
 
   switch (index) {
-    case 1: getAccountBookData(); break
+    case 1: handleTypeUpdate(getCurrentAccountBookType()); break
     case 2: getShowcaseData(); break
     case 3: getBillData(); break
   }
@@ -149,7 +162,8 @@ function countPaid(bills) {
 
 // ===== 分类筛选回调（子组件触发） =====
 const handleTypeUpdate = (type) => {
-  getAccountBookData(type)
+  selectedAccountBookType.value = type || ''
+  getAccountBookData(selectedAccountBookType.value)
 }
 
 // ===== 悬浮按钮 =====
@@ -163,13 +177,21 @@ function handleFloatingButton() {
 
 // ===== 请求：账本/展示柜/账单 =====
 function getAccountBookData(type) {
-  if (!global.isLogin) { accountBookData.value = {}; showcaseData.value = {}; billData.value = {}; return }
+  if (!global.isLogin) {
+    accountBookData.value = {}
+    showcaseData.value = {}
+    billData.value = {}
+    stockLoading.value = false
+    return
+  }
   const token = uni.getStorageSync('token')
   let url = websiteUrl.value + '/with-state/account-book'
   if (type && type !== '全部') url = websiteUrl.value + '/with-state/account-book?type=' + encodeURIComponent(type)
+  stockLoading.value = true
   uni.request({
     url, method: 'GET', header: { 'Authorization': token },
-    success: (res) => { accountBookData.value = res.data.data || {} }
+    success: (res) => { accountBookData.value = res.data.data || {} },
+    complete: () => { stockLoading.value = false }
   })
 }
 function getShowcaseData(){
@@ -210,9 +232,16 @@ onShow(() => {
     uni.showTabBar({ animation: false })
   } catch (e) {}
 
+  if (activeTab.value === 1) {
+    stockLoading.value = true
+    selectedAccountBookType.value = getCurrentAccountBookType()
+  }
   asyncGetUserInfo().then(() => {
     switch (activeTab.value) {
-      case 1: getAccountBookData(); break
+      case 1:
+        selectedAccountBookType.value = getCurrentAccountBookType()
+        getAccountBookData(selectedAccountBookType.value)
+        break
       case 2: getShowcaseData(); break
       case 3: getBillData(); break
     }
