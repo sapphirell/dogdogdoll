@@ -2,11 +2,13 @@
   <view-logs />
 <view class="page-container">
     <zhouWei-navBar
-      type="fixed"
+      type="transparentFixed"
+      :scrollTop="scrollTop"
       :backState="2000"
       :homeState="2000"
-      bgColor="rgba(255,255,255,0.88)"
+      bgColor="rgba(255,255,255,0.92)"
       fontColor="#000000"
+      transparentFixedFontColor="#000000"
       :shadow="false"
     >
       <template #left>
@@ -14,9 +16,19 @@
           <uni-icons type="left" size="22" color="#000" />
         </view>
       </template>
+      <template #transparentFixedLeft>
+        <view class="nav-back-pill nav-back-pill--offset nav-back-pill--transparent" @click="goBack" aria-label="返回">
+          <uni-icons type="left" size="22" color="#fff" />
+        </view>
+      </template>
       <template #default>
         <view class="nav-center">
           <text class="nav-title-ellipsis">投递详情</text>
+        </view>
+      </template>
+      <template #transparentFixed>
+        <view class="nav-center nav-center--transparent">
+          <text class="nav-title-ellipsis nav-title-ellipsis--ghost">投递详情</text>
         </view>
       </template>
     </zhouWei-navBar>
@@ -81,13 +93,85 @@
             <text class="info-val font-title">{{ queuePositionText }}</text>
           </view>
 
-	          <view class="info-row-item info-row-link" @tap="openProgressOverview">
-	            <text class="info-label font-alimamashuhei">前方订单动态</text>
-	            <view class="info-link-right">
-	              <text class="info-link-text font-title">查看</text>
-	              <uni-icons type="right" size="16" color="#969696" />
+	        </view>
+
+	        <view class="overview-inline-panel">
+	          <view class="overview-inline-head">
+	            <text class="overview-inline-title font-alimamashuhei">前方订单状态</text>
+	            <view class="overview-inline-actions">
+	              <text class="overview-inline-action font-title" @tap="reloadProgressOverview">刷新</text>
+	              <view class="overview-inline-expand" @tap="openProgressOverview">
+	                <text class="overview-inline-action font-title">展开</text>
+	                <uni-icons type="right" size="14" color="#8e99a3" />
+	              </view>
 	            </view>
 	          </view>
+
+	          <view v-if="progressOverviewLoading && !progressOverviewLoaded" class="overview-inline-loading">
+	            <loading-jump-text />
+	          </view>
+	          <view v-else-if="progressOverviewError && !overviewCurrentPlanItems.length" class="overview-inline-error">
+	            <text class="overview-state-text">{{ progressOverviewError }}</text>
+	            <view class="overview-retry-btn" @tap="reloadProgressOverview">重试</view>
+	          </view>
+	          <view v-else-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
+	          <scroll-view
+	            v-else
+	            class="overview-timeline-scroll"
+	            scroll-x
+	            :show-scrollbar="false"
+              :lower-threshold="80"
+              @scrolltolower="handleOverviewReachEnd"
+	          >
+	            <view class="overview-timeline-track">
+	              <view
+	                v-for="(entry, idx) in overviewCurrentPlanItems"
+	                :key="`inline-plan-${overviewEntryKey(entry)}`"
+	                class="overview-timeline-node"
+	              >
+	                <view class="overview-node-top">
+	                  <view
+	                    class="overview-node-dot"
+	                    :class="{ current: isOverviewCurrentSubmission(entry) }"
+	                  ></view>
+	                  <view
+	                    v-if="idx < overviewCurrentPlanItems.length - 1"
+	                    class="overview-node-line"
+	                    :class="{ current: isOverviewCurrentSubmission(entry) }"
+	                  ></view>
+	                </view>
+
+	                <view
+	                  class="overview-timeline-card"
+	                  :class="{ current: isOverviewCurrentSubmission(entry) }"
+	                >
+	                  <view class="overview-timeline-card-head">
+	                    <text class="overview-item-order-id">{{ overviewEntryOrderTag(entry, idx) }}</text>
+	                  </view>
+
+	                  <view class="overview-item-thumb-wrap">
+	                    <image
+	                      v-if="overviewEntryThumb(entry)"
+	                      class="overview-item-thumb"
+	                      :src="overviewEntryThumb(entry)"
+	                      mode="aspectFill"
+	                      @tap.stop="previewOverviewEntryImages(entry, 0)"
+	                    />
+	                    <view v-else class="overview-item-thumb overview-item-thumb-empty">
+	                      <text class="overview-item-thumb-empty-text">暂无娃头</text>
+	                    </view>
+	                  </view>
+
+	                  <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
+	                  <text class="overview-item-status text-truncate">{{ overviewEntryStatus(entry) }}</text>
+	                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
+	                </view>
+	              </view>
+
+              <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
+              <view v-else-if="overviewTailTipText" class="overview-tail-tip">{{ overviewTailTipText }}</view>
+	            </view>
+	          </scroll-view>
 	        </view>
 
 	        <view class="tab-header-wrapper">
@@ -174,8 +258,20 @@
 	              </view>
 	            </view>
 
-	            <view class="timeline-area">
+            <view class="timeline-area">
               <view class="timeline-header">进度详情</view>
+              <view v-if="currentItemProgressGuide" class="timeline-guide-card">
+                <view class="timeline-guide-row">
+                  <text class="timeline-guide-label">当前进度</text>
+                  <text class="timeline-guide-value">{{ currentItemProgressGuide.current_stage_text || '处理中' }}</text>
+                </view>
+                <view class="timeline-guide-row next">
+                  <text class="timeline-guide-label">下一步</text>
+                  <text class="timeline-guide-value">
+                    {{ currentItemProgressGuide.next_action_text || currentItemProgressGuide.next_status_text || '等待下一步' }}
+                  </text>
+                </view>
+              </view>
               <view v-if="timelineEvents.length" class="timeline-list">
                 <view
                   v-for="(event, idx) in timelineEvents"
@@ -353,7 +449,7 @@
     >
       <view class="overview-modal" @tap.stop @touchmove.stop>
         <view class="overview-modal-header">
-          <text class="overview-modal-title">前方订单动态</text>
+          <text class="overview-modal-title">前方订单状态</text>
           <text class="overview-modal-refresh" @tap="reloadProgressOverview">刷新</text>
         </view>
 
@@ -367,29 +463,64 @@
           </view>
           <view v-else class="overview-sections">
             <view v-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
-            <view
-              v-for="(entry, idx) in overviewCurrentPlanItems"
-              :key="`plan-${overviewEntryKey(entry)}`"
-              class="overview-item-row"
-              :class="{ current: isOverviewCurrentSubmission(entry) }"
+            <scroll-view
+              v-else
+              class="overview-timeline-scroll"
+              scroll-x
+              :show-scrollbar="false"
+              :lower-threshold="80"
+              @scrolltolower="handleOverviewReachEnd"
+              @touchmove.stop
             >
-              <view class="overview-item-main">
-                <text class="overview-item-order-id">顺序ID {{ overviewEntrySequence(entry, idx) }}</text>
-                <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
-                <text class="overview-item-status">{{ overviewEntryStatus(entry) }}</text>
-                <text v-if="overviewEntryProgress(entry)" class="overview-item-progress text-truncate">
-                  {{ overviewEntryProgress(entry) }}
-                </text>
+              <view class="overview-timeline-track">
+                <view
+                  v-for="(entry, idx) in overviewCurrentPlanItems"
+                  :key="`plan-${overviewEntryKey(entry)}`"
+                  class="overview-timeline-node"
+                >
+                  <view class="overview-node-top">
+                    <view
+                      class="overview-node-dot"
+                      :class="{ current: isOverviewCurrentSubmission(entry) }"
+                    ></view>
+                    <view
+                      v-if="idx < overviewCurrentPlanItems.length - 1"
+                      class="overview-node-line"
+                      :class="{ current: isOverviewCurrentSubmission(entry) }"
+                    ></view>
+                  </view>
+
+	                  <view
+	                    class="overview-timeline-card"
+	                    :class="{ current: isOverviewCurrentSubmission(entry) }"
+	                  >
+	                    <view class="overview-timeline-card-head">
+	                      <text class="overview-item-order-id">{{ overviewEntryOrderTag(entry, idx) }}</text>
+	                    </view>
+
+	                    <view class="overview-item-thumb-wrap">
+	                      <image
+	                        v-if="overviewEntryThumb(entry)"
+                        class="overview-item-thumb"
+                        :src="overviewEntryThumb(entry)"
+                        mode="aspectFill"
+                        @tap.stop="previewOverviewEntryImages(entry, 0)"
+                      />
+                      <view v-else class="overview-item-thumb overview-item-thumb-empty">
+                        <text class="overview-item-thumb-empty-text">暂无娃头</text>
+                      </view>
+                    </view>
+
+	                    <text class="overview-item-title text-truncate">{{ overviewEntryTitle(entry) }}</text>
+	                    <text class="overview-item-status text-truncate">{{ overviewEntryStatus(entry) }}</text>
+	                    <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
+	                  </view>
+	                </view>
+
+                <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
+                <view v-else-if="overviewTailTipText" class="overview-tail-tip">{{ overviewTailTipText }}</view>
               </view>
-              <view class="overview-item-side">
-                <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
-                <view v-if="isOverviewCurrentSubmission(entry)" class="overview-current-marker">
-                  <text class="overview-current-arrow">←</text>
-                  <text class="overview-current-label">您的位置</text>
-                </view>
-              </view>
-            </view>
-            <view class="overview-tail-tip">您后方的不展示</view>
+            </scroll-view>
           </view>
         </scroll-view>
       </view>
@@ -627,7 +758,7 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, watch } from 'vue'
-import { onLoad, onShow, onHide, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onShow, onHide, onUnload, onPageScroll } from '@dcloudio/uni-app'
 import { websiteUrl, global, asyncGetUserInfo } from '@/common/config.js'
 import { chooseImageList, getQiniuToken, uploadImageToQiniu } from '@/common/image.js'
 import CommonModal from '@/components/common-modal/common-modal.vue'
@@ -667,6 +798,8 @@ const submission = reactive({
   progress_logs: [],
   items: [],
   item_final_states: [],
+  status_flow_map: [],
+  item_progress_guides: [],
   can_fill_return_address: false,
   return_address_requested: false,
   return_address_ready: false,
@@ -718,6 +851,12 @@ const progressOverviewLoaded = ref(false)
 const progressOverviewError = ref('')
 const overviewCurrentPlanItems = ref([])
 const lastRouteKey = ref('')
+const scrollTop = ref(0)
+const progressOverviewHasMore = ref(false)
+const progressOverviewCursor = ref(0)
+const progressOverviewPageSize = ref(20)
+const progressOverviewAppending = ref(false)
+const progressOverviewAnchorID = ref(0)
 
 let h5ScrollLockApplied = false
 let h5BodyOverflowBackup = ''
@@ -776,6 +915,35 @@ function getItemFinalState(item) {
   if (!itemID) return {}
   return itemFinalStateMap.value[itemID] || {}
 }
+
+const statusFlowMap = computed(() => {
+  return Array.isArray(submission.status_flow_map) ? submission.status_flow_map : []
+})
+
+const statusFlowNode = computed(() => {
+  const status = Number(submission.status || 0)
+  return statusFlowMap.value.find((row) => Number(row?.status || 0) === status) || null
+})
+
+const currentItemProgressGuide = computed(() => {
+  const itemID = Number(currentItem.value?.id || currentItem.value?.ID || 0)
+  const guideList = Array.isArray(submission.item_progress_guides)
+    ? submission.item_progress_guides
+    : []
+  if (itemID > 0) {
+    const hit = guideList.find((row) => Number(row?.item_id || 0) === itemID)
+    if (hit) return hit
+  }
+  if (guideList.length === 1) return guideList[0]
+  if (statusFlowNode.value) {
+    return {
+      current_stage_text: statusFlowNode.value.status_text,
+      next_action_text: statusFlowNode.value.next_action_text,
+      next_status_text: statusFlowNode.value.next_status_text
+    }
+  }
+  return null
+})
 
 function parseProgressLogExtra(row) {
   const raw = row?.extra_json ?? row?.extra
@@ -1318,6 +1486,8 @@ function resetSubmissionRuntimeState() {
     progress_logs: [],
     items: [],
     item_final_states: [],
+    status_flow_map: [],
+    item_progress_guides: [],
     can_fill_return_address: false,
     return_address_requested: false,
     return_address_ready: false,
@@ -1456,14 +1626,20 @@ function formatTimelineTime(ts) {
 
 function overviewEntryKey(entry) {
   const itemID = Number(entry?.item?.id || entry?.item?.ID || 0)
-  const subID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  const subID = overviewEntrySubmissionID(entry)
   return `${subID}-${itemID}`
+}
+
+function overviewEntrySubmissionID(entry) {
+  const subID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  if (subID > 0) return subID
+  return Number(entry?.item?.submission_id || entry?.item?.SubmissionID || 0)
 }
 
 function overviewEntryTitle(entry) {
   const subject = String(entry?.item?.work_subject || '').trim()
   if (subject) return subject
-  const subID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  const subID = overviewEntrySubmissionID(entry)
   return subID ? `投递 #${subID}` : '未命名投递'
 }
 
@@ -1474,14 +1650,6 @@ function overviewEntryStatus(entry) {
   return itemText || subText || '状态未知'
 }
 
-function overviewEntryProgress(entry) {
-  const latest = entry?.latest_progress
-  if (!latest) return ''
-  const stepName = String(latest?.step_name || '').trim()
-  const content = String(latest?.content || '').trim()
-  return content || stepName || ''
-}
-
 function overviewEntryTime(entry) {
   const latestTs = Number(entry?.latest_progress?.created_at || 0)
   if (latestTs > 0) return formatTimelineTime(latestTs)
@@ -1490,8 +1658,23 @@ function overviewEntryTime(entry) {
   return '--'
 }
 
+function overviewEntryThumb(entry) {
+  return getFirstRefImage(entry?.item?.ref_images || '')
+}
+
+function previewOverviewEntryImages(entry, current = 0) {
+  const raw = String(entry?.item?.ref_images || '').trim()
+  if (!raw) return
+  const urls = raw.split(',').map(item => String(item || '').trim()).filter(Boolean)
+  if (!urls.length) return
+  uni.previewImage({
+    urls,
+    current: urls[Math.max(0, Math.min(current, urls.length - 1))]
+  })
+}
+
 function isOverviewCurrentSubmission(entry) {
-  const entrySubmissionID = Number(entry?.submission?.id || entry?.submission?.ID || 0)
+  const entrySubmissionID = overviewEntrySubmissionID(entry)
   const currentSubmissionID = Number(submission.submission_id || submissionId.value || 0)
   return entrySubmissionID > 0 && currentSubmissionID > 0 && entrySubmissionID === currentSubmissionID
 }
@@ -1506,55 +1689,102 @@ function overviewEntrySequence(entry, idx) {
   return `No.${String(orderNo).padStart(3, '0')}`
 }
 
+function overviewEntryOrderTag(entry, idx) {
+  const base = overviewEntrySequence(entry, idx)
+  if (isOverviewCurrentSubmission(entry)) {
+    return `${base} · 当前订单`
+  }
+  return base
+}
+
+const overviewTailTipText = computed(() => {
+  if (!overviewCurrentPlanItems.value.length) return ''
+  if (progressOverviewHasMore.value) return '向右滑动加载前方订单'
+  return '已到最前的订单'
+})
+
 function pickOverviewEntryBySubmission(rows, currentSubmissionID, preferredItemID) {
   const groupMap = new Map()
+  const order = []
   rows.forEach((row) => {
-    const submissionID = Number(row?.submission?.id || row?.submission?.ID || 0)
+    const submissionID = overviewEntrySubmissionID(row)
     if (submissionID <= 0) return
     if (!groupMap.has(submissionID)) {
       groupMap.set(submissionID, [])
+      order.push(submissionID)
     }
     groupMap.get(submissionID).push(row)
   })
 
   const normalized = []
-  Array.from(groupMap.keys())
-    .sort((a, b) => a - b)
-    .forEach((submissionID) => {
-      const list = groupMap.get(submissionID) || []
-      if (!list.length) return
+  order.forEach((submissionID) => {
+    const list = groupMap.get(submissionID) || []
+    if (!list.length) return
 
-      let picked = list[0]
-      if (submissionID === currentSubmissionID && preferredItemID > 0) {
-        const hit = list.find((row) => Number(row?.item?.id || row?.item?.ID || 0) === preferredItemID)
-        if (hit) picked = hit
-      }
+    let picked = list[0]
+    if (submissionID === currentSubmissionID && preferredItemID > 0) {
+      const hit = list.find((row) => Number(row?.item?.id || row?.item?.ID || 0) === preferredItemID)
+      if (hit) picked = hit
+    }
 
-      normalized.push({
-        ...picked,
-        _submission_item_count: list.length,
-      })
+    normalized.push({
+      ...picked,
+      _submission_item_count: list.length,
     })
+  })
 
   return normalized
+}
+
+function handleOverviewReachEnd() {
+  if (!progressOverviewHasMore.value) return
+  fetchProgressOverview({ append: true })
 }
 
 function resetProgressOverviewState() {
   progressOverviewError.value = ''
   progressOverviewLoaded.value = false
   overviewCurrentPlanItems.value = []
+  progressOverviewHasMore.value = false
+  progressOverviewCursor.value = 0
+  progressOverviewPageSize.value = 20
+  progressOverviewAppending.value = false
+  progressOverviewAnchorID.value = 0
 }
 
-async function fetchProgressOverview(force = false) {
-  if (progressOverviewLoading.value) return
-  if (progressOverviewLoaded.value && !force) return
+function mergeOverviewEntries(existing, incoming) {
+  if (!existing.length) return incoming
+  if (!incoming.length) return existing
+  const out = existing.slice()
+  const seen = new Set(existing.map((row) => overviewEntrySubmissionID(row)).filter((id) => id > 0))
+  incoming.forEach((row) => {
+    const subID = overviewEntrySubmissionID(row)
+    if (subID > 0 && seen.has(subID)) return
+    if (subID > 0) seen.add(subID)
+    out.push(row)
+  })
+  return out
+}
+
+async function fetchProgressOverview(options = {}) {
+  const force = !!options.force
+  const append = !!options.append
+
+  if (progressOverviewLoading.value || progressOverviewAppending.value) return
+  if (append && !progressOverviewHasMore.value) return
+  if (!append && progressOverviewLoaded.value && !force) return
   if (!isLogin.value) {
     progressOverviewError.value = '请先登录'
     return
   }
 
-  progressOverviewLoading.value = true
-  progressOverviewError.value = ''
+  if (append) {
+    progressOverviewAppending.value = true
+  } else {
+    progressOverviewLoading.value = true
+    progressOverviewError.value = ''
+  }
+
   try {
     const token = uni.getStorageSync('token') || ''
     const currentSubmissionID = Number(submission.submission_id || submissionId.value || 0)
@@ -1567,6 +1797,16 @@ async function fetchProgressOverview(force = false) {
     }
     const itemBrandID = Number(submission.items?.[0]?.brand_id || 0)
     const brandID = Number(plan.brand?.id || itemBrandID || 0)
+
+    if (!append && (force || progressOverviewAnchorID.value !== currentSubmissionID)) {
+      overviewCurrentPlanItems.value = []
+      progressOverviewHasMore.value = false
+      progressOverviewCursor.value = 0
+    }
+
+    const cursorSubmissionID = append ? Number(progressOverviewCursor.value || 0) : 0
+    const size = Number(progressOverviewPageSize.value || 20)
+
     const res = await uni.request({
       url: `${websiteUrl.value}/with-state/artist-order/item-progress-overview`,
       method: 'GET',
@@ -1575,7 +1815,8 @@ async function fetchProgressOverview(force = false) {
         submission_id: currentSubmissionID,
         plan_id: planID,
         brand_id: brandID,
-        size: 20
+        size,
+        cursor_submission_id: cursorSubmissionID
       }
     })
     const body = res?.data || {}
@@ -1587,30 +1828,36 @@ async function fetchProgressOverview(force = false) {
     const currentItemID = Number(currentItem.value?.id || focusItemID.value || 0)
     const currentQueueNo = Number(submission.ahead_count || 0) + 1
     const normalizedRows = pickOverviewEntryBySubmission(rows, currentSubmissionID, currentItemID)
+    const mergedRows = append
+      ? mergeOverviewEntries(overviewCurrentPlanItems.value, normalizedRows)
+      : normalizedRows
 
-    const startQueueNo = currentQueueNo > 0
-      ? Math.max(1, currentQueueNo - Math.max(0, normalizedRows.length - 1))
-      : 1
-
-    overviewCurrentPlanItems.value = normalizedRows.map((row, idx) => ({
+    overviewCurrentPlanItems.value = mergedRows.map((row, idx) => ({
       ...row,
-      _display_queue_no: startQueueNo + idx,
+      _display_queue_no: Math.max(1, currentQueueNo - idx),
     }))
+    progressOverviewHasMore.value = !!d.has_more_front_items
+    progressOverviewCursor.value = Number(d.next_front_cursor_submission_id || 0)
+    progressOverviewPageSize.value = Number(d.front_page_size || size)
+    progressOverviewAnchorID.value = currentSubmissionID
     progressOverviewLoaded.value = true
   } catch (e) {
-    progressOverviewError.value = e?.message || '加载订单动态失败'
+    if (!append) {
+      progressOverviewError.value = e?.message || '加载订单动态失败'
+    }
   } finally {
     progressOverviewLoading.value = false
+    progressOverviewAppending.value = false
   }
 }
 
 async function openProgressOverview() {
   progressOverviewVisible.value = true
-  await fetchProgressOverview(false)
+  await fetchProgressOverview()
 }
 
 function reloadProgressOverview() {
-  fetchProgressOverview(true)
+  fetchProgressOverview({ force: true })
 }
 
 function timelineTitle(row) {
@@ -2032,6 +2279,8 @@ async function fetchDetail(force = false) {
         progress_logs: Array.isArray(d.progress_logs) ? d.progress_logs : [],
         items: d.items || [],
         item_final_states: Array.isArray(d.item_final_states) ? d.item_final_states : [],
+        status_flow_map: Array.isArray(d.status_flow_map) ? d.status_flow_map : [],
+        item_progress_guides: Array.isArray(d.item_progress_guides) ? d.item_progress_guides : [],
         can_fill_return_address: !!d.can_fill_return_address,
         return_address_requested: !!d.return_address_requested,
         return_address_ready: !!d.return_address_ready,
@@ -2046,6 +2295,10 @@ async function fetchDetail(force = false) {
       })
       draftItems.value = d.draft_items || []
       applyFocusItemByID(focusItemID.value)
+      if (force) {
+        progressOverviewLoaded.value = false
+      }
+      fetchProgressOverview({ force })
       
       if (d.plan_id && (!plan.id || plan.id !== d.plan_id)) {
         fetchPlanInfo(d.plan_id)
@@ -2715,6 +2968,10 @@ onLoad((opt) => {
   lastRouteKey.value = String(snap?.key || buildStableQueryString(merged) || '')
   applyRouteOptionsAndRefresh(merged, 'onLoad')
 })
+
+onPageScroll((e) => {
+  scrollTop.value = Number(e?.scrollTop || 0)
+})
 onShow(() => {
   bindH5HashChangeListener()
   const snap = getCurrentPageSnapshot()
@@ -2767,6 +3024,24 @@ onUnload(() => {
   }
 }
 
+@keyframes overviewLineFlow {
+  0% {
+    background-position: 0 50%, 0 50%;
+  }
+  100% {
+    background-position: 0 50%, -240rpx 50%;
+  }
+}
+
+@keyframes overviewDotFlow {
+  0% {
+    background-position: 160% 50%;
+  }
+  100% {
+    background-position: -60% 50%;
+  }
+}
+
 .anim-fade-up {
   animation: fadeSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
@@ -2808,9 +3083,18 @@ $spacing-page: 30rpx;
   margin-left: 10rpx;
 }
 
+.nav-back-pill--transparent {
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+}
+
 .nav-center {
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.nav-center--transparent {
   justify-content: center;
 }
 
@@ -2822,6 +3106,11 @@ $spacing-page: 30rpx;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.nav-title-ellipsis--ghost {
+  color: #ffffff;
+  text-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
 }
 
 /* ====== Header Banner (含模糊效果) ====== */
@@ -3508,6 +3797,35 @@ $spacing-page: 30rpx;
   margin-bottom: 30rpx; /* 增大留白 */
   color: #333;
 }
+.timeline-guide-card {
+  margin-bottom: 26rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, rgba(73, 202, 238, 0.16) 0%, rgba(73, 202, 238, 0.04) 100%);
+  box-shadow: 0 16rpx 26rpx rgba(73, 202, 238, 0.12);
+}
+.timeline-guide-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.timeline-guide-row + .timeline-guide-row {
+  margin-top: 10rpx;
+}
+.timeline-guide-label {
+  font-size: 22rpx;
+  color: #7b8a98;
+}
+.timeline-guide-value {
+  font-size: 24rpx;
+  color: #223043;
+  font-weight: 600;
+  text-align: right;
+}
+.timeline-guide-row.next .timeline-guide-value {
+  color: #2aa6c8;
+}
 .timeline-list,
 .timeline-empty-box {
   position: relative;
@@ -3739,6 +4057,50 @@ $spacing-page: 30rpx;
   z-index: 100;
 }
 
+.overview-inline-panel {
+  margin-top: 24rpx;
+  padding: 24rpx 22rpx 20rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(246,249,252,0.98) 100%);
+  box-shadow: 0 16rpx 30rpx rgba(54, 71, 91, 0.08);
+}
+
+.overview-inline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  margin-bottom: 18rpx;
+}
+
+.overview-inline-title {
+  font-size: 28rpx;
+  color: #27313a;
+}
+
+.overview-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  flex-shrink: 0;
+}
+
+.overview-inline-action {
+  font-size: 22rpx;
+  color: #8e99a3;
+}
+
+.overview-inline-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.overview-inline-loading,
+.overview-inline-error {
+  padding: 16rpx 0 6rpx;
+}
+
 .overview-modal {
   max-height: 80vh;
   display: flex;
@@ -3806,7 +4168,7 @@ $spacing-page: 30rpx;
 .overview-sections {
   display: flex;
   flex-direction: column;
-  gap: 10rpx;
+  gap: 12rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 
@@ -3816,27 +4178,154 @@ $spacing-page: 30rpx;
   padding: 16rpx 0;
 }
 
-.overview-item-row {
-  display: flex;
+.overview-timeline-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.overview-timeline-track {
+  display: inline-flex;
   align-items: flex-start;
+  gap: 0;
+  padding: 8rpx 8rpx 12rpx 2rpx;
+  box-sizing: border-box;
+}
+
+.overview-timeline-node {
+  width: 248rpx;
+  flex: 0 0 248rpx;
+  min-width: 248rpx;
+  position: relative;
+}
+
+.overview-node-top {
+  position: relative;
+  height: 34rpx;
+  margin-bottom: 16rpx;
+  overflow: visible;
+}
+
+.overview-node-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    rgba(138, 155, 171, 0.88) 0%,
+    rgba(231, 238, 244, 0.98) 52%,
+    rgba(138, 155, 171, 0.88) 100%
+  );
+  background-size: 240% 100%;
+  animation: overviewDotFlow 1.05s linear infinite;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.overview-node-dot.current {
+  width: 22rpx;
+  height: 22rpx;
+  background: linear-gradient(
+    90deg,
+    rgba(59, 177, 206, 0.9) 0%,
+    rgba(204, 244, 252, 0.98) 52%,
+    rgba(59, 177, 206, 0.9) 100%
+  );
+  background-size: 240% 100%;
+  animation: overviewDotFlow 0.95s linear infinite;
+  box-shadow: 0 0 0 8rpx rgba(73, 202, 238, 0.16);
+}
+
+.overview-node-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background:
+    linear-gradient(90deg, rgba(168, 188, 203, 0.34) 0%, rgba(168, 188, 203, 0.34) 100%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 0rpx,
+      rgba(255, 255, 255, 0.08) 16rpx,
+      rgba(236, 244, 250, 0.78) 16rpx,
+      rgba(236, 244, 250, 0.78) 28rpx,
+      rgba(255, 255, 255, 0.08) 28rpx,
+      rgba(255, 255, 255, 0.08) 44rpx
+    );
+  background-size: 100% 100%, 240rpx 100%;
+  animation: overviewLineFlow 1.1s linear infinite;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.overview-node-line.current {
+  background:
+    linear-gradient(90deg, rgba(168, 188, 203, 0.34) 0%, rgba(168, 188, 203, 0.34) 100%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 0rpx,
+      rgba(255, 255, 255, 0.08) 16rpx,
+      rgba(236, 244, 250, 0.78) 16rpx,
+      rgba(236, 244, 250, 0.78) 28rpx,
+      rgba(255, 255, 255, 0.08) 28rpx,
+      rgba(255, 255, 255, 0.08) 44rpx
+    );
+  background-size: 100% 100%, 240rpx 100%;
+}
+
+.overview-timeline-card {
+  min-height: 344rpx;
+  margin-right: 18rpx;
+  padding: 18rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fb 100%);
+  box-shadow: 0 16rpx 28rpx rgba(36, 54, 74, 0.08);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.overview-timeline-card.current {
+  background: linear-gradient(180deg, #f5fcff 0%, #eef8fd 100%);
+  box-shadow: 0 18rpx 30rpx rgba(73, 202, 238, 0.16);
+}
+
+.overview-timeline-card-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 14rpx;
-  padding: 18rpx 14rpx;
-  border-radius: 16rpx;
-  border-top: 1rpx solid #eef2f5;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 14rpx;
 }
 
-.overview-item-row:first-of-type {
-  border-top: none;
+.overview-item-thumb-wrap {
+  width: 100%;
+  margin-bottom: 14rpx;
 }
 
-.overview-item-row.current {
-  background: #f4f8ff;
+.overview-item-thumb {
+  width: 100%;
+  height: 136rpx;
+  border-radius: 20rpx;
+  display: block;
+  background: #eef2f5;
 }
 
-.overview-item-main {
-  flex: 1;
-  min-width: 0;
+.overview-item-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f4f6f8 0%, #eceff3 100%);
+}
+
+.overview-item-thumb-empty-text {
+  font-size: 22rpx;
+  color: #97a0a8;
 }
 
 .overview-item-title {
@@ -3848,40 +4337,47 @@ $spacing-page: 30rpx;
 
 .overview-item-order-id {
   display: inline-block;
-  margin-bottom: 6rpx;
-  padding: 2rpx 12rpx;
+  margin-bottom: 0;
+  padding: 6rpx 14rpx;
   border-radius: 999rpx;
   background: #eef3f5;
   font-size: 20rpx;
   color: #66757f;
+  white-space: nowrap;
 }
 
 .overview-item-status {
   display: block;
-  margin-top: 6rpx;
+  width: 100%;
+  min-width: 0;
+  margin-top: 8rpx;
   font-size: 22rpx;
   color: #6f7c87;
   line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .overview-item-progress {
   display: block;
-  margin-top: 4rpx;
+  margin-top: 6rpx;
   font-size: 21rpx;
   color: #919ca6;
   line-height: 1.45;
 }
 
-.overview-item-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 6rpx;
-  flex-shrink: 0;
+.overview-item-progress-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .overview-item-time {
+  display: block;
+  margin-top: auto;
+  padding-top: 18rpx;
   font-size: 20rpx;
   color: #a3adb4;
 }
@@ -3890,43 +4386,39 @@ $spacing-page: 30rpx;
   display: inline-flex;
   align-items: center;
   gap: 6rpx;
-  padding: 2rpx 10rpx;
+  padding: 6rpx 12rpx;
   border-radius: 999rpx;
-  background: #e7efff;
+  background: rgba(73, 202, 238, 0.14);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .overview-current-label {
   font-size: 20rpx;
-  color: #516581;
+  color: #1f7e97;
   font-weight: 600;
 }
 
-.overview-current-arrow {
-  font-size: 22rpx;
-  color: #516581;
-  animation: overviewArrowMove 1.1s ease-in-out infinite;
-}
-
 .overview-tail-tip {
-  margin-top: 16rpx;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 344rpx;
+  padding: 0 22rpx;
   font-size: 21rpx;
   color: #9aa4ab;
+  white-space: nowrap;
 }
 
-@keyframes overviewArrowMove {
-  0% {
-    transform: translateX(0);
-    opacity: 0.65;
-  }
-  50% {
-    transform: translateX(-8rpx);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 0.65;
-  }
+.overview-loading-tail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 344rpx;
+  padding: 0 22rpx;
+  font-size: 22rpx;
+  color: #7fa6b6;
+  white-space: nowrap;
 }
 
 .pay-sheet {

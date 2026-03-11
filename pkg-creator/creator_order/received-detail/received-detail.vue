@@ -512,36 +512,43 @@
         </view>
 
         <view class="price-body" v-if="editingItem">
-          <view class="price-row">
+          <view class="price-row price-row-static">
             <text class="price-label">作品</text>
-            <text class="price-value">
-              {{ (editingItem.work_subject || '').trim() || '未命名作品' }}
-            </text>
+            <view class="price-field">
+              <text class="price-value">
+                {{ (editingItem.work_subject || '').trim() || '未命名作品' }}
+              </text>
+            </view>
           </view>
 
-          <view class="price-row">
+          <view class="price-row price-row-static">
             <text class="price-label">当前金额</text>
-            <text class="price-value">
-              ¥ {{ formatPrice(calcItemTotal(editingItem)) }}
-            </text>
+            <view class="price-field">
+              <text class="price-value">
+                ¥ {{ formatPrice(calcItemTotal(editingItem)) }}
+              </text>
+            </view>
           </view>
 
           <view class="price-row">
             <text class="price-label">新总金额</text>
-            <input
-              type="digit"
-              class="price-input"
-              v-model="priceInput"
-              placeholder="请输入新的总金额（整数或小数）"
-            />
+            <view class="price-field">
+              <input
+                type="digit"
+                class="price-input"
+                v-model="priceInput"
+                placeholder="请输入新的总金额"
+              />
+            </view>
           </view>
 
           <view class="price-row-column">
             <text class="price-label">调价说明（选填）</text>
+            <text class="price-hint">这段说明会发给对方，简单说明原因即可</text>
             <textarea
               class="price-textarea"
               v-model="reasonInput"
-              placeholder="该说明会发送给对方，建议简单说明调价原因"
+              placeholder="例如：补色、更换材料、追加工序"
               auto-height
               maxlength="200"
             />
@@ -1277,7 +1284,7 @@ const footerPlaceholderHeight = computed(() => {
   return toPx(getFooterPlaceholderHeight())
 })
 const footerPadding = computed(() => {
-  return toPx(getSafeBottom())
+  return toPx(getSafeBottom() + 40)
 })
 const bottomBarPadding = computed(() => {
   return toPx(getSafeBottom() + 14)
@@ -4052,7 +4059,7 @@ onShow(() => {
   background-color: #ffffff;
   border-top-left-radius: 28rpx;
   border-top-right-radius: 28rpx;
-  padding: 18rpx 24rpx 24rpx;
+  padding: 18rpx 28rpx 28rpx;
   box-shadow: 0 -8rpx 28rpx rgba(20, 33, 52, 0.12);
 }
 .price-header {
@@ -4075,65 +4082,81 @@ onShow(() => {
   color: #8d97aa;
 }
 .price-body {
-  padding-top: 14rpx;
+  padding-top: 18rpx;
 }
 .price-row {
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  border-radius: 14rpx;
-  background: #f6f8fc;
+  margin-top: 8rpx;
+  min-height: 88rpx;
   display: flex;
   align-items: center;
+  column-gap: 18rpx;
+}
+.price-row + .price-row {
+  border-top: 1rpx solid #edf2f7;
+}
+.price-row-static {
+  padding: 0;
 }
 .price-row-column {
-  margin-top: 16rpx;
+  margin-top: 18rpx;
   display: flex;
   flex-direction: column;
+  padding-top: 18rpx;
+  border-top: 1rpx solid #edf2f7;
 }
 .price-label {
   font-size: 26rpx;
   color: #5f6778;
-  min-width: 150rpx;
+  width: 148rpx;
+  flex-shrink: 0;
+}
+.price-field {
+  flex: 1;
+  min-width: 0;
 }
 .price-value {
-  flex: 1;
   font-size: 26rpx;
   color: #253044;
-  text-align: right;
-  min-width: 0;
+  text-align: left;
+  display: block;
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .price-input {
-  flex: 1;
   height: 72rpx;
   line-height: 72rpx;
-  padding: 0 16rpx;
-  border-radius: 16rpx;
-  background-color: #ffffff;
-  border: 1rpx solid #e4eaf4;
+  padding: 0;
+  background-color: transparent;
   font-size: 26rpx;
+  color: #253044;
+}
+.price-hint {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #98a4b7;
+  line-height: 1.6;
 }
 .price-textarea {
-  margin-top: 8rpx;
-  padding: 12rpx 16rpx;
-  border-radius: 16rpx;
-  background-color: #ffffff;
-  border: 1rpx solid #e4eaf4;
+  margin-top: 18rpx;
+  padding: 0;
+  background-color: transparent;
   font-size: 24rpx;
-  min-height: 120rpx;
+  color: #253044;
+  min-height: 148rpx;
+  line-height: 1.7;
 }
 .price-footer {
-  margin-top: 20rpx;
+  margin-top: 28rpx;
 }
 .price-btn {
   width: 100%;
   height: 80rpx;
   line-height: 80rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #8fe8ff, #72d8ff);
-  color: #143043;
+  background: linear-gradient(135deg, #7fe1ff, #49caee);
+  color: #ffffff;
   font-size: 29rpx;
   font-weight: 700;
   border: none;

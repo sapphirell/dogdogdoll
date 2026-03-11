@@ -201,10 +201,12 @@
       >
         <button
           v-if="showArtistSubmitStep"
-          class="bottom-action-btn secondary"
+          class="bottom-action-btn accent"
+          :class="{ disabled: stepActioning }"
+          :disabled="stepActioning"
           @tap="goStepSubmit"
         >
-          提交节点状态
+          {{ stepActioning ? '处理中...' : '提交节点状态' }}
         </button>
         <button
           v-if="showArtistMarkFinished"
@@ -1993,6 +1995,11 @@ onShow(() => {
 
 .bottom-action-btn.primary.danger {
   background: linear-gradient(135deg, #f2a9a9 0%, #e18f8f 100%);
+}
+
+.bottom-action-btn.accent {
+  background: linear-gradient(135deg, #7fd8f3 0%, #49caee 100%);
+  color: #fff;
 }
 
 .bottom-action-btn.secondary {
