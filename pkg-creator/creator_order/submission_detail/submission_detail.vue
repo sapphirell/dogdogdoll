@@ -867,6 +867,10 @@ let h5BodyWidthBackup = ''
 let h5ScrollTopBackup = 0
 
 const PAY_DEBUG_TAG = '[submission-pay]'
+// 支付宝 APP SDK 返回的成功码，表示客户端已经拿到明确成功结果。
+const ALIPAY_APP_PAY_SUCCESS_CODES = ['9000']
+// 这些状态通常表示支付结果还在确认中，最终仍以后端回调和查单为准。
+const ALIPAY_APP_PAY_WAITING_CODES = ['8000', '6004']
 function payDebug(step, payload = {}) {
   try {
     console.log(PAY_DEBUG_TAG, step, payload)
@@ -2750,6 +2754,146 @@ async function submitPayRequest(paymentMethod, paymentCodeChannel = '') {
   }
 }
 
+// 先向后端创建平台支付单，由后端生成签名后的支付宝 order string。
+async function createPlatformPaymentOrder(provider = 'alipay', channel = 'app') {
+  const res = await uni.request({
+    url: `${websiteUrl.value}/with-state/artist-order/platform-payment/create`,
+    method: 'POST',
+    header: { Authorization: uni.getStorageSync('token') },
+    data: {
+      submission_id: Number(submission.submission_id || 0),
+      provider: String(provider || '').trim().toLowerCase(),
+      channel: String(channel || 'app').trim().toLowerCase()
+    }
+  })
+  const body = res.data || {}
+  payDebug('createPlatformPaymentOrder:response', body)
+  // 只要后端没有成功创建支付单，就不要继续拉起支付宝 SDK。
+  if (String(body.status).toLowerCase() !== 'success') {
+    throw new Error(body.msg || '创建平台支付订单失败')
+  }
+  const payload = body.data || {}
+  // 优先使用新字段 order_string，同时兼容旧字段 pay_url。
+  const orderString = String(payload.order_string || payload.pay_url || '').trim()
+  if (!orderString) {
+    throw new Error('支付参数缺失：order_string')
+  }
+  return {
+    bizOrderNo: String(payload.biz_order_no || '').trim(),
+    orderString,
+    raw: payload
+  }
+}
+
+// 支付宝客户端结果只做“本地态”判断，最终业务成功仍以后端状态为准。
+function parseAlipayResultStatus(err, result) {
+  const status = String(result?.resultStatus || err?.resultStatus || '').trim()
+  if (ALIPAY_APP_PAY_SUCCESS_CODES.includes(status)) return 'success'
+  if (ALIPAY_APP_PAY_WAITING_CODES.includes(status)) return 'pending'
+  return 'failed'
+}
+
+// 真正拉起支付宝收银台，只允许在 uni-app 原生 App 环境执行。
+async function invokeAlipayAppPay(orderString) {
+  // #ifndef APP-PLUS
+  throw new Error('支付宝 APP 支付仅支持 App 端（APP-PLUS）')
+  // #endif
+
+  // #ifdef APP-PLUS
+  const value = await new Promise((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'alipay',
+      orderInfo: String(orderString || ''),
+      success: (res) => resolve(res || {}),
+      fail: (err) => reject(err || new Error('支付宝拉起失败'))
+    })
+  })
+  return value
+  // #endif
+}
+
+// 客户端支付后主动回查本地支付单，避免只依赖 SDK 回调导致状态漂移。
+async function queryPlatformPaymentStatus(bizOrderNo) {
+  const res = await uni.request({
+    url: `${websiteUrl.value}/with-state/artist-order/platform-payment/status`,
+    method: 'GET',
+    header: { Authorization: uni.getStorageSync('token') },
+    data: { biz_order_no: String(bizOrderNo || '').trim() }
+  })
+  const body = res.data || {}
+  payDebug('queryPlatformPaymentStatus:response', body)
+  if (String(body.status).toLowerCase() !== 'success') {
+    throw new Error(body.msg || '查询支付状态失败')
+  }
+  return body.data || {}
+}
+
+// 支付宝 APP 支付主流程：
+// 1. 创建平台支付单
+// 2. 拉起支付宝 SDK
+// 3. 回查服务端状态并刷新当前页面
+async function runAlipayAppPaymentFlow() {
+  uni.showLoading({ title: '拉起支付宝中' })
+  try {
+    const order = await createPlatformPaymentOrder('alipay', 'app')
+    const payResult = await invokeAlipayAppPay(order.orderString)
+    const localStatus = parseAlipayResultStatus(null, payResult)
+    payDebug('runAlipayAppPaymentFlow:pay_result', {
+      localStatus,
+      resultStatus: payResult?.resultStatus,
+      memo: payResult?.memo,
+      result: payResult?.result
+    })
+
+    if (localStatus === 'failed') {
+      const failMsg = String(payResult?.memo || '支付未完成').trim() || '支付未完成'
+      throw new Error(failMsg)
+    }
+
+    // 不管支付宝端返回 success/pending，都回查服务端状态，避免客户端状态漂移。
+    let statusResp = null
+    for (let i = 0; i < 4; i++) {
+      statusResp = await queryPlatformPaymentStatus(order.bizOrderNo)
+      // 服务端一旦确认成功，就以服务端结果为准结束流程。
+      if (String(statusResp.status || '').toLowerCase() === 'succeeded') {
+        break
+      }
+      // 给异步回调一点落库时间，避免用户刚支付完就立刻查到 pending。
+      if (i < 3) {
+        await new Promise(resolve => setTimeout(resolve, 1500))
+      }
+    }
+
+    const finalStatus = String(statusResp?.status || '').toLowerCase()
+    if (finalStatus === 'succeeded') {
+      // 成功后统一刷新详情页，让投稿状态和支付状态一起更新。
+      uni.showToast({ title: '支付成功', icon: 'success' })
+      if (global.lastRefresh) global.lastRefresh.time = 0
+      fetchDetail()
+      resetPayState()
+      closePayPopup()
+      payCodeModalVisible.value = false
+      return
+    }
+    if (localStatus === 'pending') {
+      // 支付宝端还在处理中时，不直接判失败，提示用户稍后刷新即可。
+      uni.showToast({ title: '支付结果确认中，请稍后刷新', icon: 'none' })
+      fetchDetail()
+      return
+    }
+    throw new Error(`支付未完成，当前状态：${finalStatus || 'unknown'}`)
+  } catch (err) {
+    const msg = String(err?.message || err?.errMsg || '支付失败').trim()
+    payDebug('runAlipayAppPaymentFlow:error', {
+      message: msg,
+      raw: err
+    })
+    uni.showToast({ title: msg || '支付失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
 function onPayGoButtonTap(source = 'tap') {
   const now = Date.now()
   if (now - payGoLastTriggerTs.value < 350) {
@@ -2840,6 +2984,12 @@ async function confirmPayFromPopup() {
   payDebug('confirmPayFromPopup:platform_pay_start', {
     selectedPayMethodId: selectedPayMethodId.value
   })
+  // 支付宝方式走新的“平台代收 + SDK 拉起”链路；
+  // 其它方式继续保留原来的提交流程，避免影响既有逻辑。
+  if (Number(selectedPayMethodId.value || 0) === PlanPaymentMethodAlipay) {
+    await runAlipayAppPaymentFlow()
+    return
+  }
   await submitPayRequest(Number(selectedPayMethodId.value || 0), '')
 }
 
