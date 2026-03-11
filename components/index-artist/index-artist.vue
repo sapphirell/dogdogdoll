@@ -38,7 +38,7 @@
         v-for="(artist, index) in filteredArtists"
         :key="index"
         class="artist-card"
-        @click="navigateToArtistDetail(artist)"
+        @tap="handleCardTap(artist)"
       >
         <view class="card-header">
           <view class="avatar-wrapper">
@@ -70,7 +70,15 @@
 
         <view class="card-body">
           <view class="highlight-works" v-if="artist.highlight_img && artist.highlight_img.length > 0">
-            <scroll-view scroll-x class="works-scroll" :show-scrollbar="false">
+            <scroll-view
+              scroll-x
+              class="works-scroll"
+              :show-scrollbar="false"
+              @touchstart.stop="onWorksTouchStart"
+              @touchmove.stop="onWorksTouchMove"
+              @touchend.stop="onWorksTouchEnd"
+              @touchcancel.stop="onWorksTouchEnd"
+            >
               <view class="scroll-inner">
                 <view
                   v-for="(img, imgIndex) in artist.highlight_img"
@@ -200,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { websiteUrl } from '@/common/config.js'
 
 // --- Props ---
@@ -241,6 +249,11 @@ const accept3D = ref(false)
 // 弹窗控制
 const helpModalVisible = ref(false)
 const filterPopupVisible = ref(false)
+const worksTouchLock = ref(false)
+const worksTouchStartX = ref(0)
+const worksTouchStartY = ref(0)
+const worksTouchDragging = ref(false)
+let worksTouchTimer = null
 
 // --- Computed ---
 const filteredArtists = computed(() => props.list || [])
@@ -288,6 +301,55 @@ const resetFilters = () => {
   emitFilterChange()
 }
 
+const clearWorksTouchTimer = () => {
+  if (!worksTouchTimer) return
+  clearTimeout(worksTouchTimer)
+  worksTouchTimer = null
+}
+
+const getTouchPoint = (event) => {
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0] || null
+  if (!touch) return null
+  return {
+    x: Number(touch.pageX ?? touch.clientX ?? 0),
+    y: Number(touch.pageY ?? touch.clientY ?? 0),
+  }
+}
+
+const onWorksTouchStart = (event) => {
+  const point = getTouchPoint(event)
+  clearWorksTouchTimer()
+  worksTouchLock.value = false
+  worksTouchDragging.value = false
+  worksTouchStartX.value = point?.x || 0
+  worksTouchStartY.value = point?.y || 0
+}
+
+const onWorksTouchMove = (event) => {
+  const point = getTouchPoint(event)
+  if (!point) return
+  const deltaX = Math.abs(point.x - worksTouchStartX.value)
+  const deltaY = Math.abs(point.y - worksTouchStartY.value)
+  if (deltaX > 8 && deltaX > deltaY) {
+    worksTouchDragging.value = true
+    worksTouchLock.value = true
+  }
+}
+
+const onWorksTouchEnd = () => {
+  if (!worksTouchDragging.value) return
+  clearWorksTouchTimer()
+  worksTouchTimer = setTimeout(() => {
+    worksTouchLock.value = false
+    worksTouchDragging.value = false
+  }, 180)
+}
+
+const handleCardTap = (artist) => {
+  if (worksTouchLock.value) return
+  navigateToArtistDetail(artist)
+}
+
 const navigateToArtistDetail = (artist) => {
   const role = roleType.value === 'artist' ? 'artist' : 'hair'
   
@@ -295,6 +357,10 @@ const navigateToArtistDetail = (artist) => {
     url: `/pkg-creator/creator_base/creator_profile/creator_profile?brand_id=${artist.brand_id}&type=${role}`,
   })
 }
+
+onUnmounted(() => {
+  clearWorksTouchTimer()
+})
 </script>
 
 <style lang="less">
@@ -519,10 +585,29 @@ const navigateToArtistDetail = (artist) => {
           width: 100%;
           white-space: nowrap;
           height: 200rpx;
+          touch-action: pan-x;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-x: contain;
+
+          .uni-scroll-view {
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+          }
+
+          .uni-scroll-view-content {
+            display: inline-flex;
+            min-width: 100%;
+            width: max-content;
+          }
           
           .scroll-inner {
             display: flex;
+            flex-wrap: nowrap;
             padding: 0 30rpx; 
+            min-width: 100%;
+            width: max-content;
           }
 
           .work-item {
@@ -534,6 +619,7 @@ const navigateToArtistDetail = (artist) => {
             overflow: hidden;
             background: #f9f9f9;
             flex-shrink: 0;
+            touch-action: pan-x;
 
             /* 【修改点 4】移除了 .work-image 的 animation 和 opacity 样式
                因为 common-image 组件内部已经实现了渐变加载动画 */
