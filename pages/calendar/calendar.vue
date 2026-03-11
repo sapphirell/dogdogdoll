@@ -60,7 +60,13 @@ function goBack() {
 <style lang="less" scoped>
 .calendar-page {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
   background: #f8faff;
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+  overscroll-behavior-x: none;
 }
 
 .nav-placeholder { width: 100%; }

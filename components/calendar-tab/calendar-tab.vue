@@ -1011,8 +1011,15 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 <style lang="less" scoped>
 /* 页面背景淡灰 */
 .summary-wrap{
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
   padding-bottom: 40rpx;
   background:#f5f6f8;
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+  overscroll-behavior-x: none;
 }
 
 /* ====== 吸顶标题栏 ====== */
@@ -1050,6 +1057,8 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
   background: linear-gradient(180deg,#b9e3ff 0%, #d1ecff 38%, #e8eef4 72%, #f5f6f8 100%);
   border-bottom-left-radius: 40rpx; border-bottom-right-radius: 40rpx;
   box-shadow: 0 12rpx 28rpx rgba(123, 186, 224, .2);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* 下划线Tab */
@@ -1088,13 +1097,17 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
   box-shadow: none;
   position: relative;
   z-index: 20;
-  overflow: visible;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .date-scroll{
+  width: 100%;
+  max-width: 100%;
   white-space: nowrap;
   display: block;
   padding: 6rpx 14rpx 0;
-  overflow: visible;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .date-item{
   display: inline-flex;
@@ -1229,6 +1242,8 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
   min-height: 70vh;
   position: relative;
   bottom: 2rpx;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 .date-title{ font-size:32rpx; color:#555; margin-bottom:30rpx; padding-left:15rpx; }
 .date-title .highlight{ color:#7dc3d3; font-weight:700; margin-right:10rpx; }
@@ -1309,7 +1324,7 @@ watch(() => chooseItem.value, () => { resetStickySoon() }, { deep: true })
 .currency{ font-size:24rpx; color:#999; transform: translateY(-2rpx); }
 
 /* 约妆/约毛卡片 */
-.plan-card{ background:#fff; border-radius:24rpx; padding:30rpx; margin-bottom:30rpx; box-shadow:0 8rpx 25rpx rgba(125,195,211,.15); position:relative; }
+.plan-card{ background:#fff; border-radius:24rpx; padding:30rpx; margin-bottom:30rpx; box-shadow:0 8rpx 25rpx rgba(125,195,211,.15); position:relative; box-sizing:border-box; overflow:hidden; }
 .artist-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20rpx; }
 .artist-info{ display:flex; align-items:center; }
 .artist-avatar{ width:100rpx; height:100rpx; border-radius:50%; margin-right:20rpx; border:2rpx solid #e6f7ff; }
