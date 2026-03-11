@@ -37,7 +37,7 @@
         <!-- 基本信息卡片 -->
         <view class="card">
           <view class="card-header">
-            <text class="card-title">基本信息</text>
+            <text class="card-title">{{ basicInfoTitle }}</text>
           </view>
 
           <!-- 娃头：分步选择 / 从娃柜中添加 / 手动输入 -->
@@ -89,7 +89,7 @@
                     {{ selectedGoods.name }}
                   </text>
                   <text v-else class="placeholder-text">
-                    可选择娃头（先选品牌再选商品）
+                    {{ selectHeadPlaceholder }}
                   </text>
                   <text v-if="selectedBrand.brand_name" class="sub-text">
                     {{ selectedBrand.brand_name }}
@@ -117,7 +117,7 @@
                     {{ form.work_subject }}
                   </text>
                   <text v-else class="placeholder-text">
-                    可从娃柜中选择娃头
+                    {{ cabinetHeadPlaceholder }}
                   </text>
                   <text v-if="cabinetItem && cabinetItem.name" class="sub-text">
                     {{ cabinetItem.name }}
@@ -141,7 +141,7 @@
                     v-model.trim="form.work_subject"
                     class="field-input manual-input"
                     type="text"
-                    placeholder="请输入娃头名称"
+                    :placeholder="manualHeadPlaceholder"
                   />
                 </view>
               </view>
@@ -192,6 +192,97 @@
                 <text class="upload-status">
                   {{ uploadStatusText || '上传中…' }}
                 </text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 毛娘专用：毛坯提供方式 -->
+          <view v-if="showBlankSupplySection" class="plan-row">
+            <view class="plan-row-label">
+              <text class="plan-row-title">毛坯提供方式</text>
+            </view>
+            <view class="chip-list">
+              <view
+                v-for="option in blankOptions"
+                :key="option.key"
+                class="chip chip-column blank-chip"
+                :class="[{ active: form.blank_supply_mode === option.key }, option.chipClass]"
+                @click="selectBlankSupplyMode(option.key)"
+              >
+                <view class="chip-line">
+                  <text class="chip-main font-alimamashuhei">{{ option.label }}</text>
+                </view>
+                <text class="chip-desc">{{ option.desc }}</text>
+              </view>
+            </view>
+
+            <view v-if="selectedBlankOption" class="blank-panel">
+              <view v-if="form.blank_supply_mode === 'self'" class="blank-panel-body">
+                <view class="blank-note">
+                  <text class="blank-note-title font-alimamashuhei">请上传毛坯图片</text>
+                  <text class="blank-note-text">方便毛娘提前判断毛坯状态、颜色和可操作空间。</text>
+                </view>
+                <view class="field-control image-field blank-image-field">
+                  <view class="upload-container">
+                    <view
+                      v-for="(img, index) in form.blank_image_urls"
+                      :key="`blank-${index}`"
+                      class="image-preview"
+                    >
+                      <image :src="img" mode="aspectFill" class="preview-img" />
+                      <view class="image-actions">
+                        <uni-icons
+                          type="eye"
+                          size="20"
+                          color="#fff"
+                          @click.stop="previewBlankImage(img)"
+                        />
+                        <uni-icons
+                          type="trash"
+                          size="20"
+                          color="#fff"
+                          @click.stop="removeBlankImage(index)"
+                        />
+                      </view>
+                    </view>
+
+                    <view
+                      v-if="form.blank_image_urls.length < 3"
+                      class="upload-btn"
+                      @click="handleUploadBlankImages"
+                    >
+                      <uni-icons type="plus" size="32" color="#999" />
+                      <text class="upload-text">添加毛坯图</text>
+                    </view>
+                  </view>
+                </view>
+
+                <view class="field-row field-textarea-row blank-textarea-row">
+                  <view class="field-label">
+                    <text class="label-text">毛坯介绍</text>
+                  </view>
+                  <view class="field-control">
+                    <textarea
+                      v-model.trim="form.blank_intro"
+                      class="field-textarea"
+                      maxlength="300"
+                      placeholder="可填写毛坯来源、颜色、是否修剪过等信息"
+                    />
+                    <view class="textarea-count">
+                      <text>{{ form.blank_intro.length }}/300</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+
+              <view v-else-if="form.blank_supply_mode === 'third'" class="blank-note blank-note-soft">
+                <text class="blank-note-title font-alimamashuhei">指定购买毛坯</text>
+                <text class="blank-note-text">毛娘会提供给您购买第三方店铺毛坯的链接。</text>
+              </view>
+
+              <view v-else-if="form.blank_supply_mode === 'stock'" class="blank-note blank-note-soft">
+                <text class="blank-note-title font-alimamashuhei">选购现有毛坯</text>
+                <text class="blank-note-text">现有毛坯功能整理中，下一步会在这里接入可选毛坯列表。</text>
               </view>
             </view>
           </view>
@@ -355,6 +446,9 @@ const dirty = reactive({
   remark: false,
   subject_goods_id: false,
   ref_images: false,
+  blank_supply_mode: false,
+  blank_image_urls: false,
+  blank_intro: false,
   headMode: false,
   addons: false,
   displayGoods: false,
@@ -426,7 +520,10 @@ const form = reactive({
   price_text: '',
   remark: '',
   subject_goods_id: 0,
-  ref_images: []
+  ref_images: [],
+  blank_supply_mode: '',
+  blank_image_urls: [],
+  blank_intro: ''
 })
 
 /** 选择品牌 / 娃物（用于展示） */
@@ -448,11 +545,67 @@ const firstRefImage = computed(() => {
 const sizeOptions = ref([])
 const tierOptions = ref([])
 const addonOptions = ref([])
+const planArtistType = ref(0)
+const planBlankSupport = reactive({
+  self: false,
+  third: false,
+  stock: false
+})
 
 const selectedSizeIndex = ref(-1)
 const selectedTierIndex = ref(-1)
 const selectedAddonIndexes = ref([])
 const rawAddonTitles = ref([])
+
+const isHairPlan = computed(() => Number(planArtistType.value) === 2)
+const basicInfoTitle = computed(() => {
+  return isHairPlan.value ? '选择佩戴假毛的头' : '选择投妆的娃头'
+})
+const selectHeadPlaceholder = computed(() => {
+  return isHairPlan.value ? '请选择佩戴假毛的娃头' : '请选择投妆娃头'
+})
+const cabinetHeadPlaceholder = computed(() => {
+  return isHairPlan.value ? '从娃柜中选择佩戴假毛的娃头' : '从娃柜中选择投妆娃头'
+})
+const manualHeadPlaceholder = computed(() => {
+  return isHairPlan.value ? '请填写佩戴假毛的娃头名称' : '请填写投妆娃头名称'
+})
+const blankOptions = computed(() => {
+  if (!isHairPlan.value) return []
+  const rows = [
+    {
+      key: 'self',
+      label: '自带毛坯',
+      desc: '买家自带毛坯并寄送，毛娘按实物制作。',
+      chipClass: 'blank-chip--self',
+      enabled: !!planBlankSupport.self
+    },
+    {
+      key: 'third',
+      label: '指定购买毛坯',
+      desc: '毛娘会提供给您购买第三方店铺毛坯的链接。',
+      chipClass: 'blank-chip--third',
+      enabled: !!planBlankSupport.third
+    },
+    {
+      key: 'stock',
+      label: '选购现有毛坯',
+      desc: '现有毛坯功能整理中，下一步会在这里接入可选毛坯列表。',
+      chipClass: 'blank-chip--stock',
+      enabled: !!planBlankSupport.stock
+    }
+  ]
+  return rows.filter(function (row) { return row.enabled })
+})
+const showBlankSupplySection = computed(() => {
+  return isHairPlan.value && blankOptions.value.length > 0
+})
+const selectedBlankOption = computed(() => {
+  if (!form.blank_supply_mode) return null
+  return blankOptions.value.find(function (row) {
+    return row.key === form.blank_supply_mode
+  }) || null
+})
 
 const hasPlanConfig = computed(() => {
   return sizeOptions.value.length || tierOptions.value.length || addonOptions.value.length
@@ -498,6 +651,18 @@ watch(() => (Array.isArray(form.ref_images) ? form.ref_images.slice() : []), () 
   if (isApplyingServerData.value) return
   markDirty('ref_images')
 })
+watch(() => form.blank_supply_mode, () => {
+  if (isApplyingServerData.value) return
+  markDirty('blank_supply_mode')
+})
+watch(() => (Array.isArray(form.blank_image_urls) ? form.blank_image_urls.slice() : []), () => {
+  if (isApplyingServerData.value) return
+  markDirty('blank_image_urls')
+})
+watch(() => form.blank_intro, () => {
+  if (isApplyingServerData.value) return
+  markDirty('blank_intro')
+})
 watch(() => headMode.value, () => {
   if (isApplyingServerData.value) return
   markDirty('headMode')
@@ -520,6 +685,9 @@ function resetStateForNewItem () {
     form.remark = ''
     form.subject_goods_id = 0
     form.ref_images = []
+    form.blank_supply_mode = ''
+    form.blank_image_urls = []
+    form.blank_intro = ''
   })
 
   selectedBrand.value = {}
@@ -529,6 +697,10 @@ function resetStateForNewItem () {
   sizeOptions.value = []
   tierOptions.value = []
   addonOptions.value = []
+  planArtistType.value = 0
+  planBlankSupport.self = false
+  planBlankSupport.third = false
+  planBlankSupport.stock = false
 
   selectedSizeIndex.value = -1
   selectedTierIndex.value = -1
@@ -889,6 +1061,45 @@ function decodeAddonsJson (str) {
   }
 }
 
+function normalizeBlankSupplyMode (mode) {
+  const value = String(mode || '').trim()
+  if (value === 'self' || value === 'third' || value === 'stock') {
+    return value
+  }
+  return ''
+}
+
+function normalizePlanBlankSupport (cfg) {
+  const extra = (cfg && cfg.extra) || {}
+  planBlankSupport.self = !!extra.support_self_blank
+  planBlankSupport.third = !!extra.support_third_party_blank
+  planBlankSupport.stock = !!extra.support_stock_blank
+}
+
+function ensureBlankSupplyMode () {
+  if (!showBlankSupplySection.value) {
+    withApplyingLock(function () {
+      form.blank_supply_mode = ''
+      form.blank_image_urls = []
+      form.blank_intro = ''
+    })
+    return
+  }
+  const exists = blankOptions.value.some(function (row) {
+    return row.key === form.blank_supply_mode
+  })
+  if (exists) return
+  withApplyingLock(function () {
+    form.blank_supply_mode = blankOptions.value[0] && blankOptions.value[0].key
+  })
+}
+
+function selectBlankSupplyMode (mode) {
+  const next = normalizeBlankSupplyMode(mode)
+  if (!next || form.blank_supply_mode === next) return
+  form.blank_supply_mode = next
+}
+
 /** 根据表单值 + plan 配置，同步尺寸 / 档位 / 加购的选中状态 */
 function syncSelectionsFromFormAndPlan () {
   console.log('[item-form] syncSelectionsFromFormAndPlan form.size=', form.size, 'form.tier_title=', form.tier_title, 'rawAddonTitles=', rawAddonTitles.value)
@@ -963,6 +1174,16 @@ function fillFormFromRaw (raw, opt) {
       form.remark = raw.remark || raw.note || ''
     }
 
+    if (!dirty.blank_supply_mode) {
+      form.blank_supply_mode = normalizeBlankSupplyMode(raw.blank_supply_mode)
+    }
+    if (isFirstLoad || !dirty.blank_image_urls) {
+      form.blank_image_urls = normalizeRefImages(raw.blank_image_urls)
+    }
+    if (!dirty.blank_intro) {
+      form.blank_intro = raw.blank_intro || ''
+    }
+
     // 关键修复点：
     // - 首次加载该 item：无条件应用服务端 ref_images
     // - 非首次加载：尊重 dirty.ref_images（避免覆盖用户正在编辑的图片）
@@ -1029,6 +1250,7 @@ function fillFormFromRaw (raw, opt) {
   if (sizeOptions.value.length || tierOptions.value.length || addonOptions.value.length) {
     syncSelectionsFromFormAndPlan()
   }
+  ensureBlankSupplyMode()
 }
 
 /** 加载单个 item 详情（编辑模式） */
@@ -1152,12 +1374,26 @@ async function fetchPlanInfo () {
       return
     }
     const data = body.data || {}
+    planArtistType.value = Number(data.artist_type || data.artistType || 0)
     let cfg = {}
     try {
-      cfg = data.order_config ? JSON.parse(data.order_config) : {}
+      if (typeof data.order_config === 'string') {
+        cfg = data.order_config ? JSON.parse(data.order_config) : {}
+      } else if (data.order_config && typeof data.order_config === 'object') {
+        cfg = data.order_config
+      } else {
+        cfg = {}
+      }
     } catch (e) {
       console.error('[item-form] 解析 order_config 失败', e)
       cfg = {}
+    }
+    normalizePlanBlankSupport(cfg)
+    if (
+      planArtistType.value === 0 &&
+      (planBlankSupport.self || planBlankSupport.third || planBlankSupport.stock)
+    ) {
+      planArtistType.value = 2
     }
 
     sizeOptions.value = Array.isArray(cfg && cfg.extra && cfg.extra.size_surcharges)
@@ -1171,6 +1407,7 @@ async function fetchPlanInfo () {
     if (form.size || form.tier_title || (rawAddonTitles.value && rawAddonTitles.value.length) || (selectedAddonIndexes.value && selectedAddonIndexes.value.length)) {
       syncSelectionsFromFormAndPlan()
     }
+    ensureBlankSupplyMode()
   } catch (e) {
     console.error('[item-form] 加载 order plan 信息失败', e)
   }
@@ -1253,16 +1490,34 @@ function toggleAddon (idx) {
 /** 表单校验 */
 function validateForm () {
   const subject = (form.work_subject || '').trim()
+  const headNameText = isHairPlan.value ? '佩戴假毛的头' : '投妆娃头'
 
   if (headMode.value === 'select') {
     if (!form.subject_goods_id) {
-      uni.showToast({ title: '请选择娃头（分步选择）', icon: 'none' })
+      uni.showToast({ title: `请选择${headNameText}`, icon: 'none' })
       return false
     }
   } else {
     if (!subject) {
-      uni.showToast({ title: '请填写娃头名称', icon: 'none' })
+      uni.showToast({ title: `请填写${headNameText}`, icon: 'none' })
       return false
+    }
+  }
+
+  if (showBlankSupplySection.value) {
+    if (!normalizeBlankSupplyMode(form.blank_supply_mode)) {
+      uni.showToast({ title: '请选择毛坯提供方式', icon: 'none' })
+      return false
+    }
+    if (form.blank_supply_mode === 'self') {
+      if (!Array.isArray(form.blank_image_urls) || form.blank_image_urls.length === 0) {
+        uni.showToast({ title: '请上传毛坯图片', icon: 'none' })
+        return false
+      }
+      if ((form.blank_intro || '').trim().length < 2) {
+        uni.showToast({ title: '请填写毛坯介绍', icon: 'none' })
+        return false
+      }
     }
   }
 
@@ -1348,6 +1603,63 @@ function removeRefImage (index) {
   })
 }
 
+async function handleUploadBlankImages () {
+  try {
+    const currentCount = Array.isArray(form.blank_image_urls) ? form.blank_image_urls.length : 0
+    const remain = 3 - currentCount
+    if (remain <= 0) {
+      uni.showToast({ title: '最多上传 3 张毛坯图', icon: 'none' })
+      return
+    }
+
+    const files = await chooseImageList(remain)
+    if (!files || !files.length) return
+
+    for (let i = 0; i < files.length; i++) {
+      const tk = await getQiniuToken()
+      if (!tk || !tk.token || !tk.path) {
+        throw new Error('获取上传凭证失败')
+      }
+      const ret = await uploadImageToQiniu(files[i], tk.token, tk.path)
+      if (ret && ret.imageUrl) {
+        if (!Array.isArray(form.blank_image_urls)) {
+          form.blank_image_urls = []
+        }
+        form.blank_image_urls.push(ret.imageUrl)
+        markDirty('blank_image_urls')
+      }
+    }
+
+    uni.showToast({ title: '毛坯图上传成功', icon: 'success' })
+  } catch (e) {
+    console.error('[item-form] 上传毛坯图片失败', e)
+    uni.showToast({
+      title: (e && e.message) ? e.message : '上传失败',
+      icon: 'none'
+    })
+  }
+}
+
+function previewBlankImage (url) {
+  uni.previewImage({
+    current: url,
+    urls: Array.isArray(form.blank_image_urls) ? form.blank_image_urls : []
+  })
+}
+
+function removeBlankImage (index) {
+  uni.showModal({
+    title: '提示',
+    content: '确定删除这张毛坯图吗？',
+    success (res) {
+      if (!res.confirm) return
+      form.blank_image_urls.splice(index, 1)
+      markDirty('blank_image_urls')
+      uni.showToast({ title: '已删除', icon: 'success' })
+    }
+  })
+}
+
 /** 保存（新增 / 编辑） */
 async function handleSave () {
   if (!isLogin.value) {
@@ -1373,6 +1685,15 @@ async function handleSave () {
       return addonOptions.value[idx] && addonOptions.value[idx].title
     })
     .filter(function (t) { return !!t })
+  const blankSupplyModeForSave = showBlankSupplySection.value
+    ? normalizeBlankSupplyMode(form.blank_supply_mode)
+    : ''
+  const blankImageUrlsForSave = (blankSupplyModeForSave === 'self' && Array.isArray(form.blank_image_urls))
+    ? form.blank_image_urls
+    : []
+  const blankIntroForSave = blankSupplyModeForSave === 'self'
+    ? (form.blank_intro || '').trim()
+    : ''
 
   saving.value = true
   try {
@@ -1389,7 +1710,10 @@ async function handleSave () {
         ref_images: Array.isArray(form.ref_images) ? form.ref_images : [],
         tier_title: (form.tier_title || '').trim(),
         addons: addonTitles,
-        remark: (form.remark || '').trim()
+        remark: (form.remark || '').trim(),
+        blank_supply_mode: blankSupplyModeForSave,
+        blank_image_urls: blankImageUrlsForSave,
+        blank_intro: blankIntroForSave
       }
       console.log('[item-form] update payload=', payload)
 
@@ -1426,7 +1750,10 @@ async function handleSave () {
         ref_images: Array.isArray(form.ref_images) ? form.ref_images : [],
         tier_title: (form.tier_title || '').trim(),
         addons: addonTitles,
-        remark: (form.remark || '').trim()
+        remark: (form.remark || '').trim(),
+        blank_supply_mode: blankSupplyModeForSave,
+        blank_image_urls: blankImageUrlsForSave,
+        blank_intro: blankIntroForSave
       }
 
       console.log('[item-form] create payload=', createPayload)
@@ -1746,6 +2073,51 @@ onShow(function () {
 }
 .chip.active {
   background: #def3ff;
+}
+
+.blank-chip {
+  width: 100%;
+  padding: 20rpx 22rpx;
+  background: #f4f8ff;
+}
+.blank-chip.active {
+  background: #e9f9ff;
+}
+.blank-panel {
+  margin-top: 14rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #f8fbff;
+}
+.blank-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.blank-note {
+  padding: 14rpx 16rpx;
+  border-radius: 14rpx;
+  background: #edf8ff;
+}
+.blank-note-soft {
+  background: #f2f7ff;
+}
+.blank-note-title {
+  font-size: 24rpx;
+  color: #334155;
+}
+.blank-note-text {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #64748b;
+  line-height: 1.7;
+}
+.blank-image-field {
+  background: #ffffff;
+}
+.blank-textarea-row {
+  margin-top: 0;
 }
 
 /* 娃头选择触发区域 */
