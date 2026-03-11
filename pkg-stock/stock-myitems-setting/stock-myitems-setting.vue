@@ -41,10 +41,26 @@
 
         <view class="setting-row">
           <view class="setting-main">
+            <text class="setting-name font-alimamashuhei">显示类型标签</text>
+            <text class="setting-desc">在图片左上角显示物品类型标签</text>
+          </view>
+          <switch :checked="form.show_type_tag" color="#49caee" @change="onSwitch('show_type_tag', $event)" />
+        </view>
+
+        <view class="setting-row">
+          <view class="setting-main">
             <text class="setting-name font-alimamashuhei">显示价格标签</text>
             <text class="setting-desc">在物品卡片上显示价格文本</text>
           </view>
           <switch :checked="form.show_price_tag" color="#49caee" @change="onSwitch('show_price_tag', $event)" />
+        </view>
+
+        <view class="setting-row">
+          <view class="setting-main">
+            <text class="setting-name font-alimamashuhei">显示物品信息</text>
+            <text class="setting-desc">显示名称与价格区域</text>
+          </view>
+          <switch :checked="form.show_item_info" color="#49caee" @change="onSwitch('show_item_info', $event)" />
         </view>
 
         <view class="setting-row">
@@ -106,7 +122,9 @@ import { websiteUrl, getStatusBarHeight, getNavBarHeight, toPx } from '@/common/
 
 const DEFAULT_FORM = Object.freeze({
   show_size_tag: true,
+  show_type_tag: true,
   show_price_tag: true,
+  show_item_info: true,
   show_payment_tag: true,
   include_additional_in_item_price: false,
   include_additional_in_total: false,
@@ -143,7 +161,9 @@ function normalizePayload(payload) {
   }
   return {
     show_size_tag: boolOf(p.show_size_tag, true),
+    show_type_tag: boolOf(p.show_type_tag, true),
     show_price_tag: boolOf(p.show_price_tag, true),
+    show_item_info: boolOf(p.show_item_info, true),
     show_payment_tag: boolOf(p.show_payment_tag, true),
     include_additional_in_item_price: boolOf(p.include_additional_in_item_price, false),
     include_additional_in_total: boolOf(p.include_additional_in_total, false),
@@ -197,7 +217,9 @@ async function saveSetting() {
   try {
     const payload = {
       show_size_tag: !!form.value.show_size_tag,
+      show_type_tag: !!form.value.show_type_tag,
       show_price_tag: !!form.value.show_price_tag,
+      show_item_info: !!form.value.show_item_info,
       show_payment_tag: !!form.value.show_payment_tag,
       include_additional_in_item_price: !!form.value.include_additional_in_item_price,
       include_additional_in_total: !!form.value.include_additional_in_total,

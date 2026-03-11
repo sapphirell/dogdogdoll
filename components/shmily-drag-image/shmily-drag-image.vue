@@ -45,18 +45,18 @@
 							class="pre-image"
 							:src="getDisplayImg(item)"
 							width="100%"
-							height="85%"
+							:height="getImageHeight()"
 							radius="0"
 							mode="aspectFill"
 							:lazy="true"
 							:threshold="80"
 						/>
 
-						<view class="info-container" v-if="props.showItemInfo">
+						<view class="info-container" :class="{ compact: shouldUseCompactInfo() }" v-if="shouldShowInfoArea()">
 							<text class="name">{{ item.name }}</text>
 							<text v-if="props.showPriceTag" class="price">{{ getDisplayPrice(item.price) }}</text>
-							<text class="type">{{ item.type }}</text>
 						</view>
+						<text v-if="props.showTypeTag" class="type">{{ item.type }}</text>
 						<view
 							v-if="props.showSizeTag && item.sizeText"
 							class="size-badge"
@@ -164,6 +164,7 @@
 		/* 付款状态标签（新增能力） */
 		showPaymentTag: { type: Boolean, default: false },
 		showSizeTag: { type: Boolean, default: true },
+		showTypeTag: { type: Boolean, default: true },
 		showPriceTag: { type: Boolean, default: true },
 		paymentField: { type: String, default: 'payment_status' },
 		paymentMap: {
@@ -202,6 +203,13 @@
 		}
 		return (Math.ceil(imageList.value.length / colsValue.value) * viewHeight.value) + 'px'
 	})
+
+	// getViewHeightRatio 根据“信息区/价格显示”动态调整卡片高度
+	const getViewHeightRatio = () => {
+		if (!props.showItemInfo) return 1.1
+		if (!props.showPriceTag) return 1.22
+		return 1.3
+	}
 
 	// 调整内部容器宽度计算
 	const childWidth = computed(() => {
@@ -698,11 +706,11 @@
 				viewWidth.value = data.width / props.cols
 
 				// 计算高度（宽度 + 文字区域高度）
-				viewHeight.value = viewWidth.value * 1.3
+				viewHeight.value = viewWidth.value * getViewHeightRatio()
 
 				if (props.imageWidth > 0) {
 					viewWidth.value = rpx2px(props.imageWidth)
-					viewHeight.value = viewWidth.value * 1.3 // 保持比例
+					viewHeight.value = viewWidth.value * getViewHeightRatio() // 保持比例
 					colsValue.value = Math.floor(data.width / viewWidth.value)
 				}
 
@@ -748,17 +756,27 @@
 
 				colsValue.value = props.cols;
 				viewWidth.value = data.width / props.cols;
-				viewHeight.value = viewWidth.value * 1.3;
+				viewHeight.value = viewWidth.value * getViewHeightRatio();
 
 				if (props.imageWidth > 0) {
 					viewWidth.value = rpx2px(props.imageWidth);
-					viewHeight.value = viewWidth.value * 1.3;
+					viewHeight.value = viewWidth.value * getViewHeightRatio();
 					colsValue.value = Math.floor(data.width / viewWidth.value);
 				}
 				resolve();
 			}).exec();
 		});
 	};
+
+	// 监听信息区/价格显示切换，动态调整卡片高度
+	watch(
+		() => [props.showItemInfo, props.showPriceTag],
+		() => {
+			if (!isMounted.value || !viewWidth.value) return
+			viewHeight.value = viewWidth.value * getViewHeightRatio()
+			updateItemsPosition()
+		}
+	);
 
 	// 监听 value 和 modelValue 的变化
 	watch(
@@ -855,6 +873,19 @@
 		return String(price).replace(/【.*?】/g, '').trim()
 	}
 
+	function shouldShowInfoArea() {
+		return !!props.showItemInfo
+	}
+
+	function shouldUseCompactInfo() {
+		return !!props.showItemInfo && !props.showPriceTag
+	}
+
+	function getImageHeight() {
+		if (!props.showItemInfo) return '100%'
+		return props.showPriceTag ? '85%' : '90%'
+	}
+
 	/* 付款状态文本 */
 	function getPaymentText(item) {
 		const st = Number(item?.payStatus ?? 1)
@@ -879,13 +910,19 @@
 	flex-direction: column;
 }
 
-.pre-image { width: 100%; height: 85%; display: block; }
+.pre-image { width: 100%; display: block; }
 
 .info-container {
   padding: 8rpx;
   display: flex;
   flex-direction: column;
-  height: 30%;
+  min-height: 30%;
+  justify-content: center;
+  &.compact {
+    min-height: 20%;
+    padding-top: 6rpx;
+    padding-bottom: 6rpx;
+  }
   .name {
     font-size: 24rpx;
     font-weight: bold;
@@ -901,18 +938,19 @@
     text-align: center;
     font-weight: 1000;
   }
-  .type {
-    position: absolute;
-    top: 8rpx;
-    left: 8rpx;
-    background: linear-gradient(135deg, #91c9ffa3, #7aa6ffa1);
-    color: #fff;
-    padding: 8rpx 18rpx;
-    border-radius: 12rpx;
-    font-size: 22rpx;
-    font-weight: 700;
-    box-shadow: 0 2rpx 8rpx rgba(122,166,255,.18);
-  }
+}
+
+.type {
+  position: absolute;
+  top: 8rpx;
+  left: 8rpx;
+  background: linear-gradient(135deg, #91c9ffa3, #7aa6ffa1);
+  color: #fff;
+  padding: 8rpx 18rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  box-shadow: 0 2rpx 8rpx rgba(122,166,255,.18);
 }
 
 /* 糖果配色标签（新增） */

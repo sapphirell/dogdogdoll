@@ -59,8 +59,10 @@
 		  border-radius="20"
 		  @sort-change="handleSortChange"
 		  :show-payment-tag="displaySetting.show_payment_tag"
-      :show-size-tag="displaySetting.show_size_tag"
-      :show-price-tag="displaySetting.show_price_tag"
+		  :show-size-tag="displaySetting.show_size_tag"
+		  :show-type-tag="displaySetting.show_type_tag"
+		  :show-price-tag="displaySetting.show_price_tag"
+		  :show-item-info="displaySetting.show_item_info"
 		  payment-field="payment_status"
 		/>
 
@@ -148,7 +150,9 @@ const emit = defineEmits(['go2editor','update-type','init-request','update:accou
 
 const DEFAULT_DISPLAY_SETTING = Object.freeze({
   show_size_tag: true,
+  show_type_tag: true,
   show_price_tag: true,
+  show_item_info: true,
   show_payment_tag: true,
   include_additional_in_item_price: false,
   include_additional_in_total: false,
@@ -245,7 +249,9 @@ function normalizeDisplaySetting(payload) {
   }
   return {
     show_size_tag: boolOf(p.show_size_tag, true),
+    show_type_tag: boolOf(p.show_type_tag, true),
     show_price_tag: boolOf(p.show_price_tag, true),
+    show_item_info: boolOf(p.show_item_info, true),
     show_payment_tag: boolOf(p.show_payment_tag, true),
     include_additional_in_item_price: boolOf(p.include_additional_in_item_price, false),
     include_additional_in_total: boolOf(p.include_additional_in_total, false),
