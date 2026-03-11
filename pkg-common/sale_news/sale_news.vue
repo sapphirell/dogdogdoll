@@ -64,9 +64,16 @@
 
     <!-- 图文内容 -->
     <view class="content-box">
-      <view><text class="title">{{ detailData.title }}</text></view>
-      <view style="margin: 20rpx 0rpx;">
-        <text class="content common-text">{{ detailData.content }}</text>
+      <view
+        class="content-report-zone"
+        @longpress.stop.prevent="openReportActionPopup"
+      >
+        <view class="content-head">
+          <text class="title">{{ detailData.title }}</text>
+        </view>
+        <view style="margin: 20rpx 0rpx;">
+          <text class="content common-text">{{ detailData.content }}</text>
+        </view>
       </view>
     </view>
 
@@ -155,11 +162,28 @@
     />
 
     <view style="width:100%;height:120rpx;"></view>
+
+    <bottom-popup :show="reportActionPopupVisible" @close="closeReportActionPopup">
+      <view class="report-action-panel">
+        <view class="report-action-title">内容操作</view>
+        <view class="report-action-item danger" @tap="handlePopupReport">举报</view>
+        <view class="report-action-cancel" @tap="closeReportActionPopup">取消</view>
+      </view>
+    </bottom-popup>
+
+    <view class="report-action-trigger">
+      <report-button
+        ref="reportActionRef"
+        :report-type="1"
+        :relation-id="parseInt(pageId)"
+        button-text="举报"
+      />
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
 import {
@@ -193,6 +217,8 @@ const commentInputRef = ref(null)
 let commentsPage = ref(1)
 let replyForItem = ref({})
 const systemInfo = uni.getSystemInfoSync()
+const reportActionPopupVisible = ref(false)
+const reportActionRef = ref(null)
 
 // 品牌贩售信息：预售(waiting_goods[0]) + 上次贩售(latest_sale)
 const brandSaleInfo = ref({
@@ -208,6 +234,20 @@ const handleReplyComment = ({ parent, target }) => {
   }
   replyForItem.value = item
   commentInputRef.value?.focusInput()
+}
+
+function openReportActionPopup() {
+  reportActionPopupVisible.value = true
+}
+
+function closeReportActionPopup() {
+  reportActionPopupVisible.value = false
+}
+
+async function handlePopupReport() {
+  closeReportActionPopup()
+  await nextTick()
+  reportActionRef.value?.openReport?.()
 }
 
 function viewFullImage(index) {
@@ -541,6 +581,13 @@ onLoad((options) => {
 
 /* 图文内容 */
 .content-box{ padding:30rpx;
+  .content-report-zone{
+    width:100%;
+  }
+  .content-head{
+    display:flex;
+    align-items:flex-start;
+  }
   .title{ font-size:28rpx; font-weight:bold; margin-bottom:20rpx; }
   .content{ font-size:28rpx; }
 }
@@ -604,6 +651,57 @@ onLoad((options) => {
 
 /* 状态 */
 .loading,.error{ text-align:center; padding:40rpx; font-size:28rpx; color:#999; }
+
+.report-action-panel {
+  padding: 18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-radius: 28rpx 28rpx 0 0;
+}
+
+.report-action-title {
+  text-align: center;
+  font-size: 24rpx;
+  color: #9aa3ad;
+  margin-bottom: 12rpx;
+}
+
+.report-action-item {
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: #2f3945;
+  background: #ffffff;
+  border-radius: 18rpx;
+  box-shadow: 0 2rpx 12rpx rgba(32, 44, 58, 0.04);
+}
+
+.report-action-item.danger {
+  color: #e55d62;
+}
+
+.report-action-cancel {
+  height: 92rpx;
+  margin-top: 18rpx;
+  border-radius: 18rpx;
+  background: #f7f8fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: #5f6975;
+}
+
+.report-action-trigger {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
 
 text{ font-size:22rpx; }
 </style>
