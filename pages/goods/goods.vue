@@ -598,203 +598,325 @@
       width="700rpx"
     >
       <view class="price-supplement-modal">
-        <text class="price-supplement-title">补充信息</text>
-        <text class="price-supplement-desc">
-          支持补充或修改价格、头围、脖围、插口、眼珠建议、材质、颜色、尺寸与图片。提交后会进入后台审核。
-        </text>
-        <view class="price-supplement-grid">
-          <view class="supplement-field">
-            <text class="supplement-field-label font-title">价格</text>
-            <input
-              v-model="priceSupplementPriceInput"
-              class="price-supplement-input"
-              type="number"
-              placeholder="可选，整数价格"
-              placeholder-class="price-placeholder"
-            />
+        <view class="price-supplement-header">
+          <view class="price-supplement-header-main">
+            <text class="price-supplement-title">补充信息</text>
+            <text class="price-supplement-desc">
+              只补充需要更新的内容，审核通过后会同步到商品信息。
+            </text>
           </view>
-          <view class="supplement-field">
-            <text class="supplement-field-label font-title">币种</text>
-            <input
-              v-model="priceSupplementCurrencyInput"
-              class="price-supplement-input"
-              type="text"
-              maxlength="12"
-              placeholder="如 CNY / USD"
-              placeholder-class="price-placeholder"
-            />
+          <view class="price-supplement-step">
+            <text class="price-supplement-step-num">第{{ priceSupplementStep }}步</text>
+            <text class="price-supplement-step-total">/ 2</text>
           </view>
         </view>
 
-        <view class="price-supplement-grid">
-          <view class="supplement-field">
-            <text class="supplement-field-label font-title">头围</text>
-            <input
-              v-model="priceSupplementHeadCircumferenceInput"
-              class="price-supplement-input"
-              type="text"
-              :placeholder="`当前：${goods.head_circumference || '未填写'}`"
-              placeholder-class="price-placeholder"
-            />
+        <view v-if="priceSupplementStep === 1" class="supplement-step">
+          <view class="supplement-step-intro">
+            <view class="supplement-step-intro-copy">
+              <text class="supplement-step-title">先勾选这次要补的内容</text>
+              <text class="supplement-step-sub">只选需要更新的项目，下一步会只显示你刚选的表单。</text>
+            </view>
+            <view class="supplement-step-intro-count">
+              <text class="supplement-step-intro-count-num">{{ priceSupplementSelectedCount }}</text>
+              <text class="supplement-step-intro-count-label">已选</text>
+            </view>
           </view>
-          <view class="supplement-field">
-            <text class="supplement-field-label font-title">脖围</text>
-            <input
-              v-model="priceSupplementNeckCircumferenceInput"
-              class="price-supplement-input"
-              type="text"
-              :placeholder="`当前：${goods.neck_circumference || '未填写'}`"
-              placeholder-class="price-placeholder"
-            />
-          </view>
-        </view>
 
-        <view v-if="isHeadOrWholeGoods" class="supplement-field">
-          <view class="supplement-field-head">
-            <text class="supplement-field-label font-title">插口</text>
-            <text class="supplement-current-text">当前：{{ formatMultiSpecText(goods.socket_sizes) }}</text>
-          </view>
-          <view class="supplement-chip-group">
-            <view
-              v-for="item in supplementSocketOptions"
-              :key="`socket-${item}`"
-              :class="['supplement-chip', { active: priceSupplementSocketSelections.includes(item) }]"
-              @tap="toggleSupplementSocket(item)"
-            >
-              {{ item }}
+          <view class="supplement-step-guide">
+            <view class="supplement-guide-chip">
+              <text class="supplement-guide-chip-title">常用</text>
+              <text class="supplement-guide-chip-desc">价格、尺寸、材质</text>
+            </view>
+            <view class="supplement-guide-chip">
+              <text class="supplement-guide-chip-title">头部词条</text>
+              <text class="supplement-guide-chip-desc">头围、脖围、插口、眼珠</text>
+            </view>
+            <view class="supplement-guide-chip">
+              <text class="supplement-guide-chip-title">说明材料</text>
+              <text class="supplement-guide-chip-desc">图片、截图、补充说明</text>
             </view>
           </view>
-        </view>
 
-        <view v-if="isHeadOrWholeGoods" class="supplement-field">
-          <view class="supplement-field-head">
-            <text class="supplement-field-label font-title">眼珠建议</text>
-            <text class="supplement-current-text">当前：{{ formatMultiSpecText(goods.eye_recommendations) }}</text>
-          </view>
-          <view class="supplement-chip-group">
-            <view
-              v-for="item in supplementEyeOptions"
-              :key="`eye-${item}`"
-              :class="['supplement-chip', { active: priceSupplementEyeSelections.includes(item) }]"
-              @tap="toggleSupplementEye(item)"
-            >
-              {{ item }}
+          <view class="supplement-selected-panel">
+            <view class="supplement-selected-panel-head">
+              <text class="supplement-selected-panel-title">这次准备补充</text>
+              <text class="supplement-selected-panel-tip">{{ priceSupplementSelectedCount > 0 ? `共 ${priceSupplementSelectedCount} 项` : '可多选' }}</text>
             </view>
-          </view>
-        </view>
-
-        <view class="price-supplement-grid">
-          <view class="supplement-field">
-            <view class="supplement-field-head">
-              <text class="supplement-field-label font-title">材质</text>
-              <text class="supplement-current-text">当前：{{ goods.doll_material || '未填写' }}</text>
-            </view>
-            <picker :range="supplementMaterialOptions" :value="Math.max(0, supplementMaterialOptions.indexOf(priceSupplementDollMaterialInput))" @change="onSupplementMaterialChange">
-              <view :class="['supplement-picker-trigger', { placeholder: !priceSupplementDollMaterialInput }]">
-                {{ priceSupplementDollMaterialInput || (supplementMetaLoading ? '加载材质中...' : '请选择材质') }}
-              </view>
-            </picker>
-          </view>
-          <view class="supplement-field">
-            <text class="supplement-field-label font-title">颜色</text>
-            <input
-              v-model="priceSupplementSkinInput"
-              class="price-supplement-input"
-              type="text"
-              :placeholder="`当前：${goods.skin || '未填写'}`"
-              placeholder-class="price-placeholder"
-            />
-          </view>
-        </view>
-
-        <view class="price-supplement-grid">
-          <view class="supplement-field">
-            <view class="supplement-field-head">
-              <text class="supplement-field-label font-title">尺寸分类</text>
-              <text class="supplement-current-text">当前：{{ goods.size || '未填写' }}</text>
-            </view>
-            <picker :range="supplementSizeCategoryOptions" :value="Math.max(0, supplementSizeCategoryOptions.indexOf(priceSupplementSizeCategoryInput))" @change="onSupplementSizeCategoryChange">
-              <view :class="['supplement-picker-trigger', { placeholder: !priceSupplementSizeCategoryInput }]">
-                {{ priceSupplementSizeCategoryInput || (supplementMetaLoading ? '加载尺寸中...' : '请选择尺寸分类') }}
-              </view>
-            </picker>
-          </view>
-          <view class="supplement-field">
-            <view class="supplement-field-head">
-              <text class="supplement-field-label font-title">尺寸详情</text>
-              <text class="supplement-current-text">当前：{{ formatCurrentSizeText() }}</text>
-            </view>
-            <view v-if="priceSupplementSizeCategoryInput" class="supplement-chip-group">
+            <view v-if="priceSupplementSelectedOptions.length" class="supplement-selected-list">
               <view
-                v-for="item in supplementSizeDetailOptions"
-                :key="`size-detail-${item}`"
-                :class="['supplement-chip', { active: priceSupplementSizeDetailSelections.includes(item) }]"
-                @tap="toggleSupplementSizeDetail(item)"
+                v-for="item in priceSupplementSelectedOptions"
+                :key="`selected-${item.key}`"
+                class="supplement-selected-chip"
+              >
+                {{ item.label }}
+              </view>
+            </view>
+            <text v-else class="supplement-selected-empty">还没选内容，先点下面的卡片。</text>
+          </view>
+
+          <view
+            v-for="group in priceSupplementFieldGroups"
+            :key="group.key"
+            class="supplement-select-section"
+          >
+            <view class="supplement-select-section-head">
+              <view class="supplement-select-section-copy">
+                <text class="supplement-select-section-title">{{ group.title }}</text>
+                <text class="supplement-select-section-sub">{{ group.desc }}</text>
+              </view>
+            </view>
+            <view class="supplement-select-grid">
+              <view
+                v-for="item in group.items"
+                :key="item.key"
+                :class="['supplement-select-card', { active: isSupplementFieldSelected(item.key) }]"
+                @tap="toggleSupplementField(item.key)"
+              >
+                <view class="supplement-select-info">
+                  <view class="supplement-select-title-row">
+                    <text class="supplement-select-title">{{ item.label }}</text>
+                    <text v-if="item.optional" class="supplement-select-tag">可选</text>
+                  </view>
+                  <text class="supplement-select-desc">{{ item.desc }}</text>
+                </view>
+                <view :class="['supplement-select-check', { active: isSupplementFieldSelected(item.key) }]">
+                  {{ isSupplementFieldSelected(item.key) ? '已选' : '+' }}
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view v-else class="supplement-step">
+          <view class="supplement-step-head">
+            <text class="supplement-step-title">填写补充内容</text>
+            <text class="supplement-step-sub">已选：{{ priceSupplementSelectedOptionsText || '未选择' }}</text>
+          </view>
+          <text class="supplement-step-tip">佐证截图和补充原因只用于说明，建议配合主要信息一起提交。</text>
+
+          <view v-if="isSupplementFieldSelected('price')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">价格</text>
+              <text class="supplement-section-tip">整数价格即可</text>
+            </view>
+            <view class="supplement-row">
+              <view class="supplement-field">
+                <text class="supplement-field-label font-title">金额</text>
+                <input
+                  v-model="priceSupplementPriceInput"
+                  class="price-supplement-input"
+                  type="number"
+                  placeholder="输入价格"
+                  placeholder-class="price-placeholder"
+                />
+              </view>
+              <view class="supplement-field">
+                <text class="supplement-field-label font-title">币种</text>
+                <input
+                  v-model="priceSupplementCurrencyInput"
+                  class="price-supplement-input"
+                  type="text"
+                  maxlength="12"
+                  placeholder="如 CNY / USD"
+                  placeholder-class="price-placeholder"
+                />
+              </view>
+            </view>
+          </view>
+
+          <view v-if="isSupplementFieldSelected('head_circumference') || isSupplementFieldSelected('neck_circumference')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">头围/脖围</text>
+              <text class="supplement-section-tip">可填 cm 或 mm</text>
+            </view>
+            <view class="supplement-row">
+              <view v-if="isSupplementFieldSelected('head_circumference')" class="supplement-field">
+                <text class="supplement-field-label font-title">头围</text>
+                <input
+                  v-model="priceSupplementHeadCircumferenceInput"
+                  class="price-supplement-input"
+                  type="text"
+                  :placeholder="`当前：${goods.head_circumference || '未填写'}`"
+                  placeholder-class="price-placeholder"
+                />
+              </view>
+              <view v-if="isSupplementFieldSelected('neck_circumference')" class="supplement-field">
+                <text class="supplement-field-label font-title">脖围</text>
+                <input
+                  v-model="priceSupplementNeckCircumferenceInput"
+                  class="price-supplement-input"
+                  type="text"
+                  :placeholder="`当前：${goods.neck_circumference || '未填写'}`"
+                  placeholder-class="price-placeholder"
+                />
+              </view>
+            </view>
+          </view>
+
+          <view v-if="isSupplementFieldSelected('socket_sizes')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">插口</text>
+              <text class="supplement-section-tip">当前：{{ formatMultiSpecText(goods.socket_sizes) }}</text>
+            </view>
+            <view class="supplement-chip-group">
+              <view
+                v-for="item in supplementSocketOptions"
+                :key="`socket-${item}`"
+                :class="['supplement-chip', { active: priceSupplementSocketSelections.includes(item) }]"
+                @tap="toggleSupplementSocket(item)"
               >
                 {{ item }}
               </view>
             </view>
-            <text v-else class="supplement-field-tip">请先选择尺寸分类，再选择对应尺寸详情。</text>
           </view>
-        </view>
 
-        <view class="supplement-uploader">
-          <view class="supplement-uploader-head">
-            <text class="supplement-field-label font-title">补充图片</text>
-            <button class="supplement-upload-btn" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets('image')">
-              {{ priceSupplementUploading ? '上传中...' : '上传图片' }}
-            </button>
-          </view>
-          <text class="supplement-field-tip">可补充新的商品图片，审核通过后会追加到商品图集中。</text>
-          <scroll-view v-if="priceSupplementImageList.length" scroll-x class="supplement-preview-scroll">
-            <view class="supplement-preview-row">
+          <view v-if="isSupplementFieldSelected('eye_recommendations')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">眼珠建议</text>
+              <text class="supplement-section-tip">当前：{{ formatMultiSpecText(goods.eye_recommendations) }}</text>
+            </view>
+            <view class="supplement-chip-group">
               <view
-                v-for="(url, index) in priceSupplementImageList"
-                :key="`supplement-image-${url}`"
-                class="supplement-preview-item"
+                v-for="item in supplementEyeOptions"
+                :key="`eye-${item}`"
+                :class="['supplement-chip', { active: priceSupplementEyeSelections.includes(item) }]"
+                @tap="toggleSupplementEye(item)"
               >
-                <image class="supplement-preview-image" :src="url" mode="aspectFill" @tap="previewSupplementImages(priceSupplementImageList, url)" />
-                <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset('image', index)">×</view>
+                {{ item }}
               </view>
             </view>
-          </scroll-view>
-        </view>
-
-        <view class="supplement-uploader">
-          <view class="supplement-uploader-head">
-            <text class="supplement-field-label font-title">截图</text>
-            <button class="supplement-upload-btn is-light" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets('screenshot')">
-              {{ priceSupplementUploading ? '上传中...' : '上传截图' }}
-            </button>
           </view>
-          <text class="supplement-field-tip">可选填写，用于说明来源或佐证。</text>
-          <scroll-view v-if="priceSupplementScreenshotList.length" scroll-x class="supplement-preview-scroll">
-            <view class="supplement-preview-row">
-              <view
-                v-for="(url, index) in priceSupplementScreenshotList"
-                :key="`supplement-proof-${url}`"
-                class="supplement-preview-item"
-              >
-                <image class="supplement-preview-image" :src="url" mode="aspectFill" @tap="previewSupplementImages(priceSupplementScreenshotList, url)" />
-                <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset('screenshot', index)">×</view>
+
+          <view v-if="isSupplementFieldSelected('doll_material') || isSupplementFieldSelected('skin')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">材质与颜色</text>
+              <text class="supplement-section-tip">可按官方描述填写</text>
+            </view>
+            <view class="supplement-row">
+              <view v-if="isSupplementFieldSelected('doll_material')" class="supplement-field">
+                <text class="supplement-field-label font-title">材质</text>
+                <picker :range="supplementMaterialOptions" :value="Math.max(0, supplementMaterialOptions.indexOf(priceSupplementDollMaterialInput))" @change="onSupplementMaterialChange">
+                  <view :class="['supplement-picker-trigger', { placeholder: !priceSupplementDollMaterialInput }]">
+                    {{ priceSupplementDollMaterialInput || (supplementMetaLoading ? '加载材质中...' : '请选择材质') }}
+                  </view>
+                </picker>
+              </view>
+              <view v-if="isSupplementFieldSelected('skin')" class="supplement-field">
+                <text class="supplement-field-label font-title">颜色</text>
+                <input
+                  v-model="priceSupplementSkinInput"
+                  class="price-supplement-input"
+                  type="text"
+                  :placeholder="`当前：${goods.skin || '未填写'}`"
+                  placeholder-class="price-placeholder"
+                />
               </view>
             </view>
-          </scroll-view>
+          </view>
+
+          <view v-if="isSupplementFieldSelected('size')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">尺寸</text>
+              <text class="supplement-section-tip">当前：{{ formatCurrentSizeText() }}</text>
+            </view>
+            <view class="supplement-field">
+              <text class="supplement-field-label font-title">尺寸分类</text>
+              <picker :range="supplementSizeCategoryOptions" :value="Math.max(0, supplementSizeCategoryOptions.indexOf(priceSupplementSizeCategoryInput))" @change="onSupplementSizeCategoryChange">
+                <view :class="['supplement-picker-trigger', { placeholder: !priceSupplementSizeCategoryInput }]">
+                  {{ priceSupplementSizeCategoryInput || (supplementMetaLoading ? '加载尺寸中...' : '请选择尺寸分类') }}
+                </view>
+              </picker>
+            </view>
+            <view class="supplement-field">
+              <text class="supplement-field-label font-title">尺寸详情</text>
+              <view v-if="priceSupplementSizeCategoryInput" class="supplement-chip-group">
+                <view
+                  v-for="item in supplementSizeDetailOptions"
+                  :key="`size-detail-${item}`"
+                  :class="['supplement-chip', { active: priceSupplementSizeDetailSelections.includes(item) }]"
+                  @tap="toggleSupplementSizeDetail(item)"
+                >
+                  {{ item }}
+                </view>
+              </view>
+              <text v-else class="supplement-field-tip">先选尺寸分类，再选对应详情。</text>
+            </view>
+          </view>
+
+          <view v-if="isSupplementFieldSelected('images')" class="supplement-section">
+            <view class="supplement-uploader-head">
+              <text class="supplement-field-label font-title">补充图片</text>
+              <button class="supplement-upload-btn" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets('image')">
+                {{ priceSupplementUploading ? '上传中...' : '上传图片' }}
+              </button>
+            </view>
+            <text class="supplement-field-tip">审核通过后会追加到商品图集中。</text>
+            <scroll-view v-if="priceSupplementImageList.length" scroll-x class="supplement-preview-scroll">
+              <view class="supplement-preview-row">
+                <view
+                  v-for="(url, index) in priceSupplementImageList"
+                  :key="`supplement-image-${url}`"
+                  class="supplement-preview-item"
+                >
+                  <image class="supplement-preview-image" :src="url" mode="aspectFill" @tap="previewSupplementImages(priceSupplementImageList, url)" />
+                  <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset('image', index)">×</view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view v-if="isSupplementFieldSelected('screenshots')" class="supplement-section">
+            <view class="supplement-uploader-head">
+              <text class="supplement-field-label font-title">佐证截图</text>
+              <button class="supplement-upload-btn is-light" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets('screenshot')">
+                {{ priceSupplementUploading ? '上传中...' : '上传截图' }}
+              </button>
+            </view>
+            <text class="supplement-field-tip">用于说明来源或佐证。</text>
+            <scroll-view v-if="priceSupplementScreenshotList.length" scroll-x class="supplement-preview-scroll">
+              <view class="supplement-preview-row">
+                <view
+                  v-for="(url, index) in priceSupplementScreenshotList"
+                  :key="`supplement-proof-${url}`"
+                  class="supplement-preview-item"
+                >
+                  <image class="supplement-preview-image" :src="url" mode="aspectFill" @tap="previewSupplementImages(priceSupplementScreenshotList, url)" />
+                  <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset('screenshot', index)">×</view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view v-if="isSupplementFieldSelected('reason')" class="supplement-section">
+            <view class="supplement-section-head">
+              <text class="supplement-section-title">补充原因</text>
+              <text class="supplement-section-tip">可选填写</text>
+            </view>
+            <textarea
+              v-model="priceSupplementReasonInput"
+              class="price-supplement-textarea"
+              maxlength="120"
+              placeholder="例如：官方直播提到、本人实测、商品页截图等"
+              placeholder-class="price-placeholder"
+            />
+          </view>
         </view>
 
-        <view class="supplement-field">
-          <text class="supplement-field-label font-title">补充原因</text>
-          <textarea
-            v-model="priceSupplementReasonInput"
-            class="price-supplement-textarea"
-            maxlength="120"
-            placeholder="可选填写，例如：官方直播提到、本人实测、商品页截图等"
-            placeholder-class="price-placeholder"
-          />
-        </view>
         <view class="price-supplement-actions">
-          <button class="price-supplement-cancel" @click="priceSupplementVisible = false">取消</button>
+          <button v-if="priceSupplementStep === 1" class="price-supplement-cancel" @click="priceSupplementVisible = false">取消</button>
           <button
+            v-if="priceSupplementStep === 1"
+            class="price-supplement-confirm"
+            :disabled="!canGoPriceSupplementNext"
+            @click="goPriceSupplementNextStep"
+          >
+            下一步
+          </button>
+
+          <button v-else class="price-supplement-cancel" @click="goPriceSupplementPrevStep">返回修改</button>
+          <button
+            v-else
             class="price-supplement-confirm"
             :disabled="priceSupplementSubmitting"
             @click="submitPriceSupplement"
@@ -919,7 +1041,9 @@ let wishLoading = ref(false)
 let hasWish = ref(false)
 let wishCount = ref(0)
 const priceSupplementVisible = ref(false)
+const priceSupplementStep = ref(1)
 const priceSupplementSubmitting = ref(false)
+const priceSupplementFieldSelections = ref([])
 const priceSupplementPriceInput = ref('')
 const priceSupplementCurrencyInput = ref('')
 const priceSupplementHeadCircumferenceInput = ref('')
@@ -950,10 +1074,71 @@ const faceupList = ref([])
 const faceupLoading = ref(false)
 const BODY_SIZE_VISIBLE_TYPES = Object.freeze(['单体', '单头', '整体'])
 const HEAD_OR_WHOLE_TYPES = Object.freeze(['单头', '整体'])
+const SUPPLEMENT_PRIMARY_FIELD_KEYS = Object.freeze([
+  'price',
+  'head_circumference',
+  'neck_circumference',
+  'socket_sizes',
+  'eye_recommendations',
+  'doll_material',
+  'skin',
+  'size',
+  'images'
+])
 const normalizedGoodsType = computed(() => String(goods.value?.type || '').trim())
 const showBodySizeInfo = computed(() => BODY_SIZE_VISIBLE_TYPES.includes(normalizedGoodsType.value))
 const isHeadOrWholeGoods = computed(() => HEAD_OR_WHOLE_TYPES.includes(normalizedGoodsType.value))
 const showFaceupSection = computed(() => isHeadOrWholeGoods.value)
+const priceSupplementFieldOptions = computed(() => {
+  const list = [
+    { key: 'price', label: '价格', desc: '补充或更正价格' },
+    { key: 'head_circumference', label: '头围', desc: '补充头围信息' },
+    { key: 'neck_circumference', label: '脖围', desc: '补充脖围信息' },
+    { key: 'socket_sizes', label: '插口', desc: '适配口型', headOnly: true },
+    { key: 'eye_recommendations', label: '眼珠建议', desc: '适配眼珠尺寸', headOnly: true },
+    { key: 'doll_material', label: '材质', desc: '例如树脂、软胶' },
+    { key: 'skin', label: '颜色', desc: '例如粉色、咖色' },
+    { key: 'size', label: '尺寸', desc: '尺寸分类与细项' },
+    { key: 'images', label: '补充图片', desc: '追加到商品图集' },
+    { key: 'screenshots', label: '佐证截图', desc: '说明来源或佐证', optional: true },
+    { key: 'reason', label: '补充原因', desc: '可选说明理由', optional: true }
+  ]
+  return list.filter(item => !item.headOnly || isHeadOrWholeGoods.value)
+})
+const priceSupplementFieldGroups = computed(() => {
+  const primary = []
+  const support = []
+  priceSupplementFieldOptions.value.forEach(item => {
+    if (SUPPLEMENT_PRIMARY_FIELD_KEYS.includes(item.key)) {
+      primary.push(item)
+      return
+    }
+    support.push(item)
+  })
+  return [
+    {
+      key: 'primary',
+      title: '主要信息',
+      desc: '建议优先补充会直接影响词条展示和筛选的信息。',
+      items: primary
+    },
+    {
+      key: 'support',
+      title: '说明材料',
+      desc: '用于补充来源和说明，方便审核时判断。',
+      items: support
+    }
+  ].filter(group => group.items.length > 0)
+})
+const priceSupplementSelectedOptions = computed(() => {
+  const selected = new Set(priceSupplementFieldSelections.value)
+  return priceSupplementFieldOptions.value.filter(item => selected.has(item.key))
+})
+const priceSupplementSelectedCount = computed(() => priceSupplementSelectedOptions.value.length)
+const priceSupplementSelectedOptionsText = computed(() => {
+  return priceSupplementSelectedOptions.value.map(item => item.label).join('、')
+})
+const canGoPriceSupplementNext = computed(() => priceSupplementFieldSelections.value.length > 0)
 const pendingPriceSubmission = computed(() => goods.value?.pending_price_submission || null)
 const approvedPriceSubmission = computed(() => goods.value?.approved_price_submission || null)
 const contributionList = ref([])
@@ -1057,6 +1242,19 @@ watch(
   }
 )
 
+watch(
+  () => isHeadOrWholeGoods.value,
+  (isHeadType) => {
+    if (isHeadType) return
+    const blockedKeys = ['socket_sizes', 'eye_recommendations']
+    const next = priceSupplementFieldSelections.value.filter(key => !blockedKeys.includes(key))
+    if (next.length !== priceSupplementFieldSelections.value.length) {
+      priceSupplementFieldSelections.value = next
+      blockedKeys.forEach(clearSupplementFieldValue)
+    }
+  }
+)
+
 function formatMultiSpecText(raw) {
   const txt = String(raw || '').trim()
   if (!txt) return '未填写'
@@ -1143,7 +1341,80 @@ function formatCurrentSizeText() {
   return category || detail || '未填写'
 }
 
+function isSupplementFieldSelected(key) {
+  return priceSupplementFieldSelections.value.includes(key)
+}
+
+function toggleSupplementField(key) {
+  const val = String(key || '').trim()
+  if (!val) return
+  const next = [...priceSupplementFieldSelections.value]
+  const idx = next.indexOf(val)
+  if (idx >= 0) {
+    next.splice(idx, 1)
+    clearSupplementFieldValue(val)
+  } else {
+    next.push(val)
+  }
+  priceSupplementFieldSelections.value = next
+}
+
+function clearSupplementFieldValue(key) {
+  switch (key) {
+    case 'price':
+      priceSupplementPriceInput.value = ''
+      break
+    case 'head_circumference':
+      priceSupplementHeadCircumferenceInput.value = ''
+      break
+    case 'neck_circumference':
+      priceSupplementNeckCircumferenceInput.value = ''
+      break
+    case 'socket_sizes':
+      priceSupplementSocketSelections.value = []
+      break
+    case 'eye_recommendations':
+      priceSupplementEyeSelections.value = []
+      break
+    case 'doll_material':
+      priceSupplementDollMaterialInput.value = ''
+      break
+    case 'skin':
+      priceSupplementSkinInput.value = ''
+      break
+    case 'size':
+      priceSupplementSizeCategoryInput.value = ''
+      priceSupplementSizeDetailSelections.value = []
+      break
+    case 'images':
+      priceSupplementImageList.value = []
+      break
+    case 'screenshots':
+      priceSupplementScreenshotList.value = []
+      break
+    case 'reason':
+      priceSupplementReasonInput.value = ''
+      break
+    default:
+      break
+  }
+}
+
+function goPriceSupplementNextStep() {
+  if (!canGoPriceSupplementNext.value) {
+    uni.showToast({ title: '请选择要补充的内容', icon: 'none' })
+    return
+  }
+  priceSupplementStep.value = 2
+}
+
+function goPriceSupplementPrevStep() {
+  priceSupplementStep.value = 1
+}
+
 function resetPriceSupplementForm() {
+  priceSupplementStep.value = 1
+  priceSupplementFieldSelections.value = []
   priceSupplementPriceInput.value = ''
   priceSupplementCurrencyInput.value = resolvedMainCurrency.value || goods.value.currency || ''
   priceSupplementHeadCircumferenceInput.value = ''
@@ -1813,9 +2084,10 @@ function submitPriceSupplement () {
     return
   }
 
+  const selected = new Set(priceSupplementFieldSelections.value)
   const priceText = String(priceSupplementPriceInput.value || '').trim()
   let price = 0
-  if (priceText) {
+  if (selected.has('price') && priceText) {
     price = parseInt(priceText, 10)
     if (!price || price <= 0) {
       uni.showToast({ title: '请输入正确的整数价格', icon: 'none' })
@@ -1825,34 +2097,33 @@ function submitPriceSupplement () {
 
   const payload = {
     goods_id: parseInt(currentId.value),
-    price,
-    currency: (priceSupplementCurrencyInput.value || '').trim(),
-    head_circumference: (priceSupplementHeadCircumferenceInput.value || '').trim(),
-    neck_circumference: (priceSupplementNeckCircumferenceInput.value || '').trim(),
-    socket_sizes: [...priceSupplementSocketSelections.value],
-    eye_recommendations: [...priceSupplementEyeSelections.value],
-    doll_material: (priceSupplementDollMaterialInput.value || '').trim(),
-    skin: (priceSupplementSkinInput.value || '').trim(),
-    size_category: (priceSupplementSizeCategoryInput.value || '').trim(),
-    size_details: [...priceSupplementSizeDetailSelections.value],
-    image_urls: [...priceSupplementImageList.value],
-    reason: (priceSupplementReasonInput.value || '').trim(),
-    screenshot_urls: [...priceSupplementScreenshotList.value]
+    price: selected.has('price') ? price : 0,
+    currency: selected.has('price') ? (priceSupplementCurrencyInput.value || '').trim() : '',
+    head_circumference: selected.has('head_circumference') ? (priceSupplementHeadCircumferenceInput.value || '').trim() : '',
+    neck_circumference: selected.has('neck_circumference') ? (priceSupplementNeckCircumferenceInput.value || '').trim() : '',
+    socket_sizes: selected.has('socket_sizes') ? [...priceSupplementSocketSelections.value] : [],
+    eye_recommendations: selected.has('eye_recommendations') ? [...priceSupplementEyeSelections.value] : [],
+    doll_material: selected.has('doll_material') ? (priceSupplementDollMaterialInput.value || '').trim() : '',
+    skin: selected.has('skin') ? (priceSupplementSkinInput.value || '').trim() : '',
+    size_category: selected.has('size') ? (priceSupplementSizeCategoryInput.value || '').trim() : '',
+    size_details: selected.has('size') ? [...priceSupplementSizeDetailSelections.value] : [],
+    image_urls: selected.has('images') ? [...priceSupplementImageList.value] : [],
+    reason: selected.has('reason') ? (priceSupplementReasonInput.value || '').trim() : '',
+    screenshot_urls: selected.has('screenshots') ? [...priceSupplementScreenshotList.value] : []
   }
   const hasAnyField = Boolean(
-    payload.price > 0 ||
-    payload.head_circumference ||
-    payload.neck_circumference ||
-    payload.socket_sizes.length ||
-    payload.eye_recommendations.length ||
-    payload.doll_material ||
-    payload.skin ||
-    payload.size_category ||
-    payload.size_details.length ||
-    payload.image_urls.length
+    (selected.has('price') && payload.price > 0) ||
+    (selected.has('head_circumference') && payload.head_circumference) ||
+    (selected.has('neck_circumference') && payload.neck_circumference) ||
+    (selected.has('socket_sizes') && payload.socket_sizes.length) ||
+    (selected.has('eye_recommendations') && payload.eye_recommendations.length) ||
+    (selected.has('doll_material') && payload.doll_material) ||
+    (selected.has('skin') && payload.skin) ||
+    (selected.has('size') && (payload.size_category || payload.size_details.length)) ||
+    (selected.has('images') && payload.image_urls.length)
   )
   if (!hasAnyField) {
-    uni.showToast({ title: '请至少补充一项信息', icon: 'none' })
+    uni.showToast({ title: '请至少补充一项主要信息', icon: 'none' })
     return
   }
 
@@ -2351,6 +2622,15 @@ function selectSize (sizeText) {
   padding-bottom: calc(42rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
+.price-supplement-header{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+.price-supplement-header-main{
+  flex: 1;
+}
 .price-supplement-title{
   display: block;
   font-size: 32rpx;
@@ -2364,25 +2644,287 @@ function selectSize (sizeText) {
   color: #7e8795;
   line-height: 1.5;
 }
+.price-supplement-step{
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #eef3f7;
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  color: #5f6f85;
+  font-size: 22rpx;
+}
+.price-supplement-step-num{
+  font-weight: 600;
+}
+.price-supplement-step-total{
+  font-size: 20rpx;
+}
+.supplement-step{
+  margin-top: 26rpx;
+}
+.supplement-step-intro{
+  display: flex;
+  align-items: stretch;
+  gap: 16rpx;
+}
+.supplement-step-intro-copy{
+  flex: 1;
+  min-width: 0;
+}
+.supplement-step-intro-count{
+  min-width: 128rpx;
+  padding: 18rpx 16rpx;
+  border-radius: 22rpx;
+  background: rgba(73, 202, 238, 0.14);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10rpx 22rpx rgba(73, 202, 238, 0.16);
+}
+.supplement-step-intro-count-num{
+  font-size: 38rpx;
+  line-height: 1;
+  font-weight: 700;
+  color: #49caee;
+}
+.supplement-step-intro-count-label{
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #6c7a8e;
+}
+.supplement-step-head{
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.supplement-step-title{
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #243047;
+}
+.supplement-step-sub{
+  font-size: 22rpx;
+  color: #8a97a8;
+}
+.supplement-step-guide{
+  margin-top: 18rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.supplement-guide-chip{
+  flex: 1 1 180rpx;
+  min-width: 0;
+  padding: 18rpx 18rpx 16rpx;
+  border-radius: 20rpx;
+  background: #f5f8fb;
+  box-shadow: 0 10rpx 20rpx rgba(36, 48, 71, 0.04);
+}
+.supplement-guide-chip-title{
+  display: block;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #243047;
+}
+.supplement-guide-chip-desc{
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  line-height: 1.45;
+  color: #8b98a9;
+}
+.supplement-step-tip{
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #9aa7b8;
+}
+.supplement-selected-panel{
+  margin-top: 18rpx;
+  padding: 20rpx;
+  border-radius: 22rpx;
+  background: linear-gradient(135deg, rgba(73, 202, 238, 0.13), rgba(255, 255, 255, 0.96));
+  box-shadow: 0 12rpx 24rpx rgba(73, 202, 238, 0.10);
+}
+.supplement-selected-panel-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.supplement-selected-panel-title{
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #243047;
+}
+.supplement-selected-panel-tip{
+  font-size: 20rpx;
+  color: #6d7c90;
+}
+.supplement-selected-empty{
+  display: block;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #8b98a9;
+}
+.supplement-select-section{
+  margin-top: 18rpx;
+}
+.supplement-select-section-head{
+  margin-bottom: 12rpx;
+}
+.supplement-select-section-copy{
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.supplement-select-section-title{
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #243047;
+}
+.supplement-select-section-sub{
+  font-size: 20rpx;
+  line-height: 1.45;
+  color: #8b98a9;
+}
+.supplement-select-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+.supplement-select-card{
+  padding: 20rpx;
+  border-radius: 24rpx;
+  background: #f6f8fb;
+  box-shadow: 0 12rpx 24rpx rgba(36, 48, 71, 0.06);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14rpx;
+  min-height: 136rpx;
+}
+.supplement-select-card.active{
+  background: rgba(73, 202, 238, 0.16);
+  box-shadow: 0 14rpx 28rpx rgba(73, 202, 238, 0.18);
+}
+.supplement-select-info{
+  flex: 1;
+  min-width: 0;
+}
+.supplement-select-title-row{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+.supplement-select-title{
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #243047;
+}
+.supplement-select-tag{
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(73, 202, 238, 0.15);
+  color: #49caee;
+  font-size: 18rpx;
+  line-height: 1.2;
+}
+.supplement-select-desc{
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8b98a9;
+  line-height: 1.4;
+}
+.supplement-select-check{
+  min-width: 56rpx;
+  height: 56rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  background: #edf2f7;
+  color: #6c7a8e;
+  font-size: 24rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.supplement-select-check.active{
+  background: #49caee;
+  color: #fff;
+}
+.supplement-selected-row{
+  margin-top: 16rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+}
+.supplement-selected-label{
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8a97a8;
+}
+.supplement-selected-list{
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+.supplement-selected-chip{
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4d5f77;
+  font-size: 22rpx;
+  box-shadow: 0 8rpx 18rpx rgba(36, 48, 71, 0.05);
+}
+.supplement-section{
+  margin-top: 18rpx;
+  padding: 20rpx;
+  border-radius: 22rpx;
+  background: #f7f9fc;
+  box-shadow: 0 12rpx 24rpx rgba(36, 48, 71, 0.06);
+}
+.supplement-section-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.supplement-section-title{
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #243047;
+}
+.supplement-section-tip{
+  font-size: 22rpx;
+  color: #95a2b2;
+}
+.supplement-row{
+  margin-top: 14rpx;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 14rpx;
+}
 .price-supplement-input{
   width: 100%;
-  height: 82rpx;
-  background: #f7f9fc;
+  height: 78rpx;
+  background: #fff;
   border-radius: 16rpx;
-  border: 1rpx solid #e6ebf2;
+  box-shadow: 0 6rpx 16rpx rgba(36, 48, 71, 0.06);
   padding: 0 24rpx;
   box-sizing: border-box;
   font-size: 28rpx;
   color: #2b3650;
 }
-.price-supplement-grid{
-  margin-top: 20rpx;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18rpx;
-}
 .supplement-field{
-  margin-top: 20rpx;
+  margin-top: 14rpx;
+}
+.supplement-row .supplement-field{
+  margin-top: 0;
 }
 .supplement-field-head{
   display: flex;
@@ -2401,9 +2943,6 @@ function selectSize (sizeText) {
   font-size: 22rpx;
   color: #9ca9bb;
 }
-.price-supplement-grid .supplement-field{
-  margin-top: 0;
-}
 .supplement-field-tip{
   display: block;
   margin-top: 8rpx;
@@ -2412,11 +2951,11 @@ function selectSize (sizeText) {
   color: #93a0b2;
 }
 .supplement-picker-trigger{
-  min-height: 82rpx;
+  min-height: 78rpx;
   padding: 0 24rpx;
   border-radius: 16rpx;
-  background: #f7f9fc;
-  border: 1rpx solid #e6ebf2;
+  background: #fff;
+  box-shadow: 0 6rpx 16rpx rgba(36, 48, 71, 0.06);
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -2436,8 +2975,8 @@ function selectSize (sizeText) {
   height: 60rpx;
   padding: 0 20rpx;
   border-radius: 999rpx;
-  background: #f4f7fb;
-  border: 1rpx solid #e4ebf4;
+  background: #eef3f7;
+  box-shadow: 0 6rpx 12rpx rgba(36, 48, 71, 0.05);
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -2446,16 +2985,8 @@ function selectSize (sizeText) {
   color: #5d6b80;
 }
 .supplement-chip.active{
-  background: rgba(73, 202, 238, 0.16);
-  border-color: rgba(73, 202, 238, 0.42);
+  background: rgba(73, 202, 238, 0.2);
   color: #1f7590;
-}
-.supplement-uploader{
-  margin-top: 22rpx;
-  padding: 22rpx;
-  border-radius: 20rpx;
-  background: #f7fafe;
-  border: 1rpx solid #e5edf7;
 }
 .supplement-uploader-head{
   display: flex;
@@ -2470,11 +3001,12 @@ function selectSize (sizeText) {
   padding: 0 20rpx;
   border-radius: 14rpx;
   font-size: 24rpx;
-  background: var(--app-recommend-color);
+  background: #49caee;
   color: #fff;
+  box-shadow: 0 6rpx 14rpx rgba(73, 202, 238, 0.28);
 }
 .supplement-upload-btn.is-light{
-  background: #eaf6fb;
+  background: #ecf7fb;
   color: #3c5b77;
 }
 .supplement-upload-btn::after{
@@ -2518,9 +3050,9 @@ function selectSize (sizeText) {
   width: 100%;
   min-height: 176rpx;
   padding: 22rpx 24rpx;
-  background: #f7f9fc;
+  background: #fff;
   border-radius: 16rpx;
-  border: 1rpx solid #e6ebf2;
+  box-shadow: 0 6rpx 16rpx rgba(36, 48, 71, 0.06);
   box-sizing: border-box;
   font-size: 28rpx;
   line-height: 1.6;
@@ -2549,8 +3081,9 @@ function selectSize (sizeText) {
   color: #56637a;
 }
 .price-supplement-confirm{
-  background: var(--app-recommend-color);
+  background: #49caee;
   color: #fff;
+  box-shadow: 0 8rpx 18rpx rgba(73, 202, 238, 0.3);
 }
 .price-supplement-cancel::after,
 .price-supplement-confirm::after{
