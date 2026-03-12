@@ -38,12 +38,55 @@ function pickFirstString(...values) {
   return ''
 }
 
+function getSafeProcessEnv() {
+  try {
+    if (typeof process !== 'undefined' && process && process.env) {
+      return {
+        VUE_APP_ENV_NAME: process.env.VUE_APP_ENV_NAME,
+        VITE_APP_ENV_NAME: process.env.VITE_APP_ENV_NAME,
+        VUE_APP_API_CN: process.env.VUE_APP_API_CN,
+        VITE_APP_API_CN: process.env.VITE_APP_API_CN,
+        VUE_APP_CN_API: process.env.VUE_APP_CN_API,
+        VUE_APP_API_US: process.env.VUE_APP_API_US,
+        VITE_APP_API_US: process.env.VITE_APP_API_US,
+        VUE_APP_US_API: process.env.VUE_APP_US_API,
+        VUE_APP_API_DEV: process.env.VUE_APP_API_DEV,
+        VITE_APP_API_DEV: process.env.VITE_APP_API_DEV,
+        VUE_APP_API_EU: process.env.VUE_APP_API_EU,
+        VITE_APP_API_EU: process.env.VITE_APP_API_EU,
+        VUE_APP_API_JP: process.env.VUE_APP_API_JP,
+        VITE_APP_API_JP: process.env.VITE_APP_API_JP,
+        VUE_APP_API_SG: process.env.VUE_APP_API_SG,
+        VITE_APP_API_SG: process.env.VITE_APP_API_SG,
+        VUE_APP_WEB_WWW: process.env.VUE_APP_WEB_WWW,
+        VITE_APP_WEB_WWW: process.env.VITE_APP_WEB_WWW,
+        VUE_APP_WEB_H5: process.env.VUE_APP_WEB_H5,
+        VITE_APP_WEB_H5: process.env.VITE_APP_WEB_H5,
+        VUE_APP_SHARE_H5_BASE: process.env.VUE_APP_SHARE_H5_BASE,
+        VITE_APP_SHARE_H5_BASE: process.env.VITE_APP_SHARE_H5_BASE,
+        VUE_APP_IMAGE1_URL: process.env.VUE_APP_IMAGE1_URL,
+        VITE_APP_IMAGE1_URL: process.env.VITE_APP_IMAGE1_URL
+      }
+    }
+  } catch (_) {}
+  return {}
+}
+
+function getSafeInjectedEnv() {
+  try {
+    if (typeof globalThis !== 'undefined' && globalThis && globalThis.__DOGDOGDOLL_ENV__) {
+      return globalThis.__DOGDOGDOLL_ENV__
+    }
+  } catch (_) {}
+  return {}
+}
+
 function getRuntimeEnvValue(...keys) {
-  const importMetaEnv = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {}
-  const processEnv = (typeof process !== 'undefined' && process.env) ? process.env : {}
+  const injectedEnv = getSafeInjectedEnv()
+  const processEnv = getSafeProcessEnv()
   for (const key of keys) {
-    const importMetaValue = importMetaEnv[key]
-    if (typeof importMetaValue === 'string' && importMetaValue.trim()) return importMetaValue.trim()
+    const injectedValue = injectedEnv[key]
+    if (typeof injectedValue === 'string' && injectedValue.trim()) return injectedValue.trim()
     const processValue = processEnv[key]
     if (typeof processValue === 'string' && processValue.trim()) return processValue.trim()
   }
