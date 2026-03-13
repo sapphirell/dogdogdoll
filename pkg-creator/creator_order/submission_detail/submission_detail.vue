@@ -98,13 +98,6 @@
 	        <view class="overview-inline-panel">
 	          <view class="overview-inline-head">
 	            <text class="overview-inline-title font-alimamashuhei">前方订单状态</text>
-	            <view class="overview-inline-actions">
-	              <text class="overview-inline-action font-title" @tap="reloadProgressOverview">刷新</text>
-	              <view class="overview-inline-expand" @tap="openProgressOverview">
-	                <text class="overview-inline-action font-title">展开</text>
-	                <uni-icons type="right" size="14" color="#8e99a3" />
-	              </view>
-	            </view>
 	          </view>
 
 	          <view v-if="progressOverviewLoading && !progressOverviewLoaded" class="overview-inline-loading">
@@ -169,7 +162,7 @@
 	              </view>
 
               <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
-              <view v-else-if="overviewTailTipText" class="overview-tail-tip">{{ overviewTailTipText }}</view>
+              <view v-else-if="showOverviewTailFade" class="overview-tail-fade"></view>
 	            </view>
 	          </scroll-view>
 	        </view>
@@ -260,19 +253,16 @@
 
             <view class="timeline-area">
               <view class="timeline-header">进度详情</view>
-              <view v-if="currentItemProgressGuide" class="timeline-guide-card">
-                <view class="timeline-guide-row">
-                  <text class="timeline-guide-label">当前进度</text>
-                  <text class="timeline-guide-value">{{ currentItemProgressGuide.current_stage_text || '处理中' }}</text>
+              <view v-if="currentItemProgressGuide || timelineEvents.length" class="timeline-list">
+                <view v-if="currentItemProgressGuide" class="timeline-row timeline-row-guide">
+                  <view class="timeline-dot guide"></view>
+                  <view v-if="timelineEvents.length" class="timeline-line"></view>
+                  <view class="timeline-text-box">
+                    <view class="timeline-title-row">
+                      <text class="t-title">{{ timelineNextActionText }}</text>
+                    </view>
+                  </view>
                 </view>
-                <view class="timeline-guide-row next">
-                  <text class="timeline-guide-label">下一步</text>
-                  <text class="timeline-guide-value">
-                    {{ currentItemProgressGuide.next_action_text || currentItemProgressGuide.next_status_text || '等待下一步' }}
-                  </text>
-                </view>
-              </view>
-              <view v-if="timelineEvents.length" class="timeline-list">
                 <view
                   v-for="(event, idx) in timelineEvents"
                   :key="event.key"
@@ -450,7 +440,6 @@
       <view class="overview-modal" @tap.stop @touchmove.stop>
         <view class="overview-modal-header">
           <text class="overview-modal-title">前方订单状态</text>
-          <text class="overview-modal-refresh" @tap="reloadProgressOverview">刷新</text>
         </view>
 
         <scroll-view class="overview-modal-scroll" scroll-y @touchmove.stop>
@@ -518,7 +507,7 @@
 	                </view>
 
                 <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
-                <view v-else-if="overviewTailTipText" class="overview-tail-tip">{{ overviewTailTipText }}</view>
+                <view v-else-if="showOverviewTailFade" class="overview-tail-fade"></view>
               </view>
             </scroll-view>
           </view>
@@ -947,6 +936,16 @@ const currentItemProgressGuide = computed(() => {
     }
   }
   return null
+})
+
+const timelineNextActionText = computed(() => {
+  const guide = currentItemProgressGuide.value
+  if (!guide) return ''
+  const nextAction = String(guide.next_action_text || '').trim()
+  if (nextAction) return nextAction
+  const nextStatus = String(guide.next_status_text || '').trim()
+  if (nextStatus) return `下一步：${nextStatus}`
+  return '等待下一步'
 })
 
 function parseProgressLogExtra(row) {
@@ -1701,10 +1700,10 @@ function overviewEntryOrderTag(entry, idx) {
   return base
 }
 
-const overviewTailTipText = computed(() => {
-  if (!overviewCurrentPlanItems.value.length) return ''
-  if (progressOverviewHasMore.value) return '向右滑动加载前方订单'
-  return '已到最前的订单'
+const showOverviewTailFade = computed(() => {
+  if (!overviewCurrentPlanItems.value.length) return false
+  if (progressOverviewAppending.value) return false
+  return !progressOverviewHasMore.value
 })
 
 function pickOverviewEntryBySubmission(rows, currentSubmissionID, preferredItemID) {
@@ -3179,7 +3178,7 @@ onUnload(() => {
     background-position: 0 50%, 0 50%;
   }
   100% {
-    background-position: 0 50%, -240rpx 50%;
+    background-position: 0 50%, -180rpx 50%;
   }
 }
 
@@ -3489,7 +3488,7 @@ $spacing-page: 30rpx;
 }
 .review-preview-score {
   font-size: 22rpx;
-  color: #49caee;
+  color: #78daf5;
   font-weight: 700;
 }
 .review-preview-content {
@@ -3532,7 +3531,7 @@ $spacing-page: 30rpx;
   box-sizing: border-box;
 }
 .delivery-action-btn.primary {
-  background: #49caee;
+  background: #78daf5;
   color: #fff;
 }
 .review-modal {
@@ -3638,7 +3637,7 @@ $spacing-page: 30rpx;
   display: block;
   margin-top: 10rpx;
   font-size: 22rpx;
-  color: #49caee;
+  color: #78daf5;
 }
 .review-modal-actions {
   margin-top: 28rpx;
@@ -3661,7 +3660,7 @@ $spacing-page: 30rpx;
   color: #2d394b;
 }
 .review-modal-btn.confirm {
-  background: #49caee;
+  background: #78daf5;
   color: #fff;
 }
 .review-modal-btn.confirm.disabled {
@@ -3947,35 +3946,6 @@ $spacing-page: 30rpx;
   margin-bottom: 30rpx; /* 增大留白 */
   color: #333;
 }
-.timeline-guide-card {
-  margin-bottom: 26rpx;
-  padding: 18rpx 22rpx;
-  border-radius: 20rpx;
-  background: linear-gradient(135deg, rgba(73, 202, 238, 0.16) 0%, rgba(73, 202, 238, 0.04) 100%);
-  box-shadow: 0 16rpx 26rpx rgba(73, 202, 238, 0.12);
-}
-.timeline-guide-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12rpx;
-}
-.timeline-guide-row + .timeline-guide-row {
-  margin-top: 10rpx;
-}
-.timeline-guide-label {
-  font-size: 22rpx;
-  color: #7b8a98;
-}
-.timeline-guide-value {
-  font-size: 24rpx;
-  color: #223043;
-  font-weight: 600;
-  text-align: right;
-}
-.timeline-guide-row.next .timeline-guide-value {
-  color: #2aa6c8;
-}
 .timeline-list,
 .timeline-empty-box {
   position: relative;
@@ -4007,6 +3977,9 @@ $spacing-page: 30rpx;
   }
   &.rejected {
     background: #b9bec4;
+  }
+  &.guide {
+    background: #bcc5cf;
   }
 }
 .timeline-line {
@@ -4369,7 +4342,7 @@ $spacing-page: 30rpx;
     rgba(138, 155, 171, 0.88) 100%
   );
   background-size: 240% 100%;
-  animation: overviewDotFlow 1.05s linear infinite;
+  animation: overviewDotFlow 2.3s linear infinite;
   transform: translate(-50%, -50%);
   z-index: 2;
 }
@@ -4377,14 +4350,9 @@ $spacing-page: 30rpx;
 .overview-node-dot.current {
   width: 22rpx;
   height: 22rpx;
-  background: linear-gradient(
-    90deg,
-    rgba(59, 177, 206, 0.9) 0%,
-    rgba(204, 244, 252, 0.98) 52%,
-    rgba(59, 177, 206, 0.9) 100%
-  );
-  background-size: 240% 100%;
-  animation: overviewDotFlow 0.95s linear infinite;
+  background: #8fd2e2;
+  background-size: 100% 100%;
+  animation: none;
   box-shadow: 0 0 0 8rpx rgba(73, 202, 238, 0.16);
 }
 
@@ -4406,8 +4374,8 @@ $spacing-page: 30rpx;
       rgba(255, 255, 255, 0.08) 28rpx,
       rgba(255, 255, 255, 0.08) 44rpx
     );
-  background-size: 100% 100%, 240rpx 100%;
-  animation: overviewLineFlow 1.1s linear infinite;
+  background-size: 100% 100%, 220rpx 100%;
+  animation: overviewLineFlow 2.1s linear infinite;
   transform: translateY(-50%);
   z-index: 1;
 }
@@ -4424,7 +4392,7 @@ $spacing-page: 30rpx;
       rgba(255, 255, 255, 0.08) 28rpx,
       rgba(255, 255, 255, 0.08) 44rpx
     );
-  background-size: 100% 100%, 240rpx 100%;
+  background-size: 100% 100%, 220rpx 100%;
 }
 
 .overview-timeline-card {
@@ -4549,17 +4517,6 @@ $spacing-page: 30rpx;
   font-weight: 600;
 }
 
-.overview-tail-tip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 344rpx;
-  padding: 0 22rpx;
-  font-size: 21rpx;
-  color: #9aa4ab;
-  white-space: nowrap;
-}
-
 .overview-loading-tail {
   display: inline-flex;
   align-items: center;
@@ -4569,6 +4526,19 @@ $spacing-page: 30rpx;
   font-size: 22rpx;
   color: #7fa6b6;
   white-space: nowrap;
+}
+
+.overview-tail-fade {
+  width: 82rpx;
+  min-height: 344rpx;
+  flex: 0 0 82rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(
+    90deg,
+    rgba(149, 158, 168, 0.46) 0%,
+    rgba(211, 217, 223, 0.24) 58%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
 }
 
 .pay-sheet {
