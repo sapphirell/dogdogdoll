@@ -1,6 +1,8 @@
 import {
 	reactive,ref
 } from 'vue';
+import { BUILD_PROFILE } from './build-profile.js'
+import { getBuildEnvValue } from './build-env.js'
 
 const DEFAULT_DOMAIN_CONFIG = {
   api: {
@@ -93,6 +95,20 @@ function getRuntimeEnvValue(...keys) {
   return ''
 }
 
+function getBuildProfileEnvValue(...keys) {
+  return getBuildEnvValue(BUILD_PROFILE.envFileName, ...keys)
+}
+
+function toBool(value, defaultValue = false) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false
+  }
+  return defaultValue
+}
+
 function isUnsafeLocalApi(url) {
   const s = String(url || '').trim().toLowerCase()
   if (!s) return false
@@ -120,35 +136,33 @@ function getGlobalConfig() {
 }
 
 function getEnvConfig() {
+  // 统一从 BUILD_PROFILE.envFileName 指定的 .env 文件读取默认配置。
+  // 运行时环境变量只作为兜底，避免 HBuilderX / 命令行差异导致取值混乱。
   return {
     api: {
-      cn: getRuntimeEnvValue('VITE_APP_API_CN', 'VUE_APP_API_CN', 'VUE_APP_CN_API'),
-      us: getRuntimeEnvValue('VITE_APP_API_US', 'VUE_APP_API_US', 'VUE_APP_US_API'),
-      dev: getRuntimeEnvValue('VITE_APP_API_DEV', 'VUE_APP_API_DEV'),
-      eu: getRuntimeEnvValue('VITE_APP_API_EU', 'VUE_APP_API_EU'),
-      jp: getRuntimeEnvValue('VITE_APP_API_JP', 'VUE_APP_API_JP'),
-      sg: getRuntimeEnvValue('VITE_APP_API_SG', 'VUE_APP_API_SG')
+      cn: pickFirstString(getBuildProfileEnvValue('VITE_APP_API_CN', 'VUE_APP_API_CN', 'VUE_APP_CN_API'), getRuntimeEnvValue('VITE_APP_API_CN', 'VUE_APP_API_CN', 'VUE_APP_CN_API')),
+      us: pickFirstString(getBuildProfileEnvValue('VITE_APP_API_US', 'VUE_APP_API_US', 'VUE_APP_US_API'), getRuntimeEnvValue('VITE_APP_API_US', 'VUE_APP_API_US', 'VUE_APP_US_API')),
+      dev: pickFirstString(getBuildProfileEnvValue('VITE_APP_API_DEV', 'VUE_APP_API_DEV'), getRuntimeEnvValue('VITE_APP_API_DEV', 'VUE_APP_API_DEV')),
+      eu: pickFirstString(getBuildProfileEnvValue('VITE_APP_API_EU', 'VUE_APP_API_EU'), getRuntimeEnvValue('VITE_APP_API_EU', 'VUE_APP_API_EU')),
+      jp: pickFirstString(getBuildProfileEnvValue('VITE_APP_API_JP', 'VUE_APP_API_JP'), getRuntimeEnvValue('VITE_APP_API_JP', 'VUE_APP_API_JP')),
+      sg: pickFirstString(getBuildProfileEnvValue('VITE_APP_API_SG', 'VUE_APP_API_SG'), getRuntimeEnvValue('VITE_APP_API_SG', 'VUE_APP_API_SG'))
     },
     web: {
-      www: getRuntimeEnvValue('VITE_APP_WEB_WWW', 'VUE_APP_WEB_WWW'),
-      h5: getRuntimeEnvValue('VITE_APP_WEB_H5', 'VUE_APP_WEB_H5', 'VITE_APP_SHARE_H5_BASE', 'VUE_APP_SHARE_H5_BASE')
+      www: pickFirstString(getBuildProfileEnvValue('VITE_APP_WEB_WWW', 'VUE_APP_WEB_WWW'), getRuntimeEnvValue('VITE_APP_WEB_WWW', 'VUE_APP_WEB_WWW')),
+      h5: pickFirstString(getBuildProfileEnvValue('VITE_APP_WEB_H5', 'VUE_APP_WEB_H5', 'VITE_APP_SHARE_H5_BASE', 'VUE_APP_SHARE_H5_BASE'), getRuntimeEnvValue('VITE_APP_WEB_H5', 'VUE_APP_WEB_H5', 'VITE_APP_SHARE_H5_BASE', 'VUE_APP_SHARE_H5_BASE'))
     },
     image: {
-      image1: getRuntimeEnvValue('VITE_APP_IMAGE1_URL', 'VUE_APP_IMAGE1_URL')
+      image1: pickFirstString(getBuildProfileEnvValue('VITE_APP_IMAGE1_URL', 'VUE_APP_IMAGE1_URL'), getRuntimeEnvValue('VITE_APP_IMAGE1_URL', 'VUE_APP_IMAGE1_URL'))
     }
   }
 }
 
 function buildDomainConfig() {
   // 配置优先级（高 -> 低）：
-  // 1) globalThis.__DOGDOGDOLL_DOMAIN_CONFIG__
-  //    适合在运行时由宿主/注入脚本动态下发。
-  // 2) 本地存储 domainConfig / runtimeDomainConfig
-  //    适合远程拉取配置后本地缓存。
-  // 3) process.env (VUE_APP_*)
-  //    来自 .env.development / .env.production（由运行/发行模式决定）。
-  // 4) DEFAULT_DOMAIN_CONFIG
-  //    最终兜底，避免未配置时崩溃。
+  // 1) 全局注入配置：适合宿主动态下发
+  // 2) 本地缓存配置：适合远程配置下发后持久化
+  // 3) 当前选中的 .env 文件：由 BUILD_PROFILE.envFileName 决定
+  // 4) 默认兜底配置：避免未配置时直接崩
   const g = getGlobalConfig()
   const s = getStorageConfig()
   const e = getEnvConfig()
@@ -176,6 +190,7 @@ function buildDomainConfig() {
 
 export const DOMAIN_CONFIG = buildDomainConfig()
 export const ENV_NAME = pickFirstString(
+  BUILD_PROFILE.envFileName,
   getRuntimeEnvValue('VITE_APP_ENV_NAME', 'VUE_APP_ENV_NAME'),
   'unknown'
 )
@@ -199,27 +214,36 @@ export const apiRegionURLs = Object.freeze({
   sg: sgURL
 });
 
+// 是否允许设备本地缓存的 selectedServer 覆盖当前环境默认后端。
+// 正式包通常设为 false，测试包按需要开启。
+const allowSelectedServerOverride = toBool(
+  pickFirstString(
+    getBuildProfileEnvValue('VITE_APP_ALLOW_SELECTED_SERVER_OVERRIDE', 'VUE_APP_ALLOW_SELECTED_SERVER_OVERRIDE'),
+    getRuntimeEnvValue('VITE_APP_ALLOW_SELECTED_SERVER_OVERRIDE', 'VUE_APP_ALLOW_SELECTED_SERVER_OVERRIDE')
+  ),
+  BUILD_PROFILE.allowSelectedServerOverride
+)
 const savedServer = (typeof uni !== 'undefined' && typeof uni.getStorageSync === 'function')
   ? uni.getStorageSync('selectedServer')
   : '';
-const safeSelectedServer = isUnsafeLocalApi(savedServer) ? '' : savedServer
+const safeSelectedServer = isUnsafeLocalApi(savedServer) ? '' : trimSlash(savedServer)
+const effectiveSelectedServer = allowSelectedServerOverride ? safeSelectedServer : ''
 // 默认 API 选择规则：
-// 1) 若存在 selectedServer（用户通过服务器切换组件选过），优先使用它；
-// 2) 否则按 cnURL -> usURL -> devUrl 回退。
-//
-// 所以你即便改了 .env 的 VUE_APP_API_CN，只要本机仍保存 selectedServer，
-// 实际请求地址仍可能不是新配置值。排查时请看控制台 [Config] 日志。
-const defaultApiUrl = trimSlash(pickFirstString(safeSelectedServer, cnURL, usURL, devUrl));
+// 1) 允许覆盖时，优先使用设备本地 selectedServer
+// 2) 否则直接使用当前 .env 文件里的中国站 API
+// 3) 如果中国站没配，再按 us -> dev 回退
+const defaultApiUrl = trimSlash(pickFirstString(effectiveSelectedServer, cnURL, usURL, devUrl));
 // 网站域名（动态取配置 + 本地已选服务器）
 export const websiteUrl = ref(defaultApiUrl);
 
 if (typeof console !== 'undefined' && typeof console.info === 'function') {
   console.info(
-    '[Config] env=%s api=%s h5=%s selectedServer=%s selectedServerIgnored=%s',
+    '[Config] env=%s api=%s h5=%s selectedServer=%s selectedServerUsed=%s selectedServerIgnored=%s',
     ENV_NAME,
     websiteUrl.value,
     DOMAIN_CONFIG.web.h5,
     savedServer || '(none)',
+    effectiveSelectedServer ? 'yes' : 'no',
     isUnsafeLocalApi(savedServer) ? 'yes(local)' : 'no'
   )
 }
