@@ -70,27 +70,54 @@
 
       <!-- 贩售作品 -->
       <view v-show="activeTabKey === 'goods'">
-        <view class="brand_goods">
-          <view class="brand_goods_item" v-for="item in goods.goods_list" :key="item.id">
-            <navigator @click="jumpGoods(item.id)" style="width: 100%;height: 100%;">
-              <view class="goods-media">
-                <image
-                  class="brand_goods_image"
-                  :src="item.goods_images[0]"
-                  mode="aspectFill"
-                ></image>
+        <view v-if="brandGoodsTypes.length" class="goods-type-sections">
+          <view v-for="typeItem in brandGoodsTypes" :key="typeItem.type" class="goods-type-section">
+            <view class="goods-type-head">
+              <text class="goods-type-tag alimama-shuhei">{{ typeItem.label }}</text>
+              <text class="goods-type-meta font-title">{{ formatTypeTotal(typeItem) }} 款</text>
+            </view>
 
-                <!-- 待开售角标：waiting_sale == 1 时展示 -->
-                <view v-if="Number(item.waiting_sale) === 1" class="goods-badge alimama-shuhei">
-                  待开售
+            <scroll-view
+              class="goods-row-scroll"
+              scroll-x
+              enhanced
+              :show-scrollbar="false"
+              :lower-threshold="80"
+              @scrolltolower="loadMoreByType(typeItem.type)"
+            >
+              <view class="goods-row-inner">
+                <view
+                  class="brand_goods_item goods-row-item"
+                  v-for="item in getTypeGoodsList(typeItem.type)"
+                  :key="`${typeItem.type}-${item.id}`"
+                >
+                  <navigator hover-class="none" @click="jumpGoods(item.id)" style="width: 100%;height: 100%;">
+                    <view class="goods-media">
+                      <image
+                        class="brand_goods_image"
+                        :src="item.goods_images[0]"
+                        mode="aspectFill"
+                      ></image>
+                      <view v-if="Number(item.waiting_sale) === 1" class="goods-badge alimama-shuhei">
+                        待开售
+                      </view>
+                    </view>
+                    <text class="goods-title alimama-shuhei">{{ item.name }}</text>
+                  </navigator>
                 </view>
               </view>
+            </scroll-view>
 
-              <text class="goods-title alimama-shuhei">{{ item.name }}</text>
-            </navigator>
+            <view v-if="isTypeLoading(typeItem.type) && getTypeGoodsList(typeItem.type).length" class="goods-hint alimama-shuhei">
+              正在加载更多...
+            </view>
+            <view v-if="!isTypeLoading(typeItem.type) && !getTypeGoodsList(typeItem.type).length" class="goods-hint alimama-shuhei">
+              这个分类还没有商品
+            </view>
           </view>
         </view>
-        <button class="load_more" @click="getBrandGoods(true)">加载更多</button>
+
+        <view v-else class="goods-hint alimama-shuhei">暂时还没有可展示的商品类型</view>
       </view>
 
       <!-- 消息动态：卡片（图片 + 标题一行 + 时间） -->
@@ -424,10 +451,160 @@ const handleCommentSubmit = submitData => {
 }
 
 /** ====== 数据拉取 ====== */
-let goods = ref({})
-let page = ref(1)
 let newsList = ref([])
 let newsPage = ref({ page_index: 1, page_size: 10, total: 0 })
+const brandGoodsTypes = ref([])
+const goodsTypeStateMap = ref({})
+
+function resetGoodsTypeState() {
+  brandGoodsTypes.value = []
+  goodsTypeStateMap.value = {}
+}
+
+function ensureGoodsTypeState(typeKey) {
+  if (!goodsTypeStateMap.value[typeKey]) {
+    goodsTypeStateMap.value[typeKey] = {
+      goods_list: [],
+      page: 1,
+      total: 0,
+      loading: false,
+      inited: false,
+      noMore: false
+    }
+  }
+  return goodsTypeStateMap.value[typeKey]
+}
+
+function getTypeGoodsList(typeKey) {
+  return ensureGoodsTypeState(typeKey).goods_list || []
+}
+
+function isTypeLoading(typeKey) {
+  return !!ensureGoodsTypeState(typeKey).loading
+}
+
+function canLoadMoreType(typeKey) {
+  const state = ensureGoodsTypeState(typeKey)
+  if (state.loading || !state.inited) return false
+  if (state.total <= 0) return false
+  return state.goods_list.length < state.total
+}
+
+function loadMoreByType(typeKey) {
+  return getBrandGoodsByType(true, typeKey, currentBrandId.value)
+}
+
+function formatTypeTotal(typeItem) {
+  const typeKey = String(typeItem?.type || '')
+  if (!typeKey) return Number(typeItem?.count || 0)
+  const state = ensureGoodsTypeState(typeKey)
+  return Number(state.total || typeItem?.count || 0)
+}
+
+function getBrandGoodsTypes(brandId = currentBrandId.value) {
+  return new Promise(resolve => {
+    const parseTypeList = rawList => {
+      if (Array.isArray(rawList)) {
+        return rawList
+          .map(item => {
+            if (typeof item === 'string') {
+              return { type: item, label: item, count: 0 }
+            }
+            return {
+              type: String(item?.type || '').trim(),
+              label: String(item?.label || item?.type || '').trim(),
+              count: Number(item?.count || 0)
+            }
+          })
+          .filter(item => item.type)
+      }
+      return []
+    }
+
+    const applyList = list => {
+      brandGoodsTypes.value = parseTypeList(list)
+    }
+
+    const fallbackToGlobalTypes = () => {
+      uni.request({
+        url: `${websiteUrl.value}/goods-types`,
+        method: 'GET',
+        success: fallbackRes => {
+          applyList(fallbackRes?.data?.data || [])
+        },
+        complete: () => resolve()
+      })
+    }
+
+    uni.request({
+      url: `${websiteUrl.value}/brand-goods-types?brand_id=${brandId}`,
+      method: 'GET',
+      success: res => {
+        const isSuccess = String(res?.data?.status || '') === 'success'
+        if (!isSuccess) {
+          fallbackToGlobalTypes()
+          return
+        }
+        applyList(res?.data?.data || [])
+        resolve()
+      },
+      fail: () => {
+        fallbackToGlobalTypes()
+      },
+      complete: () => {}
+    })
+  })
+}
+
+function getBrandGoodsByType(isLoadMore = false, goodsType = '', brandId = currentBrandId.value) {
+  return new Promise(resolve => {
+    const state = ensureGoodsTypeState(goodsType)
+    if (state.loading) {
+      resolve()
+      return
+    }
+    if (isLoadMore && state.noMore) {
+      resolve()
+      return
+    }
+    const page = isLoadMore ? state.page : 1
+    state.loading = true
+
+    uni.request({
+      url: `${websiteUrl.value}/brand-goods?brand_id=${brandId}&page=${page}&page_size=9&goods_type=${encodeURIComponent(goodsType)}`,
+      method: 'GET',
+      timeout: 5000,
+      success: res => {
+        const data = res.data?.data || { goods_list: [], total: 0, page_index: page }
+        const nextList = Array.isArray(data.goods_list) ? data.goods_list : []
+        state.total = Number(data.total || 0)
+        state.goods_list = isLoadMore ? state.goods_list.concat(nextList) : nextList
+        state.inited = true
+        state.page = page + 1
+        state.noMore = state.goods_list.length >= state.total || nextList.length === 0
+        if (isLoadMore && nextList.length === 0) {
+          uni.showToast({ title: '这个分类已经到底啦', icon: 'none' })
+        }
+      },
+      fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
+      complete: () => {
+        state.loading = false
+        resolve()
+      }
+    })
+  })
+}
+
+async function initBrandGoodsByType(brandId = currentBrandId.value) {
+  resetGoodsTypeState()
+  await getBrandGoodsTypes(brandId)
+  if (!brandGoodsTypes.value.length) {
+    return
+  }
+  await Promise.all(
+    brandGoodsTypes.value.map(typeItem => getBrandGoodsByType(false, typeItem.type, brandId))
+  )
+}
 
 async function reloadByBrandId(newId, source = 'unknown') {
   console.log(`【品牌】reloadByBrandId 来源=${source} id=${newId}`)
@@ -435,8 +612,7 @@ async function reloadByBrandId(newId, source = 'unknown') {
   lastBrandId.value = String(newId)
 
   // 重置
-  page.value = 1
-  goods.value = { goods_list: [], page_index: 1, total: 0 }
+  resetGoodsTypeState()
   newsList.value = []
   newsPage.value = { page_index: 1, page_size: 10, total: 0 }
   hasLikeBrand.value = false
@@ -455,7 +631,7 @@ async function reloadByBrandId(newId, source = 'unknown') {
   try {
     await Promise.all([
       getBrandsInfo(currentBrandId.value),
-      getBrandGoods(false, currentBrandId.value),
+      initBrandGoodsByType(currentBrandId.value),
       getBrandNews(currentBrandId.value)
     ])
   } finally {
@@ -504,30 +680,6 @@ function getBrandsInfo(brandId = currentBrandId.value) {
           const insertAt = idx >= 0 ? idx : tabs.value.length
           tabs.value.splice(insertAt, 0, { label: '接单主页', key: 'artist' })
           hasAddedArtistTab.value = true
-        }
-      },
-      fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
-      complete: () => resolve()
-    })
-  })
-}
-
-function getBrandGoods(isLoadMore = false, brandId = currentBrandId.value) {
-  return new Promise(resolve => {
-    uni.request({
-      url: websiteUrl.value + '/brand-goods?brand_id=' + brandId + '&page=' + page.value,
-      method: 'GET',
-      timeout: 5000,
-      success: res => {
-        const data = res.data.data || { goods_list: [], total: 0, page_index: 1 }
-        goods.value.page_index = data.page_index
-        goods.value.total = data.total
-        if (isLoadMore) goods.value.goods_list = (goods.value.goods_list || []).concat(data.goods_list || [])
-        else goods.value.goods_list = data.goods_list || []
-
-        if (data.goods_list && data.goods_list.length > 0) page.value += 1
-        if (isLoadMore && (!data.goods_list || data.goods_list.length === 0) && page.value > 1) {
-          uni.showToast({ title: '没有更多数据了', icon: 'none' })
         }
       },
       fail: () => uni.showToast({ title: '网络请求失败', icon: 'none' }),
@@ -618,13 +770,13 @@ onShow(async () => {
     uni.showLoading({ title: '加载中' })
     try {
       await getBrandsInfo(currentBrandId.value)
-      await Promise.all([getBrandNews(currentBrandId.value), getBrandGoods(false, currentBrandId.value)])
+      await Promise.all([getBrandNews(currentBrandId.value), initBrandGoodsByType(currentBrandId.value)])
     } finally {
       uni.hideLoading()
     }
   } else {
     if (newsList.value.length === 0) getBrandNews(currentBrandId.value)
-    if (!goods.value.goods_list || goods.value.goods_list.length === 0) getBrandGoods(false, currentBrandId.value)
+    if (!brandGoodsTypes.value.length) initBrandGoodsByType(currentBrandId.value)
   }
 })
 </script>
@@ -726,7 +878,6 @@ onShow(async () => {
   background: #f4fbfd;
   color: #2b7f8f;
   font-size: 26rpx;
-  border: 1px solid rgba(101, 195, 214, 0.25);
 }
 
 /* Tab + indicator */
@@ -761,27 +912,86 @@ onShow(async () => {
   z-index: 1;
 }
 
-/* 贩售作品 */
-.brand_goods {
+/* 贩售作品：按类型纵向分区，每个分区横向滑动 */
+.goods-type-sections {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column;
+  gap: 20rpx;
+}
 
-  .brand_goods_item {
-    flex: 1 1 calc(33.33% - 12px);
-    width: calc(33.33% - 12px);
-    max-width: calc(33.33% - 12px);
-    height: 140px;
-    aspect-ratio: 1;
-    border-radius: 8px;
-    overflow: hidden;
-  }
+.goods-type-section {
+  padding: 4rpx 0 10rpx;
+}
+
+.goods-type-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12rpx;
+  padding: 0 2rpx;
+}
+
+.goods-type-tag {
+  display: inline-block;
+  font-size: 28rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #7adcf3 0%, #78daf5 52%, #74b7ff 100%);
+  padding: 10rpx 20rpx 10rpx 30rpx;
+  border-radius: 14rpx 6rpx 14rpx 6rpx;
+  line-height: 1.2;
+  position: relative;
+  box-shadow: 0 8rpx 16rpx rgba(73, 202, 238, 0.25);
+}
+
+.goods-type-tag::before {
+  content: '';
+  position: absolute;
+  left: 12rpx;
+  top: 50%;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.goods-type-meta {
+  font-size: 24rpx;
+  color: #8ea0b8;
+}
+
+.goods-row-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.goods-row-inner {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding-right: 8rpx;
+}
+
+.brand_goods_item.goods-row-item {
+  width: 220rpx;
+  min-width: 220rpx;
+  max-width: 220rpx;
+  height: 300rpx;
+  border-radius: 14rpx;
+  overflow: hidden;
+  background: #ffffff;
+  padding: 8rpx;
+  box-sizing: border-box;
 }
 
 .goods-media {
-  width: 100%;
-  height: calc(100% - 20px);
+  width: 204rpx;
+  height: 220rpx;
   position: relative;
+  border-radius: 12rpx;
+  overflow: hidden;
 }
 
 .brand_goods_image {
@@ -800,25 +1010,27 @@ onShow(async () => {
   font-size: 22rpx;
   color: #ffffff;
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .goods-title {
   display: block;
-  width: 100%;
-  text-align: center;
+  width: 204rpx;
+  margin-top: 8rpx;
+  text-align: left;
   font-weight: 900;
   color: #586f88;
+  font-size: 24rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.load_more {
-  background: #fff;
-  color: #d6d6d6;
-  font-size: 13px;
-  margin-top: 15px;
-}
-.load_more::after {
-  border: none;
+.goods-hint {
+  margin-top: 10rpx;
+  text-align: left;
+  padding-left: 8rpx;
+  color: #8ea0b8;
+  font-size: 24rpx;
 }
 
 /* 消息动态 */
