@@ -860,6 +860,7 @@ const PAY_DEBUG_TAG = '[submission-pay]'
 const ALIPAY_APP_PAY_SUCCESS_CODES = ['9000']
 // 这些状态通常表示支付结果还在确认中，最终仍以后端回调和查单为准。
 const ALIPAY_APP_PAY_WAITING_CODES = ['8000', '6004']
+const H5_PENDING_ALIPAY_PAYMENT_KEY = 'pendingAlipayH5Payment'
 function payDebug(step, payload = {}) {
   try {
     console.log(PAY_DEBUG_TAG, step, payload)
@@ -2772,16 +2773,62 @@ async function createPlatformPaymentOrder(provider = 'alipay', channel = 'app') 
     throw new Error(body.msg || '创建平台支付订单失败')
   }
   const payload = body.data || {}
-  // 优先使用新字段 order_string，同时兼容旧字段 pay_url。
+  const payURL = String(payload.pay_url || '').trim()
   const orderString = String(payload.order_string || payload.pay_url || '').trim()
-  if (!orderString) {
-    throw new Error('支付参数缺失：order_string')
+  if (!orderString && !payURL) {
+    throw new Error('支付参数缺失')
   }
   return {
     bizOrderNo: String(payload.biz_order_no || '').trim(),
     orderString,
+    payURL,
     raw: payload
   }
+}
+
+function savePendingH5Payment(order) {
+  // #ifdef H5
+  try {
+    uni.setStorageSync(H5_PENDING_ALIPAY_PAYMENT_KEY, {
+      bizOrderNo: String(order?.bizOrderNo || '').trim(),
+      submissionID: Number(submissionId.value || submission?.submission_id || 0),
+      provider: 'alipay',
+      createdAt: Date.now()
+    })
+  } catch (e) {
+    payDebug('savePendingH5Payment:error', { message: e?.message || String(e) })
+  }
+  // #endif
+}
+
+function getPendingH5Payment() {
+  // #ifdef H5
+  try {
+    const raw = uni.getStorageSync(H5_PENDING_ALIPAY_PAYMENT_KEY)
+    if (!raw || typeof raw !== 'object') return null
+    const bizOrderNo = String(raw.bizOrderNo || '').trim()
+    if (!bizOrderNo) return null
+    return {
+      bizOrderNo,
+      submissionID: Number(raw.submissionID || 0),
+      provider: String(raw.provider || '').trim().toLowerCase(),
+      createdAt: Number(raw.createdAt || 0)
+    }
+  } catch (e) {
+    payDebug('getPendingH5Payment:error', { message: e?.message || String(e) })
+  }
+  // #endif
+  return null
+}
+
+function clearPendingH5Payment() {
+  // #ifdef H5
+  try {
+    uni.removeStorageSync(H5_PENDING_ALIPAY_PAYMENT_KEY)
+  } catch (e) {
+    payDebug('clearPendingH5Payment:error', { message: e?.message || String(e) })
+  }
+  // #endif
 }
 
 // 支付宝客户端结果只做“本地态”判断，最终业务成功仍以后端状态为准。
@@ -2811,6 +2858,25 @@ async function invokeAlipayAppPay(orderString) {
   // #endif
 }
 
+async function invokeAlipayH5Pay(order) {
+  // #ifndef H5
+  throw new Error('支付宝 H5 支付仅支持 H5 页面')
+  // #endif
+
+  // #ifdef H5
+  const payURL = String(order?.payURL || order?.orderString || '').trim()
+  if (!payURL) {
+    throw new Error('支付链接缺失')
+  }
+  savePendingH5Payment(order)
+  closePayPopup()
+  payCodeModalVisible.value = false
+  setH5PageScrollLock(false)
+  window.location.href = payURL
+  return true
+  // #endif
+}
+
 // 客户端支付后主动回查本地支付单，避免只依赖 SDK 回调导致状态漂移。
 async function queryPlatformPaymentStatus(bizOrderNo) {
   const res = await uni.request({
@@ -2825,6 +2891,49 @@ async function queryPlatformPaymentStatus(bizOrderNo) {
     throw new Error(body.msg || '查询支付状态失败')
   }
   return body.data || {}
+}
+
+async function tryResumePendingH5Payment() {
+  // #ifndef H5
+  return
+  // #endif
+
+  // #ifdef H5
+  const pending = getPendingH5Payment()
+  if (!pending) return
+  if (pending.provider !== 'alipay') {
+    clearPendingH5Payment()
+    return
+  }
+  if (pending.submissionID > 0 && Number(submissionId.value || 0) > 0 && pending.submissionID !== Number(submissionId.value || 0)) {
+    return
+  }
+
+  payDebug('tryResumePendingH5Payment:start', pending)
+  try {
+    const statusResp = await queryPlatformPaymentStatus(pending.bizOrderNo)
+    const finalStatus = String(statusResp?.status || '').toLowerCase()
+    if (finalStatus === 'succeeded') {
+      clearPendingH5Payment()
+      uni.showToast({ title: '支付成功', icon: 'success' })
+      if (global.lastRefresh) global.lastRefresh.time = 0
+      fetchDetail()
+      resetPayState()
+      return
+    }
+    if (finalStatus === 'failed' || finalStatus === 'closed') {
+      clearPendingH5Payment()
+      uni.showToast({ title: '支付未完成', icon: 'none' })
+      fetchDetail()
+      return
+    }
+    payDebug('tryResumePendingH5Payment:pending', statusResp)
+  } catch (err) {
+    payDebug('tryResumePendingH5Payment:error', {
+      message: err?.message || err?.errMsg || String(err)
+    })
+  }
+  // #endif
 }
 
 // 支付宝 APP 支付主流程：
@@ -2884,6 +2993,24 @@ async function runAlipayAppPaymentFlow() {
   } catch (err) {
     const msg = String(err?.message || err?.errMsg || '支付失败').trim()
     payDebug('runAlipayAppPaymentFlow:error', {
+      message: msg,
+      raw: err
+    })
+    uni.showToast({ title: msg || '支付失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+async function runAlipayH5PaymentFlow() {
+  uni.showLoading({ title: '跳转支付中' })
+  try {
+    const order = await createPlatformPaymentOrder('alipay', 'h5')
+    await invokeAlipayH5Pay(order)
+  } catch (err) {
+    clearPendingH5Payment()
+    const msg = String(err?.message || err?.errMsg || '支付失败').trim()
+    payDebug('runAlipayH5PaymentFlow:error', {
       message: msg,
       raw: err
     })
@@ -2986,6 +3113,10 @@ async function confirmPayFromPopup() {
   // 支付宝方式走新的“平台代收 + SDK 拉起”链路；
   // 其它方式继续保留原来的提交流程，避免影响既有逻辑。
   if (Number(selectedPayMethodId.value || 0) === PlanPaymentMethodAlipay) {
+    // #ifdef H5
+    await runAlipayH5PaymentFlow()
+    return
+    // #endif
     await runAlipayAppPaymentFlow()
     return
   }
@@ -3143,6 +3274,7 @@ onShow(() => {
 
   if (isLogin.value && submissionId.value) {
     ensureCurrentUserUID()
+    tryResumePendingH5Payment()
     startPolling(true)
   }
 })
