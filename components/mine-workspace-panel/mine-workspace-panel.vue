@@ -206,6 +206,13 @@ const allFunctions = [
     needHairstylist: true
   },
   {
+    key: 'blank-stock-settings',
+    label: '毛坯设置',
+    desc: '管理已有毛坯库存、价格与头围信息',
+    icon: 'list',
+    needHairstylist: true
+  },
+  {
     key: 'article-publish',
     label: '发布文章',
     desc: '发布图透、成品展示和公告',
@@ -223,7 +230,8 @@ const functionThemeMap = {
   'makeup-gallery': 'fc-theme-5',        // 新配色1：#e5e3ed + #e19cbb
   'hair-gallery': 'fc-theme-6',          // 新配色2：#003153 + #e5e3ed
   'publish-plan': 'fc-theme-7',          // 新配色3：#ecf2ec + #008c8d
-  'hairstylist-settings': 'fc-theme-8'   // 新配色4：#efdfce + #7e041d
+  'hairstylist-settings': 'fc-theme-8',  // 新配色4：#efdfce + #7e041d
+  'blank-stock-settings': 'fc-theme-7'
 }
 
 // 主题 class → 图标颜色 映射（给 uni-icons 的 :color 用）
@@ -527,6 +535,9 @@ function handleFunctionClick (key) {
       break
     case 'hairstylist-settings':
       url = '/pkg-creator/creator_base/hairstylist_setting/hairstylist_setting'
+      break
+    case 'blank-stock-settings':
+      url = '/pkg-creator/creator_base/blank_stock_manage/blank_stock_manage'
       break
     case 'article-publish':
       url = '/pkg-creator/creator_base/news/news'

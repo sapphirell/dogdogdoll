@@ -280,9 +280,36 @@
                 <text class="blank-note-text">毛娘会提供给您购买第三方店铺毛坯的链接。</text>
               </view>
 
-              <view v-else-if="form.blank_supply_mode === 'stock'" class="blank-note blank-note-soft">
-                <text class="blank-note-title font-alimamashuhei">选购现有毛坯</text>
-                <text class="blank-note-text">现有毛坯功能整理中，下一步会在这里接入可选毛坯列表。</text>
+              <view v-else-if="form.blank_supply_mode === 'stock'" class="blank-panel-body">
+                <view v-if="hasPickedStockBlank" class="picked-blank-card">
+                  <common-image
+                    class="picked-blank-cover"
+                    :src="pickedStockBlank.cover_image || firstBlankStockImage || '/static/default-goods.png'"
+                    width="112"
+                    height="112"
+                    radius="12"
+                    mode="aspectFill"
+                  />
+                  <view class="picked-blank-main">
+                    <text class="picked-blank-name font-alimamashuhei">{{ pickedStockBlank.blank_name || '已选毛坯' }}</text>
+                    <text class="picked-blank-meta">头围：{{ pickedStockBlank.head_circumference || '未填写' }}</text>
+                    <text class="picked-blank-meta">库存：{{ pickedStockBlank.quantity || 0 }}</text>
+                    <view class="picked-blank-price font-title">¥{{ formatStockBlankPrice(pickedStockBlank.price) }}</view>
+                  </view>
+                </view>
+
+                <view class="stock-pick-actions">
+                  <view class="stock-pick-btn stock-pick-primary" @click="goPickStockBlank">
+                    {{ hasPickedStockBlank ? '更换毛坯' : '去选择毛坯' }}
+                  </view>
+                  <view
+                    v-if="hasPickedStockBlank"
+                    class="stock-pick-btn stock-pick-remove"
+                    @click="removePickedStockBlank"
+                  >
+                    移除
+                  </view>
+                </view>
               </view>
             </view>
           </view>
@@ -449,6 +476,7 @@ const dirty = reactive({
   blank_supply_mode: false,
   blank_image_urls: false,
   blank_intro: false,
+  blank_stock: false,
   headMode: false,
   addons: false,
   displayGoods: false,
@@ -523,7 +551,9 @@ const form = reactive({
   ref_images: [],
   blank_supply_mode: '',
   blank_image_urls: [],
-  blank_intro: ''
+  blank_intro: '',
+  blank_stock_id: 0,
+  blank_stock_snapshot: null
 })
 
 /** 选择品牌 / 娃物（用于展示） */
@@ -590,7 +620,7 @@ const blankOptions = computed(() => {
     {
       key: 'stock',
       label: '选购现有毛坯',
-      desc: '现有毛坯功能整理中，下一步会在这里接入可选毛坯列表。',
+      desc: '在毛娘已有毛坯里选购，选中后会自动回填到投递信息。',
       chipClass: 'blank-chip--stock',
       enabled: !!planBlankSupport.stock
     }
@@ -605,6 +635,17 @@ const selectedBlankOption = computed(() => {
   return blankOptions.value.find(function (row) {
     return row.key === form.blank_supply_mode
   }) || null
+})
+const pickedStockBlank = computed(() => {
+  return normalizeBlankStockSnapshot(form.blank_stock_snapshot)
+})
+const hasPickedStockBlank = computed(() => {
+  return Number(form.blank_stock_id || 0) > 0
+})
+const firstBlankStockImage = computed(() => {
+  const snapshot = pickedStockBlank.value
+  if (!snapshot || !Array.isArray(snapshot.image_urls) || !snapshot.image_urls.length) return ''
+  return snapshot.image_urls[0]
 })
 
 const hasPlanConfig = computed(() => {
@@ -663,6 +704,14 @@ watch(() => form.blank_intro, () => {
   if (isApplyingServerData.value) return
   markDirty('blank_intro')
 })
+watch(() => form.blank_stock_id, () => {
+  if (isApplyingServerData.value) return
+  markDirty('blank_stock')
+})
+watch(() => form.blank_stock_snapshot, () => {
+  if (isApplyingServerData.value) return
+  markDirty('blank_stock')
+}, { deep: true })
 watch(() => headMode.value, () => {
   if (isApplyingServerData.value) return
   markDirty('headMode')
@@ -688,6 +737,8 @@ function resetStateForNewItem () {
     form.blank_supply_mode = ''
     form.blank_image_urls = []
     form.blank_intro = ''
+    form.blank_stock_id = 0
+    form.blank_stock_snapshot = null
   })
 
   selectedBrand.value = {}
@@ -973,6 +1024,59 @@ function applyPickedCabinetItem (payload) {
   saveHeadModeSnapshot()
 }
 
+/** 选购现有毛坯入口 */
+function goPickStockBlank () {
+  if (!planId.value) {
+    uni.showToast({ title: '缺少接单计划，无法选择毛坯', icon: 'none' })
+    return
+  }
+  if (!showBlankSupplySection.value) {
+    uni.showToast({ title: '当前开单未开启毛坯选购', icon: 'none' })
+    return
+  }
+  if (form.blank_supply_mode !== 'stock') {
+    form.blank_supply_mode = 'stock'
+  }
+  const selectedId = Number(form.blank_stock_id || 0)
+  uni.$once('artist-order:pick-blank-stock', function (payload) {
+    applyPickedStockBlank(payload)
+  })
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/blank_stock_pick/blank_stock_pick?plan_id=${planId.value}&selected_id=${selectedId}`
+  })
+}
+
+/** 应用选中的现有毛坯 */
+function applyPickedStockBlank (payload) {
+  const snapshot = normalizeBlankStockSnapshot(payload)
+  if (!snapshot) return
+  withApplyingLock(function () {
+    form.blank_stock_id = snapshot.id
+    form.blank_stock_snapshot = snapshot
+    if (!snapshot.cover_image && Array.isArray(snapshot.image_urls) && snapshot.image_urls.length) {
+      form.blank_image_urls = [snapshot.image_urls[0]]
+    } else if (snapshot.cover_image) {
+      form.blank_image_urls = [snapshot.cover_image]
+    }
+    form.blank_supply_mode = 'stock'
+  })
+  markDirty('blank_stock')
+  uni.showToast({ title: '已选择毛坯', icon: 'none' })
+}
+
+/** 移除已选现有毛坯 */
+function removePickedStockBlank () {
+  withApplyingLock(function () {
+    form.blank_stock_id = 0
+    form.blank_stock_snapshot = null
+    if (form.blank_supply_mode === 'stock') {
+      form.blank_image_urls = []
+      form.blank_intro = ''
+    }
+  })
+  markDirty('blank_stock')
+}
+
 /** ====== 数据归一化：ref_images / addons_json ====== */
 function safeJsonParse (s) {
   try { return JSON.parse(s) } catch (e) { return null }
@@ -1067,6 +1171,39 @@ function normalizeBlankSupplyMode (mode) {
     return value
   }
   return ''
+}
+
+function normalizeBlankStockSnapshot (raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const id = Number(raw.id || raw.blank_stock_id || 0)
+  if (!id) return null
+  const imageURLs = Array.isArray(raw.image_urls) ? raw.image_urls : normalizeRefImages(raw.image_urls)
+  return {
+    id,
+    blank_name: String(raw.blank_name || '').trim(),
+    price: Number(raw.price || 0),
+    head_circumference: String(raw.head_circumference || '').trim(),
+    quantity: Number(raw.quantity || 0),
+    cover_image: String(raw.cover_image || '').trim(),
+    image_urls: imageURLs
+  }
+}
+
+function parseBlankStockSnapshot (text) {
+  const raw = String(text || '').trim()
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    return normalizeBlankStockSnapshot(parsed)
+  } catch (e) {
+    return null
+  }
+}
+
+function formatStockBlankPrice (v) {
+  const n = Number(v || 0)
+  if (!Number.isFinite(n)) return '0.00'
+  return n.toFixed(2)
 }
 
 function normalizePlanBlankSupport (cfg) {
@@ -1182,6 +1319,16 @@ function fillFormFromRaw (raw, opt) {
     }
     if (!dirty.blank_intro) {
       form.blank_intro = raw.blank_intro || ''
+    }
+    if (isFirstLoad || !dirty.blank_stock) {
+      const parsedSnapshot = parseBlankStockSnapshot(raw.blank_intro || '')
+      if (parsedSnapshot) {
+        form.blank_stock_id = Number(parsedSnapshot.id || 0)
+        form.blank_stock_snapshot = parsedSnapshot
+      } else {
+        form.blank_stock_id = 0
+        form.blank_stock_snapshot = null
+      }
     }
 
     // 关键修复点：
@@ -1518,6 +1665,11 @@ function validateForm () {
         uni.showToast({ title: '请填写毛坯介绍', icon: 'none' })
         return false
       }
+    } else if (form.blank_supply_mode === 'stock') {
+      if (Number(form.blank_stock_id || 0) <= 0) {
+        uni.showToast({ title: '请先选择现有毛坯', icon: 'none' })
+        return false
+      }
     }
   }
 
@@ -1688,11 +1840,18 @@ async function handleSave () {
   const blankSupplyModeForSave = showBlankSupplySection.value
     ? normalizeBlankSupplyMode(form.blank_supply_mode)
     : ''
+  const stockSnapshotForSave = blankSupplyModeForSave === 'stock'
+    ? normalizeBlankStockSnapshot(form.blank_stock_snapshot)
+    : null
   const blankImageUrlsForSave = (blankSupplyModeForSave === 'self' && Array.isArray(form.blank_image_urls))
     ? form.blank_image_urls
+    : (blankSupplyModeForSave === 'stock' && stockSnapshotForSave && (stockSnapshotForSave.cover_image || firstBlankStockImage.value))
+        ? [stockSnapshotForSave.cover_image || firstBlankStockImage.value]
     : []
   const blankIntroForSave = blankSupplyModeForSave === 'self'
     ? (form.blank_intro || '').trim()
+    : (blankSupplyModeForSave === 'stock' && stockSnapshotForSave)
+        ? JSON.stringify(stockSnapshotForSave)
     : ''
 
   saving.value = true
@@ -1887,6 +2046,17 @@ onShow(function () {
     }
   } catch (e) {
     console.log('[item-form] onShow read __pickedMyItemFromStock error', e)
+  }
+
+  try {
+    const cachedBlank = uni.getStorageSync('__pickedBlankStockFromOrder')
+    if (cachedBlank && cachedBlank.id) {
+      console.log('[item-form] onShow found cached __pickedBlankStockFromOrder=', cachedBlank)
+      applyPickedStockBlank(cachedBlank)
+      uni.removeStorageSync('__pickedBlankStockFromOrder')
+    }
+  } catch (e) {
+    console.log('[item-form] onShow read __pickedBlankStockFromOrder error', e)
   }
 })
 </script>
@@ -2118,6 +2288,63 @@ onShow(function () {
 }
 .blank-textarea-row {
   margin-top: 0;
+}
+.picked-blank-card {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 14rpx;
+  padding: 14rpx;
+}
+.picked-blank-cover {
+  flex-shrink: 0;
+}
+.picked-blank-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.picked-blank-name {
+  font-size: 26rpx;
+  color: #1f2b43;
+  line-height: 1.35;
+}
+.picked-blank-meta {
+  font-size: 22rpx;
+  color: #6b7a93;
+}
+.picked-blank-price {
+  margin-top: 2rpx;
+  font-size: 28rpx;
+  color: #334155;
+}
+.stock-pick-actions {
+  display: flex;
+  gap: 14rpx;
+}
+.stock-pick-btn {
+  height: 68rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: #2e3b57;
+  background: #eef4ff;
+  padding: 0 28rpx;
+}
+.stock-pick-primary {
+  flex: 1;
+  background: #e4f8ff;
+  color: #227f99;
+}
+.stock-pick-remove {
+  min-width: 140rpx;
+  background: #fff1f4;
+  color: #b65b77;
 }
 
 /* 娃头选择触发区域 */

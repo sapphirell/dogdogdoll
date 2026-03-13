@@ -236,6 +236,12 @@
         { "path": "creator_base/order_plan/order_plan" },
         { "path": "creator_base/news/news" },
         { "path": "creator_base/set_hair_showcase/set_hair_showcase" },
+        {
+          "path": "creator_base/blank_stock_manage/blank_stock_manage",
+          "style": {
+            "navigationBarTitleText": "毛坯设置"
+          }
+        },
         { "path": "creator_base/order_plan/form-artist"},
         { "path": "creator_base/order_plan/form-wig"},
 		{
@@ -266,6 +272,12 @@
 			"path": "creator_order/submission_item_form/submission_item_form",
 			"style": {
 				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "creator_order/blank_stock_pick/blank_stock_pick",
+			"style": {
+				"navigationBarTitleText": "选择毛坯"
 			}
 		},
 		{
