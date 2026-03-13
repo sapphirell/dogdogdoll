@@ -3115,7 +3115,7 @@ onShow(() => {
 }
 .delivery-review-score {
   font-size: 22rpx;
-  color: #49caee;
+  color: #78daf5;
   font-weight: 700;
 }
 .delivery-review-content {
@@ -3268,7 +3268,7 @@ onShow(() => {
 
 .return-express-copy {
   font-size: 23rpx;
-  color: #49caee;
+  color: #78daf5;
   font-weight: 600;
 }
 
@@ -3311,7 +3311,7 @@ onShow(() => {
 }
 
 .return-progress-item.done .return-progress-dot {
-  background: #49caee;
+  background: #78daf5;
   box-shadow: 0 0 0 8rpx rgba(73, 202, 238, 0.18);
 }
 
@@ -3362,7 +3362,7 @@ onShow(() => {
 
 .return-address-copy {
   font-size: 23rpx;
-  color: #49caee;
+  color: #78daf5;
   font-weight: 600;
 }
 
@@ -4155,7 +4155,7 @@ onShow(() => {
   height: 80rpx;
   line-height: 80rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #7fe1ff, #49caee);
+  background: linear-gradient(135deg, #7fe1ff, #78daf5);
   color: #ffffff;
   font-size: 29rpx;
   font-weight: 700;

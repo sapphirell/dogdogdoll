@@ -298,7 +298,7 @@ onShow(() => {
   --line-strong: #d9dee7;
   --surface: #ffffff;
   --surface-subtle: #f7f8fa;
-  --primary: #49caee;
+  --primary: #78daf5;
   --primary-press: #2db5dc;
   --primary-soft: rgba(73, 202, 238, 0.15);
   min-height: 100vh;
@@ -375,7 +375,7 @@ onShow(() => {
   line-height: 70rpx;
   border-radius: 999rpx;
   border: none;
-  background: linear-gradient(180deg, #49caee 0%, #2eb9df 100%);
+  background: linear-gradient(180deg, #78daf5 0%, #2eb9df 100%);
   color: #ffffff;
   font-size: 24rpx;
   font-weight: 600;
@@ -524,7 +524,7 @@ onShow(() => {
   height: 66rpx;
   line-height: 66rpx;
   border-radius: 999rpx;
-  background: linear-gradient(180deg, #49caee 0%, #2eb9df 100%);
+  background: linear-gradient(180deg, #78daf5 0%, #2eb9df 100%);
   color: #ffffff;
   font-size: 24rpx;
   font-weight: 600;

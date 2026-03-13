@@ -109,7 +109,7 @@ function loadFonts() {
 
 	:root {
 		/* 全局建议色：用于主要操作按钮 */
-		--app-recommend-color: #49caee;
+		--app-recommend-color: #78daf5;
 		--app-recommend-color-press: #34bee4;
 	}
 

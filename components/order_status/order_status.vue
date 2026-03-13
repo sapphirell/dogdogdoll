@@ -143,7 +143,7 @@ const sizeClass = computed(() => (props.size === 'small' ? 'small' : 'normal'))
 }
 
 .order-status.s-9 {
-  background: #49caee;
+  background: #78daf5;
 }
 
 .order-status.s-default {

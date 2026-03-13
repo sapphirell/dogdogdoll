@@ -2687,7 +2687,7 @@ function selectSize (sizeText) {
   font-size: 38rpx;
   line-height: 1;
   font-weight: 700;
-  color: #49caee;
+  color: #78daf5;
 }
 .supplement-step-intro-count-label{
   margin-top: 8rpx;
@@ -2828,7 +2828,7 @@ function selectSize (sizeText) {
   padding: 4rpx 12rpx;
   border-radius: 999rpx;
   background: rgba(73, 202, 238, 0.15);
-  color: #49caee;
+  color: #78daf5;
   font-size: 18rpx;
   line-height: 1.2;
 }
@@ -2853,7 +2853,7 @@ function selectSize (sizeText) {
   flex-shrink: 0;
 }
 .supplement-select-check.active{
-  background: #49caee;
+  background: #78daf5;
   color: #fff;
 }
 .supplement-selected-row{
@@ -3001,7 +3001,7 @@ function selectSize (sizeText) {
   padding: 0 20rpx;
   border-radius: 14rpx;
   font-size: 24rpx;
-  background: #49caee;
+  background: #78daf5;
   color: #fff;
   box-shadow: 0 6rpx 14rpx rgba(73, 202, 238, 0.28);
 }
@@ -3081,7 +3081,7 @@ function selectSize (sizeText) {
   color: #56637a;
 }
 .price-supplement-confirm{
-  background: #49caee;
+  background: #78daf5;
   color: #fff;
   box-shadow: 0 8rpx 18rpx rgba(73, 202, 238, 0.3);
 }

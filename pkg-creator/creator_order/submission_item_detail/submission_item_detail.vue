@@ -1998,7 +1998,7 @@ onShow(() => {
 }
 
 .bottom-action-btn.accent {
-  background: linear-gradient(135deg, #7fd8f3 0%, #49caee 100%);
+  background: linear-gradient(135deg, #7fd8f3 0%, #78daf5 100%);
   color: #fff;
 }
 

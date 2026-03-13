@@ -258,7 +258,7 @@ const iconMap = {
 }
 
 const rewardMap = {
-  account_book_limit: { icon: 'calendar', color: '#49caee', label: '记账上限', unit: '条', prefix: '解锁至' },
+  account_book_limit: { icon: 'calendar', color: '#78daf5', label: '记账上限', unit: '条', prefix: '解锁至' },
   skin: { icon: 'gift-filled', color: '#fb9ac2', label: '专属皮肤', unit: '', prefix: '' },
   points: { icon: 'star-filled', color: '#f2b45f', label: '奖励积分', unit: '积分', prefix: '+' }
 }
@@ -311,7 +311,7 @@ const dialogRewards = computed(() => {
 function normalizeRewards(list) {
   return (Array.isArray(list) ? list : []).map((item) => {
     const type = String(item?.type || '').trim()
-    const meta = rewardMap[type] || { icon: 'gift-filled', color: '#49caee', label: '等级奖励', unit: '', prefix: '' }
+    const meta = rewardMap[type] || { icon: 'gift-filled', color: '#78daf5', label: '等级奖励', unit: '', prefix: '' }
     const amount = Number(item?.amount || 0)
     const label = String(item?.label || '').trim() || meta.label
     let valueText = ''
@@ -853,7 +853,7 @@ onMounted(() => {
 
 .reward-value {
   font-size: 26rpx;
-  color: #49caee;
+  color: #78daf5;
   flex-shrink: 0;
 }
 
