@@ -247,7 +247,14 @@ function closeReportActionPopup() {
 async function handlePopupReport() {
   closeReportActionPopup()
   await nextTick()
-  reportActionRef.value?.openReport?.()
+  setTimeout(() => {
+    const openReport = reportActionRef.value?.openReport
+    if (typeof openReport === 'function') {
+      openReport()
+      return
+    }
+    uni.showToast({ title: '举报面板打开失败，请重试', icon: 'none' })
+  }, 30)
 }
 
 function viewFullImage(index) {
@@ -697,10 +704,12 @@ onLoad((options) => {
   position: fixed;
   left: -9999px;
   top: -9999px;
+}
+
+/* 仅隐藏触发按钮，不影响 report-button 内部 common-modal 弹层 */
+.report-action-trigger :deep(.report-button) {
   width: 1px;
   height: 1px;
-  overflow: hidden;
-  pointer-events: none;
 }
 
 text{ font-size:22rpx; }

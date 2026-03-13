@@ -194,13 +194,14 @@
       </view>
     </bottom-popup>
 
-    <report-button
-      ref="reportActionRef"
-      :report-type="5"
-      :relation-id="reportTargetId"
-      button-text="举报"
-      class="report-action-trigger"
-    />
+    <view class="report-action-trigger">
+      <report-button
+        ref="reportActionRef"
+        :report-type="5"
+        :relation-id="reportTargetId"
+        button-text="举报"
+      />
+    </view>
   </view>
 </template>
 
@@ -493,7 +494,17 @@ const handlePopupReport = async () => {
   if (!reportTargetId.value) return
   closeActionPopup()
   await nextTick()
-  reportActionRef.value?.openReport?.()
+  setTimeout(() => {
+    const openReport = reportActionRef.value?.openReport
+    if (typeof openReport === 'function') {
+      openReport()
+      return
+    }
+    uni.showToast({
+      title: '举报面板打开失败，请重试',
+      icon: 'none',
+    })
+  }, 30)
 }
 
 const visibleChildren = comment => {
@@ -995,6 +1006,12 @@ const loadMore = async comment => {
   position: fixed;
   left: -9999px;
   top: -9999px;
+}
+
+/* 仅隐藏触发按钮本体，保留组件内 common-modal 的正常显示能力 */
+.report-action-trigger :deep(.report-button) {
+  width: 1px;
+  height: 1px;
 }
 
 @keyframes rotating {

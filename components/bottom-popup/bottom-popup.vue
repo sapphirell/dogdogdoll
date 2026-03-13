@@ -46,22 +46,35 @@
 	    if (typeof uni === 'undefined') return;
 	    if (newVal) {
 	      this.ignoreMaskTapUntil = Date.now() + 320;
-	      // 弹窗显示时隐藏 tab-bar
-	      uni.hideTabBar();
+	      // 弹窗显示时隐藏 tab-bar（非 tabBar 页面静默忽略）
+	      this.safeToggleTabBar(false);
 	    } else {
-	      // 弹窗隐藏时显示 tab-bar
-	      uni.showTabBar();
+	      // 弹窗隐藏时显示 tab-bar（非 tabBar 页面静默忽略）
+	      this.safeToggleTabBar(true);
 	    }
 	  }
 	},
     beforeUnmount() {
       // 防止弹窗处于显示态时被页面切走，导致 tab-bar 未恢复
       if (typeof uni === 'undefined') return;
-      try {
-        uni.showTabBar({ animation: false });
-      } catch (e) {}
+      this.safeToggleTabBar(true);
     },
     methods: {
+      // safeToggleTabBar 安全切换 tabBar 显隐，避免在非 tabBar 页面触发未捕获 Promise 报错。
+      safeToggleTabBar(visible) {
+        if (typeof uni === 'undefined') return;
+        try {
+          const fn = visible ? uni.showTabBar : uni.hideTabBar;
+          if (typeof fn !== 'function') return;
+          const ret = fn({
+            animation: false,
+            fail: () => {}
+          });
+          if (ret && typeof ret.catch === 'function') {
+            ret.catch(() => {});
+          }
+        } catch (e) {}
+      },
       closePopup() {
         if (Date.now() < this.ignoreMaskTapUntil) return;
         this.$emit('close');
