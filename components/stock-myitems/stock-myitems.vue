@@ -3,7 +3,7 @@
   <view class="tab_body_1st" :style="{ '--safe-top': safeTop + 'px' }">
     <!-- 顶部：分类选择 + 管理 + 搜索按钮 -->
     <view class="type-header">
-      <view class="selector-container">
+      <view v-if="viewMode === VIEW_MODE_ITEM" class="selector-container">
         <view class="type-picker" @tap="openTypeSelectPopup">
           <view class="selector-content">
             <view class="selector-main">
@@ -28,10 +28,30 @@
           <uni-icons type="search" size="18" color="#fff" />
         </view>
       </view>
+
+      <view v-else class="selector-container selector-container-cabinet">
+        <view class="cabinet-mode-banner">
+          <text class="cabinet-mode-title font-alimamashuhei">柜子视图</text>
+          <text class="cabinet-mode-desc">已展示全部分类，每类最多显示 5 条</text>
+        </view>
+
+        <text class="manage-btn" @tap="openTypeToolsPopup">
+          <uni-icons type="more-filled" size="18" color="#fff" />
+          <text class="font-title">分类工具</text>
+        </text>
+
+        <view class="setting-icon-btn" @click="openDisplaySettingPage">
+          <uni-icons type="gear-filled" size="18" color="#fff" />
+        </view>
+
+        <view class="search-icon-btn" @click="openSearch">
+          <uni-icons type="search" size="18" color="#fff" />
+        </view>
+      </view>
     </view>
 
-    <!-- 合计（不受搜索影响） -->
-    <view class="summary-container">
+    <!-- 合计（仅物品视图，不受搜索影响） -->
+    <view v-if="viewMode === VIEW_MODE_ITEM" class="summary-container">
       <view class="summary-content">
         <view class="summary-main">
           <text class="summary-label font-alimamashuhei">当前分类合计</text>
@@ -51,7 +71,7 @@
     </view>
 
     <!-- 内容 -->
-    <view class="content" v-if="baseList.length > 0">
+    <view v-if="viewMode === VIEW_MODE_ITEM && baseList.length > 0" class="content">
 		<shmily-drag-image
 		  :modelValue="displayList"
 		  :padding="0"
@@ -67,12 +87,42 @@
 		/>
 
     </view>
+    <view v-else-if="viewMode === VIEW_MODE_CABINET && cabinetTypeCards.length > 0" class="content cabinet-content">
+      <view
+        v-for="group in cabinetTypeCards"
+        :key="`cabinet-${group.type}`"
+        class="cabinet-card"
+      >
+        <view class="cabinet-card-head">
+          <text class="cabinet-card-title font-alimamashuhei">{{ group.type }}</text>
+          <text class="cabinet-card-count">已收录 {{ group.total }}</text>
+        </view>
+        <view class="cabinet-item-row">
+          <view
+            v-for="item in group.previewItems"
+            :key="`cabinet-item-${group.type}-${item.id}`"
+            class="cabinet-item"
+            @tap="emit('go2editor', item.id)"
+          >
+            <image
+              v-if="item.cabinetImage"
+              class="cabinet-item-img"
+              :src="item.cabinetImage"
+              mode="aspectFill"
+            />
+            <view v-else class="cabinet-item-fallback">
+              <uni-icons type="image" size="30" color="#a7b8cb" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
 
     <!-- 空态 -->
     <view class="empty-state" v-else>
       <image class="empty-icon" src="/static/empty.jpg" />
-      <text class="empty-text">空空如也～</text>
-      <text class="empty-tip">点击下方按钮添加第一个物品吧！</text>
+      <text class="empty-text">{{ viewMode === VIEW_MODE_CABINET ? (cabinetLoading ? '正在整理柜子…' : '还没有可展示的分类') : '空空如也～' }}</text>
+      <text class="empty-tip">{{ viewMode === VIEW_MODE_CABINET ? (cabinetLoading ? '正在汇总分类和物品，请稍候' : '先添加分类或物品后，这里会自动整理展示') : '点击下方按钮添加第一个物品吧！' }}</text>
     </view>
 
     <!-- 分类切换弹窗 -->
@@ -147,6 +197,9 @@ const props = defineProps({
   currentType: { type: String, default: '' }
 })
 const emit = defineEmits(['go2editor','update-type','init-request','update:accountBookData'])
+const ACCOUNT_BOOK_VIEW_MODE_KEY = 'accountBookViewMode'
+const VIEW_MODE_ITEM = 'item'
+const VIEW_MODE_CABINET = 'cabinet'
 
 const DEFAULT_DISPLAY_SETTING = Object.freeze({
   show_size_tag: true,
@@ -160,6 +213,9 @@ const DEFAULT_DISPLAY_SETTING = Object.freeze({
   include_count_in_total: false
 })
 const displaySetting = ref({ ...DEFAULT_DISPLAY_SETTING })
+const viewMode = ref(loadStoredViewMode())
+const cabinetAllList = ref([])
+const cabinetLoading = ref(false)
 
 /* ===== 显示金额 ===== */
 const isPriceVisible = ref(true)
@@ -181,6 +237,52 @@ const showTypeToolsPopup = ref(false)
 
 /* ===== 列表数据（当前分类） ===== */
 const baseList = computed(() => props.accountBookData?.account_books || [])
+const cabinetTypeCards = computed(() => {
+  const sourceList = Array.isArray(cabinetAllList.value) ? cabinetAllList.value : []
+  const groupedMap = new Map()
+  sourceList.forEach((item) => {
+    const typeName = String(item?.type || '').trim() || '未分类'
+    if (!groupedMap.has(typeName)) {
+      groupedMap.set(typeName, [])
+    }
+    groupedMap.get(typeName).push(item)
+  })
+
+  const orderedNames = []
+  const pushName = (name) => {
+    const safeName = String(name || '').trim()
+    if (!safeName || orderedNames.includes(safeName)) return
+    orderedNames.push(safeName)
+  }
+
+  customTypes.value.forEach(t => pushName(t?.name))
+  groupedMap.forEach((_, name) => pushName(name))
+
+  return orderedNames.map((name) => {
+    const rows = groupedMap.get(name) || []
+    const previewItems = rows
+      .slice(0, 5)
+      .map(item => ({
+        ...item,
+        cabinetImage: getCabinetItemImage(item)
+      }))
+    return {
+      type: name,
+      total: rows.length,
+      previewItems
+    }
+  })
+})
+
+function normalizeViewMode(raw) {
+  const txt = String(raw || '').trim().toLowerCase()
+  if (txt === VIEW_MODE_CABINET) return VIEW_MODE_CABINET
+  return VIEW_MODE_ITEM
+}
+
+function loadStoredViewMode() {
+  return normalizeViewMode(uni.getStorageSync(ACCOUNT_BOOK_VIEW_MODE_KEY))
+}
 
 function parseAdditionalNumeric(raw) {
   if (raw === null || raw === undefined) return 0
@@ -278,6 +380,29 @@ async function fetchDisplaySetting() {
     displaySetting.value = normalizeDisplaySetting(res?.data?.data || {})
   } catch (e) {
     console.error('[stock-myitems] get display setting fail:', e)
+  }
+}
+
+async function fetchCabinetAllList() {
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    cabinetAllList.value = []
+    return
+  }
+  cabinetLoading.value = true
+  try {
+    const res = await uni.request({
+      url: websiteUrl.value + '/with-state/account-book',
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    const list = Array.isArray(res?.data?.data?.account_books) ? res.data.data.account_books : []
+    cabinetAllList.value = list
+  } catch (e) {
+    console.error('[stock-myitems] get cabinet list fail:', e)
+    cabinetAllList.value = []
+  } finally {
+    cabinetLoading.value = false
   }
 }
 
@@ -383,7 +508,8 @@ function handleSortChange(sortedIds){
 /* ===== 跳转搜索页 ===== */
 function openSearch(){
   // 1) 深拷贝成普通对象，避免把 Proxy 直接塞进通道/存储
-  const list = JSON.parse(JSON.stringify(baseList.value || []))
+  const source = viewMode.value === VIEW_MODE_CABINET ? cabinetAllList.value : baseList.value
+  const list = JSON.parse(JSON.stringify(source || []))
   // 2) 全端兜底：写入 uniStorage（小程序/H5/App 都可用）
   try { uni.setStorageSync('__stockList', list) } catch (e) {}
   // 3) H5 旧兜底（保留）
@@ -406,6 +532,7 @@ const safeTop = ref(0)
 
 /* 生命周期 */
 onShow(async ()=>{
+  viewMode.value = loadStoredViewMode()
   closeTypeSelectPopup()
   closeTypeToolsPopup()
   const saved = uni.getStorageSync(PRICE_VISIBLE_KEY)
@@ -414,6 +541,9 @@ onShow(async ()=>{
   selectedTypeName.value = getStoredTypeName()
   await fetchDisplaySetting()
   await getAccountTypes()
+  if (viewMode.value === VIEW_MODE_CABINET) {
+    await fetchCabinetAllList()
+  }
   const targetType = selectedTypeName.value === '全部' ? '' : selectedTypeName.value
   if (targetType !== (props.currentType || '')) {
     emit('update-type', targetType)
@@ -424,6 +554,25 @@ onShow(async ()=>{
     safeTop.value = wi?.safeAreaInsets?.top ?? wi?.statusBarHeight ?? 0
   } catch { safeTop.value = 20 }
 })
+
+watch(
+  () => props.activeTab,
+  async (tab) => {
+    if (tab !== 1) return
+    viewMode.value = loadStoredViewMode()
+    if (viewMode.value === VIEW_MODE_CABINET) {
+      await fetchCabinetAllList()
+    }
+  }
+)
+
+function getCabinetItemImage(item) {
+  const src = String(item?.image_url || item?.image || '').split(',')[0].trim()
+  if (!src) return ''
+  const low = src.toLowerCase()
+  if (low.includes('/default') || low.endsWith('default.png') || low.includes('noimage')) return ''
+  return src
+}
 </script>
 
 <style lang="scss" scoped>
@@ -435,6 +584,70 @@ onShow(async ()=>{
 .content {
   padding: 12rpx 0 calc(148rpx + constant(safe-area-inset-bottom));
   padding: 12rpx 0 calc(148rpx + env(safe-area-inset-bottom));
+}
+
+.cabinet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.cabinet-card {
+  border-radius: 24rpx;
+  background: linear-gradient(160deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 10rpx 24rpx rgba(84, 112, 137, 0.13);
+  padding: 24rpx;
+}
+
+.cabinet-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.cabinet-card-title {
+  font-size: 40rpx;
+  color: #1f344a;
+  line-height: 1.2;
+}
+
+.cabinet-card-count {
+  font-size: 24rpx;
+  color: #7d92a8;
+  line-height: 1;
+}
+
+.cabinet-item-row {
+  margin-top: 18rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+}
+
+.cabinet-item {
+  width: calc((100% - 56rpx) / 5);
+  aspect-ratio: 1 / 1;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #edf4fb;
+  box-shadow: 0 8rpx 16rpx rgba(83, 113, 138, 0.14);
+}
+
+.cabinet-item-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cabinet-item-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f6f9fc 0%, #edf3f9 100%);
 }
 
 /* 顶部选择与按钮 */
@@ -449,6 +662,35 @@ onShow(async ()=>{
   display: flex;
   align-items: center;
   gap: 12rpx;
+}
+
+.selector-container-cabinet {
+  align-items: stretch;
+}
+
+.cabinet-mode-banner {
+  flex: 1;
+  min-width: 0;
+  border-radius: 14rpx;
+  padding: 10rpx 16rpx;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4rpx;
+}
+
+.cabinet-mode-title {
+  font-size: 28rpx;
+  color: #2f475f;
+  line-height: 1.2;
+}
+
+.cabinet-mode-desc {
+  font-size: 20rpx;
+  color: #7f95ab;
+  line-height: 1.3;
 }
 
 .type-picker { flex: 1; }

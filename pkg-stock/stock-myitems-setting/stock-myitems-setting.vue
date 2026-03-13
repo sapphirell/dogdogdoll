@@ -5,20 +5,20 @@
       type="transparentFixed"
       :backState="2000"
       :homeState="2000"
-      fontColor="#1f2b3b"
-      transparentFixedFontColor="#1f2b3b"
+      fontColor="#586478"
+      transparentFixedFontColor="#586478"
       :scrollTop="scrollTop"
       :titleCenter="true"
       title="物品显示设置"
     >
       <template #left>
         <view class="nav-back-pill" @click="goBack">
-          <uni-icons type="left" size="22" color="#1f2b3b" />
+          <uni-icons type="left" size="22" color="#586478" />
         </view>
       </template>
       <template #transparentFixedLeft>
         <view class="nav-back-pill" @click="goBack">
-          <uni-icons type="left" size="22" color="#1f2b3b" />
+          <uni-icons type="left" size="22" color="#586478" />
         </view>
       </template>
     </zhouWei-navBar>
@@ -31,12 +31,23 @@
       </view>
 
       <view class="setting-card">
+        <view class="setting-row setting-row-action" @tap="openViewModePopup">
+          <view class="setting-main">
+            <text class="setting-name font-alimamashuhei">切换视图</text>
+            <text class="setting-desc">可切换为物品视图或柜子视图</text>
+          </view>
+          <view class="setting-action-pill">
+            <text class="setting-action-text">{{ currentViewModeLabel }}</text>
+            <uni-icons type="right" size="15" color="#7f97ae" />
+          </view>
+        </view>
+
         <view class="setting-row">
           <view class="setting-main">
             <text class="setting-name font-alimamashuhei">显示尺寸标签</text>
             <text class="setting-desc">在物品卡片上显示尺寸（如四分/六分）</text>
           </view>
-          <switch :checked="form.show_size_tag" color="#49caee" @change="onSwitch('show_size_tag', $event)" />
+          <switch :checked="form.show_size_tag" color="#78daf5" @change="onSwitch('show_size_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -44,7 +55,7 @@
             <text class="setting-name font-alimamashuhei">显示类型标签</text>
             <text class="setting-desc">在图片左上角显示物品类型标签</text>
           </view>
-          <switch :checked="form.show_type_tag" color="#49caee" @change="onSwitch('show_type_tag', $event)" />
+          <switch :checked="form.show_type_tag" color="#78daf5" @change="onSwitch('show_type_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -52,7 +63,7 @@
             <text class="setting-name font-alimamashuhei">显示价格标签</text>
             <text class="setting-desc">在物品卡片上显示价格文本</text>
           </view>
-          <switch :checked="form.show_price_tag" color="#49caee" @change="onSwitch('show_price_tag', $event)" />
+          <switch :checked="form.show_price_tag" color="#78daf5" @change="onSwitch('show_price_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -60,7 +71,7 @@
             <text class="setting-name font-alimamashuhei">显示物品信息</text>
             <text class="setting-desc">显示名称与价格区域</text>
           </view>
-          <switch :checked="form.show_item_info" color="#49caee" @change="onSwitch('show_item_info', $event)" />
+          <switch :checked="form.show_item_info" color="#78daf5" @change="onSwitch('show_item_info', $event)" />
         </view>
 
         <view class="setting-row">
@@ -68,7 +79,7 @@
             <text class="setting-name font-alimamashuhei">显示全款标签</text>
             <text class="setting-desc">显示全款/定金/未买状态标签</text>
           </view>
-          <switch :checked="form.show_payment_tag" color="#49caee" @change="onSwitch('show_payment_tag', $event)" />
+          <switch :checked="form.show_payment_tag" color="#78daf5" @change="onSwitch('show_payment_tag', $event)" />
         </view>
 
         <view class="setting-row">
@@ -76,7 +87,7 @@
             <text class="setting-name font-alimamashuhei">列表价格包含附加价值</text>
             <text class="setting-desc">如附加值中包含数值，将计入卡片价格显示</text>
           </view>
-          <switch :checked="form.include_additional_in_item_price" color="#49caee" @change="onSwitch('include_additional_in_item_price', $event)" />
+          <switch :checked="form.include_additional_in_item_price" color="#78daf5" @change="onSwitch('include_additional_in_item_price', $event)" />
         </view>
 
         <view class="setting-row">
@@ -84,7 +95,7 @@
             <text class="setting-name font-alimamashuhei">列表价格按数量计算</text>
             <text class="setting-desc">外层卡片价格按单价乘以个数后显示</text>
           </view>
-          <switch :checked="form.include_count_in_item_price" color="#49caee" @change="onSwitch('include_count_in_item_price', $event)" />
+          <switch :checked="form.include_count_in_item_price" color="#78daf5" @change="onSwitch('include_count_in_item_price', $event)" />
         </view>
 
         <view class="setting-row">
@@ -92,7 +103,7 @@
             <text class="setting-name font-alimamashuhei">总价包含附加价值</text>
             <text class="setting-desc">将附加值中的数值计入当前分类合计</text>
           </view>
-          <switch :checked="form.include_additional_in_total" color="#49caee" @change="onSwitch('include_additional_in_total', $event)" />
+          <switch :checked="form.include_additional_in_total" color="#78daf5" @change="onSwitch('include_additional_in_total', $event)" />
         </view>
 
         <view class="setting-row no-border">
@@ -100,7 +111,7 @@
             <text class="setting-name font-alimamashuhei">合计按数量计算</text>
             <text class="setting-desc">当前分类合计按单价乘以个数后统计</text>
           </view>
-          <switch :checked="form.include_count_in_total" color="#49caee" @change="onSwitch('include_count_in_total', $event)" />
+          <switch :checked="form.include_count_in_total" color="#78daf5" @change="onSwitch('include_count_in_total', $event)" />
         </view>
       </view>
 
@@ -112,6 +123,31 @@
         保存设置
       </button>
     </view>
+
+    <bottom-popup :show="showViewModePopup" @close="closeViewModePopup">
+      <view class="view-mode-popup">
+        <view class="view-mode-head">
+          <text class="view-mode-title font-alimamashuhei">切换视图</text>
+          <text class="view-mode-close font-title" @tap="closeViewModePopup">关闭</text>
+        </view>
+        <view class="view-mode-list">
+          <view
+            v-for="option in viewModeOptions"
+            :key="option.value"
+            class="view-mode-item"
+            :class="{ active: viewMode === option.value }"
+            @tap="selectViewMode(option.value)"
+          >
+            <view class="view-mode-item-main">
+              <text class="view-mode-item-name font-alimamashuhei">{{ option.label }}</text>
+              <text class="view-mode-item-desc">{{ option.desc }}</text>
+            </view>
+            <uni-icons v-if="viewMode === option.value" type="checkmarkempty" size="18" color="#78daf5" />
+            <uni-icons v-else type="right" size="15" color="#8ea3b8" />
+          </view>
+        </view>
+      </view>
+    </bottom-popup>
   </view>
 </template>
 
@@ -135,9 +171,37 @@ const DEFAULT_FORM = Object.freeze({
 const scrollTop = ref(0)
 const loading = ref(false)
 const saving = ref(false)
+const showViewModePopup = ref(false)
 
 const form = ref({ ...DEFAULT_FORM })
 const headerPadPx = computed(() => toPx(getStatusBarHeight() + getNavBarHeight()))
+const ACCOUNT_BOOK_VIEW_MODE_KEY = 'accountBookViewMode'
+const VIEW_MODE_ITEM = 'item'
+const VIEW_MODE_CABINET = 'cabinet'
+const viewMode = ref(loadStoredViewMode())
+const viewModeOptions = Object.freeze([
+  { value: VIEW_MODE_ITEM, label: '物品视图', desc: '按当前分类显示并支持拖拽排序' },
+  { value: VIEW_MODE_CABINET, label: '柜子视图', desc: '首页展示全部分类，每类最多显示 5 条' }
+])
+const currentViewModeLabel = computed(() => {
+  const matched = viewModeOptions.find(item => item.value === viewMode.value)
+  return matched?.label || '物品视图'
+})
+
+function normalizeViewMode(raw) {
+  const txt = String(raw || '').trim().toLowerCase()
+  if (txt === VIEW_MODE_CABINET) return VIEW_MODE_CABINET
+  return VIEW_MODE_ITEM
+}
+
+function loadStoredViewMode() {
+  return normalizeViewMode(uni.getStorageSync(ACCOUNT_BOOK_VIEW_MODE_KEY))
+}
+
+function saveViewMode(mode) {
+  viewMode.value = normalizeViewMode(mode)
+  uni.setStorageSync(ACCOUNT_BOOK_VIEW_MODE_KEY, viewMode.value)
+}
 
 onPageScroll((e) => {
   scrollTop.value = e?.scrollTop || 0
@@ -211,6 +275,19 @@ function onSwitch(key, e) {
   form.value[key] = !!raw
 }
 
+function openViewModePopup() {
+  showViewModePopup.value = true
+}
+
+function closeViewModePopup() {
+  showViewModePopup.value = false
+}
+
+function selectViewMode(mode) {
+  saveViewMode(mode)
+  closeViewModePopup()
+}
+
 async function saveSetting() {
   if (saving.value) return
   saving.value = true
@@ -239,6 +316,7 @@ async function saveSetting() {
       throw new Error(res?.data?.msg || res?.data?.message || res?.data?.error || '保存失败')
     }
     form.value = normalizePayload(res?.data?.data || payload)
+    saveViewMode(viewMode.value)
     uni.showToast({ title: '设置已保存', icon: 'none' })
   } catch (err) {
     uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
@@ -252,6 +330,7 @@ function goBack() {
 }
 
 onShow(() => {
+  viewMode.value = loadStoredViewMode()
   fetchSetting()
 })
 </script>
@@ -260,8 +339,8 @@ onShow(() => {
 .setting-page {
   min-height: 100vh;
   background:
-    radial-gradient(1100rpx 560rpx at 100% -8%, rgba(73, 202, 238, 0.18), rgba(73, 202, 238, 0)),
-    linear-gradient(180deg, #dff6ff 0%, #eefaff 44%, #ffffff 100%);
+    radial-gradient(680rpx 300rpx at 100% -10%, rgba(73, 202, 238, 0.08), rgba(73, 202, 238, 0)),
+    linear-gradient(180deg, #fbfcfe 0%, #ffffff 46%);
 }
 
 .page-body {
@@ -273,16 +352,16 @@ onShow(() => {
   margin-top: 14rpx;
   border-radius: 24rpx;
   padding: 28rpx 24rpx;
-  background: linear-gradient(145deg, rgba(229, 247, 255, 0.96), rgba(243, 251, 255, 0.98));
-  box-shadow: 0 12rpx 28rpx rgba(76, 129, 170, 0.12);
+  background: #ffffff;
+  box-shadow: 0 10rpx 26rpx rgba(33, 50, 71, 0.08);
 }
 
 .hero-tag {
   display: inline-flex;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: rgba(73, 202, 238, 0.14);
-  color: #4a99b3;
+  background: rgba(73, 202, 238, 0.12);
+  color: #3f97b2;
   font-size: 18rpx;
 }
 
@@ -290,22 +369,22 @@ onShow(() => {
   display: block;
   margin-top: 12rpx;
   font-size: 38rpx;
-  color: #20425e;
+  color: #586478;
 }
 
 .hero-tip {
   display: block;
   margin-top: 10rpx;
   font-size: 23rpx;
-  color: #6a90ac;
+  color: #738195;
   line-height: 1.6;
 }
 
 .setting-card {
   margin-top: 22rpx;
   border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 10rpx 24rpx rgba(84, 130, 166, 0.08);
+  background: #ffffff;
+  box-shadow: 0 8rpx 20rpx rgba(33, 50, 71, 0.07);
   padding: 8rpx 0;
 }
 
@@ -315,6 +394,11 @@ onShow(() => {
   align-items: center;
   justify-content: space-between;
   gap: 18rpx;
+}
+
+.setting-row-action {
+  padding-top: 24rpx;
+  padding-bottom: 18rpx;
 }
 
 .setting-row.no-border {
@@ -329,15 +413,32 @@ onShow(() => {
 }
 
 .setting-name {
-  color: #275074;
+  color: #586478;
   font-size: 30rpx;
   line-height: 1.25;
 }
 
 .setting-desc {
-  color: #6d8daa;
+  color: #7d8798;
   font-size: 22rpx;
   line-height: 1.4;
+}
+
+.setting-action-pill {
+  height: 62rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  background: #f2f9fc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+  box-shadow: 0 6rpx 14rpx rgba(73, 202, 238, 0.14);
+}
+
+.setting-action-text {
+  font-size: 24rpx;
+  color: #4e657d;
 }
 
 .bottom-space {
@@ -351,7 +452,7 @@ onShow(() => {
   bottom: 0;
   padding: 14rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
   padding: 14rpx 24rpx calc(16rpx + constant(safe-area-inset-bottom));
-  background: rgba(244, 251, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(10rpx);
 }
 
@@ -359,14 +460,80 @@ onShow(() => {
   height: 82rpx;
   border-radius: 16rpx;
   border: none;
-  background: linear-gradient(140deg, #49caee 0%, #53b8eb 56%, #7bcff2 100%);
+  background: #78daf5;
   color: #fff;
   font-size: 30rpx;
   line-height: 82rpx;
-  box-shadow: 0 10rpx 20rpx rgba(68, 127, 172, 0.25);
+  box-shadow: 0 8rpx 18rpx rgba(73, 202, 238, 0.28);
 }
 
 .save-btn::after {
   border: none;
+}
+
+.view-mode-popup {
+  background: #fff;
+  border-top-left-radius: 26rpx;
+  border-top-right-radius: 26rpx;
+  padding: 16rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 24rpx calc(24rpx + constant(safe-area-inset-bottom));
+}
+
+.view-mode-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.view-mode-title {
+  font-size: 32rpx;
+  color: #586478;
+}
+
+.view-mode-close {
+  font-size: 22rpx;
+  color: #8a94a4;
+  padding: 8rpx 6rpx;
+}
+
+.view-mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.view-mode-item {
+  min-height: 92rpx;
+  border-radius: 18rpx;
+  padding: 16rpx 18rpx;
+  background: #f7f9fc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  box-shadow: 0 6rpx 14rpx rgba(33, 50, 71, 0.08);
+}
+
+.view-mode-item.active {
+  background: rgba(73, 202, 238, 0.12);
+  box-shadow: 0 8rpx 18rpx rgba(73, 202, 238, 0.18);
+}
+
+.view-mode-item-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.view-mode-item-name {
+  font-size: 27rpx;
+  color: #586478;
+}
+
+.view-mode-item-desc {
+  font-size: 21rpx;
+  color: #7f8a9a;
 }
 </style>
