@@ -108,20 +108,20 @@
 	            <view class="overview-retry-btn" @tap="reloadProgressOverview">重试</view>
 	          </view>
 	          <view v-else-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
-	          <scroll-view
-	            v-else
-	            class="overview-timeline-scroll"
-	            scroll-x
-	            :show-scrollbar="false"
-              :lower-threshold="80"
-              @scrolltolower="handleOverviewReachEnd"
-	          >
-	            <view class="overview-timeline-track">
-	              <view
-	                v-for="(entry, idx) in overviewCurrentPlanItems"
-	                :key="`inline-plan-${overviewEntryKey(entry)}`"
-	                class="overview-timeline-node"
-	              >
+              <view v-else class="overview-scroll-wrap">
+		            <scroll-view
+		              class="overview-timeline-scroll"
+		              scroll-x
+		              :show-scrollbar="false"
+                :lower-threshold="80"
+                @scrolltolower="handleOverviewReachEnd"
+		            >
+		              <view class="overview-timeline-track">
+		              <view
+		                v-for="(entry, idx) in overviewCurrentPlanItems"
+		                :key="`inline-plan-${overviewEntryKey(entry)}`"
+		                class="overview-timeline-node"
+		              >
 	                <view class="overview-node-top">
 	                  <view
 	                    class="overview-node-dot"
@@ -159,13 +159,14 @@
 	                  <text class="overview-item-status text-truncate">{{ overviewEntryStatus(entry) }}</text>
 	                  <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
 	                </view>
-	              </view>
+		              </view>
 
-              <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
-              <view v-else-if="showOverviewTailFade" class="overview-tail-fade"></view>
-	            </view>
-	          </scroll-view>
-	        </view>
+                <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
+		              </view>
+		            </scroll-view>
+                <view v-if="showOverviewTailFade" class="overview-tail-fade"></view>
+              </view>
+		        </view>
 
 	        <view class="tab-header-wrapper">
           <view class="custom-tab-bar">
@@ -250,6 +251,62 @@
 	                </view>
 	              </view>
 	            </view>
+
+            <view v-if="showBlankSupplyCard" class="blank-supply-card">
+              <view class="blank-supply-head">
+                <text class="blank-supply-title font-alimamashuhei">毛坯方案</text>
+                <view v-if="blankCheckTagText" class="blank-check-tag font-alimamashuhei" :class="{ replace: activeItemNeedReplaceBlank }">
+                  {{ blankCheckTagText }}
+                </view>
+              </view>
+              <text class="blank-supply-mode">{{ blankSupplyModeText(activeItemBlankSupplyMode) }}</text>
+
+              <view v-if="activeItemBlankSnapshot" class="blank-stock-card">
+                <image
+                  v-if="activeItemBlankSnapshot.cover_image"
+                  class="blank-stock-cover"
+                  :src="activeItemBlankSnapshot.cover_image"
+                  mode="aspectFill"
+                />
+                <view class="blank-stock-main">
+                  <text class="blank-stock-name font-alimamashuhei">{{ activeItemBlankSnapshot.blank_name || '已选毛坯' }}</text>
+                  <text class="blank-stock-meta">¥{{ formatBlankPrice(activeItemBlankSnapshot.price) }} · {{ activeItemBlankSnapshot.head_circumference || '头围待补充' }}</text>
+                </view>
+              </view>
+              <text v-else-if="activeItemBlankIntroText" class="blank-stock-fallback">已选毛坯：{{ activeItemBlankIntroText }}</text>
+
+              <text v-if="activeItemBlankPurchaseLink" class="blank-link-text" @tap="openBlankPurchaseLink(activeItemBlankPurchaseLink)">
+                购买链接：{{ activeItemBlankPurchaseLink }}
+              </text>
+
+            </view>
+
+            <view v-if="showMaterialShipInfoCard || showSubmitMaterialShipBtn" class="material-ship-panel">
+              <view class="material-ship-info">
+                <view class="material-ship-row">
+                  <text class="material-ship-label font-title">素材寄送</text>
+                  <text class="material-ship-value">{{ materialShipStatusText }}</text>
+                </view>
+                <view v-if="activeItemBuyerExpressNo" class="material-ship-row">
+                  <text class="material-ship-label font-title">物流单号</text>
+                  <text class="material-ship-value">{{ activeItemBuyerExpressCompany || '快递' }} {{ activeItemBuyerExpressNo }}</text>
+                </view>
+              </view>
+
+              <view
+                v-if="showSubmitMaterialShipBtn"
+                class="material-ship-btn"
+                :class="{ disabled: materialShipSubmitting }"
+                @tap="openMaterialShipModal"
+              >
+                {{ materialShipActionText }}
+              </view>
+            </view>
+
+            <view v-if="showTransferNodeNotice" class="transfer-node-notice">
+              <uni-icons type="info-filled" size="16" color="#6f8fa5" />
+              <text class="transfer-node-notice-text">{{ transferNodeNoticeText }}</text>
+            </view>
 
             <view class="timeline-area">
               <view class="timeline-header">进度详情</view>
@@ -452,16 +509,16 @@
           </view>
           <view v-else class="overview-sections">
             <view v-if="!overviewCurrentPlanItems.length" class="overview-empty-row">暂无记录</view>
-            <scroll-view
-              v-else
-              class="overview-timeline-scroll"
-              scroll-x
-              :show-scrollbar="false"
-              :lower-threshold="80"
-              @scrolltolower="handleOverviewReachEnd"
-              @touchmove.stop
-            >
-              <view class="overview-timeline-track">
+            <view v-else class="overview-scroll-wrap">
+              <scroll-view
+                class="overview-timeline-scroll"
+                scroll-x
+                :show-scrollbar="false"
+                :lower-threshold="80"
+                @scrolltolower="handleOverviewReachEnd"
+                @touchmove.stop
+              >
+                <view class="overview-timeline-track">
                 <view
                   v-for="(entry, idx) in overviewCurrentPlanItems"
                   :key="`plan-${overviewEntryKey(entry)}`"
@@ -504,12 +561,13 @@
 	                    <text class="overview-item-status text-truncate">{{ overviewEntryStatus(entry) }}</text>
 	                    <text class="overview-item-time">{{ overviewEntryTime(entry) }}</text>
 	                  </view>
-	                </view>
+                </view>
 
-                <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
-                <view v-else-if="showOverviewTailFade" class="overview-tail-fade"></view>
-              </view>
-            </scroll-view>
+                  <view v-if="progressOverviewAppending" class="overview-loading-tail">加载中...</view>
+                </view>
+              </scroll-view>
+              <view v-if="showOverviewTailFade" class="overview-tail-fade"></view>
+            </view>
           </view>
         </scroll-view>
       </view>
@@ -742,6 +800,55 @@
         </view>
       </view>
     </common-modal>
+
+    <common-modal
+      v-model:visible="materialShipModalVisible"
+      width="640rpx"
+      :closeable="!materialShipSubmitting"
+      :center="true"
+    >
+      <view class="material-ship-modal">
+        <text class="material-ship-modal-title font-alimamashuhei">提交{{ materialTargetText }}寄送信息</text>
+        <text class="material-ship-modal-desc">请填写寄送给创作者的物流信息，方便对方及时签收{{ materialTargetText }}。</text>
+
+        <view class="material-ship-form-row">
+          <text class="material-ship-form-label font-title">快递单号</text>
+          <input
+            v-model.trim="materialShipExpressNo"
+            class="material-ship-form-input"
+            placeholder="请填写快递单号"
+          />
+        </view>
+
+        <view class="material-ship-form-row" @tap="chooseMaterialShipCompany">
+          <text class="material-ship-form-label font-title">快递公司</text>
+          <view class="material-ship-form-picker">
+            <text :class="{ placeholder: !materialShipExpressCompany }">
+              {{ materialShipExpressCompany || '请选择快递公司' }}
+            </text>
+            <uni-icons type="right" size="14" color="#b2bed1" />
+          </view>
+        </view>
+
+        <view class="material-ship-modal-actions">
+          <button
+            class="material-ship-modal-btn cancel"
+            :disabled="materialShipSubmitting"
+            @tap="closeMaterialShipModal"
+          >
+            取消
+          </button>
+          <button
+            class="material-ship-modal-btn confirm"
+            :class="{ disabled: materialShipSubmitting }"
+            :disabled="materialShipSubmitting"
+            @tap="submitMaterialShip"
+          >
+            {{ materialShipSubmitting ? '提交中...' : '确认提交' }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
   </view>
 </template>
 
@@ -761,6 +868,8 @@ const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
 const SubmissionStatusReturned = 8
 const SubmissionStatusFinished = 9
+const ItemStatusWaitBuyerShip = 7
+const ItemStatusBuyerShipped = 8
 const PlanPaymentMethodQRCode = 1
 const PlanPaymentMethodAlipay = 2
 const reviewMaxImages = 9
@@ -782,7 +891,9 @@ const submission = reactive({
   status: 0,
   status_text: '',
   ahead_count: 0,
+  viewer_is_buyer: false,
   artist_type: 0, // 修改点：新增 artist_type
+  payment_method: 0,
   step_configs: [],
   progress_logs: [],
   items: [],
@@ -846,6 +957,12 @@ const progressOverviewCursor = ref(0)
 const progressOverviewPageSize = ref(20)
 const progressOverviewAppending = ref(false)
 const progressOverviewAnchorID = ref(0)
+const materialShipModalVisible = ref(false)
+const materialShipSubmitting = ref(false)
+const materialShipExpressNo = ref('')
+const materialShipExpressCompany = ref('')
+const blankStockSnapshotMap = ref({})
+const blankStockSnapshotLoadingMap = ref({})
 
 let h5ScrollLockApplied = false
 let h5BodyOverflowBackup = ''
@@ -940,14 +1057,24 @@ const currentItemProgressGuide = computed(() => {
 })
 
 const timelineNextActionText = computed(() => {
+  const itemSpecific = buildItemSpecificNextActionText()
+  if (itemSpecific) return itemSpecific
+
   const guide = currentItemProgressGuide.value
   if (!guide) return ''
   const nextAction = String(guide.next_action_text || '').trim()
-  if (nextAction) return nextAction
+  if (nextAction) return normalizeCreatorRoleText(nextAction)
   const nextStatus = String(guide.next_status_text || '').trim()
-  if (nextStatus) return `下一步：${nextStatus}`
+  if (nextStatus) return `下一步：${normalizeCreatorRoleText(nextStatus)}`
   return '等待下一步'
 })
+
+function normalizeCreatorRoleText(raw) {
+  const txt = String(raw || '').trim()
+  if (!txt) return ''
+  if (isHairOrder.value) return txt.replace(/妆师/g, '毛娘')
+  return txt.replace(/毛娘/g, '妆师')
+}
 
 function parseProgressLogExtra(row) {
   const raw = row?.extra_json ?? row?.extra
@@ -1102,6 +1229,196 @@ const currentItem = computed(() => {
 
 const currentItemAlertTag = computed(() => buildItemAlertTag(currentItem.value))
 
+const isHairOrder = computed(() => Number(submission.artist_type || 0) === 2)
+const creatorRoleText = computed(() => (isHairOrder.value ? '毛娘' : '妆师'))
+const isTransferSubmissionPayment = computed(() => Number(submission.payment_method || 0) === 2)
+const showTransferNodeNotice = computed(() => {
+  if (!submission.viewer_is_buyer) return false
+  if (!isTransferSubmissionPayment.value) return false
+  return Number(submission.status || 0) >= SubmissionStatusPaid
+})
+const transferNodeNoticeText = computed(() => {
+  return `当前订单为扫码转账，不支持中间节点的异议。若需要调整，请直接和${creatorRoleText.value}协商。`
+})
+
+const activeItemBlankSupplyMode = computed(() => {
+  const row = currentItem.value || {}
+  return normalizeBlankSupplyMode(row.blank_supply_mode || row.blankSupplyMode || '')
+})
+
+const activeItemBlankSnapshot = computed(() => {
+  const row = currentItem.value || {}
+  const localSnapshot = parseBlankStockSnapshot(
+    row.blank_intro ||
+      row.blankIntro ||
+      row.blank_stock_snapshot ||
+      row.blankStockSnapshot ||
+      null
+  )
+  if (localSnapshot) return localSnapshot
+
+  const blankStockID = getItemBlankStockID(row)
+  if (blankStockID > 0 && blankStockSnapshotMap.value[blankStockID]) {
+    return blankStockSnapshotMap.value[blankStockID]
+  }
+
+  const fallbackCover = normalizeImageArray(row.blank_image_urls || row.blankImageUrls || '')[0] || ''
+  if (blankStockID > 0 || fallbackCover) {
+    return {
+      id: blankStockID,
+      blank_name: blankStockID > 0 ? `毛坯 #${blankStockID}` : '已选毛坯',
+      cover_image: fallbackCover,
+      price: Number(row.blank_price || 0),
+      head_circumference: String(row.blank_head_circumference || '').trim(),
+    }
+  }
+  return null
+})
+
+const activeItemBlankPurchaseLink = computed(() => {
+  const row = currentItem.value || {}
+  return String(row.blank_purchase_link || row.blankPurchaseLink || '').trim()
+})
+
+const activeItemBlankIntroText = computed(() => {
+  const row = currentItem.value || {}
+  const raw = String(row.blank_intro || row.blankIntro || '').trim()
+  if (!raw) return ''
+  if (parseBlankStockSnapshot(raw)) return ''
+  if (raw.startsWith('{') && raw.endsWith('}')) return ''
+  return raw
+})
+
+const activeItemNeedReplaceBlank = computed(() => {
+  const row = currentItem.value || {}
+  return Number(row.blank_check_status || row.blankCheckStatus || 0) === 2
+})
+
+const blankCheckTagText = computed(() => {
+  // 毛娘确认订单后（待付款及之后），不再展示毛坯审核角标。
+  if (Number(submission.status || 0) >= SubmissionStatusSelectedPay) return ''
+  const row = currentItem.value || {}
+  const st = Number(row.blank_check_status || row.blankCheckStatus || 0)
+  if (st === 1) return '毛坯可用'
+  if (st === 2) return '需要更换'
+  return ''
+})
+
+const showBlankSupplyCard = computed(() => {
+  if (!currentItem.value) return false
+  if (!isHairOrder.value) return false
+  return !!activeItemBlankSupplyMode.value
+})
+
+watch(
+  () => [
+    Number(submission.plan_id || 0),
+    Number(currentItem.value?.id || 0),
+    activeItemBlankSupplyMode.value,
+    getItemBlankStockID(currentItem.value || {}),
+  ].join('|'),
+  () => {
+    ensureActiveItemBlankSnapshot()
+  },
+  { immediate: true }
+)
+
+const activeItemBuyerExpressNo = computed(() => {
+  const row = currentItem.value || {}
+  return String(row.buyer_express_no || row.buyerExpressNo || '').trim()
+})
+
+const activeItemBuyerExpressCompany = computed(() => {
+  const row = currentItem.value || {}
+  return String(row.buyer_express_company || row.buyerExpressCompany || '').trim()
+})
+
+const currentItemNeedsShippingMaterial = computed(() => {
+  if (!currentItem.value) return false
+  if (!isHairOrder.value) return true
+  const mode = activeItemBlankSupplyMode.value
+  if (mode === 'self') return true
+  if (mode === 'third') return !!activeItemBlankPurchaseLink.value
+  return false
+})
+
+const showMaterialShipInfoCard = computed(() => {
+  if (!currentItem.value) return false
+  if (!canViewItemDetail.value) return false
+  const status = Number(currentItem.value?.status || 0)
+  return (
+    status === ItemStatusWaitBuyerShip ||
+    status === ItemStatusBuyerShipped ||
+    !!activeItemBuyerExpressNo.value
+  )
+})
+
+const showSubmitMaterialShipBtn = computed(() => {
+  if (!currentItem.value) return false
+  if (submission.status !== SubmissionStatusPaid) return false
+  if (!currentItemNeedsShippingMaterial.value) return false
+  const status = Number(currentItem.value?.status || 0)
+  return status === ItemStatusWaitBuyerShip || status === ItemStatusBuyerShipped
+})
+
+const materialTargetText = computed(() => (isHairOrder.value ? '毛坯' : '素头'))
+
+const materialShipStatusText = computed(() => {
+  const status = Number(currentItem.value?.status || 0)
+  const mode = activeItemBlankSupplyMode.value
+  const hasPurchaseLink = !!activeItemBlankPurchaseLink.value
+  if (status === ItemStatusBuyerShipped) return `${materialTargetText.value}寄送中`
+  if (status === ItemStatusWaitBuyerShip) {
+    if (isHairOrder.value && mode === 'stock') return `使用${creatorRoleText.value}现有毛坯，无需寄送`
+    if (isHairOrder.value && mode === 'third' && !hasPurchaseLink) return `待${creatorRoleText.value}提供购买链接`
+    return `待寄送${materialTargetText.value}`
+  }
+  if (isHairOrder.value && mode === 'third' && !hasPurchaseLink) return `待${creatorRoleText.value}提供购买链接`
+  if (activeItemBuyerExpressNo.value) return '已提交物流'
+  return '待更新'
+})
+
+const materialShipActionText = computed(() => {
+  const status = Number(currentItem.value?.status || 0)
+  if (status === ItemStatusBuyerShipped) return '修改寄送信息'
+  return '提交寄送信息'
+})
+
+function buildItemSpecificNextActionText() {
+  const item = currentItem.value
+  if (!item) return ''
+  if (Number(submission.status || 0) !== SubmissionStatusPaid) return ''
+
+  const status = Number(item.status || 0)
+  if (status !== ItemStatusWaitBuyerShip && status !== ItemStatusBuyerShipped) return ''
+
+  const role = creatorRoleText.value
+  if (!isHairOrder.value) {
+    if (status === ItemStatusWaitBuyerShip) return `请寄送素头给${role}并提交物流信息`
+    return `等待${role}签收你寄送的素头`
+  }
+
+  const mode = activeItemBlankSupplyMode.value
+  const hasPurchaseLink = !!activeItemBlankPurchaseLink.value
+  if (mode === 'stock') {
+    if (activeItemNeedReplaceBlank.value) {
+      return `${role}建议更换毛坯，请先沟通替换方案`
+    }
+    return `使用${role}现有毛坯，无需寄送`
+  }
+
+  if (mode === 'third' && !hasPurchaseLink) {
+    return `等待${role}提供毛坯购买链接`
+  }
+
+  if (status === ItemStatusWaitBuyerShip) {
+    if (mode === 'third') return `请按${role}提供的链接购买毛坯后寄送，并提交物流信息`
+    if (activeItemNeedReplaceBlank.value) return '请更换毛坯后寄送，并提交物流信息'
+    return `请寄送毛坯给${role}并提交物流信息`
+  }
+  return `等待${role}签收你寄送的毛坯`
+}
+
 const finalStepID = computed(() => {
   // 基于节点配置推导“最后节点ID”，用于区分普通通过与成品确认。
   const list = Array.isArray(submission.step_configs) ? submission.step_configs : []
@@ -1211,6 +1528,222 @@ function previewTimelineImages(images, index = 0) {
   uni.previewImage({
     current: list[index] || list[0],
     urls: list
+  })
+}
+
+function normalizeBlankSupplyMode(raw) {
+  const val = String(raw || '').trim().toLowerCase()
+  if (!val) return ''
+  if (val === 'self' || val === 'third' || val === 'stock') return val
+  return ''
+}
+
+function getItemBlankStockID(item) {
+  return Number(item?.blank_stock_id || item?.blankStockId || 0)
+}
+
+function parseBlankStockSnapshot(raw) {
+  if (!raw) return null
+  if (typeof raw === 'object' && raw !== null) {
+    const id = Number(raw.id || raw.blank_stock_id || 0)
+    const coverFromList = normalizeImageArray(raw.image_urls || raw.imageUrls || '')[0] || ''
+    const coverImage = String(raw.cover_image || raw.coverImage || coverFromList || '').trim()
+    const blankName = String(raw.blank_name || raw.blankName || '').trim()
+    const headCircumference = String(raw.head_circumference || raw.headCircumference || '').trim()
+    const price = Number(raw.price || 0)
+    const hasVisibleInfo =
+      !!blankName ||
+      !!coverImage ||
+      !!headCircumference ||
+      (Number.isFinite(price) && price > 0)
+    if (id <= 0 && !hasVisibleInfo) return null
+    return {
+      id,
+      blank_name: blankName,
+      cover_image: coverImage,
+      price: Number.isFinite(price) ? price : 0,
+      head_circumference: headCircumference,
+    }
+  }
+  const txt = String(raw || '').trim()
+  if (!txt || !txt.startsWith('{')) return null
+  try {
+    const parsed = JSON.parse(txt)
+    return parseBlankStockSnapshot(parsed)
+  } catch (_) {
+    return null
+  }
+}
+
+function blankSupplyModeText(modeRaw) {
+  const mode = normalizeBlankSupplyMode(modeRaw)
+  if (mode === 'self') return '买家自带毛坯'
+  if (mode === 'third') return '指定购买毛坯'
+  if (mode === 'stock') return '选购现有毛坯'
+  return '未设置'
+}
+
+function formatBlankPrice(v) {
+  const n = Number(v || 0)
+  if (!Number.isFinite(n)) return '0.00'
+  return n.toFixed(2)
+}
+
+async function ensureActiveItemBlankSnapshot() {
+  const item = currentItem.value
+  if (!item) return
+  if (normalizeBlankSupplyMode(item.blank_supply_mode || item.blankSupplyMode || '') !== 'stock') return
+
+  const blankStockID = getItemBlankStockID(item)
+  if (blankStockID <= 0) return
+  if (blankStockSnapshotMap.value[blankStockID]) return
+  if (blankStockSnapshotLoadingMap.value[blankStockID]) return
+
+  const planID = Number(submission.plan_id || 0)
+  if (planID <= 0) return
+
+  blankStockSnapshotLoadingMap.value = {
+    ...blankStockSnapshotLoadingMap.value,
+    [blankStockID]: true,
+  }
+  try {
+    const snapshot = await fetchBlankStockSnapshotFromPlan(planID, blankStockID)
+    if (snapshot) {
+      blankStockSnapshotMap.value = {
+        ...blankStockSnapshotMap.value,
+        [blankStockID]: snapshot,
+      }
+    }
+  } finally {
+    const next = { ...blankStockSnapshotLoadingMap.value }
+    delete next[blankStockID]
+    blankStockSnapshotLoadingMap.value = next
+  }
+}
+
+async function fetchBlankStockSnapshotFromPlan(planID, blankStockID) {
+  const token = uni.getStorageSync('token') || ''
+  if (!token) return null
+  const size = 50
+  const maxPages = 8
+
+  for (let page = 1; page <= maxPages; page++) {
+    const body = await new Promise((resolve) => {
+      uni.request({
+        url: `${websiteUrl.value}/with-state/artist-order/blank-stock/options`,
+        method: 'GET',
+        header: { Authorization: token },
+        data: { plan_id: planID, page, size },
+        success: (res) => resolve(res?.data || {}),
+        fail: () => resolve({}),
+      })
+    })
+    if (String(body?.status || '').toLowerCase() !== 'success') return null
+    const data = body?.data || {}
+    const list = Array.isArray(data.list) ? data.list : []
+    const hit = list.find((row) => Number(row?.id || 0) === Number(blankStockID))
+    if (hit) return parseBlankStockSnapshot(hit)
+
+    const total = Number(data.total || 0)
+    if (!list.length || (total > 0 && page * size >= total)) break
+  }
+  return null
+}
+
+function openBlankPurchaseLink(url) {
+  const target = String(url || '').trim()
+  if (!target) return
+  uni.setClipboardData({
+    data: target,
+    success: () => uni.showToast({ title: '链接已复制', icon: 'none' }),
+    fail: () => uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+  })
+}
+
+const materialShipCompanyOptions = [
+  '顺丰速运',
+  '京东快递',
+  '中通快递',
+  '圆通速递',
+  '韵达快递',
+  '申通快递',
+  '极兔速递',
+  'EMS',
+  '邮政快递包裹'
+]
+
+function openMaterialShipModal() {
+  if (!showSubmitMaterialShipBtn.value) return
+  materialShipExpressNo.value = activeItemBuyerExpressNo.value || ''
+  materialShipExpressCompany.value = activeItemBuyerExpressCompany.value || ''
+  materialShipModalVisible.value = true
+}
+
+function closeMaterialShipModal() {
+  if (materialShipSubmitting.value) return
+  materialShipModalVisible.value = false
+}
+
+function chooseMaterialShipCompany() {
+  if (!materialShipModalVisible.value || materialShipSubmitting.value) return
+  uni.showActionSheet({
+    itemList: materialShipCompanyOptions,
+    success: ({ tapIndex }) => {
+      const idx = Number(tapIndex || 0)
+      if (idx >= 0 && idx < materialShipCompanyOptions.length) {
+        materialShipExpressCompany.value = materialShipCompanyOptions[idx]
+      }
+    }
+  })
+}
+
+function submitMaterialShip() {
+  if (materialShipSubmitting.value) return
+  if (!showSubmitMaterialShipBtn.value) return
+  const itemID = Number(currentItem.value?.id || currentItem.value?.ID || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    return
+  }
+  const expressNo = String(materialShipExpressNo.value || '').trim()
+  const expressCompany = String(materialShipExpressCompany.value || '').trim()
+  if (!expressNo || !expressCompany) {
+    uni.showToast({ title: '请填写完整物流信息', icon: 'none' })
+    return
+  }
+
+  materialShipSubmitting.value = true
+  uni.showLoading({ title: '提交中' })
+  uni.request({
+    url: `${websiteUrl.value}/with-state/artist-order/item/submit-material-ship`,
+    method: 'POST',
+    header: {
+      Authorization: uni.getStorageSync('token'),
+      'Content-Type': 'application/json'
+    },
+    data: {
+      item_id: itemID,
+      express_no: expressNo,
+      express_company: expressCompany
+    },
+    success: (res) => {
+      const body = res?.data || {}
+      if (String(body.status).toLowerCase() !== 'success') {
+        uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+        return
+      }
+      uni.showToast({ title: '寄送信息已提交', icon: 'success' })
+      materialShipModalVisible.value = false
+      if (global.lastRefresh) global.lastRefresh.time = 0
+      fetchDetail(true)
+    },
+    fail: () => {
+      uni.showToast({ title: '提交失败，请稍后重试', icon: 'none' })
+    },
+    complete: () => {
+      materialShipSubmitting.value = false
+      uni.hideLoading()
+    }
   })
 }
 
@@ -1880,6 +2413,11 @@ function timelineTitle(row) {
     if (submission.return_address_ready) return '订单收尾'
     return '等待填写寄回地址'
   }
+  if (eventCode === 'blank_check_approved') return '毛坯判断通过'
+  if (eventCode === 'blank_check_replace') return '毛坯需要更换'
+  if (eventCode === 'blank_purchase_link') return '毛坯购买链接'
+  if (eventCode === 'buyer_ship_material') return '素材已寄送'
+  if (eventCode === 'artist_receive_material') return '素材已签收'
   if (eventCode === 'return_shipped') return '创作者已寄回'
   if (eventCode === 'return_received') return '订单已完结'
   if (eventCode === 'trade_reviewed') return '买家已评价'
@@ -1912,6 +2450,11 @@ function timelineDesc(row) {
     if (submission.return_address_ready) return '创作者已进入订单收尾，可填写寄回单号。'
     return '创作者发起结单，请买家填写寄回地址。'
   }
+  if (eventCode === 'blank_check_approved') return '创作者已确认当前毛坯可用。'
+  if (eventCode === 'blank_check_replace') return '创作者建议更换毛坯，请按要求重新寄送。'
+  if (eventCode === 'blank_purchase_link') return '创作者提供了毛坯购买链接。'
+  if (eventCode === 'buyer_ship_material') return '你已提交素材寄送物流信息。'
+  if (eventCode === 'artist_receive_material') return '创作者已确认收到你寄送的素材。'
   if (eventCode === 'return_shipped') return '创作者已寄回，等待买家确认结束。'
   if (eventCode === 'return_received') return '你已确认这次订单结束。'
   if (eventCode === 'trade_reviewed') return '你已完成订单评价。'
@@ -2024,6 +2567,12 @@ watch(
 watch(reviewModalVisible, (visible) => {
   if (visible || reviewSubmitting.value) return
   resetReviewForm()
+})
+
+watch(materialShipModalVisible, (visible) => {
+  if (visible || materialShipSubmitting.value) return
+  materialShipExpressNo.value = ''
+  materialShipExpressCompany.value = ''
 })
 
 function getFirstRefImage(str) {
@@ -2278,7 +2827,9 @@ async function fetchDetail(force = false) {
         status: d.status,
         status_text: d.status_text,
         ahead_count: d.ahead_count,
+        viewer_is_buyer: !!d.viewer_is_buyer,
         artist_type: d.artist_type, // 修改点：赋值 artist_type
+        payment_method: Number(d.payment_method || 0),
         step_configs: Array.isArray(d.step_configs) ? d.step_configs : [],
         progress_logs: Array.isArray(d.progress_logs) ? d.progress_logs : [],
         items: d.items || [],
@@ -2299,6 +2850,7 @@ async function fetchDetail(force = false) {
       })
       draftItems.value = d.draft_items || []
       applyFocusItemByID(focusItemID.value)
+      ensureActiveItemBlankSnapshot()
       if (force) {
         progressOverviewLoaded.value = false
       }
@@ -3799,6 +4351,90 @@ $spacing-page: 30rpx;
   opacity: 0.45;
 }
 
+.material-ship-modal {
+  width: 100%;
+  padding: 8rpx 6rpx 12rpx;
+  box-sizing: border-box;
+}
+.material-ship-modal-title {
+  display: block;
+  font-size: 32rpx;
+  color: #243246;
+  text-align: center;
+}
+.material-ship-modal-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  color: #72839a;
+  line-height: 1.6;
+  text-align: center;
+}
+.material-ship-form-row {
+  margin-top: 18rpx;
+  padding: 0 2rpx;
+}
+.material-ship-form-label {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 22rpx;
+  color: #8f9db3;
+}
+.material-ship-form-input {
+  width: 100%;
+  height: 78rpx;
+  border-radius: 14rpx;
+  background: #f5f7fb;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  font-size: 25rpx;
+  color: #26354a;
+}
+.material-ship-form-picker {
+  width: 100%;
+  height: 78rpx;
+  border-radius: 14rpx;
+  background: #f5f7fb;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  font-size: 24rpx;
+  color: #4e6079;
+}
+.material-ship-form-picker .placeholder {
+  color: #a4b0c1;
+}
+.material-ship-modal-actions {
+  margin-top: 24rpx;
+  display: flex;
+  gap: 12rpx;
+}
+.material-ship-modal-btn {
+  flex: 1;
+  height: 78rpx;
+  border-radius: 999rpx;
+  border: none;
+  font-size: 25rpx;
+  font-weight: 600;
+}
+.material-ship-modal-btn::after {
+  border: none;
+}
+.material-ship-modal-btn.cancel {
+  background: #eef2f7;
+  color: #2d394b;
+}
+.material-ship-modal-btn.confirm {
+  background: #78daf5;
+  color: #fff;
+}
+.material-ship-modal-btn.confirm.disabled {
+  opacity: 0.45;
+}
+
 .info-row-item {
   display: flex;
   justify-content: space-between;
@@ -3958,6 +4594,133 @@ $spacing-page: 30rpx;
   justify-content: space-between; /* 价格在左，箭头在右 */
 }
 
+.blank-supply-card {
+  margin-top: 14rpx;
+  border-radius: 20rpx;
+  padding: 20rpx;
+  background: #f5f9ff;
+}
+.blank-supply-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+.blank-supply-title {
+  font-size: 24rpx;
+  color: #34435a;
+}
+.blank-check-tag {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: #257258;
+  background: #d7f5ea;
+}
+.blank-check-tag.replace {
+  color: #97503c;
+  background: #ffe5db;
+}
+.blank-supply-mode {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  color: #52617c;
+}
+.blank-stock-card {
+  margin-top: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 10rpx 12rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.92);
+}
+.blank-stock-cover {
+  width: 86rpx;
+  height: 86rpx;
+  border-radius: 12rpx;
+  background: #edf2f8;
+  flex-shrink: 0;
+}
+.blank-stock-main {
+  min-width: 0;
+  flex: 1;
+}
+.blank-stock-name {
+  display: block;
+  font-size: 24rpx;
+  color: #2c394e;
+}
+.blank-stock-meta {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #6d7c95;
+}
+.blank-stock-fallback {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #52617c;
+  line-height: 1.6;
+}
+.blank-link-text {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+  color: #3f79b2;
+  word-break: break-all;
+}
+.material-ship-panel {
+  margin-top: 14rpx;
+  border-radius: 20rpx;
+  padding: 18rpx;
+  background: #f5f9ff;
+}
+.material-ship-info {
+  padding: 14rpx 16rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.86);
+}
+.material-ship-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+.material-ship-row + .material-ship-row {
+  margin-top: 8rpx;
+}
+.material-ship-label {
+  font-size: 22rpx;
+  color: #8f9db3;
+  flex-shrink: 0;
+}
+.material-ship-value {
+  font-size: 22rpx;
+  color: #51627c;
+  text-align: right;
+  word-break: break-all;
+}
+.material-ship-btn {
+  margin-top: 14rpx;
+  height: 70rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.material-ship-btn.disabled {
+  background: #e8edf4;
+  color: #a0adbd;
+}
+
 .item-title {
   font-size: 30rpx;
   font-weight: bold;
@@ -4071,6 +4834,21 @@ $spacing-page: 30rpx;
 .timeline-area {
   margin-top: 60rpx; /* 增大留白 */
   padding-left: 10rpx;
+}
+.transfer-node-notice {
+  margin-top: 20rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 16rpx;
+  background: linear-gradient(135deg, #edf6fc 0%, #f4f8fc 100%);
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+}
+.transfer-node-notice-text {
+  flex: 1;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #61798b;
 }
 .timeline-header {
   font-size: 28rpx;
@@ -4438,6 +5216,11 @@ $spacing-page: 30rpx;
   white-space: nowrap;
 }
 
+.overview-scroll-wrap {
+  position: relative;
+  width: 100%;
+}
+
 .overview-timeline-track {
   display: inline-flex;
   align-items: flex-start;
@@ -4661,16 +5444,20 @@ $spacing-page: 30rpx;
 }
 
 .overview-tail-fade {
-  width: 82rpx;
-  min-height: 344rpx;
-  flex: 0 0 82rpx;
-  border-radius: 999rpx;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 90rpx;
+  pointer-events: none;
+  z-index: 4;
   background: linear-gradient(
     90deg,
-    rgba(149, 158, 168, 0.46) 0%,
-    rgba(211, 217, 223, 0.24) 58%,
-    rgba(255, 255, 255, 0.02) 100%
+    rgba(245, 248, 251, 0) 0%,
+    rgba(226, 232, 238, 0.58) 56%,
+    rgba(208, 216, 225, 0.92) 100%
   );
+  border-radius: 0 22rpx 22rpx 0;
 }
 
 .pay-sheet {

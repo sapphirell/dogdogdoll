@@ -96,14 +96,15 @@
             </view>
 
             <view class="field-card">
-              <text class="field-label">库存数量</text>
+              <text class="field-label">{{ editingId > 0 ? '库存增量' : '初始库存' }}</text>
               <input
-                v-model="form.quantity"
+                v-model="form.quantity_input"
                 class="field-input"
                 type="number"
                 maxlength="8"
-                placeholder="0"
+                :placeholder="editingId > 0 ? '例如 +3 或 -1' : '0'"
               />
+              <text v-if="editingId > 0" class="field-help">当前库存：{{ form.current_quantity }}</text>
             </view>
           </view>
 
@@ -187,7 +188,8 @@ const form = reactive({
   price: '',
   head_circumference: '',
   intro: '',
-  quantity: '0',
+  quantity_input: '0',
+  current_quantity: 0,
   image_urls: []
 })
 
@@ -222,7 +224,8 @@ function resetForm () {
   form.price = ''
   form.head_circumference = ''
   form.intro = ''
-  form.quantity = '0'
+  form.quantity_input = '0'
+  form.current_quantity = 0
   form.image_urls = []
 }
 
@@ -286,7 +289,8 @@ async function openEdit (id) {
     form.price = formatPrice(data.price)
     form.head_circumference = String(data.head_circumference || '')
     form.intro = String(data.intro || '')
-    form.quantity = String(data.quantity || 0)
+    form.current_quantity = Number(data.quantity || 0)
+    form.quantity_input = '0'
     form.image_urls = normalizeImageURLs(data.image_urls || [])
     formPopupRef.value?.open()
   } catch (e) {
@@ -311,9 +315,13 @@ async function submitForm () {
     uni.showToast({ title: '请填写正确的价格', icon: 'none' })
     return
   }
-  const quantity = Number.parseInt(String(form.quantity || '0'), 10)
-  if (!Number.isInteger(quantity) || quantity < 0) {
+  const quantityInput = Number.parseInt(String(form.quantity_input || '0'), 10)
+  if (!Number.isInteger(quantityInput)) {
     uni.showToast({ title: '请填写正确的库存数量', icon: 'none' })
+    return
+  }
+  if (editingId.value <= 0 && quantityInput < 0) {
+    uni.showToast({ title: '初始库存不能小于 0', icon: 'none' })
     return
   }
   const imageURLs = normalizeImageURLs(form.image_urls)
@@ -332,8 +340,12 @@ async function submitForm () {
     price,
     head_circumference: String(form.head_circumference || '').trim(),
     intro: String(form.intro || '').trim(),
-    quantity,
     image_urls: imageURLs
+  }
+  if (editingId.value > 0) {
+    payload.quantity_delta = quantityInput
+  } else {
+    payload.quantity = quantityInput
   }
 
   saving.value = true
@@ -744,6 +756,13 @@ onReachBottom(() => {
   font-size: 27rpx;
   color: #25314a;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.field-help {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #8f9bb4;
 }
 
 .field-textarea {

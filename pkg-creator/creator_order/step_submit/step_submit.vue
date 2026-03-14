@@ -65,9 +65,7 @@
 
         <view class="card" v-else>
           <text class="card-title">进度更新</text>
-          <text class="transfer-tip">
-            当前为转账订单，无固定节点限制。妆师可按进度不限次上传图片，双方确认后走尾款与结束流程。
-          </text>
+          <text class="transfer-tip">{{ transferTipText }}</text>
         </view>
 
         <view class="card">
@@ -149,6 +147,13 @@ const paymentMethod = computed(() => Number(queueInfo.value?.payment_method || q
 const isOnlinePayment = computed(() => paymentMethod.value === PAYMENT_METHOD_PLATFORM)
 const isTransferPayment = computed(() => paymentMethod.value === PAYMENT_METHOD_QRCODE)
 const isPaid = computed(() => Number(queueInfo.value?.status || 0) === SUBMISSION_STATUS_PAID)
+const artistRoleText = computed(() => {
+  const artistType = Number(queueInfo.value?.artist_type || queueInfo.value?.artistType || 1)
+  return artistType === 2 ? '毛娘' : '妆师'
+})
+const transferTipText = computed(() => {
+  return `当前为转账订单，无固定节点限制。${artistRoleText.value}可按进度不限次上传图片，双方确认后走尾款与结束流程。`
+})
 
 const paymentMethodText = computed(() => {
   if (isOnlinePayment.value) return '在线支付'
@@ -269,7 +274,7 @@ async function fetchQueueInfo() {
       queueInfo.value = body.data || null
       if (!queueInfo.value || !ensureItemExists()) return
       if (typeof queueInfo.value.viewer_is_artist === 'boolean' && !queueInfo.value.viewer_is_artist) {
-        errorMsg.value = '仅妆师/毛娘可提交节点状态'
+        errorMsg.value = `仅${artistRoleText.value}可提交节点状态`
         return
       }
       if (!isPaid.value) {

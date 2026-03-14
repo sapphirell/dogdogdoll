@@ -187,10 +187,77 @@
                       </text>
                     </view>
                   </view>
+
+                  <view v-if="showBlankInfoCard(activeItem)" class="item-blank-card">
+                    <view class="item-blank-head">
+                      <text class="item-blank-title font-alimamashuhei">毛坯方案</text>
+                      <view
+                        v-if="Number(activeItem.blank_check_status || 0) > 0"
+                        class="item-blank-check-tag font-alimamashuhei"
+                        :class="{ replace: Number(activeItem.blank_check_status || 0) === 2 }"
+                      >
+                        {{ Number(activeItem.blank_check_status || 0) === 1 ? '毛坯可用' : '需要更换' }}
+                      </view>
+                    </view>
+                    <text class="item-blank-mode">{{ blankSupplyModeText(activeItem.blank_supply_mode) }}</text>
+                    <view v-if="activeItemBlankSnapshot" class="item-blank-picked">
+                      <image
+                        v-if="activeItemBlankSnapshot.cover_image"
+                        class="item-blank-picked-cover"
+                        :src="activeItemBlankSnapshot.cover_image"
+                        mode="aspectFill"
+                      />
+                      <view class="item-blank-picked-main">
+                        <text class="item-blank-picked-name font-alimamashuhei">{{ activeItemBlankSnapshot.blank_name || '已选毛坯' }}</text>
+                        <text class="item-blank-picked-meta">
+                          ¥{{ formatPrice(activeItemBlankSnapshot.price) }} · {{ activeItemBlankSnapshot.head_circumference || '头围待补充' }}
+                        </text>
+                      </view>
+                    </view>
+                    <text v-else-if="activeItemBlankIntroText" class="item-blank-fallback">
+                      已选毛坯：{{ activeItemBlankIntroText }}
+                    </text>
+                    <text v-if="activeItem.blank_check_note" class="item-blank-note">说明：{{ activeItem.blank_check_note }}</text>
+                    <text v-if="activeItem.blank_purchase_link" class="item-blank-link" @tap="openPurchaseLink(activeItem.blank_purchase_link)">
+                      购买链接：{{ activeItem.blank_purchase_link }}
+                    </text>
+                  </view>
+
+                  <view v-if="showMaterialFlowInfo(activeItem)" class="item-material-card">
+                    <view class="item-material-row" v-if="activeItem.buyer_express_no">
+                      <text class="item-material-label font-title">寄送物流</text>
+                      <text class="item-material-value">
+                        {{ activeItem.buyer_express_company || '快递' }} {{ activeItem.buyer_express_no }}
+                      </text>
+                    </view>
+                    <view class="item-material-row" v-if="Number(activeItem.artist_received_at || 0) > 0">
+                      <text class="item-material-label font-title">签收状态</text>
+                      <text class="item-material-value">已签收素材</text>
+                    </view>
+                  </view>
                 </view>
               </view>
 
 	              <view v-if="!activeItemFinalConfirmed" class="item-actions">
+                  <template v-if="showBlankReviewActions">
+                    <button
+                      class="btn-mini blank-replace"
+                      :class="{ disabled: blankReviewSubmitting }"
+                      :disabled="blankReviewSubmitting"
+                      @tap="openBlankReviewModal"
+                    >
+                      需要更换
+                    </button>
+                  </template>
+                  <button
+                    v-if="canConfirmMaterialReceived(activeItem)"
+                    class="btn-mini material-received"
+                    :class="{ disabled: confirmMaterialSubmitting }"
+                    :disabled="confirmMaterialSubmitting"
+                    @tap="handleConfirmMaterialReceived(activeItem)"
+                  >
+                    确认收到素材
+                  </button>
 	                <button
 	                  class="btn-mini"
 	                  @tap="openChangePricePanel(activeItem)"
@@ -215,7 +282,7 @@
 	                    拒绝修改
 	                  </button>
 	                </template>
-	                <template v-else>
+	                <template v-else-if="submissionStatus === SUBMISSION_STATUS_PAID">
 	                  <button
 	                    class="btn-mini step-submit"
 	                    :class="{ disabled: !canSubmitStep(activeItem) }"
@@ -230,7 +297,7 @@
 	                    :disabled="!canMarkFinished(activeItem)"
 	                    @tap="handleMarkItemFinished(activeItem)"
 	                  >
-	                    我已画完
+	                    {{ markFinishedBtnText }}
 	                  </button>
 	                </template>
 	              </view>
@@ -576,7 +643,7 @@
 
 	    <common-modal v-model:visible="markFinishModalVisible" width="620rpx" :closeable="!markFinishSubmitting">
 	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
-	        <text class="custom-modal-title">我已画完</text>
+	        <text class="custom-modal-title">{{ markFinishedBtnText }}</text>
 	        <text class="custom-modal-desc">提交后将向买家发起最终状态确认，是否继续？</text>
 	        <view class="custom-modal-actions">
 	          <button
@@ -667,6 +734,42 @@
 	          </button>
 	        </view>
 	      </view>
+	    </common-modal>
+
+	    <common-modal v-model:visible="blankReviewModalVisible" width="640rpx" :closeable="!blankReviewSubmitting">
+	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+          <text class="custom-modal-title">{{ blankReviewModalTitle }}</text>
+          <text class="custom-modal-desc">{{ blankReviewModalDesc }}</text>
+          <input
+            v-model.trim="blankReviewPurchaseLink"
+            class="blank-review-link-input"
+            placeholder="可选填写：毛坯购买链接"
+          />
+          <textarea
+            v-model.trim="blankReviewNote"
+            class="blank-review-note-input"
+            maxlength="180"
+            auto-height
+            placeholder="可选填写：备注说明（最多180字）"
+          />
+          <view class="custom-modal-actions">
+            <button
+              class="custom-modal-btn cancel"
+              :disabled="blankReviewSubmitting"
+              @tap="blankReviewModalVisible = false"
+            >
+              取消
+            </button>
+            <button
+              class="custom-modal-btn confirm"
+              :class="{ disabled: blankReviewSubmitting }"
+              :disabled="blankReviewSubmitting"
+              @tap="submitBlankReview"
+            >
+              {{ blankReviewSubmitting ? '提交中...' : '确认提交' }}
+            </button>
+          </view>
+        </view>
 	    </common-modal>
 
 	    <common-modal v-model:visible="paymentStatusModalVisible" width="660rpx">
@@ -1281,7 +1384,10 @@ const visibleCreativeHistoryEvents = computed(() => {
 })
 
 const footerPlaceholderHeight = computed(() => {
-  return toPx(getFooterPlaceholderHeight())
+  if (!showBottomBar.value) return toPx(0)
+  // 给 fixed 底栏留足空间，避免遮挡最后一段信息区。
+  const barReservePx = uni?.upx2px ? uni.upx2px(144) : 80
+  return toPx(getFooterPlaceholderHeight() + barReservePx)
 })
 const footerPadding = computed(() => {
   return toPx(getSafeBottom() + 40)
@@ -1312,6 +1418,14 @@ const disputeUploadText = ref('')
 const disputeSubmitting = ref(false)
 const showUnreceivedActions = ref(false)
 const showDisputeForm = ref(false)
+const blankReviewModalVisible = ref(false)
+const blankReviewSubmitting = ref(false)
+const blankReviewCheckStatus = ref(1)
+const blankReviewNote = ref('')
+const blankReviewPurchaseLink = ref('')
+const confirmMaterialSubmitting = ref(false)
+const blankStockSnapshotMap = ref({})
+const blankStockSnapshotLoadingMap = ref({})
 
 // ================== 确认/审核弹窗状态 ==================
 const auditModalVisible = ref(false)
@@ -1332,6 +1446,13 @@ watch(negotiationModalVisible, (show) => {
   if (!show && !negotiationSubmitting.value) {
     negotiationAction.value = ''
   }
+})
+
+watch(blankReviewModalVisible, (show) => {
+  if (show || blankReviewSubmitting.value) return
+  blankReviewCheckStatus.value = 1
+  blankReviewNote.value = ''
+  blankReviewPurchaseLink.value = ''
 })
 
 watch(shipModalVisible, (show) => {
@@ -1394,6 +1515,90 @@ const canApplyDispute = computed(() => {
   if (!isQrPayment.value) return false
   return !!paymentStatusInfo.value?.can_apply_dispute
 })
+
+const isHairOrder = computed(() => {
+  const q = queueInfo.value || {}
+  const artistType = Number(q.artist_type || q.artistType || 0)
+  return artistType === 2
+})
+const creatorRoleText = computed(() => (isHairOrder.value ? '毛娘' : '妆师'))
+const markFinishedBtnText = computed(() => (isHairOrder.value ? '我已做完' : '我已画完'))
+
+const activeItemBlankSupplyMode = computed(() => {
+  const row = activeItem.value || {}
+  return normalizeBlankSupplyMode(row.blank_supply_mode || row.blankSupplyMode || '')
+})
+
+const activeItemBlankSnapshot = computed(() => {
+  const row = activeItem.value || {}
+  const localSnapshot = parseBlankStockSnapshot(
+    row.blank_intro ||
+      row.blankIntro ||
+      row.blank_stock_snapshot ||
+      row.blankStockSnapshot ||
+      null
+  )
+  if (localSnapshot) return localSnapshot
+
+  const blankStockID = getItemBlankStockID(row)
+  if (blankStockID > 0 && blankStockSnapshotMap.value[blankStockID]) {
+    return blankStockSnapshotMap.value[blankStockID]
+  }
+
+  const fallbackCover = normalizeImageArray(row.blank_image_urls || row.blankImageUrls || '')[0] || ''
+  if (blankStockID > 0 || fallbackCover) {
+    return {
+      id: blankStockID,
+      blank_name: blankStockID > 0 ? `毛坯 #${blankStockID}` : '已选毛坯',
+      cover_image: fallbackCover,
+      price: Number(row.blank_price || 0),
+      head_circumference: String(row.blank_head_circumference || '').trim(),
+    }
+  }
+  return null
+})
+
+const activeItemBlankIntroText = computed(() => {
+  const row = activeItem.value || {}
+  const raw = String(row.blank_intro || row.blankIntro || '').trim()
+  if (!raw) return ''
+  if (parseBlankStockSnapshot(raw)) return ''
+  if (raw.startsWith('{') && raw.endsWith('}')) return ''
+  return raw
+})
+
+const showBlankReviewActions = computed(() => {
+  if (isBuyer.value) return false
+  if (!isHairOrder.value) return false
+  if (
+    submissionStatus.value !== SUBMISSION_STATUS_BUYER_CONFIRMED &&
+    submissionStatus.value !== SUBMISSION_STATUS_SELECTED_PAY
+  ) return false
+  if (!activeItem.value) return false
+  return !!activeItemBlankSupplyMode.value
+})
+
+watch(
+  () => [
+    Number(queueInfo.value?.plan_id || queueInfo.value?.planId || 0),
+    Number(getItemID(activeItem.value) || 0),
+    activeItemBlankSupplyMode.value,
+    getItemBlankStockID(activeItem.value || {}),
+  ].join('|'),
+  () => {
+    ensureActiveItemBlankSnapshot()
+  },
+  { immediate: true }
+)
+
+const blankReviewModalTitle = computed(() => {
+  return '毛坯需要更换'
+})
+
+const blankReviewModalDesc = computed(() => {
+  return '确认后会将订单退回待买家确认，买家可重新编辑毛坯。你也可以补充购买链接。'
+})
+
 const latestDisputeStatusText = computed(() => {
   const d = latestDispute.value
   if (!d) return ''
@@ -1461,14 +1666,195 @@ function formatItemStatus(st) {
   switch (s) {
     case 0: return '待处理/排队中'
     case 1: return '已抢到，待确认'
-    case 2: return '等待妆师/毛娘确认'
+    case 2: return `等待${creatorRoleText.value}确认`
     case 3: return '待付款'
     case 4: return '已下单/进行中'
     case 5: return '未中选'
     case 6: return '已放弃/取消'
-    case 7: return '保留过期'
+    case 7: return '待寄送素材'
+    case 8: return '素材寄送中'
     default: return '未知'
   }
+}
+
+function normalizeBlankSupplyMode(raw) {
+  const val = String(raw || '').trim().toLowerCase()
+  if (!val) return ''
+  if (val === 'self' || val === 'third' || val === 'stock') return val
+  return ''
+}
+
+function getItemBlankStockID(item) {
+  return Number(item?.blank_stock_id || item?.blankStockId || 0)
+}
+
+function parseBlankStockSnapshot(raw) {
+  if (!raw) return null
+  if (typeof raw === 'object' && raw !== null) {
+    const id = Number(raw.id || raw.blank_stock_id || 0)
+    const coverFromList = normalizeImageArray(raw.image_urls || raw.imageUrls || '')[0] || ''
+    const coverImage = String(raw.cover_image || raw.coverImage || coverFromList || '').trim()
+    const blankName = String(raw.blank_name || raw.blankName || '').trim()
+    const headCircumference = String(raw.head_circumference || raw.headCircumference || '').trim()
+    const price = Number(raw.price || 0)
+    const hasVisibleInfo =
+      !!blankName ||
+      !!coverImage ||
+      !!headCircumference ||
+      (Number.isFinite(price) && price > 0)
+    // 兼容旧数据：即使没有 id，只要有可展示信息也允许渲染。
+    if (id <= 0 && !hasVisibleInfo) return null
+    return {
+      id,
+      blank_name: blankName,
+      cover_image: coverImage,
+      price: Number.isFinite(price) ? price : 0,
+      head_circumference: headCircumference,
+    }
+  }
+  const txt = String(raw || '').trim()
+  if (!txt || !txt.startsWith('{')) return null
+  try {
+    const parsed = JSON.parse(txt)
+    return parseBlankStockSnapshot(parsed)
+  } catch (_) {
+    return null
+  }
+}
+
+function blankSupplyModeText(modeRaw) {
+  const mode = normalizeBlankSupplyMode(modeRaw)
+  if (mode === 'self') return '买家自带毛坯'
+  if (mode === 'third') return '指定购买毛坯'
+  if (mode === 'stock') return '选购现有毛坯'
+  return '未设置'
+}
+
+async function ensureActiveItemBlankSnapshot() {
+  const item = activeItem.value
+  if (!item) return
+  if (normalizeBlankSupplyMode(item.blank_supply_mode || item.blankSupplyMode || '') !== 'stock') return
+
+  const blankStockID = getItemBlankStockID(item)
+  if (blankStockID <= 0) return
+  if (blankStockSnapshotMap.value[blankStockID]) return
+  if (blankStockSnapshotLoadingMap.value[blankStockID]) return
+
+  const planID = Number(queueInfo.value?.plan_id || queueInfo.value?.planId || 0)
+  if (planID <= 0) return
+
+  blankStockSnapshotLoadingMap.value = {
+    ...blankStockSnapshotLoadingMap.value,
+    [blankStockID]: true,
+  }
+  try {
+    let snapshot = await fetchBlankStockSnapshotFromPlan(planID, blankStockID)
+    if (!snapshot && !isBuyer.value) {
+      snapshot = await fetchBlankStockSnapshotFromBrandManager(blankStockID)
+    }
+    if (snapshot) {
+      blankStockSnapshotMap.value = {
+        ...blankStockSnapshotMap.value,
+        [blankStockID]: snapshot,
+      }
+    }
+  } finally {
+    const next = { ...blankStockSnapshotLoadingMap.value }
+    delete next[blankStockID]
+    blankStockSnapshotLoadingMap.value = next
+  }
+}
+
+async function fetchBlankStockSnapshotFromPlan(planID, blankStockID) {
+  const token = uni.getStorageSync('token') || ''
+  if (!token) return null
+  const size = 50
+  const maxPages = 8
+
+  for (let page = 1; page <= maxPages; page++) {
+    const body = await new Promise((resolve) => {
+      uni.request({
+        url: `${websiteUrl.value}/with-state/artist-order/blank-stock/options`,
+        method: 'GET',
+        header: { Authorization: token },
+        data: { plan_id: planID, page, size },
+        success: (res) => resolve(res?.data || {}),
+        fail: () => resolve({}),
+      })
+    })
+    if (String(body?.status || '').toLowerCase() !== 'success') return null
+    const data = body?.data || {}
+    const list = Array.isArray(data.list) ? data.list : []
+    const hit = list.find((row) => Number(row?.id || 0) === Number(blankStockID))
+    if (hit) return parseBlankStockSnapshot(hit)
+
+    const total = Number(data.total || 0)
+    if (!list.length || (total > 0 && page * size >= total)) break
+  }
+  return null
+}
+
+async function fetchBlankStockSnapshotFromBrandManager(blankStockID) {
+  const token = uni.getStorageSync('token') || ''
+  if (!token) return null
+  const body = await new Promise((resolve) => {
+    uni.request({
+      url: `${websiteUrl.value}/brand-manager/blank-stock/info`,
+      method: 'GET',
+      header: { Authorization: token },
+      data: { id: Number(blankStockID || 0) },
+      success: (res) => resolve(res?.data || {}),
+      fail: () => resolve({}),
+    })
+  })
+  if (String(body?.status || '').toLowerCase() !== 'success') return null
+  const row = body?.data || null
+  return parseBlankStockSnapshot(row)
+}
+
+function showBlankInfoCard(item) {
+  if (!item || !isHairOrder.value) return false
+  const mode = normalizeBlankSupplyMode(item.blank_supply_mode || item.blankSupplyMode || '')
+  return !!mode
+}
+
+function showMaterialFlowInfo(item) {
+  if (!item) return false
+  const status = Number(item.status || 0)
+  return (
+    status === 7 ||
+    status === 8 ||
+    !!String(item.buyer_express_no || '').trim() ||
+    Number(item.buyer_shipped_at || 0) > 0 ||
+    Number(item.artist_received_at || 0) > 0
+  )
+}
+
+function canConfirmMaterialReceived(item) {
+  if (!item || isBuyer.value) return false
+  if (submissionStatus.value !== SUBMISSION_STATUS_PAID) return false
+  return Number(item.status || 0) === 8
+}
+
+function openBlankReviewModal() {
+  if (!showBlankReviewActions.value) {
+    uni.showToast({ title: '当前状态不可操作', icon: 'none' })
+    return
+  }
+  blankReviewCheckStatus.value = 2
+  blankReviewNote.value = ''
+  blankReviewPurchaseLink.value = String(activeItem.value?.blank_purchase_link || '').trim()
+  blankReviewModalVisible.value = true
+}
+
+function openPurchaseLink(url) {
+  const target = String(url || '').trim()
+  if (!target) return
+  uni.setClipboardData({
+    data: target,
+    success: () => uni.showToast({ title: '链接已复制', icon: 'none' }),
+    fail: () => uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+  })
 }
 
 function historyTitle(row) {
@@ -1494,6 +1880,11 @@ function historyTitle(row) {
   if (eventCode === 'final_product_confirmed') return '买家已确认最终状态'
   if (eventCode === 'return_address_request') return '订单收尾'
   if (eventCode === 'return_address_submitted') return '寄回地址已填写'
+  if (eventCode === 'blank_check_approved') return '毛坯判断通过'
+  if (eventCode === 'blank_check_replace') return '毛坯需要更换'
+  if (eventCode === 'blank_purchase_link') return '毛坯购买链接'
+  if (eventCode === 'buyer_ship_material') return '素材已寄送'
+  if (eventCode === 'artist_receive_material') return '素材已签收'
   if (eventCode === 'return_shipped') return '创作者已寄回'
   if (eventCode === 'return_received') return '订单已完结'
   if (eventCode === 'trade_reviewed') return '买家已评价'
@@ -1507,6 +1898,11 @@ function historyDesc(row) {
   if (eventCode === 'step_request') return '创作者上传了进度图片。'
   if (eventCode === 'return_address_request') return '订单进入收尾阶段，等待买家填写寄回地址。'
   if (eventCode === 'return_address_submitted') return '买家已填写寄回地址。'
+  if (eventCode === 'blank_check_approved') return '创作者已确认当前毛坯可用。'
+  if (eventCode === 'blank_check_replace') return '创作者建议更换毛坯，等待买家重新寄送。'
+  if (eventCode === 'blank_purchase_link') return '创作者已提供毛坯购买链接。'
+  if (eventCode === 'buyer_ship_material') return '买家已提交素材寄送物流信息。'
+  if (eventCode === 'artist_receive_material') return '创作者已确认收到买家寄送的素材。'
   if (eventCode === 'return_shipped') return '创作者已寄回，等待买家确认结束。'
   if (eventCode === 'return_received') return '买家已确认这次订单结束。'
   if (eventCode === 'trade_reviewed') return '买家已完成评价。'
@@ -1662,6 +2058,7 @@ async function fetchQueueInfo() {
             } else {
               targetUserInfo.value = null
             }
+            ensureActiveItemBlankSnapshot()
         }
         resolve(body)
       },
@@ -2103,6 +2500,100 @@ function doAuditSubmission(action) {
     })
 }
 
+function submitBlankReview() {
+  if (blankReviewSubmitting.value) return
+  const itemID = Number(activeItem.value?.id || activeItem.value?.ID || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    return
+  }
+  ensureLogin().then((ok) => {
+    if (!ok) return
+    blankReviewSubmitting.value = true
+    uni.showLoading({ title: '提交中' })
+    const token = uni.getStorageSync('token') || ''
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/review-blank`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: {
+        item_id: itemID,
+        check_status: Number(blankReviewCheckStatus.value || 1) === 2 ? 2 : 1,
+        check_note: String(blankReviewNote.value || '').trim(),
+        purchase_link: String(blankReviewPurchaseLink.value || '').trim(),
+      },
+      success: (res) => {
+        const body = res.data || {}
+        if (body.status !== 'success') {
+          uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+          return
+        }
+        blankReviewModalVisible.value = false
+        const isReplace = Number(blankReviewCheckStatus.value || 0) === 2
+        uni.showToast({ title: isReplace ? '已退回买家修改毛坯' : '毛坯判断已提交', icon: 'success' })
+        fetchQueueInfo()
+      },
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      },
+      complete: () => {
+        blankReviewSubmitting.value = false
+        uni.hideLoading()
+      },
+    })
+  })
+}
+
+function handleConfirmMaterialReceived(item) {
+  if (confirmMaterialSubmitting.value) return
+  if (!canConfirmMaterialReceived(item)) {
+    uni.showToast({ title: '当前状态不可操作', icon: 'none' })
+    return
+  }
+  const itemID = Number(item?.id || item?.ID || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: '确认收到素材',
+    content: '确认你已收到买家寄送的素材吗？',
+    confirmText: '确认收到',
+    cancelText: '取消',
+    success: ({ confirm }) => {
+      if (!confirm) return
+      ensureLogin().then((ok) => {
+        if (!ok) return
+        confirmMaterialSubmitting.value = true
+        uni.showLoading({ title: '提交中' })
+        const token = uni.getStorageSync('token') || ''
+        uni.request({
+          url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
+          method: 'POST',
+          header: { Authorization: token, 'Content-Type': 'application/json' },
+          data: { item_id: itemID },
+          success: (res) => {
+            const body = res.data || {}
+            if (body.status !== 'success') {
+              uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
+              return
+            }
+            uni.showToast({ title: '已确认收到素材', icon: 'success' })
+            fetchQueueInfo()
+          },
+          fail: () => {
+            uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+          },
+          complete: () => {
+            confirmMaterialSubmitting.value = false
+            uni.hideLoading()
+          },
+        })
+      })
+    }
+  })
+}
+
 function onModalConfirm() {
   auditModalVisible.value = false
   if (currentActionType.value === 'confirm') {
@@ -2114,7 +2605,7 @@ function onModalConfirm() {
 
 function getStepDisabledReason(item) {
   if (!queueInfo.value) return '订单信息加载中'
-  if (isBuyer.value) return '仅妆师/毛娘可提交节点状态'
+  if (isBuyer.value) return `仅${creatorRoleText.value}可提交节点状态`
 
   const status = Number(queueInfo.value.status || 0)
   if (status !== SUBMISSION_STATUS_PAID) {
@@ -2123,6 +2614,9 @@ function getStepDisabledReason(item) {
 
   const itemId = Number(item?.id || item?.ID || 0)
   if (!itemId) return '缺少子项ID'
+  const itemStatus = Number(item?.status || 0)
+  if (itemStatus === 7) return '买家寄送素材后才能提交节点状态'
+  if (itemStatus === 8) return '请先确认收到素材再提交节点状态'
   return ''
 }
 
@@ -2947,14 +3441,130 @@ onShow(() => {
   color: #c07a45;
 }
 
+.item-blank-card {
+  margin-top: 12rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #f4f8ff;
+}
+.item-blank-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+.item-blank-title {
+  font-size: 22rpx;
+  color: #334158;
+}
+.item-blank-check-tag {
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: #1e6f54;
+  background: #d7f5ea;
+}
+.item-blank-check-tag.replace {
+  color: #9d4f37;
+  background: #ffe6dc;
+}
+.item-blank-mode {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  color: #4f5d74;
+}
+.item-blank-picked {
+  margin-top: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 10rpx 12rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.9);
+}
+.item-blank-picked-cover {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 12rpx;
+  background: #eef2f7;
+  flex-shrink: 0;
+}
+.item-blank-picked-main {
+  min-width: 0;
+  flex: 1;
+}
+.item-blank-picked-name {
+  display: block;
+  font-size: 24rpx;
+  color: #2f3a4f;
+}
+.item-blank-picked-meta {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #6a7b93;
+}
+.item-blank-fallback {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #4f5d74;
+  line-height: 1.6;
+}
+.item-blank-note {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #67758b;
+  line-height: 1.6;
+}
+.item-blank-link {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #3f79b2;
+  line-height: 1.55;
+  word-break: break-all;
+}
+
+.item-material-card {
+  margin-top: 12rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 16rpx;
+  background: #f7f9fc;
+}
+.item-material-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.item-material-row + .item-material-row {
+  margin-top: 8rpx;
+}
+.item-material-label {
+  font-size: 22rpx;
+  color: #92a0b4;
+  flex-shrink: 0;
+}
+.item-material-value {
+  font-size: 22rpx;
+  color: #50607a;
+  text-align: right;
+  word-break: break-all;
+}
+
 /* item 操作按钮 */
 .item-actions {
   margin-top: 14rpx;
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 .btn-mini {
-  flex: 1;
+  flex: 1 1 160rpx;
   min-width: 0;
   height: 64rpx;
   line-height: 64rpx;
@@ -2967,7 +3577,6 @@ onShow(() => {
   border: none;
   margin: 0;
 }
-.btn-mini + .btn-mini { margin-left: 12rpx; }
 .btn-mini::after { border: none; }
 .btn-mini.outline {
   background-color: #ffffff;
@@ -2988,6 +3597,22 @@ onShow(() => {
 }
 .btn-mini.negotiation-reject {
   background: linear-gradient(135deg, #f4b8b8 0%, #e89898 100%);
+  color: #ffffff;
+}
+.btn-mini.blank-ok {
+  background: linear-gradient(135deg, #8fdcf8 0%, #72c7ec 100%);
+  color: #ffffff;
+}
+.btn-mini.blank-replace {
+  background: linear-gradient(135deg, #ffd0bc 0%, #f3a88c 100%);
+  color: #ffffff;
+}
+.btn-mini.blank-link {
+  background: linear-gradient(135deg, #d5dff5 0%, #b8c7ea 100%);
+  color: #334260;
+}
+.btn-mini.material-received {
+  background: linear-gradient(135deg, #95e8cf 0%, #65caac 100%);
   color: #ffffff;
 }
 .btn-mini.disabled {
@@ -4185,6 +4810,32 @@ onShow(() => {
   line-height: 1.5;
   margin-bottom: 40rpx;
   padding: 0 20rpx;
+}
+
+.blank-review-link-input {
+  width: 100%;
+  height: 84rpx;
+  margin-top: -8rpx;
+  margin-bottom: 14rpx;
+  padding: 0 24rpx;
+  border-radius: 16rpx;
+  background: #f6f8fc;
+  font-size: 25rpx;
+  color: #243246;
+  box-sizing: border-box;
+}
+
+.blank-review-note-input {
+  width: 100%;
+  min-height: 156rpx;
+  margin-bottom: 26rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 16rpx;
+  background: #f6f8fc;
+  font-size: 25rpx;
+  color: #243246;
+  line-height: 1.6;
+  box-sizing: border-box;
 }
 
 .ship-modal-input {

@@ -127,7 +127,7 @@
     </view>
 
     <view class="identity-card">
-      <view class="id-title font-title">其它身份</view>
+      <view class="id-title font-title">她的身份</view>
       <view class="id-row">
         <view
           class="id-pill"
@@ -143,12 +143,14 @@
           :key="tab.key"
           class="id-pill"
           :class="{
-            'id-pill--disabled': tab.disabled
+            'id-pill--disabled': tab.disabled,
+            'id-pill--active': activeRole === tab.key
           }"
           @click="switchRole(tab.key)"
         >
           <image class="id-img" :src="tab.icon"></image>
           <text class="font-title">{{ tab.label }}</text>
+          <view v-if="activeRole === tab.key" class="ink-ellipse"></view>
         </view>
       </view>
     </view>
@@ -160,7 +162,6 @@
           @click="switchListTab('images')"
         >
           <text class="label">{{ currentRoleConfig.imageTabLabel }}</text>
-          <view class="ink-ellipse"></view>
         </view>
 
         <view
@@ -169,7 +170,6 @@
         >
           <view v-if="currentRoleState.hasOrderDot" class="red-dot"></view>
           <text class="label">开单记录</text>
-          <view class="ink-ellipse"></view>
         </view>
       </view>
 
@@ -1069,10 +1069,28 @@ function timeAgo(milliseconds) {
   border-radius: 12rpx;
   font-size: 26rpx;
   color: #333;
+  position: relative;
+  overflow: visible;
 }
 
 .id-pill--disabled {
   opacity: 0.4;
+}
+
+.id-pill--active {
+  color: #222;
+}
+
+.id-pill .ink-ellipse {
+  position: absolute;
+  left: 50%;
+  bottom: -8rpx;
+  width: 30rpx;
+  height: 64rpx;
+  background: rgba(168, 255, 252, 0.95);
+  border-radius: 999rpx;
+  transform: translateX(-50%) rotate(58deg);
+  pointer-events: none;
 }
 
 .id-img {
@@ -1113,25 +1131,6 @@ function timeAgo(milliseconds) {
 
 .tab-btn.active .label {
   color: #000;
-}
-
-.tab-btn .ink-ellipse {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 32rpx;
-  height: 82rpx;
-  background: rgba(168, 255, 252, 1);
-  border-radius: 50%;
-  transform: translateX(-50%) rotate(60deg) scale(.7);
-  opacity: 0;
-  transition: transform .22s cubic-bezier(.2, .8, .2, 1), opacity .22s ease;
-  will-change: transform, opacity;
-}
-
-.tab-btn.active .ink-ellipse {
-  transform: translateX(-50%) rotate(60deg) scale(1);
-  opacity: 1;
 }
 
 .red-dot {

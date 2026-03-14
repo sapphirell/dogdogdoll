@@ -206,81 +206,81 @@
                 v-for="option in blankOptions"
                 :key="option.key"
                 class="chip chip-column blank-chip"
-                :class="[{ active: form.blank_supply_mode === option.key }, option.chipClass]"
+                :class="[
+                  { active: form.blank_supply_mode === option.key },
+                  option.chipClass,
+                  { 'blank-chip-with-panel': option.key === 'self' && form.blank_supply_mode === 'self' }
+                ]"
                 @click="selectBlankSupplyMode(option.key)"
               >
                 <view class="chip-line">
                   <text class="chip-main font-alimamashuhei">{{ option.label }}</text>
                 </view>
                 <text class="chip-desc">{{ option.desc }}</text>
+
+                <view
+                  v-if="option.key === 'self' && form.blank_supply_mode === 'self'"
+                  class="blank-inline-panel"
+                  @click.stop
+                >
+                  <text class="blank-helper-text">请上传毛坯图片，方便毛娘提前判断毛坯状态、颜色和可操作空间。</text>
+                  <view class="field-control image-field blank-image-field">
+                    <view class="upload-container">
+                      <view
+                        v-for="(img, index) in form.blank_image_urls"
+                        :key="`blank-${index}`"
+                        class="image-preview"
+                      >
+                        <image :src="img" mode="aspectFill" class="preview-img" />
+                        <view class="image-actions">
+                          <uni-icons
+                            type="eye"
+                            size="20"
+                            color="#fff"
+                            @click.stop="previewBlankImage(img)"
+                          />
+                          <uni-icons
+                            type="trash"
+                            size="20"
+                            color="#fff"
+                            @click.stop="removeBlankImage(index)"
+                          />
+                        </view>
+                      </view>
+
+                      <view
+                        v-if="form.blank_image_urls.length < 3"
+                        class="upload-btn"
+                        @click="handleUploadBlankImages"
+                      >
+                        <uni-icons type="plus" size="32" color="#999" />
+                        <text class="upload-text">添加毛坯图</text>
+                      </view>
+                    </view>
+                  </view>
+
+                  <view class="field-row field-textarea-row blank-textarea-row">
+                    <view class="field-label">
+                      <text class="label-text">毛坯介绍</text>
+                    </view>
+                    <view class="field-control">
+                      <textarea
+                        v-model.trim="form.blank_intro"
+                        class="field-textarea"
+                        maxlength="300"
+                        placeholder="可填写毛坯来源、颜色、是否修剪过等信息"
+                      />
+                      <view class="textarea-count">
+                        <text>{{ form.blank_intro.length }}/300</text>
+                      </view>
+                    </view>
+                  </view>
+                </view>
               </view>
             </view>
 
-            <view v-if="selectedBlankOption" class="blank-panel">
-              <view v-if="form.blank_supply_mode === 'self'" class="blank-panel-body">
-                <view class="blank-note">
-                  <text class="blank-note-title font-alimamashuhei">请上传毛坯图片</text>
-                  <text class="blank-note-text">方便毛娘提前判断毛坯状态、颜色和可操作空间。</text>
-                </view>
-                <view class="field-control image-field blank-image-field">
-                  <view class="upload-container">
-                    <view
-                      v-for="(img, index) in form.blank_image_urls"
-                      :key="`blank-${index}`"
-                      class="image-preview"
-                    >
-                      <image :src="img" mode="aspectFill" class="preview-img" />
-                      <view class="image-actions">
-                        <uni-icons
-                          type="eye"
-                          size="20"
-                          color="#fff"
-                          @click.stop="previewBlankImage(img)"
-                        />
-                        <uni-icons
-                          type="trash"
-                          size="20"
-                          color="#fff"
-                          @click.stop="removeBlankImage(index)"
-                        />
-                      </view>
-                    </view>
-
-                    <view
-                      v-if="form.blank_image_urls.length < 3"
-                      class="upload-btn"
-                      @click="handleUploadBlankImages"
-                    >
-                      <uni-icons type="plus" size="32" color="#999" />
-                      <text class="upload-text">添加毛坯图</text>
-                    </view>
-                  </view>
-                </view>
-
-                <view class="field-row field-textarea-row blank-textarea-row">
-                  <view class="field-label">
-                    <text class="label-text">毛坯介绍</text>
-                  </view>
-                  <view class="field-control">
-                    <textarea
-                      v-model.trim="form.blank_intro"
-                      class="field-textarea"
-                      maxlength="300"
-                      placeholder="可填写毛坯来源、颜色、是否修剪过等信息"
-                    />
-                    <view class="textarea-count">
-                      <text>{{ form.blank_intro.length }}/300</text>
-                    </view>
-                  </view>
-                </view>
-              </view>
-
-              <view v-else-if="form.blank_supply_mode === 'third'" class="blank-note blank-note-soft">
-                <text class="blank-note-title font-alimamashuhei">指定购买毛坯</text>
-                <text class="blank-note-text">毛娘会提供给您购买第三方店铺毛坯的链接。</text>
-              </view>
-
-              <view v-else-if="form.blank_supply_mode === 'stock'" class="blank-panel-body">
+            <view v-if="form.blank_supply_mode === 'stock'" class="blank-panel">
+              <view class="blank-panel-body">
                 <view v-if="hasPickedStockBlank" class="picked-blank-card">
                   <common-image
                     class="picked-blank-cover"
@@ -293,7 +293,6 @@
                   <view class="picked-blank-main">
                     <text class="picked-blank-name font-alimamashuhei">{{ pickedStockBlank.blank_name || '已选毛坯' }}</text>
                     <text class="picked-blank-meta">头围：{{ pickedStockBlank.head_circumference || '未填写' }}</text>
-                    <text class="picked-blank-meta">库存：{{ pickedStockBlank.quantity || 0 }}</text>
                     <view class="picked-blank-price font-title">¥{{ formatStockBlankPrice(pickedStockBlank.price) }}</view>
                   </view>
                 </view>
@@ -581,6 +580,7 @@ const planBlankSupport = reactive({
   third: false,
   stock: false
 })
+const planConfigLoaded = ref(false)
 
 const selectedSizeIndex = ref(-1)
 const selectedTierIndex = ref(-1)
@@ -629,12 +629,6 @@ const blankOptions = computed(() => {
 })
 const showBlankSupplySection = computed(() => {
   return isHairPlan.value && blankOptions.value.length > 0
-})
-const selectedBlankOption = computed(() => {
-  if (!form.blank_supply_mode) return null
-  return blankOptions.value.find(function (row) {
-    return row.key === form.blank_supply_mode
-  }) || null
 })
 const pickedStockBlank = computed(() => {
   return normalizeBlankStockSnapshot(form.blank_stock_snapshot)
@@ -752,6 +746,7 @@ function resetStateForNewItem () {
   planBlankSupport.self = false
   planBlankSupport.third = false
   planBlankSupport.stock = false
+  planConfigLoaded.value = false
 
   selectedSizeIndex.value = -1
   selectedTierIndex.value = -1
@@ -1061,6 +1056,7 @@ function applyPickedStockBlank (payload) {
     form.blank_supply_mode = 'stock'
   })
   markDirty('blank_stock')
+  triggerRecalcPrice()
   uni.showToast({ title: '已选择毛坯', icon: 'none' })
 }
 
@@ -1075,6 +1071,7 @@ function removePickedStockBlank () {
     }
   })
   markDirty('blank_stock')
+  triggerRecalcPrice()
 }
 
 /** ====== 数据归一化：ref_images / addons_json ====== */
@@ -1189,15 +1186,86 @@ function normalizeBlankStockSnapshot (raw) {
   }
 }
 
+function decodeHtmlEntities (text) {
+  const raw = String(text || '')
+  if (!raw) return ''
+  let decoded = raw
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, '\'')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+  // 兼容十进制字符实体：如 &#34;
+  decoded = decoded.replace(/&#(\d+);/g, function (_, code) {
+    const n = Number(code)
+    if (!Number.isFinite(n)) return _
+    return String.fromCharCode(n)
+  })
+  // 兼容十六进制字符实体：如 &#x22;
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, function (_, code) {
+    const n = Number.parseInt(code, 16)
+    if (!Number.isFinite(n)) return _
+    return String.fromCharCode(n)
+  })
+  return decoded
+}
+
 function parseBlankStockSnapshot (text) {
-  const raw = String(text || '').trim()
+  let raw = decodeHtmlEntities(text).trim()
   if (!raw) return null
-  try {
-    const parsed = JSON.parse(raw)
-    return normalizeBlankStockSnapshot(parsed)
-  } catch (e) {
-    return null
+
+  for (let i = 0; i < 2; i++) {
+    try {
+      const parsed = JSON.parse(raw)
+      const normalized = normalizeBlankStockSnapshot(parsed)
+      if (normalized) return normalized
+      if (typeof parsed === 'string') {
+        raw = decodeHtmlEntities(parsed).trim()
+        continue
+      }
+      return null
+    } catch (e) {
+      if (raw.startsWith('"') && raw.endsWith('"')) {
+        raw = raw.slice(1, -1).replace(/\\"/g, '"').trim()
+        continue
+      }
+      return null
+    }
   }
+  return null
+}
+
+// buildBlankStockSnapshotFromRaw 兜底还原“现有毛坯”快照，兼容历史数据只返回 blank_stock_id 的情况。
+function buildBlankStockSnapshotFromRaw (raw) {
+  if (!raw || typeof raw !== 'object') return null
+
+  const fromIntro = parseBlankStockSnapshot(raw.blank_intro || '')
+  if (fromIntro) return fromIntro
+
+  const fromObject = normalizeBlankStockSnapshot(
+    raw.blank_stock_snapshot || raw.blank_stock || null
+  )
+  if (fromObject) return fromObject
+
+  const stockId = Number(raw.blank_stock_id || 0)
+  if (stockId <= 0) return null
+
+  const imageURLs = normalizeRefImages(raw.blank_image_urls || raw.blank_stock_image_urls || '')
+  const coverImage = String(
+    raw.blank_cover_image ||
+    raw.cover_image ||
+    (imageURLs[0] || '')
+  ).trim()
+  const fallback = {
+    id: stockId,
+    blank_name: String(raw.blank_name || raw.blank_stock_name || '').trim() || ('已选毛坯 #' + stockId),
+    price: Number(raw.blank_stock_price || 0),
+    head_circumference: String(raw.blank_head_circumference || '').trim(),
+    quantity: Number(raw.blank_stock_quantity || 0),
+    cover_image: coverImage,
+    image_urls: imageURLs
+  }
+  return normalizeBlankStockSnapshot(fallback)
 }
 
 function formatStockBlankPrice (v) {
@@ -1215,6 +1283,8 @@ function normalizePlanBlankSupport (cfg) {
 
 function ensureBlankSupplyMode () {
   if (!showBlankSupplySection.value) {
+    // plan 配置尚未加载完成时，不要清空服务端回填值，避免编辑态闪烁覆盖
+    if (!planConfigLoaded.value) return
     withApplyingLock(function () {
       form.blank_supply_mode = ''
       form.blank_image_urls = []
@@ -1226,6 +1296,8 @@ function ensureBlankSupplyMode () {
     return row.key === form.blank_supply_mode
   })
   if (exists) return
+  // 编辑态：如果服务端已有历史值，先保留，不强制改成首个选项
+  if (isEdit.value && String(form.blank_supply_mode || '').trim()) return
   withApplyingLock(function () {
     form.blank_supply_mode = blankOptions.value[0] && blankOptions.value[0].key
   })
@@ -1235,6 +1307,7 @@ function selectBlankSupplyMode (mode) {
   const next = normalizeBlankSupplyMode(mode)
   if (!next || form.blank_supply_mode === next) return
   form.blank_supply_mode = next
+  triggerRecalcPrice()
 }
 
 /** 根据表单值 + plan 配置，同步尺寸 / 档位 / 加购的选中状态 */
@@ -1321,13 +1394,16 @@ function fillFormFromRaw (raw, opt) {
       form.blank_intro = raw.blank_intro || ''
     }
     if (isFirstLoad || !dirty.blank_stock) {
-      const parsedSnapshot = parseBlankStockSnapshot(raw.blank_intro || '')
-      if (parsedSnapshot) {
-        form.blank_stock_id = Number(parsedSnapshot.id || 0)
-        form.blank_stock_snapshot = parsedSnapshot
+      const snapshot = buildBlankStockSnapshotFromRaw(raw)
+      if (snapshot) {
+        form.blank_stock_id = Number(snapshot.id || 0)
+        form.blank_stock_snapshot = snapshot
       } else {
-        form.blank_stock_id = 0
-        form.blank_stock_snapshot = null
+        const stockId = Number(raw.blank_stock_id || 0)
+        form.blank_stock_id = stockId > 0 ? stockId : 0
+        form.blank_stock_snapshot = stockId > 0
+          ? normalizeBlankStockSnapshot({ id: stockId, blank_name: '已选毛坯 #' + stockId })
+          : null
       }
     }
 
@@ -1502,6 +1578,7 @@ function reloadItem () {
 async function fetchPlanInfo () {
   if (!planId.value) return
   const reqPlanId = planId.value
+  planConfigLoaded.value = false
   console.log('[item-form] fetchPlanInfo planId=', reqPlanId)
   try {
     const res = await uni.request({
@@ -1557,6 +1634,11 @@ async function fetchPlanInfo () {
     ensureBlankSupplyMode()
   } catch (e) {
     console.error('[item-form] 加载 order plan 信息失败', e)
+  } finally {
+    // 无论成功失败，都认为该轮 plan 拉取已结束，避免长期阻塞毛坯方式兜底逻辑
+    if (reqPlanId === planId.value) {
+      planConfigLoaded.value = true
+    }
   }
 }
 
@@ -1581,8 +1663,23 @@ function recalcPriceFromPlan () {
     })
   }
 
+  // 现有毛坯（stock）模式下，需要将毛坯价格计入预估总价
+  if (normalizeBlankSupplyMode(form.blank_supply_mode) === 'stock') {
+    const stockSnapshot = normalizeBlankStockSnapshot(form.blank_stock_snapshot)
+    if (stockSnapshot) {
+      total += Number(stockSnapshot.price) || 0
+    }
+  }
+
   form.price_text = String(total)
   console.log('[item-form] recalcPriceFromPlan total=', total)
+}
+
+// triggerRecalcPrice 在毛坯模式/毛坯选择发生变化时触发预估总价重算。
+function triggerRecalcPrice () {
+  if (selectedTierIndex.value >= 0) {
+    recalcPriceFromPlan()
+  }
 }
 
 /** 选择尺寸 */
@@ -1843,6 +1940,9 @@ async function handleSave () {
   const stockSnapshotForSave = blankSupplyModeForSave === 'stock'
     ? normalizeBlankStockSnapshot(form.blank_stock_snapshot)
     : null
+  const blankStockIdForSave = blankSupplyModeForSave === 'stock'
+    ? Number(form.blank_stock_id || (stockSnapshotForSave && stockSnapshotForSave.id) || 0)
+    : 0
   const blankImageUrlsForSave = (blankSupplyModeForSave === 'self' && Array.isArray(form.blank_image_urls))
     ? form.blank_image_urls
     : (blankSupplyModeForSave === 'stock' && stockSnapshotForSave && (stockSnapshotForSave.cover_image || firstBlankStockImage.value))
@@ -1871,6 +1971,7 @@ async function handleSave () {
         addons: addonTitles,
         remark: (form.remark || '').trim(),
         blank_supply_mode: blankSupplyModeForSave,
+        blank_stock_id: blankStockIdForSave,
         blank_image_urls: blankImageUrlsForSave,
         blank_intro: blankIntroForSave
       }
@@ -1911,6 +2012,7 @@ async function handleSave () {
         addons: addonTitles,
         remark: (form.remark || '').trim(),
         blank_supply_mode: blankSupplyModeForSave,
+        blank_stock_id: blankStockIdForSave,
         blank_image_urls: blankImageUrlsForSave,
         blank_intro: blankIntroForSave
       }
@@ -2253,6 +2355,17 @@ onShow(function () {
 .blank-chip.active {
   background: #e9f9ff;
 }
+.blank-chip-with-panel {
+  padding-bottom: 14rpx;
+}
+.blank-inline-panel {
+  margin-top: 12rpx;
+  width: 100%;
+  padding: 14rpx;
+  border-radius: 12rpx;
+  background: rgba(255, 255, 255, 0.82);
+  box-sizing: border-box;
+}
 .blank-panel {
   margin-top: 14rpx;
   padding: 18rpx;
@@ -2264,21 +2377,12 @@ onShow(function () {
   flex-direction: column;
   gap: 12rpx;
 }
-.blank-note {
-  padding: 14rpx 16rpx;
-  border-radius: 14rpx;
-  background: #edf8ff;
-}
-.blank-note-soft {
-  background: #f2f7ff;
-}
-.blank-note-title {
+.blank-helper-title {
   font-size: 24rpx;
   color: #334155;
 }
-.blank-note-text {
+.blank-helper-text {
   display: block;
-  margin-top: 8rpx;
   font-size: 22rpx;
   color: #64748b;
   line-height: 1.7;
