@@ -1909,7 +1909,7 @@ onBeforeUnmount(() => {
   .tl-time{ font-size: 26rpx; color: #6f7f92; font-weight: 700; line-height: 1.2; }
   .tl-date{ font-size: 18rpx; color:#9aa4b2; margin-top: 6rpx; }
 }
-.tl-middle{ position: relative; width: 30rpx; height: 100%; display: flex; justify-content: center;
+.tl-middle{ position: relative; left: -2rpx; width: 30rpx; height: 100%; display: flex; justify-content: center;
   .dot{
     width: 24rpx; height:24rpx; border-radius:50%; background:#fff;
     border: 4rpx solid var(--c-grad-start);
