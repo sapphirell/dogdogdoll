@@ -136,22 +136,45 @@
 
 	                <view
 	                  class="overview-timeline-card"
-	                  :class="{ current: isOverviewCurrentSubmission(entry) }"
+	                  :class="{
+                    current: isOverviewCurrentSubmission(entry),
+                    placeholder: !overviewEntryHasItem(entry),
+                    'placeholder-self': isOverviewCurrentSubmission(entry) && !overviewEntryHasItem(entry)
+                  }"
 	                >
 	                  <view class="overview-timeline-card-head">
 	                    <text class="overview-item-order-id">{{ overviewEntryOrderTag(entry, idx) }}</text>
 	                  </view>
 
 	                  <view class="overview-item-thumb-wrap">
-	                    <image
-	                      v-if="overviewEntryThumb(entry)"
-	                      class="overview-item-thumb"
-	                      :src="overviewEntryThumb(entry)"
-	                      mode="aspectFill"
-	                      @tap.stop="previewOverviewEntryImages(entry, 0)"
-	                    />
-	                    <view v-else class="overview-item-thumb overview-item-thumb-empty">
-	                      <text class="overview-item-thumb-empty-text">暂无娃头</text>
+                      <view
+                        v-if="overviewEntryHasItem(entry) && overviewEntryThumb(entry) && overviewEntryExtraItemCount(entry) > 0"
+                        class="overview-item-stack-layer layer-back"
+                      ></view>
+                      <view
+                        v-if="overviewEntryHasItem(entry) && overviewEntryThumb(entry) && overviewEntryExtraItemCount(entry) > 0"
+                        class="overview-item-stack-layer layer-mid"
+                      ></view>
+                      <template v-if="overviewEntryHasItem(entry) && overviewEntryThumb(entry)">
+                        <image
+                          class="overview-item-thumb"
+                          :src="overviewEntryThumb(entry)"
+                          mode="aspectFill"
+                          @tap.stop="previewOverviewEntryImages(entry, 0)"
+                        />
+                        <view
+                          v-if="overviewEntryExtraItemCount(entry) > 0"
+                          class="overview-item-more-tag font-title"
+                        >
+                          +{{ overviewEntryExtraItemCount(entry) }}
+                        </view>
+                      </template>
+	                    <view
+                        v-else
+                        class="overview-item-thumb overview-item-thumb-empty"
+                        :class="{ 'overview-item-thumb-empty-self': isOverviewCurrentSubmission(entry) && !overviewEntryHasItem(entry) }"
+                      >
+	                      <text class="overview-item-thumb-empty-text">{{ overviewEntryHasItem(entry) ? '暂无娃头' : '待填写' }}</text>
 	                    </view>
 	                  </view>
 
@@ -198,12 +221,14 @@
 
         <view class="tab-content-wrapper">
           
-          <view v-if="currentItem" class="content-item-view anim-fade-up" :key="currentTabIndex">
-	            <view
-	              class="item-detail-card"
-	              :class="{ editable: canEditSubmissionItems, viewable: canViewItemDetail }"
-	              @click="goEditItem(currentItem)"
-            >
+	          <view v-if="currentItem" class="content-item-view anim-fade-up" :key="currentTabIndex">
+              <view class="item-complete-wrap" :class="{ 'is-incomplete': currentItemNeedCompleteSelection }">
+                <view v-if="currentItemNeedCompleteSelection" class="item-complete-tag font-alimamashuhei">待完善</view>
+		            <view
+		              class="item-detail-card"
+		              :class="{ editable: canEditSubmissionItems, viewable: canViewItemDetail }"
+		              @click="goEditItem(currentItem)"
+	            >
               <image 
                 :src="getFirstRefImage(currentItem.ref_images)" 
                 class="item-img" 
@@ -249,15 +274,15 @@
 	                  </view>
 	                  <view v-if="canViewItemDetail" class="item-view-detail-btn">查看详情</view>
 	                </view>
-	              </view>
-	            </view>
+		              </view>
+		            </view>
 
-            <view v-if="showBlankSupplyCard" class="blank-supply-card">
-              <view class="blank-supply-head">
-                <text class="blank-supply-title font-alimamashuhei">毛坯方案</text>
-                <view v-if="blankCheckTagText" class="blank-check-tag font-alimamashuhei" :class="{ replace: activeItemNeedReplaceBlank }">
-                  {{ blankCheckTagText }}
-                </view>
+                <view v-if="showBlankSupplyCard" class="blank-supply-card">
+	              <view class="blank-supply-head">
+	                <text class="blank-supply-title font-alimamashuhei">毛坯方案</text>
+	                <view v-if="blankCheckTagText" class="blank-check-tag font-alimamashuhei" :class="{ replace: activeItemNeedReplaceBlank }">
+	                  {{ blankCheckTagText }}
+	                </view>
               </view>
               <text class="blank-supply-mode">{{ blankSupplyModeText(activeItemBlankSupplyMode) }}</text>
 
@@ -279,9 +304,10 @@
                 购买链接：{{ activeItemBlankPurchaseLink }}
               </text>
 
-            </view>
+                </view>
+              </view>
 
-            <view v-if="showMaterialShipInfoCard || showSubmitMaterialShipBtn" class="material-ship-panel">
+	            <view v-if="showMaterialShipInfoCard || showSubmitMaterialShipBtn" class="material-ship-panel">
               <view class="material-ship-info">
                 <view class="material-ship-row">
                   <text class="material-ship-label font-title">素材寄送</text>
@@ -480,11 +506,16 @@
          :hover-class="isContentReady ? 'btn-hover' : ''"
          @click="handleBottomAction"
        >
-         <view class="btn-content">
-           <text class="btn-price font-din">¥ {{ Number(totalPrice) }}</text>
-           <view class="btn-divider"></view>
-           <text class="btn-label">{{ bottomActionText }}</text>
-         </view>
+	        <view class="btn-content">
+	           <text
+	             class="btn-price"
+	             :class="[bottomAction === 'confirm' ? 'font-alimamashuhei is-confirm' : 'font-din']"
+	           >
+	             {{ bottomAmountText }}
+	           </text>
+	           <view class="btn-divider"></view>
+	           <text class="btn-label">{{ bottomActionText }}</text>
+	        </view>
        </button>
     </view>
 
@@ -538,22 +569,45 @@
 
 	                  <view
 	                    class="overview-timeline-card"
-	                    :class="{ current: isOverviewCurrentSubmission(entry) }"
+	                    :class="{
+                      current: isOverviewCurrentSubmission(entry),
+                      placeholder: !overviewEntryHasItem(entry),
+                      'placeholder-self': isOverviewCurrentSubmission(entry) && !overviewEntryHasItem(entry)
+                    }"
 	                  >
 	                    <view class="overview-timeline-card-head">
 	                      <text class="overview-item-order-id">{{ overviewEntryOrderTag(entry, idx) }}</text>
 	                    </view>
 
 	                    <view class="overview-item-thumb-wrap">
-	                      <image
-	                        v-if="overviewEntryThumb(entry)"
-                        class="overview-item-thumb"
-                        :src="overviewEntryThumb(entry)"
-                        mode="aspectFill"
-                        @tap.stop="previewOverviewEntryImages(entry, 0)"
-                      />
-                      <view v-else class="overview-item-thumb overview-item-thumb-empty">
-                        <text class="overview-item-thumb-empty-text">暂无娃头</text>
+                      <view
+                        v-if="overviewEntryHasItem(entry) && overviewEntryThumb(entry) && overviewEntryExtraItemCount(entry) > 0"
+                        class="overview-item-stack-layer layer-back"
+                      ></view>
+                      <view
+                        v-if="overviewEntryHasItem(entry) && overviewEntryThumb(entry) && overviewEntryExtraItemCount(entry) > 0"
+                        class="overview-item-stack-layer layer-mid"
+                      ></view>
+                      <template v-if="overviewEntryHasItem(entry) && overviewEntryThumb(entry)">
+                        <image
+                          class="overview-item-thumb"
+                          :src="overviewEntryThumb(entry)"
+                          mode="aspectFill"
+                          @tap.stop="previewOverviewEntryImages(entry, 0)"
+                        />
+                        <view
+                          v-if="overviewEntryExtraItemCount(entry) > 0"
+                          class="overview-item-more-tag font-title"
+                        >
+                          +{{ overviewEntryExtraItemCount(entry) }}
+                        </view>
+                      </template>
+                      <view
+                        v-else
+                        class="overview-item-thumb overview-item-thumb-empty"
+                        :class="{ 'overview-item-thumb-empty-self': isOverviewCurrentSubmission(entry) && !overviewEntryHasItem(entry) }"
+                      >
+                        <text class="overview-item-thumb-empty-text">{{ overviewEntryHasItem(entry) ? '暂无娃头' : '待填写' }}</text>
                       </view>
                     </view>
 
@@ -601,9 +655,43 @@
           </view>
         </view>
 
-        <view class="pay-method-tip">
-          <text v-if="selectedMethodIsQRCode">已选择扫码转账，点击“去付款”后查看并保存收款码。</text>
-          <text v-else>已选择支付宝，点击“去付款”后直接完成支付。</text>
+        <view v-if="selectedMethodPayAmountOptions.length" class="pay-amount-wrap">
+          <text class="pay-amount-title">支付价格</text>
+          <view v-if="selectedMethodPayAmountOptions.length > 1" class="pay-amount-list">
+            <view
+              v-for="amountItem in selectedMethodPayAmountOptions"
+              :key="`${selectedPayMethodId}-${amountItem.pay_part}`"
+              class="pay-amount-item"
+              :class="{ active: selectedPayPart === amountItem.pay_part }"
+              @tap="selectPayPart(amountItem.pay_part)"
+            >
+              <text class="pay-amount-item-text">{{ amountItem.label }}</text>
+            </view>
+          </view>
+          <view v-else class="pay-amount-single">
+            <text class="pay-amount-single-text">{{ selectedMethodPayAmountOptions[0].label }}</text>
+          </view>
+        </view>
+
+        <view v-if="selectedMethodIsAlipay" class="pay-method-explain-card">
+          <text class="pay-method-explain-title font-alimamashuhei">创作节点预览</text>
+          <view v-if="paymentStepPreviewList.length" class="pay-step-preview-list">
+            <view
+              v-for="(step, idx) in paymentStepPreviewList"
+              :key="`pay-step-${step.id || idx}`"
+              class="pay-step-preview-item"
+            >
+              <text class="pay-step-preview-dot"></text>
+              <text class="pay-step-preview-name">{{ step.name }} · {{ step.percentText }}</text>
+            </view>
+          </view>
+          <text v-else class="pay-step-preview-empty">本单未配置中间节点，完成后直接进入成品确认。</text>
+          <text class="pay-method-explain-tip">{{ platformEscrowNoticeText }}</text>
+        </view>
+
+        <view v-if="selectedMethodIsQRCode" class="pay-method-explain-card transfer-risk">
+          <text class="pay-method-explain-title font-alimamashuhei">转账付款提醒</text>
+          <text class="pay-method-explain-tip">{{ transferRiskNoticeText }}</text>
         </view>
 
         <view class="pay-action-row">
@@ -868,6 +956,8 @@ const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
 const SubmissionStatusReturned = 8
 const SubmissionStatusFinished = 9
+const PayStatusDepositPaid = 2
+const PayStatusPaid = 4
 const ItemStatusWaitBuyerShip = 7
 const ItemStatusBuyerShipped = 8
 const PlanPaymentMethodQRCode = 1
@@ -890,6 +980,8 @@ const submission = reactive({
   plan_id: 0,
   status: 0,
   status_text: '',
+  payment_type: 0,
+  pay_status: 0,
   ahead_count: 0,
   viewer_is_buyer: false,
   artist_type: 0, // 修改点：新增 artist_type
@@ -921,13 +1013,17 @@ const plan = reactive({
   artist_info: null,
   brand: null,
   images: '',
-  order_type: 0
+  order_type: 0,
+  order_config: '',
+  extra: {},
+  payment_methods: []
 })
 
 const payPopupRef = ref(null)
 const payPopupData = ref(null)
 const selectedPayMethodId = ref(0)
 const selectedPayCodeChannel = ref('')
+const selectedPayPart = ref('')
 const payCodeModalVisible = ref(false)
 const payPopupVisible = ref(false)
 const openingPayCodeModal = ref(false)
@@ -1225,6 +1321,14 @@ const currentItem = computed(() => {
     return submission.items[currentTabIndex.value]
   }
   return null
+})
+
+const currentItemNeedCompleteSelection = computed(() => {
+  const row = currentItem.value || null
+  if (!row) return false
+  const tierTitle = String(row.tier_title || '').trim()
+  const size = String(row.size || '').trim()
+  return !tierTitle || !size
 })
 
 const currentItemAlertTag = computed(() => buildItemAlertTag(currentItem.value))
@@ -1758,6 +1862,45 @@ const totalPrice = computed(() => {
   return submission.items.reduce((sum, item) => sum + Number(item.price_total || 0), 0)
 })
 
+function formatMoneyText(amount) {
+  const n = Number(amount || 0)
+  if (!Number.isFinite(n)) return '0'
+  return n.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
+}
+
+const planPaymentMethods = computed(() => {
+  const list = Array.isArray(plan.payment_methods) ? plan.payment_methods : []
+  return list.map((id) => Number(id || 0)).filter((id) => id > 0)
+})
+
+const planScanDepositRate = computed(() => {
+  const raw = Number(plan.extra?.scan_deposit_rate || 0)
+  if (!Number.isFinite(raw) || raw <= 0) return 100
+  if (raw >= 100) return 100
+  return Math.max(1, Math.floor(raw))
+})
+
+const confirmStageAmountText = computed(() => {
+  const total = Number(totalPrice.value || 0)
+  const totalText = `¥${formatMoneyText(total)}`
+  const methods = planPaymentMethods.value
+  const hasQRCode = methods.includes(1)
+  const hasOnline = methods.includes(2)
+
+  if (!hasQRCode && !hasOnline) return totalText
+
+  if (hasQRCode) {
+    const rate = planScanDepositRate.value
+    if (rate >= 100) return `${totalText} 全款`
+    const deposit = Number((total * rate / 100).toFixed(2))
+    const depositText = `¥${formatMoneyText(deposit)} 定金`
+    if (hasOnline) return `${depositText} 或 ${totalText} 全款`
+    return depositText
+  }
+
+  return `${totalText} 全款`
+})
+
 const returnAddressInfo = computed(() => {
   const raw = submission.return_address_info
   if (!raw || typeof raw !== 'object') return null
@@ -1856,15 +1999,29 @@ const canSubmitReviewForm = computed(() => {
 
 // 底部按钮
 const bottomAction = computed(() => {
-  const txt = submission.status_text || ''
-  if (txt.includes('待买家确认') || submission.status === SubmissionStatusSelectedConfirm) return 'confirm'
-  if (txt.includes('待付款') || submission.status === SubmissionStatusSelectedPay) return 'pay'
+  const status = Number(submission.status || 0)
+  const txt = String(submission.status_text || '')
+  if (txt.includes('待买家确认') || status === SubmissionStatusSelectedConfirm) return 'confirm'
+  if (txt.includes('待付款') || status === SubmissionStatusSelectedPay) return 'pay'
+  if (status === SubmissionStatusPaid) {
+    const paymentMethod = Number(submission.payment_method || 0)
+    const payStatus = Number(submission.pay_status || 0)
+    // 扫码转账在“已付定金”状态下，仍需展示“去付款”以补尾款。
+    if (paymentMethod === PlanPaymentMethodQRCode && payStatus !== PayStatusPaid) {
+      return 'pay'
+    }
+  }
   return ''
 })
 const bottomActionText = computed(() => {
   if (bottomAction.value === 'confirm') return '确认订单'
   if (bottomAction.value === 'pay') return '去付款'
   return ''
+})
+
+const bottomAmountText = computed(() => {
+  if (bottomAction.value === 'confirm') return confirmStageAmountText.value
+  return `¥ ${formatMoneyText(totalPrice.value)}`
 })
 
 // 修改点：新增判断内容是否准备就绪
@@ -1894,9 +2051,100 @@ const selectedMethodIsQRCode = computed(() => {
   return Number(selectedPayMethod.value?.id || 0) === PlanPaymentMethodQRCode
 })
 
+const selectedMethodIsAlipay = computed(() => {
+  return Number(selectedPayMethod.value?.id || 0) === PlanPaymentMethodAlipay
+})
+
+const payPopupStage = computed(() => {
+  return String(payPopupData.value?.current_pay_stage || '').trim().toLowerCase()
+})
+
 const selectedMethodCodeOptions = computed(() => {
   const list = selectedPayMethod.value?.code_options
   return Array.isArray(list) ? list : []
+})
+
+const selectedMethodPayAmountOptions = computed(() => {
+  const methodID = Number(selectedPayMethod.value?.id || 0)
+  const list = Array.isArray(selectedPayMethod.value?.pay_amount_options)
+    ? selectedPayMethod.value.pay_amount_options
+    : []
+  if (!list.length) return []
+
+  let normalized = list.map((item) => {
+    const payPart = String(item?.pay_part || '').trim().toLowerCase()
+    const amount = Number(item?.amount || 0)
+    return {
+      ...item,
+      pay_part: payPart,
+      amount: Number.isFinite(amount) ? amount : 0
+    }
+  })
+
+  // 扫码转账在首付阶段仅允许“定金”支付，不开放“全款”入口。
+  if (methodID === PlanPaymentMethodQRCode && payPopupStage.value === 'initial') {
+    const hasDeposit = normalized.some((item) => item.pay_part === 'deposit')
+    if (hasDeposit) {
+      normalized = normalized.filter((item) => item.pay_part === 'deposit')
+    }
+  }
+
+  if (methodID === PlanPaymentMethodQRCode) {
+    const rate = planScanDepositRate.value
+    return normalized.map((item) => {
+      const part = String(item.pay_part || '').trim().toLowerCase()
+      const amountText = `¥${formatMoneyText(item.amount)}`
+      if (part === 'deposit') {
+        return {
+          ...item,
+          label: `${amountText} 定金（${rate}%）`
+        }
+      }
+      if (part === 'balance') {
+        return {
+          ...item,
+          label: `${amountText} 尾款`
+        }
+      }
+      if (part === 'full' && rate >= 100 && payPopupStage.value === 'initial') {
+        return {
+          ...item,
+          label: `${amountText} 定金（100%）`
+        }
+      }
+      if (part === 'full') {
+        return {
+          ...item,
+          label: `${amountText} 全款`
+        }
+      }
+      return {
+        ...item,
+        label: String(item?.label || amountText)
+      }
+    })
+  }
+
+  if (methodID === PlanPaymentMethodAlipay) {
+    return normalized.map((item) => {
+      const part = String(item.pay_part || '').trim().toLowerCase()
+      const amountText = `¥${formatMoneyText(item.amount)}`
+      if (part === 'full') return { ...item, label: `${amountText} 全款` }
+      if (part === 'balance') return { ...item, label: `${amountText} 尾款` }
+      if (part === 'deposit') return { ...item, label: `${amountText} 定金` }
+      return { ...item, label: String(item?.label || amountText) }
+    })
+  }
+
+  return normalized
+})
+
+const selectedPayAmountOption = computed(() => {
+  const payPart = String(selectedPayPart.value || '').trim().toLowerCase()
+  if (!payPart) return null
+  return selectedMethodPayAmountOptions.value.find(
+    item => String(item?.pay_part || '').trim().toLowerCase() === payPart
+  ) || null
 })
 
 const selectedPayCode = computed(() => {
@@ -1918,9 +2166,56 @@ const payMessageLength = computed(() => {
   return Array.from(String(payMessage.value || '')).length
 })
 
+const platformEscrowNoticeText = computed(() => {
+  const txt = String(payPopupData.value?.platform_escrow_notice || '').trim()
+  if (txt) return txt
+  return '使用支付宝付款后，款项会先由平台托管，交易完成前不会直接打给创作者。若在节点确认后取消订单，创作者会收到已确认节点对应的赔偿金额。若发生吞头吞钱跑路等恶性交易违约事件，我们会先协助您追回娃头；若娃头最终无法追回，狗狗助手会按一手原价赔付娃头损失。'
+})
+
+const transferRiskNoticeText = computed(() => {
+  const txt = String(payPopupData.value?.transfer_risk_notice || '').trim()
+  if (txt) return txt
+  return '使用转账支付会直接把钱转入妆师/毛娘账户。狗狗助手会对入驻妆师/毛娘进行实名扫脸，并验证其在其它平台有 100 单成交记录且无重大交易纠纷。但转账付款客观存在风险。由于资金不经过狗狗助手账户，在这种交易模式下，我们仅对吞头吞钱跑路等恶性交易违约事件负责。我们会替您追回娃头；若娃头最终无法追回，狗狗助手会按一手原价赔付娃头损失。'
+})
+
+function normalizeStepPercent(raw) {
+  const num = Number(raw || 0)
+  if (!Number.isFinite(num) || num <= 0) return 0
+  if (num <= 1) return Number((num * 100).toFixed(1))
+  return Number(num.toFixed(1))
+}
+
+function formatStepPercentText(step) {
+  const ratio = normalizeStepPercent(
+    step?.compensation_rate ??
+      step?.breach_compensation_rate ??
+      step?.penalty_rate ??
+      0
+  )
+  const text = Number.isInteger(ratio) ? String(ratio) : String(ratio)
+  return `${text}%`
+}
+
+const paymentStepPreviewList = computed(() => {
+  const rows = Array.isArray(submission.step_configs) ? submission.step_configs : []
+  const out = []
+  rows.forEach((row, idx) => {
+    const name = String(row?.name || '').trim()
+    if (!name) return
+    out.push({
+      id: Number(row?.id || idx + 1),
+      name,
+      percentText: formatStepPercentText(row)
+    })
+  })
+  return out
+})
+
 const canSubmitPayFromPopup = computed(() => {
   const methodID = Number(selectedPayMethodId.value || 0)
   if (!methodID) return false
+  if (!selectedMethodPayAmountOptions.value.length) return false
+  if (!selectedPayAmountOption.value) return false
   if (methodID === PlanPaymentMethodQRCode) {
     return selectedMethodCodeOptions.value.length > 0
   }
@@ -2017,6 +2312,8 @@ function resetSubmissionRuntimeState() {
     plan_id: 0,
     status: 0,
     status_text: '',
+    payment_type: 0,
+    pay_status: 0,
     ahead_count: 0,
     artist_type: 0,
     step_configs: [],
@@ -2173,7 +2470,14 @@ function overviewEntrySubmissionID(entry) {
   return Number(entry?.item?.submission_id || entry?.item?.SubmissionID || 0)
 }
 
+function overviewEntryHasItem(entry) {
+  if (entry?.has_submission_item === true) return true
+  if (entry?.has_submission_item === false) return false
+  return Number(entry?.item?.id || entry?.item?.ID || 0) > 0
+}
+
 function overviewEntryTitle(entry) {
+  if (!overviewEntryHasItem(entry)) return '待填写投递内容'
   const subject = String(entry?.item?.work_subject || '').trim()
   if (subject) return subject
   const subID = overviewEntrySubmissionID(entry)
@@ -2181,6 +2485,10 @@ function overviewEntryTitle(entry) {
 }
 
 function overviewEntryStatus(entry) {
+  if (!overviewEntryHasItem(entry)) {
+    const subText = String(entry?.submission_status_text || '').trim()
+    return subText || '等待填写'
+  }
   const itemText = String(entry?.item_status_text || '').trim()
   const subText = String(entry?.submission_status_text || '').trim()
   if (itemText && subText) return `${itemText} · ${subText}`
@@ -2192,6 +2500,8 @@ function overviewEntryTime(entry) {
   if (latestTs > 0) return formatTimelineTime(latestTs)
   const updated = Number(entry?.item?.updated_at || 0)
   if (updated > 0) return formatTimelineTime(updated)
+  const subUpdated = Number(entry?.submission?.updated_at || 0)
+  if (subUpdated > 0) return formatTimelineTime(subUpdated)
   return '--'
 }
 
@@ -2217,7 +2527,7 @@ function isOverviewCurrentSubmission(entry) {
 }
 
 function overviewEntrySequence(entry, idx) {
-  const displayNo = Number(entry?._display_queue_no || 0)
+  const displayNo = Number(entry?.display_order_no || entry?._display_queue_no || 0)
   if (displayNo > 0) {
     return `No.${String(displayNo).padStart(3, '0')}`
   }
@@ -2229,9 +2539,15 @@ function overviewEntrySequence(entry, idx) {
 function overviewEntryOrderTag(entry, idx) {
   const base = overviewEntrySequence(entry, idx)
   if (isOverviewCurrentSubmission(entry)) {
-    return `${base} · 当前订单`
+    return `${base} · 您的订单`
   }
   return base
+}
+
+function overviewEntryExtraItemCount(entry) {
+  const total = Number(entry?._submission_item_count || 0)
+  if (!Number.isFinite(total) || total <= 1) return 0
+  return total - 1
 }
 
 const showOverviewTailFade = computed(() => {
@@ -2363,7 +2679,6 @@ async function fetchProgressOverview(options = {}) {
     const d = body.data || {}
     const rows = Array.isArray(d.current_plan_items) ? d.current_plan_items.slice() : []
     const currentItemID = Number(currentItem.value?.id || focusItemID.value || 0)
-    const currentQueueNo = Number(submission.ahead_count || 0) + 1
     const normalizedRows = pickOverviewEntryBySubmission(rows, currentSubmissionID, currentItemID)
     const mergedRows = append
       ? mergeOverviewEntries(overviewCurrentPlanItems.value, normalizedRows)
@@ -2371,7 +2686,8 @@ async function fetchProgressOverview(options = {}) {
 
     overviewCurrentPlanItems.value = mergedRows.map((row, idx) => ({
       ...row,
-      _display_queue_no: Math.max(1, currentQueueNo - idx),
+      // 兼容后端未返回 display_order_no 的场景，前端按列表顺序兜底编号。
+      _display_queue_no: Number(row?.display_order_no || 0) > 0 ? Number(row.display_order_no) : (Number(idx) + 1),
     }))
     progressOverviewHasMore.value = !!d.has_more_front_items
     progressOverviewCursor.value = Number(d.next_front_cursor_submission_id || 0)
@@ -2826,6 +3142,8 @@ async function fetchDetail(force = false) {
         plan_id: d.plan_id,
         status: d.status,
         status_text: d.status_text,
+        payment_type: Number(d.payment_type || 0),
+        pay_status: Number(d.pay_status || 0),
         ahead_count: d.ahead_count,
         viewer_is_buyer: !!d.viewer_is_buyer,
         artist_type: d.artist_type, // 修改点：赋值 artist_type
@@ -2883,8 +3201,23 @@ async function fetchPlanInfo(pid) {
         artist_info: d.artist_info,
         brand: d.brand,
         images: d.images,
-        order_type: d.order_type
+        order_type: d.order_type,
+        order_config: d.order_config || ''
       })
+
+      try {
+        let cfg = {}
+        if (typeof d.order_config === 'string') {
+          cfg = d.order_config ? JSON.parse(d.order_config) : {}
+        } else if (d.order_config && typeof d.order_config === 'object') {
+          cfg = d.order_config
+        }
+        plan.extra = cfg?.extra && typeof cfg.extra === 'object' ? cfg.extra : {}
+        plan.payment_methods = Array.isArray(cfg?.payment_methods) ? cfg.payment_methods : []
+      } catch (_) {
+        plan.extra = {}
+        plan.payment_methods = []
+      }
     }
   } catch(e) {}
 }
@@ -3077,6 +3410,21 @@ function syncSelectedPayCodeChannel() {
   }
 }
 
+function syncSelectedPayPart() {
+  const options = selectedMethodPayAmountOptions.value
+  if (!options.length) {
+    selectedPayPart.value = ''
+    payDebug('syncSelectedPayPart:clear_no_options')
+    return
+  }
+  const current = String(selectedPayPart.value || '').trim().toLowerCase()
+  const exists = options.some(item => String(item?.pay_part || '').trim().toLowerCase() === current)
+  if (!exists) {
+    selectedPayPart.value = String(options[0]?.pay_part || '').trim().toLowerCase()
+    payDebug('syncSelectedPayPart:auto_select_first', { pay_part: selectedPayPart.value })
+  }
+}
+
 function applyPayPopupDefaultSelection() {
   const methods = popupPaymentMethods.value
   payDebug('applyPayPopupDefaultSelection:before', {
@@ -3093,22 +3441,36 @@ function applyPayPopupDefaultSelection() {
   const recommendedID = Number(payPopupData.value?.selected_payment_method_id || 0)
   const hasRecommended = methods.some(item => Number(item.id || 0) === recommendedID)
   selectedPayMethodId.value = hasRecommended ? recommendedID : Number(methods[0].id || 0)
+  syncSelectedPayPart()
   syncSelectedPayCodeChannel()
   payDebug('applyPayPopupDefaultSelection:after', {
     selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayPart: selectedPayPart.value,
     selectedPayCodeChannel: selectedPayCodeChannel.value
   })
 }
 
 function selectPayMethod(methodID) {
   selectedPayMethodId.value = Number(methodID || 0)
+  syncSelectedPayPart()
   syncSelectedPayCodeChannel()
   payDebug('selectPayMethod', {
     methodID: selectedPayMethodId.value,
+    selectedPayPart: selectedPayPart.value,
     selectedMethodIsQRCode: selectedMethodIsQRCode.value,
     code_options_count: selectedMethodCodeOptions.value.length,
     selectedPayCodeChannel: selectedPayCodeChannel.value,
     selectedPayCodeUrl: selectedPayCodeUrl.value
+  })
+}
+
+function selectPayPart(payPart) {
+  const normalized = String(payPart || '').trim().toLowerCase()
+  if (!normalized) return
+  selectedPayPart.value = normalized
+  payDebug('selectPayPart', {
+    pay_part: selectedPayPart.value,
+    amount_label: selectedPayAmountOption.value?.label || ''
   })
 }
 
@@ -3205,6 +3567,7 @@ async function choosePayProofImages() {
 function resetPayState() {
   payDebug('resetPayState:before', {
     selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayPart: selectedPayPart.value,
     selectedPayCodeChannel: selectedPayCodeChannel.value,
     payPopupVisible: payPopupVisible.value,
     payCodeModalVisible: payCodeModalVisible.value,
@@ -3212,6 +3575,7 @@ function resetPayState() {
   })
   payPopupData.value = null
   selectedPayMethodId.value = 0
+  selectedPayPart.value = ''
   selectedPayCodeChannel.value = ''
   payPopupVisible.value = false
   openingPayCodeModal.value = false
@@ -3257,12 +3621,13 @@ function saveCurrentPayCode() {
   })
 }
 
-async function submitPayRequest(paymentMethod, paymentCodeChannel = '') {
+async function submitPayRequest(paymentMethod, paymentCodeChannel = '', payPart = '') {
   const proofImages = payProofImages.value.slice()
   const paymentMessage = String(payMessage.value || '').trim()
   payDebug('submitPayRequest:start', {
     submission_id: submission.submission_id,
     payment_method: Number(paymentMethod || 0),
+    pay_part: String(payPart || ''),
     payment_code_channel: paymentCodeChannel || '',
     payment_proof_images_count: proofImages.length,
     payment_message_length: Array.from(paymentMessage).length
@@ -3276,6 +3641,7 @@ async function submitPayRequest(paymentMethod, paymentCodeChannel = '') {
       data: {
         submission_id: submission.submission_id,
         payment_method: Number(paymentMethod || 0),
+        pay_part: String(payPart || ''),
         payment_code_channel: paymentCodeChannel || '',
         payment_proof_images: proofImages,
         payment_message: paymentMessage
@@ -3583,7 +3949,8 @@ function onPayGoButtonTap(source = 'tap') {
     source,
     payPopupVisible: payPopupVisible.value,
     disabled: !canSubmitPayFromPopup.value,
-    selectedPayMethodId: selectedPayMethodId.value
+    selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayPart: selectedPayPart.value
   })
   confirmPayFromPopup()
 }
@@ -3621,6 +3988,7 @@ async function confirmPayFromPopup() {
   payDebug('confirmPayFromPopup:clicked', {
     canSubmitPayFromPopup: canSubmitPayFromPopup.value,
     selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayPart: selectedPayPart.value,
     selectedMethodIsQRCode: selectedMethodIsQRCode.value,
     code_options_count: selectedMethodCodeOptions.value.length,
     selectedPayCodeChannel: selectedPayCodeChannel.value,
@@ -3672,13 +4040,18 @@ async function confirmPayFromPopup() {
     await runAlipayAppPaymentFlow()
     return
   }
-  await submitPayRequest(Number(selectedPayMethodId.value || 0), '')
+  await submitPayRequest(
+    Number(selectedPayMethodId.value || 0),
+    '',
+    String(selectedPayPart.value || '')
+  )
 }
 
 async function confirmPayFromCodeModal() {
   syncSelectedPayCodeChannel()
   payDebug('confirmPayFromCodeModal:clicked', {
     selectedPayMethodId: selectedPayMethodId.value,
+    selectedPayPart: selectedPayPart.value,
     selectedPayCodeChannel: selectedPayCodeChannel.value,
     selectedPayCodeUrl: selectedPayCodeUrl.value,
     payProofImagesCount: payProofImages.value.length,
@@ -3702,7 +4075,8 @@ async function confirmPayFromCodeModal() {
   }
   await submitPayRequest(
     Number(selectedPayMethodId.value || 0),
-    String(selectedPayCodeChannel.value || '')
+    String(selectedPayCodeChannel.value || ''),
+    String(selectedPayPart.value || '')
   )
 }
 
@@ -3758,6 +4132,10 @@ watch(payPopupVisible, (val) => {
 
 watch(selectedPayMethodId, (val) => {
   payDebug('watch:selectedPayMethodId', { value: val })
+})
+
+watch(selectedPayPart, (val) => {
+  payDebug('watch:selectedPayPart', { value: val })
 })
 
 watch(selectedPayCodeChannel, (val) => {
@@ -4545,6 +4923,29 @@ $spacing-page: 30rpx;
   margin-top: 50rpx; /* 增大留白 */
   min-height: 400rpx;
 }
+
+.item-complete-wrap {
+  position: relative;
+  border-radius: 28rpx;
+}
+
+.item-complete-wrap.is-incomplete {
+  border: 4rpx solid #ff9ac5;
+  padding: 12rpx;
+}
+
+.item-complete-tag {
+  position: absolute;
+  right: 10rpx;
+  top: -20rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  color: #fff;
+  background: #ff7fb3;
+  z-index: 5;
+}
+
 .item-detail-card {
   display: flex;
   gap: 24rpx;
@@ -5327,6 +5728,17 @@ $spacing-page: 30rpx;
   box-shadow: 0 18rpx 30rpx rgba(73, 202, 238, 0.16);
 }
 
+.overview-timeline-card.placeholder {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 2rpx dashed #cad4de;
+  box-shadow: none;
+}
+
+.overview-timeline-card.placeholder-self {
+  border-color: #78daf5;
+  background: linear-gradient(180deg, rgba(120, 218, 245, 0.12) 0%, rgba(120, 218, 245, 0.05) 100%);
+}
+
 .overview-timeline-card-head {
   display: flex;
   align-items: center;
@@ -5337,16 +5749,60 @@ $spacing-page: 30rpx;
 }
 
 .overview-item-thumb-wrap {
+  position: relative;
   width: 100%;
   margin-bottom: 14rpx;
+  padding-right: 12rpx;
+  padding-bottom: 12rpx;
+  box-sizing: border-box;
+}
+
+.overview-item-stack-layer {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 136rpx;
+  border-radius: 20rpx;
+  background: #dce2e8;
+  z-index: 1;
+}
+
+.overview-item-stack-layer.layer-back {
+  top: 12rpx;
+  left: 12rpx;
+  background: #cdd5de;
+}
+
+.overview-item-stack-layer.layer-mid {
+  top: 6rpx;
+  left: 6rpx;
+  background: #d6dde5;
 }
 
 .overview-item-thumb {
+  position: relative;
   width: 100%;
   height: 136rpx;
   border-radius: 20rpx;
   display: block;
   background: #eef2f5;
+  z-index: 2;
+}
+
+.overview-item-more-tag {
+  position: absolute;
+  right: 0;
+  top: 0;
+  min-width: 42rpx;
+  height: 34rpx;
+  padding: 0 10rpx;
+  border-radius: 999rpx;
+  background: rgba(73, 84, 96, 0.92);
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 34rpx;
+  text-align: center;
+  z-index: 3;
 }
 
 .overview-item-thumb-empty {
@@ -5354,6 +5810,10 @@ $spacing-page: 30rpx;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f4f6f8 0%, #eceff3 100%);
+}
+
+.overview-item-thumb-empty-self {
+  background: linear-gradient(135deg, rgba(120, 218, 245, 0.26) 0%, rgba(120, 218, 245, 0.12) 100%);
 }
 
 .overview-item-thumb-empty-text {
@@ -5532,6 +5992,59 @@ $spacing-page: 30rpx;
   color: #39b8c4;
 }
 
+.pay-amount-wrap {
+  margin-top: 16rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #f7fbfe;
+}
+
+.pay-amount-title {
+  font-size: 24rpx;
+  color: #4d6276;
+}
+
+.pay-amount-list {
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.pay-amount-item {
+  min-height: 62rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  background: #edf3f8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pay-amount-item.active {
+  background: #d6f5ff;
+}
+
+.pay-amount-item-text {
+  font-size: 23rpx;
+  color: #4e6074;
+}
+
+.pay-amount-item.active .pay-amount-item-text {
+  color: #2f475d;
+  font-weight: 600;
+}
+
+.pay-amount-single {
+  margin-top: 12rpx;
+}
+
+.pay-amount-single-text {
+  font-size: 24rpx;
+  color: #2f475d;
+  font-weight: 600;
+}
+
 .pay-code-tabs {
   display: flex;
   gap: 12rpx;
@@ -5585,14 +6098,61 @@ $spacing-page: 30rpx;
   font-size: 24rpx;
 }
 
-.pay-method-tip {
-  margin-top: 20rpx;
-  padding: 20rpx;
+.pay-method-explain-card {
+  margin-top: 16rpx;
+  padding: 18rpx 20rpx;
   border-radius: 16rpx;
-  background: #f8fbfc;
-  color: #666;
+  background: #f4f9fd;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.pay-method-explain-card.transfer-risk {
+  background: #f8f5ff;
+}
+
+.pay-method-explain-title {
   font-size: 24rpx;
-  line-height: 1.6;
+  color: #31455d;
+}
+
+.pay-method-explain-tip {
+  font-size: 22rpx;
+  color: #637688;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.pay-step-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.pay-step-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.pay-step-preview-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 999rpx;
+  background: #90c8df;
+  flex-shrink: 0;
+}
+
+.pay-step-preview-name {
+  font-size: 22rpx;
+  color: #3f546a;
+  line-height: 1.5;
+}
+
+.pay-step-preview-empty {
+  font-size: 22rpx;
+  color: #7b8fa3;
 }
 
 .pay-action-row {
@@ -5895,6 +6455,11 @@ $spacing-page: 30rpx;
 }
 .btn-price {
   font-size: 32rpx;
+  white-space: nowrap;
+}
+
+.btn-price.is-confirm {
+  font-size: 27rpx;
 }
 .btn-divider {
   width: 2rpx;
