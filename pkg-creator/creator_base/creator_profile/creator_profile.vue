@@ -81,18 +81,7 @@
             </view>
           </view>
 
-          <view v-if="activeRole !== 'hair' && linkIcons.length" class="link-icons">
-            <view
-              v-for="item in linkIcons"
-              :key="item.key"
-              class="link-icon-btn"
-              @click="copyText(item.url, item.label)"
-            >
-              <image class="link-icon-img" :src="item.icon" mode="aspectFit" />
-            </view>
-          </view>
-
-          <view v-if="activeRole === 'hair' && linkTags.length" class="link-tags">
+          <view v-if="linkTags.length" class="link-tags">
             <view
               v-for="item in linkTags"
               :key="item.key"
@@ -130,15 +119,6 @@
       <view class="id-title font-title">她的身份</view>
       <view class="id-row">
         <view
-          class="id-pill"
-          :class="{ 'id-pill--disabled': !identity.is_brand }"
-          @click="identity.is_brand && openBrandHome()"
-        >
-          <image class="id-img" src="/static/artist/iconify-uil_shop.png"></image>
-          <text class="font-title">{{ brandIdentityLabel }}</text>
-        </view>
-
-        <view
           v-for="tab in identityTabs"
           :key="tab.key"
           class="id-pill"
@@ -150,7 +130,21 @@
         >
           <image class="id-img" :src="tab.icon"></image>
           <text class="font-title">{{ tab.label }}</text>
-          <view v-if="activeRole === tab.key" class="ink-ellipse"></view>
+          <image
+            v-if="activeRole === tab.key"
+            class="ink-wave"
+            src="/static/select.png"
+            mode="scaleToFill"
+          />
+        </view>
+
+        <view
+          class="id-pill"
+          :class="{ 'id-pill--disabled': !identity.is_brand }"
+          @click="identity.is_brand && openBrandHome()"
+        >
+          <image class="id-img" src="/static/artist/iconify-uil_shop.png"></image>
+          <text class="font-title">{{ brandIdentityLabel }}</text>
         </view>
       </view>
     </view>
@@ -250,17 +244,17 @@ const ROLE_CONFIGS = {
   hair: {
     key: 'hair',
     label: '毛娘',
-    navText: '手改毛',
-    shareTitle: '手改毛',
-    shareSummary: '看看这个手改毛主页～',
+    navText: '毛娘',
+    shareTitle: '毛娘',
+    shareSummary: '看看这个毛娘主页～',
     icon: '/static/artist/wig.png',
     imageTabLabel: '展示图片',
-    emptyImageText: '暂无手改毛作品',
+    emptyImageText: '暂无毛娘作品',
     imageEndpoint: '/brand-artist/custom-wig',
     orderArtistType: 2
   }
 }
-const ROLE_ORDER = ['hair', 'artist']
+const ROLE_ORDER = ['artist', 'hair']
 const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
 
 const defaultAvatar = 'https://images1.fantuanpu.com/brand-avatar/default'
@@ -313,7 +307,7 @@ const monthBusyList = ref([])
 const isSettled = computed(() => Number(info.last_login_time || 0) > 0)
 const currentRoleConfig = computed(() => ROLE_CONFIGS[activeRole.value] || ROLE_CONFIGS.artist)
 const currentRoleState = computed(() => roleStates[activeRole.value])
-const brandIdentityLabel = computed(() => (activeRole.value === 'hair' ? '贩售主页' : '贩售'))
+const brandIdentityLabel = computed(() => '贩售')
 const roleTabs = computed(() => {
   return ROLE_ORDER.map((key) => {
     const config = ROLE_CONFIGS[key]
@@ -329,23 +323,14 @@ const roleTabs = computed(() => {
   })
 })
 const identityTabs = computed(() => {
-  const hairTab = roleTabs.value.find((item) => item.key === 'hair')
   const artistTab = roleTabs.value.find((item) => item.key === 'artist')
+  const hairTab = roleTabs.value.find((item) => item.key === 'hair')
   return [
-    hairTab ? { ...hairTab, label: activeRole.value === 'hair' ? '毛娘' : '手改毛' } : null,
-    artistTab ? { ...artistTab, label: '妆师' } : null
+    artistTab ? { ...artistTab, label: '妆师' } : null,
+    hairTab ? { ...hairTab, label: '毛娘' } : null
   ].filter(Boolean)
 })
 
-const linkIcons = computed(() => {
-  const list = []
-  if (brandLinks.tb_url) list.push({ key: 'tb', label: '淘宝', url: brandLinks.tb_url, icon: LINK_ICON.tb })
-  if (brandLinks.vd_url) list.push({ key: 'vd', label: '微店', url: brandLinks.vd_url, icon: LINK_ICON.vd })
-  if (brandLinks.rednote_url) list.push({ key: 'xhs', label: '小红书', url: brandLinks.rednote_url, icon: LINK_ICON.xhs })
-  if (brandLinks.weibo_url) list.push({ key: 'wb', label: '微博', url: brandLinks.weibo_url, icon: LINK_ICON.wb })
-  if (brandLinks.website_url) list.push({ key: 'website', label: '官网', url: brandLinks.website_url, icon: LINK_ICON.website })
-  return list
-})
 const linkTags = computed(() => {
   const tags = []
   if (brandLinks.rednote_url) tags.push({ key: 'xhs', label: '小红书', url: brandLinks.rednote_url, icon: LINK_ICON.xhs })
@@ -821,6 +806,7 @@ function timeAgo(milliseconds) {
 
 .font-title {
   font-weight: 800;
+  z-index: 2;
 }
 
 .nav-left {
@@ -941,28 +927,6 @@ function timeAgo(milliseconds) {
   font-weight: 600;
 }
 
-.link-icons {
-  margin-top: 16rpx;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-}
-
-.link-icon-btn {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 9999rpx;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.link-icon-img {
-  width: 40rpx;
-  height: 40rpx;
-}
-
 .link-tags {
   margin-top: 16rpx;
   display: flex;
@@ -1071,6 +1035,7 @@ function timeAgo(milliseconds) {
   color: #333;
   position: relative;
   overflow: visible;
+  width: 140rpx;
 }
 
 .id-pill--disabled {
@@ -1081,15 +1046,14 @@ function timeAgo(milliseconds) {
   color: #222;
 }
 
-.id-pill .ink-ellipse {
+.id-pill .ink-wave {
   position: absolute;
-  left: 50%;
-  bottom: -8rpx;
-  width: 30rpx;
-  height: 64rpx;
-  background: rgba(168, 255, 252, 0.95);
-  border-radius: 999rpx;
-  transform: translateX(-50%) rotate(58deg);
+  left: 40%;
+  top: 8px;
+  width: 95rpx;
+  height: 50rpx;
+  transform: translateX(-50%) rotate(0deg);
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -1103,6 +1067,12 @@ function timeAgo(milliseconds) {
   background: transparent;
   image-rendering: -webkit-optimize-contrast;
   pointer-events: none;
+  z-index: 3;
+}
+
+.id-pill .font-title {
+  position: relative;
+  z-index: 3;
 }
 
 .content-wrap {
