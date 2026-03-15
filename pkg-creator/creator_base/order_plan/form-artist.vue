@@ -50,17 +50,42 @@
 
 	  </view>
 
+      <view class="form-item" v-if="form.service_scene === 2 && hasQRCodePayment">
+        <text class="label">扫码定金比例(%)</text>
+        <view class="inline-control inline-control--between">
+          <uni-number-box
+            :value="safeScanDepositRate"
+            :min="1"
+            :max="100"
+            :disabled="!canEditScanDepositRate"
+            @change="onScanDepositRateChange"
+          />
+          <text class="inline-tip">{{ scanDepositHintText }}</text>
+        </view>
+        <view class="tip" v-if="isEditMode && !canEditScanDepositRate">
+          当前计划已配置扫码定金比例，编辑模式不可修改。
+        </view>
+        <view class="tip">仅在扫码转账时生效，100% 表示全款下定。</view>
+      </view>
+
       <view class="form-item">
         <text class="label">接单方式</text>
-        <picker
-          :range="orderTypes"
-          range-key="text"
-          :value="orderTypeIndex"
-          @change="onOrderTypeChange"
-          :disabled="!canEditOrderType"
-        >
-          <view class="picker">{{ currentOrderTypeText }}</view>
-        </picker>
+        <view class="disabled-touch-wrap">
+          <picker
+            :range="orderTypes"
+            range-key="text"
+            :value="orderTypeIndex"
+            @change="onOrderTypeChange"
+            :disabled="!canEditOrderType"
+          >
+            <view class="picker">{{ currentOrderTypeText }}</view>
+          </picker>
+          <view
+            v-if="isEditMode && !canEditOrderType"
+            class="disabled-touch-mask"
+            @tap.stop="showDisabledReason('接单已开始，不能修改接单方式。')"
+          />
+        </view>
         <view class="tip">
           长期接单和非长期接单是互斥选项，如果存在长期接单计划，将无法创建其它计划。如果存在其它未结束的接单计划，也无法创建长期接单计划。
         </view>
@@ -133,40 +158,6 @@
         <uni-number-box v-model="form.max_submissions_per_user" :min="1" :max="10" />
       </view>
 
-      <view class="form-item" v-if="form.service_scene === 2 && !isEditMode && form.order_type !== 1">
-        <text class="label">可钞吗？</text>
-        <view class="inline-control">
-          <switch :checked="premiumQueueEnabled" @change="onPremiumQueueSwitch" />
-          <text class="inline-tip">
-            {{
-              premiumQueueEnabled
-                ? `接受加价排队的用户在普通库存满之后仍可排队`
-                : '不接受加价排队'
-            }}
-          </text>
-        </view>
-
-        <view class="mt-8" v-if="premiumQueueEnabled">
-          <text class="label-small">加价排队最大人数</text>
-          <uni-number-box v-model="form.premium_queue_limit" :min="1" :max="100000" />
-        </view>
-
-        <view class="mt-8" v-if="premiumQueueEnabled">
-          <text class="label-small">钞倍率</text>
-          <input
-            class="input"
-            type="digit"
-            :value="displayPremiumMultiplier(form.premium_queue_multiplier)"
-            @blur="e => onPremiumMultiplierBlur(e.detail.value)"
-            placeholder="例如 2.5 表示价格 x2.5"
-          />
-        </view>
-
-        <view class="tip">
-          当普通库存用完后，仍允许最多 N 名接受钞的用户继续排队。
-        </view>
-      </view>
-
       <view class="form-item" v-if="isEditMode && form.service_scene === 2">
         <text class="label">库存管理</text>
         <view class="inventory-row">
@@ -186,9 +177,44 @@
           <text class="label-small">增加普通库存</text>
           <uni-number-box v-model="form.inventory" :min="0" :max="100000" />
         </view>
-        <view class="mt-12" v-if="!isLongTermOrder">
+      </view>
+
+      <view class="form-item" v-if="form.service_scene === 2 && form.order_type !== 1">
+        <text class="label">可钞吗？</text>
+        <view class="inline-control">
+          <switch :checked="premiumQueueEnabled" @change="onPremiumQueueSwitch" />
+          <text class="inline-tip">
+            {{
+              premiumQueueEnabled
+                ? `接受加价排队的用户在普通库存满之后仍可排队`
+                : '不接受加价排队'
+            }}
+          </text>
+        </view>
+
+        <view class="mt-8" v-if="premiumQueueEnabled && !isEditMode">
+          <text class="label-small">加价排队最大人数</text>
+          <uni-number-box v-model="form.premium_queue_limit" :min="1" :max="100000" />
+        </view>
+
+        <view class="mt-8" v-if="premiumQueueEnabled && isEditMode">
           <text class="label-small">增加加价库存</text>
           <uni-number-box v-model="form.premium_inventory" :min="0" :max="100000" />
+        </view>
+
+        <view class="mt-8" v-if="premiumQueueEnabled">
+          <text class="label-small">钞倍率</text>
+          <input
+            class="input"
+            type="digit"
+            :value="displayPremiumMultiplier(form.premium_queue_multiplier)"
+            @blur="onPremiumMultiplierBlur"
+            placeholder="例如 2.5 表示价格 x2.5"
+          />
+        </view>
+
+        <view class="tip">
+          当普通库存用完后，仍允许最多 N 名接受钞的用户继续排队。
         </view>
       </view>
 
@@ -257,20 +283,27 @@
 
         <view class="form-item">
           <text class="label">寄送约定</text>
-          <picker
-            :range="shippingOptions"
-            range-key="text"
-            :value="shippingIndex"
-            :disabled="form.order_type === 1"
-            @change="onShippingChange"
-          >
-            <view class="picker">
-              {{
-                shippingOptions[shippingIndex].text +
-                  (form.order_type === 1 ? '（长期接单固定为分别寄送）' : '')
-              }}
-            </view>
-          </picker>
+          <view class="disabled-touch-wrap">
+            <picker
+              :range="shippingOptions"
+              range-key="text"
+              :value="shippingIndex"
+              :disabled="form.order_type === 1"
+              @change="onShippingChange"
+            >
+              <view class="picker">
+                {{
+                  shippingOptions[shippingIndex].text +
+                    (form.order_type === 1 ? '（长期接单固定为分别寄送）' : '')
+                }}
+              </view>
+            </picker>
+            <view
+              v-if="isEditMode && form.order_type === 1"
+              class="disabled-touch-mask"
+              @tap.stop="showDisabledReason('长期接单固定为分别寄送，不能修改寄送约定。')"
+            />
+          </view>
           <view class="tip" v-if="form.order_config.extra.shipping.mode === 'unified'">
             统一寄送：要求本次投递的单主统一在一个日期之前寄送到（仅可选“接单截止后 ≥10 天”的日期）。
           </view>
@@ -380,14 +413,21 @@
           <input class="input" v-model="tier.description" placeholder="描述" />
         </view>
         <view class="row row-right">
-          <button
-            class="btn-danger"
-            :class="{ 'btn-disabled': !canDeleteConfigItem }"
-            :disabled="!canDeleteConfigItem"
-            @click="handleRemoveTier(i)"
-          >
-            删除
-          </button>
+          <view class="disabled-touch-wrap disabled-touch-wrap--inline">
+            <button
+              class="btn-danger"
+              :class="{ 'btn-disabled': !canDeleteConfigItem }"
+              :disabled="!canDeleteConfigItem"
+              @click="handleRemoveTier(i)"
+            >
+              删除
+            </button>
+            <view
+              v-if="isEditMode && !canDeleteConfigItem"
+              class="disabled-touch-mask"
+              @tap.stop="showDisabledReason('计划已开始后，档位配置不能删除。')"
+            />
+          </view>
         </view>
       </view>
     </view>
@@ -416,14 +456,21 @@
           <input class="input" v-model="addon.description" placeholder="描述" />
         </view>
         <view class="row row-right">
-          <button
-            class="btn-danger"
-            :class="{ 'btn-disabled': !canDeleteConfigItem }"
-            :disabled="!canDeleteConfigItem"
-            @click="handleRemoveAddon(i)"
-          >
-            删除
-          </button>
+          <view class="disabled-touch-wrap disabled-touch-wrap--inline">
+            <button
+              class="btn-danger"
+              :class="{ 'btn-disabled': !canDeleteConfigItem }"
+              :disabled="!canDeleteConfigItem"
+              @click="handleRemoveAddon(i)"
+            >
+              删除
+            </button>
+            <view
+              v-if="isEditMode && !canDeleteConfigItem"
+              class="disabled-touch-mask"
+              @tap.stop="showDisabledReason('计划已开始后，加购配置不能删除。')"
+            />
+          </view>
         </view>
       </view>
     </view>
@@ -431,14 +478,35 @@
     <view 
       class="form-item" 
       v-if="form.service_scene === 2"
-      :class="{ 'disabled-section': !hasAlipay }"
+      :class="{
+        'disabled-section': !hasAlipay,
+        'disabled-section--readonly': !hasAlipay && !isEditMode
+      }"
     >
       <view class="label-row">
         <text class="label">节点配置</text>
-        <picker :range="stepOptions" range-key="label" @change="onStepPickerChange" :disabled="!canEditStepConfig">
-          <button class="btn-mini">+ 添加节点</button>
-        </picker>
+        <view class="disabled-touch-wrap disabled-touch-wrap--inline">
+          <picker
+            :range="stepOptions"
+            range-key="label"
+            @change="onStepPickerChange"
+            :disabled="!canEditStepConfig"
+          >
+            <button class="btn-mini">+ 添加节点</button>
+          </picker>
+          <view
+            v-if="isEditMode && !canEditStepConfig"
+            class="disabled-touch-mask"
+            @tap.stop="showDisabledReason('接单已开始，节点配置已锁定，不能再新增节点。')"
+          />
+        </view>
       </view>
+
+      <view
+        v-if="isEditMode && !hasAlipay"
+        class="disabled-section-mask"
+        @tap.stop="showDisabledReason('请先勾选支付宝收款，再配置节点。')"
+      />
 
       <view v-if="!hasAlipay" class="tip" style="color: #ff4d4f; margin-bottom: 12rpx;">
           需要勾选「支付宝收款」方式才可以使用节点功能（平台代收才能自动分配节点违约金）。
@@ -447,36 +515,73 @@
       <view v-if="!form.step_config_json.length" class="tip">
         可以通过「+ 添加节点」为订单添加节点；添加节点后，你可以在节点完成时与买家沟通，如果买家在通过该节点之后取消订单，您可以获得设定的节点违约金。
       </view>
+      <view v-if="hasAlipay" class="tip">
+        系统会固定补充一个「创作完成 100%」节点用于流程展示，无需手动填写。
+      </view>
 
       <view class="card" v-for="(step, idx) in form.step_config_json" :key="idx">
         <view class="row">
-          <input
-            class="input"
-            v-model="form.step_config_json[idx].name"
-            :disabled="!canEditStepConfig"
-            placeholder="节点名称，例如：待寄送 / 开妆中 / 已回寄"
-          />
+          <view class="disabled-touch-wrap">
+            <input
+              class="input"
+              v-model="form.step_config_json[idx].name"
+              :disabled="!canEditStepConfig"
+              placeholder="节点名称，例如：待寄送 / 开妆中 / 已回寄"
+            />
+            <view
+              v-if="isEditMode && !canEditStepConfig"
+              class="disabled-touch-mask"
+              @tap.stop="showDisabledReason('接单已开始，节点配置已锁定，不能修改节点名称。')"
+            />
+          </view>
         </view>
         <view class="row">
           <text class="label-small">违约金比例(%)</text>
-          <input
-            class="input"
-            type="digit"
-            :value="displayStepPercent(step.breach_compensation_rate)"
-            :disabled="!canEditStepConfig"
-            @blur="e => onStepPercentBlur(idx, e.detail.value)"
-            placeholder="例如 5 表示 5%"
-          />
+          <view class="disabled-touch-wrap">
+            <input
+              class="input"
+              type="digit"
+              :value="displayStepPercent(step.breach_compensation_rate)"
+              :disabled="!canEditStepConfig"
+              @blur="e => onStepPercentBlur(idx, e.detail.value)"
+              placeholder="例如 5 表示 5%"
+            />
+            <view
+              v-if="isEditMode && !canEditStepConfig"
+              class="disabled-touch-mask"
+              @tap.stop="showDisabledReason('接单已开始，节点配置已锁定，不能修改违约金比例。')"
+            />
+          </view>
         </view>
         <view class="row row-right">
-          <button
-            class="btn-danger"
-            :class="{ 'btn-disabled': !canDeleteConfigItem }"
-            :disabled="!canDeleteConfigItem"
-            @click="handleRemoveStep(idx)"
-          >
-            删除
-          </button>
+          <view class="disabled-touch-wrap disabled-touch-wrap--inline">
+            <button
+              class="btn-danger"
+              :class="{ 'btn-disabled': !canDeleteConfigItem }"
+              :disabled="!canDeleteConfigItem"
+              @click="handleRemoveStep(idx)"
+            >
+              删除
+            </button>
+            <view
+              v-if="isEditMode && !canDeleteConfigItem"
+              class="disabled-touch-mask"
+              @tap.stop="showDisabledReason('计划已开始后，节点配置不能删除。')"
+            />
+          </view>
+        </view>
+      </view>
+
+      <view class="card card-fixed-step" v-if="hasAlipay">
+        <view class="row">
+          <input class="input" :value="'创作完成'" disabled />
+        </view>
+        <view class="row">
+          <text class="label-small">违约金比例(%)</text>
+          <input class="input" :value="'100'" disabled />
+        </view>
+        <view class="tip tip-fixed-step">
+          该节点为系统保留节点，仅用于展示，不会随表单提交。
         </view>
       </view>
 
@@ -529,6 +634,16 @@
         </scroll-view>
       </view>
     </uni-popup>
+
+    <common-modal v-model:visible="disableReasonModalVisible" width="620rpx">
+      <view class="disable-reason-modal">
+        <text class="disable-reason-title">当前暂不可操作</text>
+        <text class="disable-reason-desc">{{ disableReasonText }}</text>
+        <view class="disable-reason-actions">
+          <button class="disable-reason-btn" @tap="disableReasonModalVisible = false">我知道了</button>
+        </view>
+      </view>
+    </common-modal>
 
   </view>
 </template>
@@ -691,6 +806,8 @@ function goToPaymentSettings() {
 const isEditMode = ref(false)
 const currentId = ref(null)
 const submitting = ref(false)
+const disableReasonModalVisible = ref(false)
+const disableReasonText = ref('')
 
 const form = ref({
   id: null,
@@ -722,6 +839,7 @@ const form = ref({
       per_head_cycle_days: 0,
       finishing_method: 'water',
       finishing_desc: '',
+      scan_deposit_rate: 20,
       shipping: {
         mode: 'separate',
         unified_date: '',
@@ -738,7 +856,9 @@ const originalPlan = ref({
   service_scene: 1,
   max_participants: 0,
   inventory: 0,
-  premium_inventory: 0 
+  premium_inventory: 0,
+  has_qrcode_payment: false,
+  scan_deposit_rate: 0
 })
 
 /* ====== 收款方式逻辑 ====== */
@@ -754,9 +874,49 @@ watch(showPaymentPopup, (val) => {
     }
 })
 
+watch(
+  () => form.value.order_config.payment_methods.slice(),
+  () => {
+    if (hasQRCodePayment.value) {
+      form.value.order_config.extra.scan_deposit_rate = normalizeScanDepositRate(
+        form.value.order_config.extra.scan_deposit_rate
+      )
+      return
+    }
+    form.value.order_config.extra.scan_deposit_rate = 0
+  },
+  { deep: false }
+)
+
 // 计算属性：是否选择了支付宝 (ID=2)
 const hasAlipay = computed(() => {
     return form.value.order_config.payment_methods.includes(2)
+})
+
+// 计算属性：是否选择了扫码转账 (ID=1)
+const hasQRCodePayment = computed(() => {
+  return form.value.order_config.payment_methods.includes(1)
+})
+
+const safeScanDepositRate = computed(() => {
+  const val = Number(form.value.order_config?.extra?.scan_deposit_rate || 0)
+  if (!Number.isFinite(val) || val <= 0) return 20
+  if (val > 100) return 100
+  return Math.floor(val)
+})
+
+const canEditScanDepositRate = computed(() => {
+  if (!hasQRCodePayment.value) return false
+  if (!isEditMode.value) return true
+  const hadQRCodePayment = !!originalPlan.value.has_qrcode_payment
+  const hadScanRate = Number(originalPlan.value.scan_deposit_rate || 0) > 0
+  return !(hadQRCodePayment && hadScanRate)
+})
+
+const scanDepositHintText = computed(() => {
+  const deposit = safeScanDepositRate.value
+  if (deposit >= 100) return '全款下定'
+  return `尾款 ${100 - deposit}%`
 })
 
 async function fetchPaymentList() {
@@ -782,6 +942,28 @@ function togglePayment(id) {
     } else {
         form.value.order_config.payment_methods.push(id)
     }
+}
+
+function normalizeScanDepositRate(val) {
+  const n = Math.floor(Number(val || 0))
+  if (!Number.isFinite(n) || n <= 0) return 20
+  if (n > 100) return 100
+  return n
+}
+
+function onScanDepositRateChange(e) {
+  if (!canEditScanDepositRate.value) {
+    form.value.order_config.extra.scan_deposit_rate = normalizeScanDepositRate(
+      originalPlan.value.scan_deposit_rate || form.value.order_config.extra.scan_deposit_rate
+    )
+    return
+  }
+  const rawValue =
+    typeof e === 'number'
+      ? e
+      : e?.detail?.value ?? e?.value ?? e
+  const next = normalizeScanDepositRate(rawValue)
+  form.value.order_config.extra.scan_deposit_rate = next
 }
 
 const selectedPaymentNames = computed(() => {
@@ -889,6 +1071,12 @@ const uploadedCount = ref(0)
 const totalToUpload = ref(0)
 const uploadStatusText = ref('')
 
+function showDisabledReason(reasonText) {
+  if (!isEditMode.value) return
+  disableReasonText.value = reasonText || '当前状态下暂时不能修改该项。'
+  disableReasonModalVisible.value = true
+}
+
 const premiumQueueEnabled = computed({
   get() {
     return !!form.value.premium_queue_limit
@@ -896,6 +1084,7 @@ const premiumQueueEnabled = computed({
   set(v) {
     if (!v) {
       form.value.premium_queue_limit = 0
+      form.value.premium_inventory = 0
     } else if (!form.value.premium_queue_limit) {
       form.value.premium_queue_limit = 1
       if (!form.value.premium_queue_multiplier) {
@@ -1243,6 +1432,21 @@ function displayStepPercent(rate) {
   return (Math.round(v * 100) / 100).toString().replace(/\.00$/, '')
 }
 
+/**
+ * 规范化可编辑节点比例（小数制）
+ * - 允许输入百分比（如 5）或小数（如 0.05）
+ * - 禁止 100% 及以上（系统保留）
+ * @param {number|string} raw 输入值
+ * @returns {number} 0~0.9999
+ */
+function normalizeEditableStepRate(raw) {
+  const num = Number(raw)
+  if (!Number.isFinite(num) || num <= 0) return 0
+  const rate = num >= 1 ? num / 100 : num
+  const capped = Math.min(rate, 0.9999)
+  return Math.round(capped * 10000) / 10000
+}
+
 function onStepPercentBlur(idx, val) {
   const str = String(val || '').trim()
   if (!str) {
@@ -1254,12 +1458,19 @@ function onStepPercentBlur(idx, val) {
     form.value.step_config_json[idx].breach_compensation_rate = 0
     return
   }
-  const rate = num > 1 ? num / 100 : num
-  form.value.step_config_json[idx].breach_compensation_rate = Math.round(rate * 10000) / 10000
+  const rate = normalizeEditableStepRate(num)
+  if (rate >= 0.9999) {
+    uni.showToast({ title: '100% 为系统保留节点，请填写小于 100%', icon: 'none' })
+  }
+  form.value.step_config_json[idx].breach_compensation_rate = rate
 }
 
 function onPremiumMultiplierBlur(val) {
-  const num = toFixed1(val)
+  const rawValue =
+    typeof val === 'object'
+      ? val?.detail?.value ?? val?.value ?? ''
+      : val
+  const num = toFixed1(rawValue)
   form.value.premium_queue_multiplier = num > 0 ? num : 2
 }
 
@@ -1274,7 +1485,7 @@ function onStepPickerChange(e) {
   } else {
     form.value.step_config_json.push({
       name: String(opt.value.name || ''),
-      breach_compensation_rate: Number(opt.value.breach_compensation_rate || 0)
+      breach_compensation_rate: normalizeEditableStepRate(opt.value.breach_compensation_rate || 0)
     })
   }
 }
@@ -1448,15 +1659,17 @@ async function loadDetail(id) {
         }))
       : [{ title: '', price: 0, description: '' }]
     
-    form.value.order_config.payment_methods = Array.isArray(cfg.payment_methods) 
-        ? cfg.payment_methods.map(id => Number(id)) 
-        : []
+    const originalPaymentMethods = Array.isArray(cfg.payment_methods)
+      ? cfg.payment_methods.map(id => Number(id))
+      : []
+    form.value.order_config.payment_methods = originalPaymentMethods
 
     form.value.order_config.extra = Object.assign(
       {
         per_head_cycle_days: 0,
         finishing_method: 'water',
         finishing_desc: '',
+        scan_deposit_rate: 20,
         shipping: {
           mode: 'separate',
           unified_date: '',
@@ -1466,6 +1679,13 @@ async function loadDetail(id) {
       },
       cfg.extra || {}
     )
+    originalPlan.value.has_qrcode_payment = originalPaymentMethods.includes(1)
+    originalPlan.value.scan_deposit_rate = originalPlan.value.has_qrcode_payment
+      ? normalizeScanDepositRate(form.value.order_config.extra.scan_deposit_rate)
+      : 0
+    form.value.order_config.extra.scan_deposit_rate = hasQRCodePayment.value
+      ? normalizeScanDepositRate(form.value.order_config.extra.scan_deposit_rate)
+      : 0
     if (form.value.order_type === 1) {
       form.value.order_config.extra.shipping.mode = 'separate'
       form.value.order_config.extra.shipping.unified_date = ''
@@ -1485,14 +1705,15 @@ async function loadDetail(id) {
       if (x && typeof x === 'object') {
         return {
           name: String(x.name || ''),
-          breach_compensation_rate:
+          breach_compensation_rate: normalizeEditableStepRate(
             typeof x.breach_compensation_rate === 'number'
               ? x.breach_compensation_rate
               : Number(x.breach_compensation_rate || 0)
+          )
         }
       }
       return { name: String(x || ''), breach_compensation_rate: 0 }
-    })
+    }).filter(item => Number(item.breach_compensation_rate || 0) < 1)
 
     originalPlan.value.service_scene = form.value.service_scene
     originalPlan.value.max_participants = form.value.max_participants
@@ -1541,9 +1762,9 @@ async function submitPlan() {
     ? safeStepConfig
         .map(x => ({
           name: String(x.name || ''),
-          breach_compensation_rate: Number(x.breach_compensation_rate || 0)
+          breach_compensation_rate: normalizeEditableStepRate(x.breach_compensation_rate || 0)
         }))
-        .filter(it => it.name)
+        .filter(it => it.name && Number(it.breach_compensation_rate || 0) > 0 && Number(it.breach_compensation_rate || 0) < 1)
     : []
 
   if (
@@ -1601,6 +1822,9 @@ async function submitPlan() {
         per_head_cycle_days: Number(form.value.order_config.extra.per_head_cycle_days || 0),
         finishing_method: form.value.order_config.extra.finishing_method,
         finishing_desc: form.value.order_config.extra.finishing_desc || '',
+        scan_deposit_rate: hasQRCodePayment.value
+          ? normalizeScanDepositRate(form.value.order_config.extra.scan_deposit_rate)
+          : 0,
         shipping: {
           mode: form.value.order_config.extra.shipping.mode,
           unified_date:
@@ -1687,6 +1911,8 @@ onLoad(query => {
   } else {
     isEditMode.value = false
     currentId.value = null
+    originalPlan.value.has_qrcode_payment = false
+    originalPlan.value.scan_deposit_rate = 0
     fetchCommonConfigs(form.value.artist_type)
     fetchStepOptions(form.value.artist_type)
   }
@@ -1765,8 +1991,38 @@ onMounted(() => {
 }
 
 .disabled-section {
-    opacity: 0.6;
-    pointer-events: none;
+  opacity: 0.6;
+  position: relative;
+}
+
+.disabled-section--readonly {
+  pointer-events: none;
+}
+
+.disabled-section-mask {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.disabled-touch-wrap {
+  position: relative;
+}
+
+.disabled-touch-wrap--inline {
+  display: inline-block;
+}
+
+.disabled-touch-mask {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .label {
@@ -1794,15 +2050,17 @@ onMounted(() => {
 }
 
 .input {
-  background: #fff;
+  background: #f5f6f7;
   border-radius: 12rpx;
+  border: none;
   padding: 20rpx;
   font-size: 28rpx;
 }
 
 .picker {
-  background: #fff;
+  background: #f5f6f7;
   border-radius: 12rpx;
+  border: none;
   padding: 20rpx;
   font-size: 28rpx;
   color: #333;
@@ -1833,8 +2091,9 @@ onMounted(() => {
 
 .picker-col {
   flex: 1;
-  background: #fff;
+  background: #f5f6f7;
   border-radius: 12rpx;
+  border: none;
   padding: 20rpx;
   font-size: 28rpx;
   color: #333;
@@ -1866,6 +2125,12 @@ onMounted(() => {
   margin-top: 16rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
+.card-fixed-step {
+  background: #f7fbff;
+}
+.tip-fixed-step {
+  margin-top: 0;
+}
 
 .row {
   margin-bottom: 12rpx;
@@ -1876,8 +2141,8 @@ onMounted(() => {
 }
 
 .btn-danger {
-  background: #ffeeee;
-  color: #ff4d6a;
+  background: #ffeaf3;
+  color: #d97b9a;
   border-radius: 24rpx;
   font-size: 24rpx;
   padding: 4rpx 16rpx;
@@ -2095,10 +2360,14 @@ onMounted(() => {
 .popup-content {
     flex: 1;
     overflow-y: auto;
+    padding: 24rpx;
+    box-sizing: border-box;
 }
 
 .payment-item {
     background: #f9f9f9;
+    width: 100%;
+    box-sizing: border-box;
     padding: 20rpx;
     border-radius: 12rpx;
     margin-bottom: 20rpx;
@@ -2148,5 +2417,46 @@ onMounted(() => {
     margin-top: 40rpx;
     color: #ff4d4f;
     font-size: 26rpx;
+}
+
+.disable-reason-modal {
+  padding: 36rpx 32rpx 28rpx;
+}
+
+.disable-reason-title {
+  display: block;
+  font-size: 34rpx;
+  color: #2f3a4f;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.disable-reason-desc {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: #6c7588;
+  line-height: 1.7;
+}
+
+.disable-reason-actions {
+  margin-top: 30rpx;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.disable-reason-btn {
+  min-width: 196rpx;
+  height: 74rpx;
+  line-height: 74rpx;
+  border-radius: 37rpx;
+  padding: 0 28rpx;
+  background: #49caee;
+  color: #ffffff;
+  font-size: 28rpx;
+}
+
+.disable-reason-btn::after {
+  border: none;
 }
 </style>

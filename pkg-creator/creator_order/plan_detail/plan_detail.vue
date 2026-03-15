@@ -188,15 +188,71 @@
       </view>
       <view class="row" v-if="showPremiumRow && supportsPremiumQueue">
         <text class="label font-title">钞倍数</text>
-        <text class="val"><text class="font-title">{{ plan.extra?.premium_price_multiple || 0 }}</text> 倍</text>
+        <text class="val"><text class="font-title">{{ premiumRateText }}</text> 倍</text>
       </view>
       
-      <view class="row" v-if="supportedPaymentMethods.length > 0" @click="paymentModalVisible = true">
-          <text class="label font-title">付款方式</text>
-          <view class="val">
-              <text class="payment-val-text">{{ paymentMethodsText }}</text>
-              <uni-icons type="info" size="18" color="#1677ff" style="margin-left: 6rpx;" />
+      <view class="plan-info-tabs-wrap" v-if="paymentMethodTabs.length">
+        <view class="plan-info-tabs-title-row">
+          <view class="plan-info-tabs-title-trigger" @tap="openPaymentMethodModal">
+            <text class="plan-info-tabs-title font-title">支付方式</text>
+            <uni-icons type="info" size="15" color="#6d7f98" />
           </view>
+          <view class="plan-info-tabs-hd plan-info-tabs-hd--inline">
+            <view
+              v-for="tab in paymentMethodTabs"
+              :key="tab.id"
+              class="plan-info-tab"
+              :class="{ active: activePaymentMethodId === tab.id }"
+              @tap="onPaymentTabTap(tab)"
+            >
+              <text class="plan-info-tab-text font-title">{{ tab.tabLabel }}</text>
+              <view class="plan-info-tab-ink"></view>
+            </view>
+          </view>
+        </view>
+
+        <view class="plan-info-tabs-bd">
+          <view v-if="activePaymentMethodId === 1" class="scan-deposit-panel">
+            <view class="scan-deposit-head">
+              <text class="scan-deposit-head-title font-title">扫码转账定金比例</text>
+            </view>
+            <view class="scan-deposit-main">
+              <text class="scan-deposit-label font-title">当前比例</text>
+              <text class="scan-deposit-value font-title">{{ scanDepositRateText }}</text>
+            </view>
+            <text class="scan-deposit-tip">扫码转账模式下按此比例先付定金，剩余尾款在后续节点完成后支付</text>
+          </view>
+
+          <view v-else-if="activePaymentMethodId === 2" class="online-payment-panel">
+            <view class="online-payment-head">
+              <text class="online-payment-title font-title">在线支付创作节点</text>
+            </view>
+            <view v-if="stepTimeline.length" class="step-timeline-wrap step-timeline-wrap--in-tab">
+              <view class="step-timeline">
+                <view
+                  class="step-timeline-item"
+                  v-for="(step, idx) in stepTimeline"
+                  :key="`step-${idx}-${step.name}`"
+                >
+                  <view class="step-axis">
+                    <view class="step-dot"></view>
+                    <view v-if="idx !== stepTimeline.length - 1" class="step-line"></view>
+                  </view>
+                  <view class="step-content">
+                    <text class="step-name font-alimamashuhei">{{ step.name }}</text>
+                    <text class="step-rate">
+                      违约金比例
+                      <text class="font-title">{{ step.rateText }}</text>
+                    </text>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view v-else class="step-empty">
+              <text class="step-empty-text">暂未配置创作节点</text>
+            </view>
+          </view>
+        </view>
       </view>
 
     </view>
@@ -373,10 +429,10 @@
       <view class="cm-wrapper">
         <view class="cm-title">付款方式说明</view>
         <view class="cm-body">
-            <view v-for="pay in supportedPaymentMethods" :key="pay.id" style="margin-bottom: 24rpx;">
-                <text class="cm-desc-title">{{ pay.name }}</text>
-                <text class="cm-desc-text">{{ pay.description_2_user }}</text>
-            </view>
+          <view v-if="activePaymentMethod">
+            <text class="cm-desc-title">{{ activePaymentMethod.tabLabel }}</text>
+            <text class="cm-desc-text">{{ activePaymentMethod.description_2_user || '暂无说明' }}</text>
+          </view>
         </view>
       </view>
     </common-modal>
@@ -420,6 +476,22 @@
             <text class="cm-desc-title">为什么需要喷涂这些？</text>
             <text class="cm-desc-text">打底可以保护娃头不受颜料染色，同时提供一些粗糙度，以供颜料和色粉附着。定妆是为了避免颜料和色粉被磨掉。</text>
           </view>
+        </view>
+      </view>
+    </common-modal>
+
+    <common-modal
+      :visible="scanDepositModalVisible"
+      @update:visible="v => scanDepositModalVisible = v"
+      top="200rpx"
+      width="calc(80vw)"
+    >
+      <view class="cm-wrapper">
+        <view class="cm-title">扫码定金说明</view>
+        <view class="cm-body">
+          <text class="cm-desc-text">该比例仅在“扫码转账”模式下生效。</text>
+          <text class="cm-desc-text">例如定金 50% 表示先支付一半金额，确认最终状态前再补齐尾款。</text>
+          <text class="cm-desc-text">若定金为 100%，则为全款下定，无需尾款。</text>
         </view>
       </view>
     </common-modal>
@@ -522,7 +594,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { onLoad, onPageScroll, onShow } from '@dcloudio/uni-app'
 import { websiteUrl, global, getScene } from '@/common/config.js'
 import { useCrossShare } from '@/common/share.js'
@@ -532,12 +604,12 @@ import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 const PAYMENT_DICT = [
     {
         id: 1, 
-        name: "收款码收款", 
-        description_2_user: "您下单成功时，可以看到接单者预设的收款码，转账后请与接单者核对。\n 此收款模式下无交易手续费。 \n 此模式下平台不介入交易纠纷 "
+        name: "扫码转账", 
+        description_2_user: "下单后可查看创作者预设的收款码，转账后请与创作者核对收款。"
     },
     {
         id: 2, 
-        name: "支付宝收款", 
+        name: "支付宝", 
         description_2_user: "下单时需要支付全款,如果交易中途终止，您可以获得已完成创作节点规定的退款。在您确认收货之时，托管在平台的资金会支付给作者。"
     }
 ]
@@ -596,7 +668,8 @@ const plan = reactive({
   premium_inventory: 0,
   premium_rate: 1,
   brand_admin_id: 0, // 新增：作者ID用于判断是否入驻
-  payment_methods: [] // 新增：付款方式ID列表
+  payment_methods: [], // 新增：付款方式ID列表
+  step_config_json: [] // 创作节点配置
 })
 
 /** 状态：是否接受排钞 (0=不接受, 1=接受) */
@@ -668,6 +741,7 @@ async function fetchPlan() {
   plan.premium_inventory = Number(d.premium_inventory || 0)
   plan.premium_rate = Number(d.premium_rate || 1)
   plan.brand_admin_id = Number(d.brand_admin_id || 0) // 获取作者入驻ID
+  plan.step_config_json = parseStepConfig(d.step_config_json)
 
   try {
     if (plan.order_config) {
@@ -683,6 +757,61 @@ async function fetchPlan() {
   } catch (e) {
     plan.tiers = []; plan.addons = []; plan.extra = {}; plan.payment_methods = []
   }
+}
+
+/**
+ * 解析开单节点配置
+ * @param {string|Array|undefined|null} raw 原始 step_config_json
+ * @returns {Array<{name:string, breach_compensation_rate:number}>}
+ */
+function parseStepConfig(raw) {
+  let list = []
+  if (Array.isArray(raw)) {
+    list = raw
+  } else if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) list = parsed
+    } catch (e) {
+      list = []
+    }
+  }
+
+  return list
+    .map(item => {
+      if (!item || typeof item !== 'object') return null
+      const name = String(item.name || '').trim()
+      const rate = Number(item.breach_compensation_rate || 0)
+      if (!name) return null
+      return {
+        name,
+        breach_compensation_rate: Number.isFinite(rate) ? rate : 0
+      }
+    })
+    .filter(Boolean)
+}
+
+/**
+ * 格式化节点违约金比例
+ * @param {number} rate 比例值，0.06 或 6 都兼容
+ * @returns {string}
+ */
+function formatStepRate(rate) {
+  const n = Number(rate || 0)
+  if (!Number.isFinite(n) || n <= 0) return '0%'
+  const pct = n <= 1 ? n * 100 : n
+  return `${(Math.round(pct * 100) / 100).toString()}%`
+}
+
+/**
+ * 将节点比例统一换算为百分数（展示用）
+ * @param {number|string} rate 节点比例，兼容 0.3 / 30 / "30"
+ * @returns {number}
+ */
+function normalizeStepRateToPercent(rate) {
+  const n = Number(rate || 0)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return n <= 1 ? n * 100 : n
 }
 
 /** ====== 计算展示 ====== */
@@ -832,10 +961,21 @@ const showPremiumRow = computed(() => isLocalPlan.value)
 const premiumQueueText = computed(() => {
   if (!showPremiumRow.value) return ''
   if (supportsPremiumQueue.value) {
-    const premiumInv = Number(plan.premium_inventory ?? 0)
     return '支持'
   }
   return '不支持'
+})
+
+const premiumRateText = computed(() => {
+  const directRate = Number(plan.premium_rate ?? 0)
+  if (Number.isFinite(directRate) && directRate > 0) {
+    return (Math.round(directRate * 10) / 10).toString()
+  }
+  const extraRate = Number(plan.extra?.premium_price_multiple ?? 0)
+  if (Number.isFinite(extraRate) && extraRate > 0) {
+    return (Math.round(extraRate * 10) / 10).toString()
+  }
+  return '1'
 })
 
 // 加价队列说明弹窗
@@ -851,10 +991,112 @@ const supportedPaymentMethods = computed(() => {
     return PAYMENT_DICT.filter(item => plan.payment_methods.includes(item.id));
 })
 
-const paymentMethodsText = computed(() => {
-    return supportedPaymentMethods.value.map(item => item.name).join(' / ') || '未设置'
-})
 const paymentModalVisible = ref(false)
+const scanDepositModalVisible = ref(false)
+const activePaymentMethodId = ref(0)
+
+const scanDepositRate = computed(() => {
+  const raw = Number(plan.extra?.scan_deposit_rate || 0)
+  if (!Number.isFinite(raw) || raw <= 0) return 100
+  if (raw > 100) return 100
+  return Math.floor(raw)
+})
+
+const scanDepositRateText = computed(() => {
+  const deposit = scanDepositRate.value
+  if (deposit >= 100) return '100%（全款下定）'
+  return `${deposit}% 定金 / ${100 - deposit}% 尾款`
+})
+
+const stepTimeline = computed(() => {
+  const rows = Array.isArray(plan.step_config_json) ? plan.step_config_json : []
+  const result = rows
+    .map(step => {
+      const name = String(step?.name || '').trim()
+      const ratePercent = normalizeStepRateToPercent(step?.breach_compensation_rate)
+      if (!name) return null
+      return {
+        name,
+        ratePercent,
+        rateText: formatStepRate(step?.breach_compensation_rate)
+      }
+    })
+    .filter(Boolean)
+
+  const hasCompletionStep = result.some(step => step.ratePercent >= 100)
+  if (!hasCompletionStep) {
+    // 固定补充 100% 完成节点，仅用于详情展示，不回写配置。
+    result.push({
+      name: '创作完成',
+      ratePercent: 100,
+      rateText: '100%'
+    })
+  }
+
+  return result
+})
+
+/**
+ * 支付方式 Tabs（扫码转账 / 在线支付）
+ * 由开单配置中的 payment_methods 动态生成。
+ */
+const paymentMethodTabs = computed(() => {
+  return supportedPaymentMethods.value
+    .filter(item => [1, 2].includes(Number(item.id || 0)))
+    .map(item => {
+      const id = Number(item.id || 0)
+      return {
+        ...item,
+        id,
+        tabLabel: id === 1 ? '扫码转账' : id === 2 ? '在线支付' : (item.name || '其它支付')
+      }
+    })
+})
+
+/**
+ * 当前选中的支付方式（用于内容区和说明弹窗）
+ * @returns {{id:number,tabLabel:string,name:string,description_2_user:string}|null}
+ */
+const activePaymentMethod = computed(() => {
+  const list = paymentMethodTabs.value
+  if (!list.length) return null
+  return list.find(item => item.id === activePaymentMethodId.value) || list[0]
+})
+
+/**
+ * 兜底当前支付方式，避免配置变化后选中项失效。
+ */
+watch(
+  paymentMethodTabs,
+  (tabs = []) => {
+    if (!tabs.length) {
+      activePaymentMethodId.value = 0
+      return
+    }
+    const hit = tabs.some(tab => tab.id === activePaymentMethodId.value)
+    if (!hit) {
+      activePaymentMethodId.value = Number(tabs[0].id || 0)
+    }
+  },
+  { immediate: true }
+)
+
+/**
+ * 点击支付方式 Tab
+ * 切换内容区到对应支付方式
+ * @param {{id:number}} tab 支付方式标签
+ */
+function onPaymentTabTap(tab) {
+  activePaymentMethodId.value = Number(tab?.id || 0)
+}
+
+/**
+ * 打开支付方式说明弹窗
+ * 只在点击“支付方式”标题时触发。
+ */
+function openPaymentMethodModal() {
+  paymentModalVisible.value = true
+}
 
 
 const finishingMap = { oil: '油性消光', water: '水性消光', gloss: '罩光剂' }
@@ -1414,10 +1656,251 @@ const descText = computed(() => {
 .mode-black  { background: #f5f5f5; color: #333;  }
 .external-tip { color: #999; font-size: 24rpx; }
 
+.plan-info-tabs-wrap {
+  margin-top: 12rpx;
+}
+
+.plan-info-tabs-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 2rpx 10rpx;
+}
+
+.plan-info-tabs-title-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.plan-info-tabs-title {
+  font-size: 24rpx;
+  color: #6a7a90;
+}
+
+.plan-info-tabs-hd {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 4rpx 2rpx 0;
+}
+
+.plan-info-tabs-hd--inline {
+  gap: 14rpx;
+  padding: 0;
+}
+
+.plan-info-tab {
+  position: relative;
+  padding: 10rpx 8rpx 14rpx;
+  opacity: 0.52;
+}
+
+.plan-info-tabs-hd--inline .plan-info-tab {
+  padding: 6rpx 6rpx 12rpx;
+}
+
+.plan-info-tab.active {
+  opacity: 1;
+}
+
+.plan-info-tab-text {
+  color: #56657a;
+  font-size: 24rpx;
+}
+
+.plan-info-tab.active .plan-info-tab-text {
+  color: #2b3a4e;
+}
+
+.plan-info-tab-ink {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  width: 48rpx;
+  height: 6rpx;
+  border-radius: 99rpx;
+  background: #78daf5;
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.plan-info-tab.active .plan-info-tab-ink {
+  transform: scaleX(1);
+}
+
+.plan-info-tabs-bd {
+  margin-top: 8rpx;
+  padding: 18rpx;
+  background: #f5fbff;
+  border-radius: 16rpx;
+}
+
+.scan-deposit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.scan-deposit-head {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.scan-deposit-head-title {
+  font-size: 24rpx;
+  color: #54657b;
+}
+
+.scan-deposit-main {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.scan-deposit-label {
+  font-size: 24rpx;
+  color: #6e7f95;
+}
+
+.scan-deposit-value {
+  font-size: 26rpx;
+  color: #2b3a4e;
+}
+
+.scan-deposit-tip {
+  font-size: 23rpx;
+  line-height: 1.4;
+  color: #8b97a8;
+}
+
+.online-payment-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.online-payment-head {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.online-payment-title {
+  font-size: 24rpx;
+  color: #54657b;
+}
+
+.step-empty {
+  margin-top: 6rpx;
+  padding: 10rpx 0 2rpx;
+}
+
+.step-empty-text {
+  font-size: 23rpx;
+  color: #97a4b6;
+}
+
+.step-timeline-wrap {
+  margin-top: 10rpx;
+  padding-top: 20rpx;
+}
+
+.step-timeline-wrap--in-tab {
+  margin-top: 0;
+  padding-top: 2rpx;
+}
+
+.step-timeline {
+  position: relative;
+  padding: 8rpx 0 4rpx;
+}
+
+.step-timeline::before {
+  content: "";
+  position: absolute;
+  left: 11rpx;
+  top: 22rpx;
+  bottom: 26rpx;
+  width: 4rpx;
+  background: linear-gradient(
+    180deg,
+    rgba(120, 218, 245, 0.6) 0%,
+    rgba(120, 218, 245, 0.2) 100%
+  );
+}
+
+.step-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.step-timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.step-axis {
+  width: 26rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.step-dot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  background: #fff;
+  margin-top: 8rpx;
+  box-shadow:
+    inset 0 0 0 4rpx #78daf5,
+    0 0 0 4rpx rgba(120, 218, 245, 0.2);
+}
+
+.step-line {
+  display: none;
+}
+
+.step-content {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 14rpx 18rpx;
+  box-shadow: 0 6rpx 18rpx rgba(34, 58, 96, 0.06);
+}
+
+.step-name {
+  display: block;
+  color: #223247;
+  font-size: 26rpx;
+  line-height: 1.42;
+}
+
+.step-rate {
+  display: block;
+  margin-top: 6rpx;
+  color: #738197;
+  font-size: 23rpx;
+  line-height: 1.38;
+}
+
 /* 毛坯提供方式：圆角标签 */
 .blank-val {
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 .blank-chip {
   display: inline-flex;
