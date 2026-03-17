@@ -91,10 +91,6 @@
         </view>
 
         <view class="card items-card">
-          <view class="card-header">
-            <text class="card-title">投递内容（{{ items.length }}）</text>
-          </view>
-
           <view
             v-if="!items.length"
             class="state-box"
@@ -121,6 +117,7 @@
                 >
                   <text class="item-tab-title">{{ getItemTabTitle(item, idx) }}</text>
                   <text class="item-tab-sub font-title">No.{{ String(idx + 1).padStart(3, '0') }}</text>
+                  <text v-if="itemTabNeedAttention(item)" class="item-tab-attention-mark font-title">!</text>
                 </view>
               </view>
             </scroll-view>
@@ -252,7 +249,10 @@
                   <button
                     v-if="canConfirmMaterialReceived(activeItem)"
                     class="btn-mini material-received"
-                    :class="{ disabled: confirmMaterialSubmitting }"
+                    :class="{
+                      disabled: confirmMaterialSubmitting,
+                      'with-attention-dot': materialConfirmButtonNeedAttention(activeItem)
+                    }"
                     :disabled="confirmMaterialSubmitting"
                     @tap="handleConfirmMaterialReceived(activeItem)"
                   >
@@ -560,7 +560,12 @@
             </view>
         </view>
         
-        <button v-if="canArtistConfirm" class="action-btn-large" @tap="handleConfirmSubmission">
+        <button
+          v-if="canArtistConfirm"
+          class="action-btn-large"
+          :class="{ 'with-attention-dot': confirmSubmissionButtonNeedAttention }"
+          @tap="handleConfirmSubmission"
+        >
             确认订单
         </button>
       </view>
@@ -660,6 +665,30 @@
 	            @tap="confirmMarkItemFinished"
 	          >
 	            {{ markFinishSubmitting ? '提交中...' : '确认提交' }}
+	          </button>
+	        </view>
+	      </view>
+	    </common-modal>
+
+	    <common-modal v-model:visible="materialConfirmModalVisible" width="620rpx" :closeable="!confirmMaterialSubmitting">
+	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+	        <text class="custom-modal-title">确认收到素材</text>
+	        <text class="custom-modal-desc">确认你已收到买家寄送的素材吗？</text>
+	        <view class="custom-modal-actions">
+	          <button
+	            class="custom-modal-btn cancel"
+	            :disabled="confirmMaterialSubmitting"
+	            @tap="materialConfirmModalVisible = false"
+	          >
+	            取消
+	          </button>
+	          <button
+	            class="custom-modal-btn confirm"
+	            :class="{ disabled: confirmMaterialSubmitting }"
+	            :disabled="confirmMaterialSubmitting"
+	            @tap="confirmMaterialReceivedByModal"
+	          >
+	            {{ confirmMaterialSubmitting ? '提交中...' : '确认收到' }}
 	          </button>
 	        </view>
 	      </view>
@@ -1424,6 +1453,8 @@ const blankReviewCheckStatus = ref(1)
 const blankReviewNote = ref('')
 const blankReviewPurchaseLink = ref('')
 const confirmMaterialSubmitting = ref(false)
+const materialConfirmModalVisible = ref(false)
+const materialConfirmItemID = ref(0)
 const blankStockSnapshotMap = ref({})
 const blankStockSnapshotLoadingMap = ref({})
 
@@ -1460,6 +1491,12 @@ watch(shipModalVisible, (show) => {
     shipExpressNo.value = ''
     shipExpressCompany.value = ''
     shipFromCloseAction.value = false
+  }
+})
+
+watch(materialConfirmModalVisible, (show) => {
+  if (!show && !confirmMaterialSubmitting.value) {
+    materialConfirmItemID.value = 0
   }
 })
 
@@ -1834,6 +1871,26 @@ function canConfirmMaterialReceived(item) {
   if (!item || isBuyer.value) return false
   if (submissionStatus.value !== SUBMISSION_STATUS_PAID) return false
   return Number(item.status || 0) === 8
+}
+
+function materialConfirmButtonNeedAttention(item) {
+  return canConfirmMaterialReceived(item) && itemTabNeedAttention(item)
+}
+
+const confirmSubmissionButtonNeedAttention = computed(() => {
+  if (!canArtistConfirm.value) return false
+  if (!activeItem.value) return false
+  return itemTabNeedAttention(activeItem.value)
+})
+
+function itemTabNeedAttention(item) {
+  if (!item || isBuyer.value) return false
+  const status = Number(item.status || 0)
+  // 待创作者确认内容（待确认）/ 待创作者接收快递（素材寄送中）
+  if (status === 2 || canConfirmMaterialReceived(item)) return true
+  const state = getItemFinalState(item)
+  // 节点或最终状态协商待创作者处理
+  return !!state?.negotiation_pending
 }
 
 function openBlankReviewModal() {
@@ -2555,42 +2612,45 @@ function handleConfirmMaterialReceived(item) {
     uni.showToast({ title: '缺少子单信息', icon: 'none' })
     return
   }
-  uni.showModal({
-    title: '确认收到素材',
-    content: '确认你已收到买家寄送的素材吗？',
-    confirmText: '确认收到',
-    cancelText: '取消',
-    success: ({ confirm }) => {
-      if (!confirm) return
-      ensureLogin().then((ok) => {
-        if (!ok) return
-        confirmMaterialSubmitting.value = true
-        uni.showLoading({ title: '提交中' })
-        const token = uni.getStorageSync('token') || ''
-        uni.request({
-          url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
-          method: 'POST',
-          header: { Authorization: token, 'Content-Type': 'application/json' },
-          data: { item_id: itemID },
-          success: (res) => {
-            const body = res.data || {}
-            if (body.status !== 'success') {
-              uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
-              return
-            }
-            uni.showToast({ title: '已确认收到素材', icon: 'success' })
-            fetchQueueInfo()
-          },
-          fail: () => {
-            uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
-          },
-          complete: () => {
-            confirmMaterialSubmitting.value = false
-            uni.hideLoading()
-          },
-        })
-      })
-    }
+  materialConfirmItemID.value = itemID
+  materialConfirmModalVisible.value = true
+}
+
+function confirmMaterialReceivedByModal() {
+  if (confirmMaterialSubmitting.value) return
+  const itemID = Number(materialConfirmItemID.value || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    return
+  }
+  ensureLogin().then((ok) => {
+    if (!ok) return
+    confirmMaterialSubmitting.value = true
+    uni.showLoading({ title: '提交中' })
+    const token = uni.getStorageSync('token') || ''
+    uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
+      method: 'POST',
+      header: { Authorization: token, 'Content-Type': 'application/json' },
+      data: { item_id: itemID },
+      success: (res) => {
+        const body = res.data || {}
+        if (body.status !== 'success') {
+          uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
+          return
+        }
+        materialConfirmModalVisible.value = false
+        uni.showToast({ title: '已确认收到素材', icon: 'success' })
+        fetchQueueInfo()
+      },
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      },
+      complete: () => {
+        confirmMaterialSubmitting.value = false
+        uni.hideLoading()
+      },
+    })
   })
 }
 
@@ -3258,36 +3318,48 @@ onShow(() => {
 
 .item-tabs-scroll {
   width: 100%;
-  margin-top: 2rpx;
+  margin-top: 6rpx;
+  overflow: visible;
+  padding: 0 4rpx;
+}
+
+:deep(.item-tabs-scroll .uni-scroll-view) {
+  overflow: visible !important;
+}
+
+:deep(.item-tabs-scroll .uni-scroll-view-content) {
+  overflow: visible !important;
 }
 
 .item-tabs-wrap {
   display: inline-flex;
-  gap: 12rpx;
-  padding-bottom: 4rpx;
+  align-items: stretch;
+  gap: 14rpx;
+  padding: 0 8rpx 12rpx;
 }
 
 .item-tab {
-  min-width: 188rpx;
-  max-width: 260rpx;
-  padding: 12rpx 16rpx;
-  border-radius: 14rpx;
-  border: 1rpx solid #e8edf6;
-  background: #f5f8fc;
+  position: relative;
+  min-width: 206rpx;
+  max-width: 292rpx;
+  padding: 18rpx 28rpx 16rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #373b44 0%, #232730 100%);
+  box-shadow: 0 8rpx 16rpx rgba(31, 39, 56, 0.16);
   box-sizing: border-box;
+  text-align: center;
 }
 
 .item-tab.active {
-  border-color: #c7ddf6;
-  background: linear-gradient(180deg, #edf6ff 0%, #f4f9ff 100%);
-  box-shadow: 0 6rpx 14rpx rgba(118, 153, 196, 0.14);
+  background: linear-gradient(135deg, #c9f3ff 0%, #a8ecff 100%);
+  box-shadow: 0 10rpx 18rpx rgba(120, 218, 245, 0.26);
 }
 
 .item-tab-title {
   display: block;
-  font-size: 23rpx;
-  color: #3a475d;
-  font-weight: 600;
+  font-size: 28rpx;
+  color: #f7fbff;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3295,10 +3367,66 @@ onShow(() => {
 
 .item-tab-sub {
   display: block;
-  margin-top: 5rpx;
-  font-size: 18rpx;
+  margin-top: 6rpx;
+  font-size: 17rpx;
   line-height: 1.2;
-  color: #95a2b5;
+  color: rgba(230, 238, 249, 0.72);
+}
+
+.item-tab.active .item-tab-title {
+  color: #203246;
+}
+
+.item-tab.active .item-tab-sub {
+  color: rgba(48, 78, 104, 0.72);
+}
+
+.item-tab-attention-mark {
+  position: absolute;
+  right: 10rpx;
+  top: -16rpx;
+  display: inline-block;
+  font-size: 55rpx;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffa4ce !important;
+  -webkit-text-fill-color: #ffa4ce !important;
+  opacity: 1 !important;
+  letter-spacing: 0;
+  text-shadow: 0 0 10rpx rgba(255, 164, 206, 0.45);
+  z-index: 5;
+  transform-origin: 50% 82%;
+  animation: item-tab-attention-wobble 1s ease-in-out infinite;
+}
+
+.item-tab .item-tab-attention-mark,
+.item-tab.active .item-tab-attention-mark {
+  color: #ffa4ce !important;
+  -webkit-text-fill-color: #ffa4ce !important;
+}
+
+@keyframes item-tab-attention-wobble {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  10% {
+    transform: translate3d(-1rpx, 0, 0) rotate(-18deg) scale(1.02);
+  }
+  20% {
+    transform: translate3d(1rpx, 0, 0) rotate(14deg) scale(1.02);
+  }
+  30% {
+    transform: translate3d(-1rpx, 0, 0) rotate(-11deg) scale(1.01);
+  }
+  40% {
+    transform: translate3d(1rpx, 0, 0) rotate(8deg) scale(1.01);
+  }
+  50% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
 }
 
 /* item 行 */
@@ -3576,6 +3704,7 @@ onShow(() => {
   font-weight: 600;
   border: none;
   margin: 0;
+  overflow: visible !important;
 }
 .btn-mini::after { border: none; }
 .btn-mini.outline {
@@ -3619,6 +3748,36 @@ onShow(() => {
   background-color: #e9edf3 !important;
   color: #a2acbb !important;
   box-shadow: none;
+}
+.btn-mini.with-attention-dot,
+.action-btn-large.with-attention-dot {
+  position: relative;
+}
+.btn-mini.with-attention-dot::before {
+  content: '';
+  position: absolute;
+  right: -4rpx;
+  top: -4rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #ff6fa6;
+  box-shadow: 0 0 0 5rpx rgba(255, 111, 166, 0.2);
+  z-index: 8;
+  pointer-events: none;
+}
+.action-btn-large.with-attention-dot::before {
+  content: '';
+  position: absolute;
+  right: -6rpx;
+  top: -6rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #ff6fa6;
+  box-shadow: 0 0 0 6rpx rgba(255, 111, 166, 0.2);
+  z-index: 8;
+  pointer-events: none;
 }
 
 .item-final-state {
@@ -4654,6 +4813,7 @@ onShow(() => {
 }
 
 .action-btn-large {
+  position: relative;
   flex: 1;
   height: 80rpx;
   line-height: 80rpx;
@@ -4665,6 +4825,7 @@ onShow(() => {
   background: linear-gradient(135deg, #ffd8e8, #ffe3bd);
   color: #4a3131;
   box-shadow: 0 6rpx 14rpx rgba(253, 212, 170, 0.35);
+  overflow: visible !important;
 }
 
 .bottom-actions-row.three-actions .action-btn-large {

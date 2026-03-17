@@ -4,7 +4,7 @@
     :class="{ 'is-center': props.center }"
     v-if="visible"
     @tap.stop="closeModal"
-    @touchmove.stop="onMaskTouchMove"
+    @touchmove.stop.prevent="onMaskTouchMove"
     @wheel.stop.prevent="onMaskWheel"
   >
     <uni-transition :mode-class="modeClass" :show="visible">
@@ -12,6 +12,8 @@
         class="modal-container safe-bottom"
         :style="containerStyle"
         @tap.stop
+        @touchmove.stop
+        @wheel.stop
       >
         <!--
           使用提示：
@@ -84,13 +86,66 @@ function getScrollLockStore() {
 
 const localLocked = ref(false)
 
+function resolvePageScrollContainer() {
+  if (typeof document === 'undefined') return null
+  const pageBodies = document.querySelectorAll('uni-page-body')
+  if (pageBodies && pageBodies.length > 0) {
+    return pageBodies[pageBodies.length - 1]
+  }
+  const pageWrappers = document.querySelectorAll('uni-page-wrapper')
+  if (pageWrappers && pageWrappers.length > 0) {
+    return pageWrappers[pageWrappers.length - 1]
+  }
+  return document.scrollingElement || document.documentElement
+}
+
 function lockBodyScroll() {
   if (localLocked.value) return
   const store = getScrollLockStore()
   if (!store) return
 
-  // 仅记录锁计数。实际阻止滚动由遮罩层 touchmove/wheel 拦截完成，
-  // 避免在某些 H5 内核下修改 body/html 样式导致页面跳到顶部。
+  // 记录锁计数；在 H5 锁定滚动但保持背景可见（不再挪动 body）。
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const body = document.body
+    const pageEl = resolvePageScrollContainer()
+    if (store.count === 0) {
+      // 兼容旧实现遗留：若 body 被固定并上移，先恢复，避免“背景消失”。
+      if (body.style.position === 'fixed' && body.style.top) {
+        body.style.position = ''
+        body.style.top = ''
+        body.style.left = ''
+        body.style.right = ''
+        body.style.width = ''
+      }
+
+      store.pageEl = pageEl || null
+      store.pageOverscrollBehavior = pageEl?.style?.overscrollBehavior || ''
+      store.pageTouchAction = pageEl?.style?.touchAction || ''
+
+      // 文档级兜底拦截：防止 iOS 下惯性滚动穿透到父级页面。
+      store.docTouchMoveHandler = (e) => {
+        if (isFromModalContainer(e)) return true
+        if (e && typeof e.preventDefault === 'function' && e.cancelable) {
+          e.preventDefault()
+        }
+        return false
+      }
+      store.docWheelHandler = (e) => {
+        if (isFromModalContainer(e)) return true
+        if (e && typeof e.preventDefault === 'function' && e.cancelable) {
+          e.preventDefault()
+        }
+        return false
+      }
+      document.addEventListener('touchmove', store.docTouchMoveHandler, { passive: false })
+      document.addEventListener('wheel', store.docWheelHandler, { passive: false })
+    }
+    if (pageEl && pageEl.style) {
+      pageEl.style.overscrollBehavior = 'none'
+      pageEl.style.touchAction = 'none'
+    }
+  }
+
   store.count += 1
   localLocked.value = true
 }
@@ -107,6 +162,24 @@ function unlockBodyScroll(force = false) {
   }
 
   if (store.count > 0) return
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const pageEl = store.pageEl && store.pageEl.style ? store.pageEl : null
+
+    if (pageEl) {
+      pageEl.style.overscrollBehavior = store.pageOverscrollBehavior || ''
+      pageEl.style.touchAction = store.pageTouchAction || ''
+    }
+
+    if (store.docTouchMoveHandler) {
+      document.removeEventListener('touchmove', store.docTouchMoveHandler)
+      store.docTouchMoveHandler = null
+    }
+    if (store.docWheelHandler) {
+      document.removeEventListener('wheel', store.docWheelHandler)
+      store.docWheelHandler = null
+    }
+  }
 }
 
 // 阻止遮罩层下页面滚动（避免滑动穿透）
@@ -188,6 +261,7 @@ onBeforeUnmount(() => {
   align-items: center; /* 确保子元素（弹窗）水平居中 */
   justify-content: flex-start;
   overscroll-behavior: contain;
+  touch-action: none;
 }
 
 .modal-mask.is-center {
@@ -218,6 +292,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   
   padding: var(--modal-base-pad);
   align-items: center;
