@@ -340,6 +340,8 @@ function mapBizToPreview (biz) {
     artist_order_return_shipped: '妆师已寄回',
     artist_order_return_received: '买家已确认结束',
     artist_order_review_submitted: '买家已完成评价',
+    artist_order_material_shipped: '买家已提交素材物流',
+    artist_order_material_received: '创作者已确认收件',
     artist_order_operate: '订单状态更新'
   }
   if (map[key]) return map[key]

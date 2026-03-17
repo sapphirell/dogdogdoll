@@ -210,6 +210,7 @@
               @click="switchTab(index)"
             >
               <text class="tab-text text-truncate font-alimamashuhei">{{ tab.label }}</text>
+              <text v-if="tabNeedAttention(index)" class="tab-attention-mark font-title">!</text>
             </view>
           </view>
           
@@ -310,11 +311,11 @@
 	            <view v-if="showMaterialShipInfoCard || showSubmitMaterialShipBtn" class="material-ship-panel">
               <view class="material-ship-info">
                 <view class="material-ship-row">
-                  <text class="material-ship-label font-title">素材寄送</text>
+                  <text class="material-ship-label font-title">{{ materialShipPanelTitle }}</text>
                   <text class="material-ship-value">{{ materialShipStatusText }}</text>
                 </view>
                 <view v-if="activeItemBuyerExpressNo" class="material-ship-row">
-                  <text class="material-ship-label font-title">物流单号</text>
+                  <text class="material-ship-label font-title">{{ materialShipExpressNoLabel }}</text>
                   <text class="material-ship-value">{{ activeItemBuyerExpressCompany || '快递' }} {{ activeItemBuyerExpressNo }}</text>
                 </view>
               </view>
@@ -337,7 +338,7 @@
             <view class="timeline-area">
               <view class="timeline-header">进度详情</view>
               <view v-if="currentItemProgressGuide || timelineEvents.length" class="timeline-list">
-                <view v-if="currentItemProgressGuide" class="timeline-row timeline-row-guide">
+                <view v-if="timelineNextActionText" class="timeline-row timeline-row-guide">
                   <view class="timeline-dot guide"></view>
                   <view v-if="timelineEvents.length" class="timeline-line"></view>
                   <view class="timeline-text-box">
@@ -896,15 +897,15 @@
       :center="true"
     >
       <view class="material-ship-modal">
-        <text class="material-ship-modal-title font-alimamashuhei">提交{{ materialTargetText }}寄送信息</text>
-        <text class="material-ship-modal-desc">请填写寄送给创作者的物流信息，方便对方及时签收{{ materialTargetText }}。</text>
+        <text class="material-ship-modal-title font-alimamashuhei">{{ materialShipModalTitleText }}</text>
+        <text class="material-ship-modal-desc">{{ materialShipModalDescText }}</text>
 
         <view class="material-ship-form-row">
-          <text class="material-ship-form-label font-title">快递单号</text>
+          <text class="material-ship-form-label font-title">{{ materialShipExpressNoLabel }}</text>
           <input
             v-model.trim="materialShipExpressNo"
             class="material-ship-form-input"
-            placeholder="请填写快递单号"
+            :placeholder="materialShipExpressNoPlaceholder"
           />
         </view>
 
@@ -912,7 +913,7 @@
           <text class="material-ship-form-label font-title">快递公司</text>
           <view class="material-ship-form-picker">
             <text :class="{ placeholder: !materialShipExpressCompany }">
-              {{ materialShipExpressCompany || '请选择快递公司' }}
+              {{ materialShipExpressCompany || materialShipCompanyPlaceholder }}
             </text>
             <uni-icons type="right" size="14" color="#b2bed1" />
           </view>
@@ -932,7 +933,7 @@
             :disabled="materialShipSubmitting"
             @tap="submitMaterialShip"
           >
-            {{ materialShipSubmitting ? '提交中...' : '确认提交' }}
+            {{ materialShipSubmitting ? '提交中...' : materialShipSubmitText }}
           </button>
         </view>
       </view>
@@ -958,6 +959,7 @@ const SubmissionStatusReturned = 8
 const SubmissionStatusFinished = 9
 const PayStatusDepositPaid = 2
 const PayStatusPaid = 4
+const ItemStatusOrdered = 3
 const ItemStatusWaitBuyerShip = 7
 const ItemStatusBuyerShipped = 8
 const PlanPaymentMethodQRCode = 1
@@ -1061,12 +1063,11 @@ const blankStockSnapshotMap = ref({})
 const blankStockSnapshotLoadingMap = ref({})
 
 let h5ScrollLockApplied = false
-let h5BodyOverflowBackup = ''
-let h5HtmlOverflowBackup = ''
-let h5BodyPositionBackup = ''
-let h5BodyTopBackup = ''
-let h5BodyWidthBackup = ''
-let h5ScrollTopBackup = 0
+let h5PageScrollEl = null
+let h5PageOverscrollBehaviorBackup = ''
+let h5PageTouchActionBackup = ''
+let h5DocTouchMoveHandler = null
+let h5DocWheelHandler = null
 
 const PAY_DEBUG_TAG = '[submission-pay]'
 // 支付宝 APP SDK 返回的成功码，表示客户端已经拿到明确成功结果。
@@ -1157,11 +1158,23 @@ const timelineNextActionText = computed(() => {
   if (itemSpecific) return itemSpecific
 
   const guide = currentItemProgressGuide.value
-  if (!guide) return ''
+  if (!guide) {
+    if (showSubmitMaterialShipBtn.value) {
+      if (isThirdBlankShipFlow.value) return `请填写第三方发货单号，等待${creatorRoleText.value}签收`
+      return `请提交${materialTargetText.value}物流，等待${creatorRoleText.value}签收`
+    }
+    if (showMaterialShipInfoCard.value) return `等待${creatorRoleText.value}签收${materialTargetText.value}`
+    return '等待下一步'
+  }
   const nextAction = String(guide.next_action_text || '').trim()
   if (nextAction) return normalizeCreatorRoleText(nextAction)
   const nextStatus = String(guide.next_status_text || '').trim()
   if (nextStatus) return `下一步：${normalizeCreatorRoleText(nextStatus)}`
+  if (showSubmitMaterialShipBtn.value) {
+    if (isThirdBlankShipFlow.value) return `请填写第三方发货单号，等待${creatorRoleText.value}签收`
+    return `请提交${materialTargetText.value}物流，等待${creatorRoleText.value}签收`
+  }
+  if (showMaterialShipInfoCard.value) return `等待${creatorRoleText.value}签收${materialTargetText.value}`
   return '等待下一步'
 })
 
@@ -1465,7 +1478,23 @@ const showSubmitMaterialShipBtn = computed(() => {
   return status === ItemStatusWaitBuyerShip || status === ItemStatusBuyerShipped
 })
 
-const materialTargetText = computed(() => (isHairOrder.value ? '毛坯' : '素头'))
+const isThirdBlankShipFlow = computed(() => (
+  isHairOrder.value && activeItemBlankSupplyMode.value === 'third'
+))
+
+const materialTargetText = computed(() => {
+  if (!isHairOrder.value) return '素头'
+  if (isThirdBlankShipFlow.value) return '第三方毛坯'
+  return '毛坯'
+})
+
+const materialShipPanelTitle = computed(() => (
+  isThirdBlankShipFlow.value ? '第三方发货' : '素材寄送'
+))
+
+const materialShipExpressNoLabel = computed(() => (
+  isThirdBlankShipFlow.value ? '发货单号' : '物流单号'
+))
 
 const materialShipStatusText = computed(() => {
   const status = Number(currentItem.value?.status || 0)
@@ -1475,18 +1504,46 @@ const materialShipStatusText = computed(() => {
   if (status === ItemStatusWaitBuyerShip) {
     if (isHairOrder.value && mode === 'stock') return `使用${creatorRoleText.value}现有毛坯，无需寄送`
     if (isHairOrder.value && mode === 'third' && !hasPurchaseLink) return `待${creatorRoleText.value}提供购买链接`
+    if (isHairOrder.value && mode === 'third') return '待填写第三方发货单号'
     return `待寄送${materialTargetText.value}`
   }
   if (isHairOrder.value && mode === 'third' && !hasPurchaseLink) return `待${creatorRoleText.value}提供购买链接`
-  if (activeItemBuyerExpressNo.value) return '已提交物流'
+  if (activeItemBuyerExpressNo.value) {
+    return isThirdBlankShipFlow.value ? '已提交第三方发货单号' : '已提交物流'
+  }
   return '待更新'
 })
 
 const materialShipActionText = computed(() => {
   const status = Number(currentItem.value?.status || 0)
-  if (status === ItemStatusBuyerShipped) return '修改寄送信息'
-  return '提交寄送信息'
+  if (status === ItemStatusBuyerShipped) {
+    return isThirdBlankShipFlow.value ? '修改发货信息' : '修改寄送信息'
+  }
+  return isThirdBlankShipFlow.value ? '填写第三方发货单号' : '提交寄送信息'
 })
+
+const materialShipModalTitleText = computed(() => (
+  isThirdBlankShipFlow.value ? '提交第三方发货信息' : `提交${materialTargetText.value}寄送信息`
+))
+
+const materialShipModalDescText = computed(() => {
+  if (isThirdBlankShipFlow.value) {
+    return `请在商家发货后填写第三方物流信息，方便${creatorRoleText.value}及时签收毛坯。`
+  }
+  return `请填写寄送给创作者的物流信息，方便对方及时签收${materialTargetText.value}。`
+})
+
+const materialShipExpressNoPlaceholder = computed(() => (
+  isThirdBlankShipFlow.value ? '请填写第三方发货单号' : '请填写快递单号'
+))
+
+const materialShipCompanyPlaceholder = computed(() => (
+  isThirdBlankShipFlow.value ? '请选择第三方快递公司' : '请选择快递公司'
+))
+
+const materialShipSubmitText = computed(() => (
+  isThirdBlankShipFlow.value ? '提交发货信息' : '确认提交'
+))
 
 function buildItemSpecificNextActionText() {
   const item = currentItem.value
@@ -1494,11 +1551,11 @@ function buildItemSpecificNextActionText() {
   if (Number(submission.status || 0) !== SubmissionStatusPaid) return ''
 
   const status = Number(item.status || 0)
-  if (status !== ItemStatusWaitBuyerShip && status !== ItemStatusBuyerShipped) return ''
-
   const role = creatorRoleText.value
   if (!isHairOrder.value) {
+    if (status === ItemStatusOrdered) return `素材已签收，等待${role}创作中`
     if (status === ItemStatusWaitBuyerShip) return `请寄送素头给${role}并提交物流信息`
+    if (status !== ItemStatusBuyerShipped) return ''
     return `等待${role}签收你寄送的素头`
   }
 
@@ -1508,19 +1565,68 @@ function buildItemSpecificNextActionText() {
     if (activeItemNeedReplaceBlank.value) {
       return `${role}建议更换毛坯，请先沟通替换方案`
     }
-    return `使用${role}现有毛坯，无需寄送`
+    return `使用${role}现有毛坯，无需寄送，等待${role}创作中`
   }
 
   if (mode === 'third' && !hasPurchaseLink) {
     return `等待${role}提供毛坯购买链接`
   }
 
+  if (status === ItemStatusOrdered) {
+    return `素材已签收，等待${role}创作中`
+  }
+
   if (status === ItemStatusWaitBuyerShip) {
-    if (mode === 'third') return `请按${role}提供的链接购买毛坯后寄送，并提交物流信息`
+    if (mode === 'third') return `请在第三方发货后填写快递单号，便于${role}签收毛坯`
     if (activeItemNeedReplaceBlank.value) return '请更换毛坯后寄送，并提交物流信息'
     return `请寄送毛坯给${role}并提交物流信息`
   }
+  if (status !== ItemStatusBuyerShipped) return ''
   return `等待${role}签收你寄送的毛坯`
+}
+
+function isItemNeedBuyerShipAction(item) {
+  if (!item) return false
+  if (Number(submission.status || 0) !== SubmissionStatusPaid) return false
+  const status = Number(item.status || 0)
+  if (status !== ItemStatusWaitBuyerShip) return false
+  const mode = normalizeBlankSupplyMode(item.blank_supply_mode || item.blankSupplyMode || '')
+  if (Number(submission.artist_type || 0) === 2) {
+    if (mode === 'stock') return false
+    if (mode === 'third') {
+      const link = String(item.blank_purchase_link || item.blankPurchaseLink || '').trim()
+      if (!link) return false
+    }
+  }
+  return true
+}
+
+function isItemNeedArtistAction(item) {
+  if (!item) return false
+  if (Number(submission.status || 0) !== SubmissionStatusPaid) return false
+  return Number(item.status || 0) === ItemStatusBuyerShipped
+}
+
+function tabNeedAttention(index) {
+  const tab = tabList.value[index]
+  if (!tab || tab.type !== 'item') return false
+  const item = submission.items[tab.index] || null
+  if (!item) return false
+
+  const alert = buildItemAlertTag(item)
+  if (submission.viewer_is_buyer && alert && /^待你确认/.test(String(alert.text || ''))) {
+    return true
+  }
+  if (submission.viewer_is_artist && alert && String(alert.text || '').includes('协商中')) {
+    return true
+  }
+  if (submission.viewer_is_buyer && isItemNeedBuyerShipAction(item)) {
+    return true
+  }
+  if (submission.viewer_is_artist && isItemNeedArtistAction(item)) {
+    return true
+  }
+  return false
 }
 
 const finalStepID = computed(() => {
@@ -2064,6 +2170,12 @@ const selectedMethodCodeOptions = computed(() => {
   return Array.isArray(list) ? list : []
 })
 
+function withBuyerFeeSuffix(baseLabel, amountItem) {
+  const fee = Number(amountItem?.buyer_fee_amount || 0)
+  if (!Number.isFinite(fee) || fee <= 0) return baseLabel
+  return `${baseLabel}（含手续费¥${formatMoneyText(fee)}）`
+}
+
 const selectedMethodPayAmountOptions = computed(() => {
   const methodID = Number(selectedPayMethod.value?.id || 0)
   const list = Array.isArray(selectedPayMethod.value?.pay_amount_options)
@@ -2097,30 +2209,30 @@ const selectedMethodPayAmountOptions = computed(() => {
       if (part === 'deposit') {
         return {
           ...item,
-          label: `${amountText} 定金（${rate}%）`
+          label: withBuyerFeeSuffix(`${amountText} 定金（${rate}%）`, item)
         }
       }
       if (part === 'balance') {
         return {
           ...item,
-          label: `${amountText} 尾款`
+          label: withBuyerFeeSuffix(`${amountText} 尾款`, item)
         }
       }
       if (part === 'full' && rate >= 100 && payPopupStage.value === 'initial') {
         return {
           ...item,
-          label: `${amountText} 定金（100%）`
+          label: withBuyerFeeSuffix(`${amountText} 定金（100%）`, item)
         }
       }
       if (part === 'full') {
         return {
           ...item,
-          label: `${amountText} 全款`
+          label: withBuyerFeeSuffix(`${amountText} 全款`, item)
         }
       }
       return {
         ...item,
-        label: String(item?.label || amountText)
+        label: withBuyerFeeSuffix(String(item?.label || amountText), item)
       }
     })
   }
@@ -2129,10 +2241,10 @@ const selectedMethodPayAmountOptions = computed(() => {
     return normalized.map((item) => {
       const part = String(item.pay_part || '').trim().toLowerCase()
       const amountText = `¥${formatMoneyText(item.amount)}`
-      if (part === 'full') return { ...item, label: `${amountText} 全款` }
-      if (part === 'balance') return { ...item, label: `${amountText} 尾款` }
-      if (part === 'deposit') return { ...item, label: `${amountText} 定金` }
-      return { ...item, label: String(item?.label || amountText) }
+      if (part === 'full') return { ...item, label: withBuyerFeeSuffix(`${amountText} 全款`, item) }
+      if (part === 'balance') return { ...item, label: withBuyerFeeSuffix(`${amountText} 尾款`, item) }
+      if (part === 'deposit') return { ...item, label: withBuyerFeeSuffix(`${amountText} 定金`, item) }
+      return { ...item, label: withBuyerFeeSuffix(String(item?.label || amountText), item) }
     })
   }
 
@@ -2414,35 +2526,84 @@ function setH5PageScrollLock(locked) {
   try {
     if (typeof document === 'undefined') return
     const body = document.body
-    const html = document.documentElement
-    if (!body || !html) return
+    if (!body) return
+
+    const resolveH5PageScrollContainer = () => {
+      const pageBodies = document.querySelectorAll('uni-page-body')
+      if (pageBodies && pageBodies.length > 0) {
+        return pageBodies[pageBodies.length - 1]
+      }
+      const pageWrappers = document.querySelectorAll('uni-page-wrapper')
+      if (pageWrappers && pageWrappers.length > 0) {
+        return pageWrappers[pageWrappers.length - 1]
+      }
+      return document.scrollingElement || document.documentElement
+    }
+
+    const isFromPayPopup = (e) => {
+      const rawTarget = e?.target
+      if (!rawTarget) return false
+      const target = rawTarget.nodeType === 3 ? rawTarget.parentElement : rawTarget
+      if (!target || typeof target.closest !== 'function') return false
+      return !!target.closest('.pay-sheet')
+    }
 
     if (locked) {
       if (h5ScrollLockApplied) return
       h5ScrollLockApplied = true
-      h5ScrollTopBackup = window.pageYOffset || html.scrollTop || body.scrollTop || 0
-      h5BodyOverflowBackup = body.style.overflow || ''
-      h5HtmlOverflowBackup = html.style.overflow || ''
-      h5BodyPositionBackup = body.style.position || ''
-      h5BodyTopBackup = body.style.top || ''
-      h5BodyWidthBackup = body.style.width || ''
+      if (body.style.position === 'fixed' && body.style.top) {
+        body.style.position = ''
+        body.style.top = ''
+        body.style.left = ''
+        body.style.right = ''
+        body.style.width = ''
+      }
 
-      html.style.overflow = 'hidden'
-      body.style.overflow = 'hidden'
-      body.style.position = 'fixed'
-      body.style.top = `-${h5ScrollTopBackup}px`
-      body.style.width = '100%'
+      h5PageScrollEl = resolveH5PageScrollContainer()
+      h5PageOverscrollBehaviorBackup = h5PageScrollEl?.style?.overscrollBehavior || ''
+      h5PageTouchActionBackup = h5PageScrollEl?.style?.touchAction || ''
+      if (h5PageScrollEl && h5PageScrollEl.style) {
+        h5PageScrollEl.style.overscrollBehavior = 'none'
+        h5PageScrollEl.style.touchAction = 'none'
+      }
+
+      h5DocTouchMoveHandler = (e) => {
+        if (isFromPayPopup(e)) return true
+        if (e && typeof e.preventDefault === 'function' && e.cancelable) {
+          e.preventDefault()
+        }
+        return false
+      }
+      h5DocWheelHandler = (e) => {
+        if (isFromPayPopup(e)) return true
+        if (e && typeof e.preventDefault === 'function' && e.cancelable) {
+          e.preventDefault()
+        }
+        return false
+      }
+      document.addEventListener('touchmove', h5DocTouchMoveHandler, { passive: false })
+      document.addEventListener('wheel', h5DocWheelHandler, { passive: false })
       return
     }
 
     if (!h5ScrollLockApplied) return
     h5ScrollLockApplied = false
-    html.style.overflow = h5HtmlOverflowBackup
-    body.style.overflow = h5BodyOverflowBackup
-    body.style.position = h5BodyPositionBackup
-    body.style.top = h5BodyTopBackup
-    body.style.width = h5BodyWidthBackup
-    window.scrollTo(0, h5ScrollTopBackup)
+    if (h5PageScrollEl && h5PageScrollEl.style) {
+      h5PageScrollEl.style.overscrollBehavior = h5PageOverscrollBehaviorBackup || ''
+      h5PageScrollEl.style.touchAction = h5PageTouchActionBackup || ''
+    }
+    h5PageScrollEl = null
+    h5PageOverscrollBehaviorBackup = ''
+    h5PageTouchActionBackup = ''
+
+    if (h5DocTouchMoveHandler) {
+      document.removeEventListener('touchmove', h5DocTouchMoveHandler)
+      h5DocTouchMoveHandler = null
+    }
+    if (h5DocWheelHandler) {
+      document.removeEventListener('wheel', h5DocWheelHandler)
+      h5DocWheelHandler = null
+    }
   } catch (_) {}
   // #endif
 }
@@ -4731,7 +4892,7 @@ $spacing-page: 30rpx;
 
 .material-ship-modal {
   width: 100%;
-  padding: 8rpx 6rpx 12rpx;
+  padding: 8rpx 6rpx 24rpx;
   box-sizing: border-box;
 }
 .material-ship-modal-title {
@@ -4795,6 +4956,10 @@ $spacing-page: 30rpx;
   height: 78rpx;
   border-radius: 999rpx;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   font-size: 25rpx;
   font-weight: 600;
 }
@@ -4909,6 +5074,59 @@ $spacing-page: 30rpx;
 .tab-text {
   font-size: 24rpx;
   padding: 0 10rpx;
+}
+
+.tab-attention-mark {
+  position: absolute;
+  right: 7rpx;
+  top: -33rpx;
+  display: inline-block;
+  font-size: 55rpx;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffa4ce !important;
+  -webkit-text-fill-color: #ffa4ce !important;
+  opacity: 1 !important;
+  letter-spacing: 0;
+  text-shadow: 0 0 10rpx rgba(255, 164, 206, 0.45);
+  z-index: 5;
+  transform-origin: 50% 82%;
+  animation: tab-attention-wobble 1s ease-in-out infinite;
+}
+
+.tab-item .tab-attention-mark {
+  color: #ffa4ce !important;
+  -webkit-text-fill-color: #ffa4ce !important;
+}
+
+.tab-item.active .tab-attention-mark {
+  color: #ffa4ce !important;
+  -webkit-text-fill-color: #ffa4ce !important;
+  text-shadow: 0 0 12rpx rgba(255, 164, 206, 0.5);
+}
+
+@keyframes tab-attention-wobble {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  10% {
+    transform: translate3d(-1rpx, 0, 0) rotate(-18deg) scale(1.02);
+  }
+  20% {
+    transform: translate3d(1rpx, 0, 0) rotate(14deg) scale(1.02);
+  }
+  30% {
+    transform: translate3d(-1rpx, 0, 0) rotate(-11deg) scale(1.01);
+  }
+  40% {
+    transform: translate3d(1rpx, 0, 0) rotate(8deg) scale(1.01);
+  }
+  50% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
 }
 
 .tab-tip-text {

@@ -220,6 +220,15 @@
               <view class="item-footer">
                 <view class="item-footer-left"></view>
                 <view class="item-footer-right">
+                  <button
+                    v-if="canConfirmCreationReceived(creation)"
+                    class="btn-received"
+                    :class="{ disabled: isConfirmingCreation(creation) }"
+                    :disabled="isConfirmingCreation(creation)"
+                    @tap.stop="handleConfirmCreationReceived(creation)"
+                  >
+                    {{ isConfirmingCreation(creation) ? '提交中...' : '我已收到' }}
+                  </button>
                   <button class="btn-view" @tap.stop="goCreationDetail(creation)">查看详情</button>
                   <view class="btn-chat-plain" @tap.stop="startChatByCreation(creation)">
                     <text class="btn-chat-plain-text">发起会话</text>
@@ -256,10 +265,12 @@ const pageSize = 20
 
 const rawList = ref([])
 const totalCount = ref(0)
+const confirmCreationLoadingMap = ref({})
 
 // “我的创作”只统计已经进入创作流程的父单。
 // 待确认、待付款、排队中的投递不应出现在创作阶段筛选里。
 const creationSubmissionStatuses = Object.freeze([4, 8, 9])
+const creationItemStatusBuyerShipped = 8
 
 const activeMainTab = ref('orders')
 const contentAnimating = ref(false)
@@ -275,6 +286,7 @@ const orderOps = Object.freeze([
 const creationOps = Object.freeze([
   { key: 'all', label: '全部', icon: 'list' },
   { key: 'not_started', label: '未开始', icon: 'info-filled' },
+  { key: 'wait_receive', label: '待收件', icon: 'email' },
   { key: 'in_progress', label: '进行中', icon: 'spinner-cycle' },
   { key: 'finished', label: '待寄回', icon: 'checkbox-filled' },
   { key: 'returned', label: '已寄回', icon: 'redo' },
@@ -567,6 +579,7 @@ function getItemStageLabel(row, item) {
   if (!itemID) return ''
   const stage = getStageMap(row)[itemID] || ''
   if (stage === 'not_started') return '未开始'
+  if (stage === 'wait_receive') return '待收件'
   if (stage === 'in_progress') return '进行中'
   if (stage === 'finished') return '待寄回'
   if (stage === 'returned') return '已寄回'
@@ -577,6 +590,7 @@ function getItemStageLabel(row, item) {
 
 function formatCreationStage(stage) {
   if (stage === 'not_started') return '未开始'
+  if (stage === 'wait_receive') return '待收件'
   if (stage === 'in_progress') return '进行中'
   if (stage === 'finished') return '待寄回'
   if (stage === 'returned') return '已寄回'
@@ -707,6 +721,73 @@ function startChatByCreation(row) {
   uni.navigateTo({
     url: `/pkg-im/chat/chat?peer_id=${uid}`,
   })
+}
+
+function getCreationLoadingKey(row) {
+  const submissionID = Number(row?.submission_id || 0)
+  const itemID = Number(row?.item_id || 0)
+  if (!submissionID || !itemID) return ''
+  return `${submissionID}-${itemID}`
+}
+
+function isConfirmingCreation(row) {
+  const key = getCreationLoadingKey(row)
+  if (!key) return false
+  return !!confirmCreationLoadingMap.value[key]
+}
+
+function setConfirmingCreation(row, loading) {
+  const key = getCreationLoadingKey(row)
+  if (!key) return
+  const next = { ...(confirmCreationLoadingMap.value || {}) }
+  if (loading) next[key] = true
+  else delete next[key]
+  confirmCreationLoadingMap.value = next
+}
+
+function canConfirmCreationReceived(row) {
+  if (!row) return false
+  if (String(row.stage || '') !== 'wait_receive') return false
+  const status = Number(row?.item?.status || 0)
+  const receivedAt = Number(row?.item?.artist_received_at || 0)
+  return status === creationItemStatusBuyerShipped && receivedAt <= 0
+}
+
+async function handleConfirmCreationReceived(row) {
+  if (!canConfirmCreationReceived(row) || isConfirmingCreation(row)) return
+  const itemID = Number(row?.item_id || 0)
+  if (!itemID) {
+    uni.showToast({ title: '缺少子单参数', icon: 'none' })
+    return
+  }
+  const token = uni.getStorageSync('token') || ''
+  setConfirmingCreation(row, true)
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
+      method: 'POST',
+      data: {
+        item_id: itemID,
+      },
+      header: token ? { Authorization: token } : {},
+    })
+    const body = res.data || {}
+    if (body.status !== 'success') {
+      uni.showToast({ title: body.msg || '提交失败，请稍后重试', icon: 'none' })
+      return
+    }
+    uni.showToast({ title: '已确认收件', icon: 'success' })
+    if (paging.value && typeof paging.value.reload === 'function') {
+      paging.value.reload()
+    } else {
+      queryList(1, pageSize)
+    }
+  } catch (err) {
+    console.error('confirm creation material received failed', err)
+    uni.showToast({ title: '提交失败，请稍后重试', icon: 'none' })
+  } finally {
+    setConfirmingCreation(row, false)
+  }
 }
 
 function computeSubmissionTotal(items) {
@@ -1174,6 +1255,11 @@ onLoad((options) => {
   background: #edf2fa;
 }
 
+.stage-wait_receive {
+  color: #6a4f87;
+  background: #f1e8ff;
+}
+
 .stage-in_progress {
   color: #2f6289;
   background: #dff1ff;
@@ -1226,6 +1312,23 @@ onLoad((options) => {
   margin-right: 12rpx;
   background: #eef3fb;
   color: #5e6b82;
+}
+
+.btn-received {
+  min-width: 156rpx;
+  height: 62rpx;
+  line-height: 62rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  margin-right: 12rpx;
+  background: #78daf5;
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.btn-received.disabled {
+  opacity: 0.6;
 }
 
 .btn-chat-plain {
