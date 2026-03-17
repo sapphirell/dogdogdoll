@@ -694,31 +694,8 @@ const handleGoodsSelect = async (goods) => {
   const goodsId = Number(goods?.id || 0)
   if (!goodsId) return
   try {
-    const res = await uni.request({
-      url: websiteUrl.value + `/goods?id=${goodsId}`,
-      method: 'GET',
-    })
-    if (res.data.status === 'success') {
-      const detail = res.data.data
-      name.value = detail.name || goods?.name || ''
-      const sub = Number(detail.sub_amount) || 0
-      const fin = Number(detail.fin_amount) || 0
-      price.value = formatPriceDisplay(sub + fin)
-      const cover = detail.goods_images?.[0] || detail.goods_image || ''
-      if (cover) {
-        imageList.value = [cover]
-      }
-      selectedGoods.value = {
-        id: goodsId,
-        name: detail.name || goods?.name || '',
-        brandName:
-          detail?.brand?.brand_name ||
-          detail?.brand_name ||
-          goods?.brand_name ||
-          '',
-        cover,
-      }
-    }
+    const detail = await getGoodsInfo(goodsId)
+    fillFormWithGoodsInfo(detail, goods || {})
   } catch (e) {
     uni.showToast({ title: '获取商品信息失败', icon: 'none' })
   }
@@ -747,29 +724,49 @@ function splitGoodsTokens(text) {
     .filter(Boolean)
 }
 
+function parseGoodsQuery(text) {
+  const tokens = splitGoodsTokens(text)
+  return {
+    brandAndKeywordText: tokens.join(' ').trim(),
+    nonCategoryTokens: tokens,
+  }
+}
+
+function collectBrandSearchTexts(item) {
+  return [item?.name, item?.nick_name]
+    .map(v => normalizeQueryKey(v))
+    .filter(Boolean)
+}
+
+function getBrandCandidateScore(item, kwNorm) {
+  if (!kwNorm) return 0
+  const texts = collectBrandSearchTexts(item)
+  if (texts.some(v => v === kwNorm)) return 4
+  if (texts.some(v => v.startsWith(kwNorm))) return 3
+  if (texts.some(v => v.includes(kwNorm) || kwNorm.includes(v))) return 2
+  return 0
+}
+
 function pickHighConfidenceBrand(candidates, brandKeyword) {
   if (!Array.isArray(candidates) || candidates.length === 0) return null
   const kwNorm = normalizeQueryKey(brandKeyword)
   if (!kwNorm) return null
 
-  const exact = candidates.find(item => normalizeQueryKey(item?.name) === kwNorm)
+  const exact = candidates.find(item => getBrandCandidateScore(item, kwNorm) >= 4)
   if (exact) return exact
 
   if (candidates.length === 1) {
     const only = candidates[0]
-    const nameNorm = normalizeQueryKey(only?.name)
-    if (nameNorm && (nameNorm.includes(kwNorm) || kwNorm.includes(nameNorm))) {
+    if (getBrandCandidateScore(only, kwNorm) >= 2) {
       return only
     }
   }
 
   const top = candidates[0]
   const second = candidates[1]
-  const topNorm = normalizeQueryKey(top?.name)
-  const secondNorm = normalizeQueryKey(second?.name)
-  const topStrong = topNorm && (topNorm === kwNorm || topNorm.startsWith(kwNorm))
-  const secondStrong = secondNorm && (secondNorm === kwNorm || secondNorm.startsWith(kwNorm))
-  if (topStrong && !secondStrong) return top
+  const topScore = getBrandCandidateScore(top, kwNorm)
+  const secondScore = getBrandCandidateScore(second, kwNorm)
+  if (topScore >= 3 && topScore > secondScore) return top
   return null
 }
 
@@ -786,40 +783,89 @@ async function fetchBrandCandidates(keywordInput) {
   }
 }
 
-async function buildGoodsSearchPlan(rawKeyword) {
-  const raw = String(rawKeyword || '').trim()
-  const tokens = splitGoodsTokens(raw)
-  if (tokens.length < 2) {
+async function resolveBrandAndKeywordFromTokens(tokens) {
+  const nonEmpty = Array.isArray(tokens)
+    ? tokens.map(v => String(v || '').trim()).filter(Boolean)
+    : []
+  if (nonEmpty.length < 2) {
     return {
-      search: raw,
-      brandId: 0,
-      brandName: '',
+      matched: null,
+      keyword: nonEmpty.join(' ').trim(),
+      candidates: [],
     }
   }
 
   const tried = new Set()
-  for (let split = tokens.length - 1; split >= 1; split--) {
-    const brandProbe = tokens.slice(0, split).join(' ').trim()
-    const goodsKeyword = tokens.slice(split).join(' ').trim()
+  let fallbackCandidates = []
+
+  for (let split = nonEmpty.length - 1; split >= 1; split--) {
+    const brandProbe = nonEmpty.slice(0, split).join(' ').trim()
+    const goodsKeyword = nonEmpty.slice(split).join(' ').trim()
     const probeKey = normalizeQueryKey(brandProbe)
     if (!brandProbe || !goodsKeyword || !probeKey || tried.has(probeKey)) continue
     tried.add(probeKey)
 
     const candidates = await fetchBrandCandidates(brandProbe)
+    if (split === 1 && candidates.length > 0) {
+      fallbackCandidates = candidates
+    }
     const matched = pickHighConfidenceBrand(candidates, brandProbe)
     if (matched && Number(matched?.id || 0) > 0) {
       return {
-        search: goodsKeyword,
-        brandId: Number(matched.id || 0),
-        brandName: String(matched.name || ''),
+        matched,
+        keyword: goodsKeyword,
+        candidates,
       }
     }
   }
 
   return {
-    search: raw,
-    brandId: 0,
-    brandName: '',
+    matched: null,
+    keyword: nonEmpty.join(' ').trim(),
+    candidates: fallbackCandidates,
+  }
+}
+
+async function buildGoodsSearchPlan(rawKeyword) {
+  const raw = String(rawKeyword || '').trim()
+  const parsed = parseGoodsQuery(raw)
+  let brandId = 0
+  let brandName = ''
+  let keywordForGoods = parsed.brandAndKeywordText
+  let brandCandidates = []
+
+  if (keywordForGoods && parsed.nonCategoryTokens.length >= 2) {
+    const resolved = await resolveBrandAndKeywordFromTokens(parsed.nonCategoryTokens)
+    if (resolved.matched && Number(resolved.matched?.id || 0) > 0) {
+      brandId = Number(resolved.matched.id || 0)
+      brandName = String(resolved.matched.name || '')
+      keywordForGoods = String(resolved.keyword || '').trim()
+    } else if (resolved.candidates.length > 0) {
+      brandCandidates = resolved.candidates
+    }
+  }
+
+  if (brandId <= 0 && keywordForGoods) {
+    const fallbackCandidates = await fetchBrandCandidates(keywordForGoods)
+    if (fallbackCandidates.length > 0 && brandCandidates.length === 0) {
+      brandCandidates = fallbackCandidates
+    }
+    const matched = pickHighConfidenceBrand(fallbackCandidates, keywordForGoods)
+    if (matched && Number(matched?.id || 0) > 0) {
+      brandId = Number(matched.id || 0)
+      brandName = String(matched.name || '')
+      if (!keywordForGoods || normalizeQueryKey(keywordForGoods) === normalizeQueryKey(brandName)) {
+        keywordForGoods = ''
+      }
+    }
+  }
+
+  const searchText = brandId > 0 ? keywordForGoods : raw
+  return {
+    search: String(searchText || '').trim(),
+    brandId,
+    brandName,
+    brandCandidates,
   }
 }
 
@@ -835,7 +881,16 @@ async function fetchGoodsCandidates(forceOpen = false) {
   if (forceOpen) goodsSearchPanelVisible.value = true
   try {
     const plan = await buildGoodsSearchPlan(q)
-    goodsSearchHint.value = plan.brandId > 0 ? `品牌限定：${plan.brandName}` : ''
+    if (plan.brandId > 0) {
+      goodsSearchHint.value = `品牌限定：${plan.brandName}`
+    } else {
+      const candidateNames = (Array.isArray(plan.brandCandidates) ? plan.brandCandidates : [])
+        .map(item => String(item?.name || '').trim())
+        .filter(Boolean)
+      goodsSearchHint.value = candidateNames.length > 0
+        ? `可能品牌：${candidateNames.slice(0, 2).join(' / ')}`
+        : ''
+    }
     const res = await searchGoods(plan.search || '', Number(plan.brandId || 0))
     const list = res?.data?.status === 'success' ? (res?.data?.data || []) : []
     goodsSearchCandidates.value = Array.isArray(list) ? list : []
@@ -1242,23 +1297,85 @@ const getGoodsInfo = (id) =>
       fail: reject,
     })
   })
-const fillFormWithGoodsInfo = (g) => {
-  name.value = g.name
-  const totalPrice = g.total_amount
-    ? Number(g.total_amount)
-    : (Number(g.sub_amount) || 0) +
-      (Number(g.fin_amount) || 0)
-  price.value = formatPriceDisplay(totalPrice)
-  if (g.goods_images?.length) imageList.value = [g.goods_images[0]]
-  selectedGoods.value = {
-    id: Number(g.id || 0),
-    name: g.name || '',
-    brandName: g?.brand?.brand_name || g?.brand_name || '',
-    cover: g.goods_images?.[0] || g.goods_image || '',
+
+function getFirstNonEmptyText(...values) {
+  for (const value of values) {
+    const text = String(value || '').trim()
+    if (text) return text
   }
-  if (g.size) {
-    selectedSizePath.value = [g.size, g.size_detail || '']
-    moreInfo.value.sizeDetail = g.size_detail || ''
+  return ''
+}
+
+function findTypeOptionIndex(typeText) {
+  const target = normalizeQueryKey(typeText)
+  if (!target) return -1
+  return typeOptions.value.findIndex((opt) => normalizeQueryKey(opt) === target)
+}
+
+function resolveGoodsMainSize(goodsDetail) {
+  const sizeFromList = Array.isArray(goodsDetail?.sizes) ? goodsDetail.sizes[0] || {} : {}
+  const size = getFirstNonEmptyText(goodsDetail?.size, sizeFromList?.goods_size)
+  const sizeDetail = getFirstNonEmptyText(goodsDetail?.size_detail, sizeFromList?.size_detail)
+  return { size, sizeDetail }
+}
+
+const fillFormWithGoodsInfo = (g, fallback = {}) => {
+  const detail = g || {}
+  const candidate = fallback || {}
+
+  name.value = getFirstNonEmptyText(detail.name, candidate.name, name.value)
+
+  const totalAmount = Number(detail.total_amount)
+  const totalPrice = totalAmount > 0
+    ? totalAmount
+    : (Number(detail.sub_amount) || 0) + (Number(detail.fin_amount) || 0)
+  if (totalPrice > 0) {
+    price.value = formatPriceDisplay(totalPrice)
+  }
+
+  const cover = getFirstNonEmptyText(detail?.goods_images?.[0], detail?.goods_image)
+  if (cover) {
+    imageList.value = [cover]
+  }
+
+  const brandName = getFirstNonEmptyText(
+    detail?.brand?.brand_name,
+    detail?.brand_name,
+    candidate?.brand_name,
+  )
+  selectedGoods.value = {
+    id: Number(detail.id || candidate.id || 0),
+    name: getFirstNonEmptyText(detail.name, candidate.name),
+    brandName,
+    cover,
+  }
+
+  const { size, sizeDetail } = resolveGoodsMainSize(detail)
+  if (size) {
+    selectedSizePath.value = [size, sizeDetail || '']
+  } else {
+    selectedSizePath.value = []
+  }
+  moreInfo.value.sizeDetail = sizeDetail
+  moreInfo.value.color = getFirstNonEmptyText(detail.skin, detail.color)
+  moreInfo.value.shopName = brandName
+  moreInfo.value.headCircumference = getFirstNonEmptyText(
+    detail.head_circumference,
+    detail.headCircumference,
+  )
+
+  const typeIndex = findTypeOptionIndex(detail.type)
+  if (typeIndex >= 0) {
+    selectedType.value = typeIndex
+  }
+
+  if (
+    moreInfo.value.sizeDetail ||
+    moreInfo.value.color ||
+    moreInfo.value.shopName ||
+    moreInfo.value.headCircumference
+  ) {
+    showMoreInfo.value = true
   }
 }
 </script>
@@ -1668,18 +1785,18 @@ $radius: 24rpx;
 }
 
 .submit-button {
-  background: linear-gradient(135deg, $primary-color, $secondary-color);
+  background: #78daf5;
   color: white;
   border: none;
   border-radius: 16rpx;
   font-size: 32rpx;
   height: 96rpx;
   line-height: 96rpx;
-  box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.3);
+  box-shadow: 0 8rpx 24rpx rgba(120, 218, 245, 0.32);
   transition: all 0.3s;
   &:active {
     transform: scale(0.98);
-    opacity: 0.9;
+    opacity: 0.92;
   }
 }
 .delete-button {
