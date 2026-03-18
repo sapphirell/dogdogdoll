@@ -203,7 +203,8 @@
                 }
             },
             "icons" : {
-                "foreground" : "C:/Users/Administrator/Desktop/1024x1024.png"
+                "foreground" : "C:/Users/Administrator/Desktop/1024x1024.png",
+                "background" : "C:/Users/Administrator/Desktop/1024x1024.png"
             },
             "modules" : {},
             "splashScreens" : {

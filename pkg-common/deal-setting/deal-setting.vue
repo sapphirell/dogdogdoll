@@ -39,18 +39,6 @@
       </view>
     </common-modal>
 
-    <common-modal :visible="showRealNameModal" width="600rpx" @update:visible="showRealNameModal = $event">
-      <view class="modal-content-box">
-        <view class="modal-title">提示</view>
-        <view class="modal-desc">该版本暂未支持实名认证，请等待下一个版本。</view>
-        <view class="modal-actions">
-          <view class="modal-btn single-gray-btn" @click="showRealNameModal = false">
-            知道了
-          </view>
-        </view>
-      </view>
-    </common-modal>
-
   </view>
 </template>
 
@@ -67,8 +55,13 @@ uni.setNavigationBarTitle({ title: '交易设置' });
 
 const showAuthModal = ref(false)
 const showRoleModal = ref(false)
-const showRealNameModal = ref(false)
 const checkingPaymentRole = ref(false)
+const realnameStatus = ref({
+  verified: false,
+  status: 'draft',
+  real_name_masked: '',
+  id_card_no_masked: ''
+})
 
 // 判断是否设置了交易密码
 const hasTradePassword = computed(() => {
@@ -101,8 +94,10 @@ const menuItems = computed(() => [
   },
   {
     label: '实名认证',
-    isSet: !!global.userInfo.is_real_name,
-    displayValue: global.userInfo.is_real_name ? '已认证' : '去认证',
+    isSet: !!realnameStatus.value.verified,
+    displayValue: realnameStatus.value.verified
+      ? (realnameStatus.value.real_name_masked || '已认证')
+      : '去认证',
     action: handleRealNameAction
   }
 ])
@@ -185,13 +180,40 @@ function jump2PaymentCode() {
 }
 
 function handleRealNameAction() {
-  showRealNameModal.value = true
+  // 微信小程序内暂不支持拉起支付宝实名认证
+  // #ifdef MP-WEIXIN
+  uni.showToast({
+    title: '在小程序内暂不支持实名认证哦~',
+    icon: 'none'
+  })
+  return
+  // #endif
+  uni.navigateTo({ url: '/pages/realname/realname' })
+}
+
+async function fetchRealnameStatus() {
+  const token = uni.getStorageSync('token')
+  if (!token) return
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/realname/status`,
+      method: 'GET',
+      header: { Authorization: token }
+    })
+    if (String(res?.data?.status || '').toLowerCase() === 'success' && res?.data?.data) {
+      realnameStatus.value = {
+        ...realnameStatus.value,
+        ...res.data.data
+      }
+    }
+  } catch (e) {}
 }
 
 // 使用 onShow 替代 onMounted
 // 这样当用户从“设置密码”页面返回时，会自动刷新用户信息，更新列表状态
 onShow(() => {
   asyncGetUserInfo()
+  fetchRealnameStatus()
 })
 </script>
 
