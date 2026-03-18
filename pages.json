@@ -94,6 +94,10 @@
       "style": { "navigationBarTitleText": "" }
     },
     {
+      "path": "pages/realname/realname",
+      "style": { "navigationBarTitleText": "实名认证" }
+    },
+    {
       "path": "pages/collocation/collocation",
       "style": { "navigationBarTitleText": "分享搭配" }
     },

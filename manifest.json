@@ -36,7 +36,6 @@
                     "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
                     "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CAMERA\"/>",
-                    "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
                     "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
@@ -123,7 +122,7 @@
                 }
             },
             "splashscreen" : {
-                "useOriginalMsgbox" : false,
+                "useOriginalMsgbox" : true,
                 "androidStyle" : "default",
                 "iosStyle" : "storyboard",
                 "ios" : {
@@ -180,6 +179,37 @@
     "app-harmony" : {
         "uniStatistics" : {
             "enable" : false
+        },
+        "distribute" : {
+            "bundleName" : "app.dogdogdoll.huawei",
+            "signingConfigs" : {
+                "default" : {
+                    "certpath" : "c:\\Users\\Administrator\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1773708818582.cer",
+                    "keyAlias" : "debugKey",
+                    "keyPassword" : "0000001B075608725E005516137C3A04E3B0C5C63CA0A62ABD1EFB5C261A22774F5341D3536DBAE4D2CB9A",
+                    "profile" : "c:\\Users\\Administrator\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1773708818582.p7b",
+                    "signAlg" : "SHA256withECDSA",
+                    "storeFile" : "c:\\Users\\Administrator\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1773708818582.p12",
+                    "storePassword" : "0000001B075608725E005516137C3A04E3B0C5C63CA0A62ABD1EFB5C261A22774F5341D3536DBAE4D2CB9A"
+                },
+                "release" : {
+                    "certpath" : "D:\\hongmeng_key\\v1.2.2发布.cer",
+                    "keyAlias" : "dogdogdoll",
+                    "keyPassword" : "0000001A18D6C06F6F6DFC551F203BBF7A61978B3FB97CD47C8AE347823A48E5B0A8FCCE01D286F9CB65",
+                    "profile" : "D:\\hongmeng_key\\娃圈狗狗助手Release.p7b",
+                    "signAlg" : "SHA256withECDSA",
+                    "storeFile" : "C:\\Users\\Administrator\\hongmeng.p12",
+                    "storePassword" : "0000001A8AA1F22A2C3DA82C088084C06E4EDE00CF756F35BECCEEB9DC07796C846003FF58CE1DA0EE71"
+                }
+            },
+            "icons" : {
+                "foreground" : "C:/Users/Administrator/Desktop/1024x1024.png",
+                "background" : "C:/Users/Administrator/Desktop/1024x1024.png"
+            },
+            "modules" : {},
+            "splashScreens" : {
+                "startWindowIcon" : "C:/Users/Administrator/Desktop/320x320.png"
+            }
         }
     },
     "h5" : {
@@ -190,6 +220,9 @@
     "mp-harmony" : {
         "uniStatistics" : {
             "enable" : false
+        },
+        "distribute" : {
+            "bundleName" : "com.atomicservice.6917600272886739975"
         }
     },
     "mp-jd" : {
