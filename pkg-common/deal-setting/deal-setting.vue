@@ -59,6 +59,7 @@ const checkingPaymentRole = ref(false)
 const realnameStatus = ref({
   verified: false,
   status: 'draft',
+  current_stage_text: '',
   real_name_masked: '',
   id_card_no_masked: ''
 })
@@ -95,12 +96,26 @@ const menuItems = computed(() => [
   {
     label: '实名认证',
     isSet: !!realnameStatus.value.verified,
-    displayValue: realnameStatus.value.verified
-      ? (realnameStatus.value.real_name_masked || '已认证')
-      : '去认证',
+    displayValue: getRealnameDisplayValue(),
     action: handleRealNameAction
   }
 ])
+
+function getRealnameDisplayValue() {
+  if (realnameStatus.value.verified) {
+    return realnameStatus.value.real_name_masked || '已认证'
+  }
+  if (realnameStatus.value.status === 'processing') {
+    return realnameStatus.value.current_stage_text || '认证进行中'
+  }
+  if (realnameStatus.value.status === 'three_factor_failed') {
+    return '三要素未通过'
+  }
+  if (realnameStatus.value.status === 'liveness_failed') {
+    return '活体未通过'
+  }
+  return '去认证'
+}
 
 // 守卫逻辑：检查交易密码
 function handleGuardedAction(callback) {
