@@ -37,22 +37,6 @@
           >
             拖拽放置
           </view>
-          <view
-            class="selected-action-chip resize-chip"
-            :class="{ disabled: !selectedHasRange }"
-            @tap.stop
-            @touchstart.stop.prevent="startResizeDrag('resize-start', $event)"
-          >
-            拖拽起始
-          </view>
-          <view
-            class="selected-action-chip resize-chip"
-            :class="{ disabled: !selectedHasRange }"
-            @tap.stop
-            @touchstart.stop.prevent="startResizeDrag('resize-end', $event)"
-          >
-            拖拽结束
-          </view>
           <view class="selected-action-chip detail-chip" @tap.stop="goSelectedOrderDetail">
             订单详情
           </view>
@@ -64,6 +48,9 @@
             清空区间
           </view>
         </view>
+        <text class="selected-action-desc">
+          先拖拽放置到日历；如需重排可再次拖拽，或直接清空后重放。
+        </text>
       </view>
       <view v-else class="selected-empty">
         <text>请先在下方订单列表点选一个订单</text>
@@ -249,6 +236,7 @@ const todayText = computed(() => {
   const t = normalizeDateText(props.today || '')
   return t || getNowDateText()
 })
+const selectedOrderId = computed(() => Number(props.selectedOrderId || 0))
 
 const monthLabel = computed(() => {
   const [y, m] = currentMonth.value.split('-')
@@ -444,8 +432,6 @@ const selectedOrder = computed(() => {
   return localOrders.value.find((o) => Number(o.submission_item_id) === id) || null
 })
 
-const selectedOrderId = computed(() => Number(props.selectedOrderId || 0))
-
 const selectedHasRange = computed(() => {
   const row = selectedOrder.value
   return !!row && !!row.start_date && !!row.end_date
@@ -472,8 +458,6 @@ const dragHintText = computed(() => {
   const name = selectedOrder.value?.work_subject || `子单#${dragState.orderId}`
   if (dragState.mode === 'place') return `放置 ${name}`
   if (dragState.mode === 'move') return `移动 ${name}`
-  if (dragState.mode === 'resize-start') return `调整起始`
-  if (dragState.mode === 'resize-end') return `调整结束`
   return '拖拽中'
 })
 
@@ -802,19 +786,6 @@ function startMoveDrag(order, event) {
   startDrag('move', id, event)
 }
 
-function startResizeDrag(mode, event) {
-  const row = selectedOrder.value
-  if (!row) {
-    emitInvalid('请先选择订单')
-    return
-  }
-  if (!row.start_date || !row.end_date) {
-    emitInvalid('请先给该订单放置日期')
-    return
-  }
-  startDrag(mode, row.submission_item_id, event)
-}
-
 function getTouchPoint(e) {
   const t = e?.touches?.[0] || e?.changedTouches?.[0]
   return t || null
@@ -856,20 +827,6 @@ function finishDrag() {
         const dur = Number(row.duration_days || props.defaultDurationDays || 1)
         const end = addDays(targetDate, Math.max(0, dur - 1))
         applyRange(orderID, targetDate, end)
-      } else if (mode === 'resize-start') {
-        const end = row.end_date
-        if (end && targetDate <= end) {
-          applyRange(orderID, targetDate, end)
-        } else {
-          emitInvalid('开始日期不能晚于结束日期')
-        }
-      } else if (mode === 'resize-end') {
-        const start = row.start_date
-        if (start && targetDate >= start) {
-          applyRange(orderID, start, targetDate)
-        } else {
-          emitInvalid('结束日期不能早于开始日期')
-        }
       }
     }
   }
@@ -923,6 +880,10 @@ watch(
 <style scoped lang="scss">
 .schedule-calendar {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   --status-c0: #dce6ef;
   --status-c1: #d2deea;
   --status-c2: #c8d6e4;
@@ -930,6 +891,8 @@ watch(
   --status-c4: #b3c7d8;
   --status-c5: #a8bfd1;
   --status-c6: #88a4ba;
+  --day-cell-height: 148rpx;
+  --day-cell-gap: 8rpx;
   --bridge-width: 10rpx;
 }
 
@@ -971,10 +934,11 @@ watch(
 
 .month-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 148rpx;
-  gap: 8rpx;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: var(--day-cell-height);
+  gap: var(--day-cell-gap);
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
   border-radius: 14rpx;
@@ -986,8 +950,9 @@ watch(
   position: relative;
   width: 100%;
   min-width: 0;
-  height: 148rpx;
-  min-height: 148rpx;
+  height: var(--day-cell-height);
+  min-height: var(--day-cell-height);
+  max-height: var(--day-cell-height);
   border-radius: 14rpx;
   background: #f8fbfe;
   padding: 8rpx 6rpx;
@@ -1136,7 +1101,7 @@ watch(
   margin-bottom: 16rpx;
   border-radius: 16rpx;
   background: #ffffff;
-  border: 1rpx solid #e4e8ef;
+  box-shadow: 0 8rpx 20rpx rgba(15, 23, 42, 0.06);
   padding: 16rpx;
 }
 
@@ -1159,9 +1124,8 @@ watch(
   border-radius: 999rpx;
   padding: 4rpx 12rpx;
   font-size: 18rpx;
-  color: #6c7788;
-  background: #f3f5f8;
-  border: 1rpx solid #dbe1e9;
+  color: #2d87a3;
+  background: rgba(120, 218, 245, 0.2);
 }
 
 .selected-head {
@@ -1213,6 +1177,7 @@ watch(
   display: flex;
   flex-wrap: wrap;
   gap: 8rpx;
+  align-items: center;
 }
 
 .selected-action-chip {
@@ -1222,28 +1187,40 @@ watch(
   line-height: 54rpx;
   font-size: 22rpx;
   color: #1f2937;
-  background: #ffffff;
-  border: 1rpx solid #d7dde6;
+  background: #f4f7fb;
   font-weight: 500;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .selected-action-chip.drag-chip {
-  background: #ffffff;
-}
-
-.selected-action-chip.resize-chip {
-  background: #ffffff;
+  background: #78daf5;
+  color: #ffffff;
 }
 
 .selected-action-chip.clear-chip {
+  background: #f5f7fa;
+  color: #516173;
+}
+
+.selected-action-chip.detail-chip {
   background: #ffffff;
+  color: #2e536b;
 }
 
 .selected-action-chip.disabled {
   color: #9aa4b2;
   background: #f4f6f8;
-  border-color: #e4e9f0;
   opacity: 1;
+  pointer-events: none;
+}
+
+.selected-action-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: #7d889a;
+  line-height: 1.4;
 }
 
 .selected-empty {
@@ -1347,9 +1324,8 @@ watch(
   line-height: 46rpx;
   text-align: center;
   font-size: 21rpx;
-  color: #1f2937;
-  background: #ffffff;
-  border: 1rpx solid #d7dde6;
+  color: #1f5b73;
+  background: rgba(120, 218, 245, 0.2);
   font-weight: 500;
 }
 

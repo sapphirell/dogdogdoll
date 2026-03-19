@@ -93,6 +93,11 @@
             <text class="info-val font-title">{{ queuePositionText }}</text>
           </view>
 
+          <view v-if="pendingCountdownVisible" class="info-row-item">
+            <text class="info-label font-alimamashuhei">{{ pendingCountdownLabel }}</text>
+            <text class="info-val info-val-countdown font-title">{{ pendingCountdownText }}</text>
+          </view>
+
 	        </view>
 
 	        <view class="overview-inline-panel">
@@ -314,10 +319,26 @@
                   <text class="material-ship-label font-title">{{ materialShipPanelTitle }}</text>
                   <text class="material-ship-value">{{ materialShipStatusText }}</text>
                 </view>
+                <view v-if="showMaterialShipDeadlineInfo" class="material-ship-row">
+                  <text class="material-ship-label font-title">{{ materialShipDeadlineLabel }}</text>
+                  <text class="material-ship-value">{{ materialShipDeadlineText }}</text>
+                </view>
                 <view v-if="activeItemBuyerExpressNo" class="material-ship-row">
                   <text class="material-ship-label font-title">{{ materialShipExpressNoLabel }}</text>
                   <text class="material-ship-value">{{ activeItemBuyerExpressCompany || '快递' }} {{ activeItemBuyerExpressNo }}</text>
                 </view>
+              </view>
+
+              <view v-if="creatorAddressInfo" class="material-ship-address-card" @tap="copyCreatorAddress">
+                <view class="material-ship-address-head">
+                  <text class="material-ship-address-title font-title">寄送地址</text>
+                  <text class="material-ship-address-copy">复制地址</text>
+                </view>
+                <view class="material-ship-address-main">
+                  <text class="material-ship-address-name">{{ creatorAddressInfo.receiver_name || '-' }}</text>
+                  <text class="material-ship-address-phone">{{ creatorAddressInfo.receiver_phone || '-' }}</text>
+                </view>
+                <text class="material-ship-address-line">{{ creatorAddressInfo.full_address || '-' }}</text>
               </view>
 
               <view
@@ -900,6 +921,23 @@
         <text class="material-ship-modal-title font-alimamashuhei">{{ materialShipModalTitleText }}</text>
         <text class="material-ship-modal-desc">{{ materialShipModalDescText }}</text>
 
+        <view v-if="showMaterialShipDeadlineInfo" class="material-ship-deadline-card">
+          <text class="material-ship-deadline-label font-title">{{ materialShipDeadlineLabel }}</text>
+          <text class="material-ship-deadline-value">{{ materialShipDeadlineText }}</text>
+        </view>
+
+        <view v-if="creatorAddressInfo" class="material-ship-address-card modal" @tap="copyCreatorAddress">
+          <view class="material-ship-address-head">
+            <text class="material-ship-address-title font-title">寄送地址</text>
+            <text class="material-ship-address-copy">复制地址</text>
+          </view>
+          <view class="material-ship-address-main">
+            <text class="material-ship-address-name">{{ creatorAddressInfo.receiver_name || '-' }}</text>
+            <text class="material-ship-address-phone">{{ creatorAddressInfo.receiver_phone || '-' }}</text>
+          </view>
+          <text class="material-ship-address-line">{{ creatorAddressInfo.full_address || '-' }}</text>
+        </view>
+
         <view class="material-ship-form-row">
           <text class="material-ship-form-label font-title">{{ materialShipExpressNoLabel }}</text>
           <input
@@ -964,6 +1002,8 @@ const ItemStatusWaitBuyerShip = 7
 const ItemStatusBuyerShipped = 8
 const PlanPaymentMethodQRCode = 1
 const PlanPaymentMethodAlipay = 2
+const PendingCountdownSceneFillContent = 'fill_content'
+const PendingCountdownScenePay = 'pay'
 const reviewMaxImages = 9
 
 // ====== 状态数据 ======
@@ -974,6 +1014,7 @@ const hasFirstLoaded = ref(false)
 const fetchSeq = ref(0)
 // 修改点：移除 ref 包装，使用普通变量作为共享变量控制定时器
 let pollingTimer = null 
+let countdownTicker = null
 
 const currentTabIndex = ref(0) // 控制 Tab
 
@@ -1004,7 +1045,27 @@ const submission = reactive({
   review_submitted: false,
   can_submit_review: false,
   review_info: null,
-  return_express_no: ''
+  return_express_no: '',
+  creator_address_info: null,
+  shipping_deadline: {
+    active: false,
+    mode: '',
+    deadline_type: '',
+    deadline_type_text: '',
+    deadline_date: '',
+    deadline_at: 0,
+    remaining_seconds: 0,
+    expired: false
+  },
+  pending_countdown: {
+    active: false,
+    scene: '',
+    label: '',
+    total_seconds: 0,
+    deadline_at: 0,
+    remaining_seconds: 0,
+    expired: false
+  }
 })
 const draftItems = ref([])
 const plan = reactive({
@@ -1059,6 +1120,7 @@ const materialShipModalVisible = ref(false)
 const materialShipSubmitting = ref(false)
 const materialShipExpressNo = ref('')
 const materialShipExpressCompany = ref('')
+const nowUnixSec = ref(Math.floor(Date.now() / 1000))
 const blankStockSnapshotMap = ref({})
 const blankStockSnapshotLoadingMap = ref({})
 
@@ -1106,6 +1168,61 @@ const planBasicText = computed(() => {
 const queuePositionText = computed(() => {
   const count = (submission.ahead_count || 0) + 1
   return `No.${String(count).padStart(3, '0')}`
+})
+
+const pendingCountdownRaw = computed(() => {
+  const row = submission.pending_countdown
+  if (!row || typeof row !== 'object') {
+    return {
+      active: false,
+      scene: '',
+      label: '',
+      total_seconds: 0,
+      deadline_at: 0,
+      remaining_seconds: 0,
+      expired: false
+    }
+  }
+  return row
+})
+
+const pendingCountdownLabel = computed(() => {
+  const rawLabel = String(pendingCountdownRaw.value.label || '').trim()
+  if (rawLabel) return rawLabel
+  const scene = String(pendingCountdownRaw.value.scene || '').trim()
+  if (scene === PendingCountdownSceneFillContent) return '完善投递倒计时'
+  if (scene === PendingCountdownScenePay) return '付款倒计时'
+  return '倒计时'
+})
+
+const pendingCountdownRemainSeconds = computed(() => {
+  const deadlineAt = Number(pendingCountdownRaw.value.deadline_at || 0)
+  if (deadlineAt > 0) {
+    return Math.max(0, deadlineAt - Number(nowUnixSec.value || 0))
+  }
+  const remaining = Number(pendingCountdownRaw.value.remaining_seconds || 0)
+  return Math.max(0, remaining)
+})
+
+function formatCountdownDuration(totalSec) {
+  const sec = Math.max(0, Number(totalSec || 0))
+  const hh = Math.floor(sec / 3600)
+  const mm = Math.floor((sec % 3600) / 60)
+  const ss = sec % 60
+  const mmText = String(mm).padStart(2, '0')
+  const ssText = String(ss).padStart(2, '0')
+  if (hh > 0) {
+    return `${hh}:${mmText}:${ssText}`
+  }
+  return `${mmText}:${ssText}`
+}
+
+const pendingCountdownText = computed(() => formatCountdownDuration(pendingCountdownRemainSeconds.value))
+
+const pendingCountdownVisible = computed(() => {
+  if (!pendingCountdownRaw.value.active) return false
+  if (pendingCountdownRaw.value.expired) return false
+  return pendingCountdownRemainSeconds.value > 0
 })
 
 const itemFinalStateMap = computed(() => {
@@ -1870,6 +1987,27 @@ function openBlankPurchaseLink(url) {
   })
 }
 
+function buildAddressText(info) {
+  return [
+    String(info?.receiver_name || '').trim(),
+    String(info?.receiver_phone || '').trim(),
+    String(info?.full_address || '').trim()
+  ].filter(Boolean).join(' ')
+}
+
+function copyCreatorAddress() {
+  const text = buildAddressText(creatorAddressInfo.value)
+  if (!text) {
+    uni.showToast({ title: '暂未填写寄送地址', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => uni.showToast({ title: '地址已复制', icon: 'none' }),
+    fail: () => uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+  })
+}
+
 const materialShipCompanyOptions = [
   '顺丰速运',
   '京东快递',
@@ -2007,8 +2145,7 @@ const confirmStageAmountText = computed(() => {
   return `${totalText} 全款`
 })
 
-const returnAddressInfo = computed(() => {
-  const raw = submission.return_address_info
+function parseAddressInfo(raw) {
   if (!raw || typeof raw !== 'object') return null
   const receiverName = String(raw.receiver_name || raw.receiverName || '').trim()
   const receiverPhone = String(raw.receiver_phone || raw.receiverPhone || '').trim()
@@ -2019,6 +2156,62 @@ const returnAddressInfo = computed(() => {
     receiver_phone: receiverPhone,
     full_address: fullAddress
   }
+}
+
+function formatDeadlineRemainText(totalSec) {
+  const sec = Math.max(0, Number(totalSec || 0))
+  if (sec <= 0) return '已超时'
+  const days = Math.floor(sec / 86400)
+  const hours = Math.floor((sec % 86400) / 3600)
+  const minutes = Math.floor((sec % 3600) / 60)
+  const seconds = sec % 60
+  if (days > 0) return `${days}天${String(hours).padStart(2, '0')}小时`
+  if (hours > 0) return `${hours}小时${String(minutes).padStart(2, '0')}分钟`
+  return `${String(minutes).padStart(2, '0')}分钟${String(seconds).padStart(2, '0')}秒`
+}
+
+const returnAddressInfo = computed(() => {
+  return parseAddressInfo(submission.return_address_info)
+})
+
+const creatorAddressInfo = computed(() => {
+  return parseAddressInfo(submission.creator_address_info)
+})
+
+const shippingDeadlineInfo = computed(() => {
+  const raw = submission.shipping_deadline
+  if (!raw || typeof raw !== 'object' || !raw.active) return null
+  return {
+    active: true,
+    deadline_type: String(raw.deadline_type || '').trim() === 'ship' ? 'ship' : 'arrival',
+    deadline_type_text: String(raw.deadline_type_text || '').trim(),
+    deadline_date: String(raw.deadline_date || '').trim(),
+    deadline_at: Number(raw.deadline_at || 0),
+    remaining_seconds: Number(raw.deadline_at || 0) > 0
+      ? Math.max(0, Number(raw.deadline_at || 0) - Number(nowUnixSec.value || 0))
+      : Math.max(0, Number(raw.remaining_seconds || 0)),
+    expired: !!raw.expired
+  }
+})
+
+const showMaterialShipDeadlineInfo = computed(() => {
+  const deadline = shippingDeadlineInfo.value
+  if (!deadline || !currentItem.value || !currentItemNeedsShippingMaterial.value) return false
+  const status = Number(currentItem.value?.status || 0)
+  const receivedAt = Number(currentItem.value?.artist_received_at || currentItem.value?.artistReceivedAt || 0)
+  if (receivedAt > 0) return false
+  if (deadline.deadline_type === 'ship') return status === ItemStatusWaitBuyerShip
+  return status === ItemStatusWaitBuyerShip || status === ItemStatusBuyerShipped
+})
+
+const materialShipDeadlineLabel = computed(() => (
+  shippingDeadlineInfo.value?.deadline_type === 'ship' ? '剩余寄送时间' : '剩余寄到时间'
+))
+
+const materialShipDeadlineText = computed(() => {
+  const deadline = shippingDeadlineInfo.value
+  if (!deadline) return ''
+  return formatDeadlineRemainText(deadline.remaining_seconds)
 })
 
 const effectiveReturnAddressReady = computed(() => {
@@ -2444,7 +2637,16 @@ function resetSubmissionRuntimeState() {
     review_submitted: false,
     can_submit_review: false,
     review_info: null,
-    return_express_no: ''
+    return_express_no: '',
+    pending_countdown: {
+      active: false,
+      scene: '',
+      label: '',
+      total_seconds: 0,
+      deadline_at: 0,
+      remaining_seconds: 0,
+      expired: false
+    }
   })
   draftItems.value = []
   currentTabIndex.value = 0
@@ -3325,7 +3527,31 @@ async function fetchDetail(force = false) {
         review_submitted: !!d.review_submitted,
         can_submit_review: !!d.can_submit_review,
         review_info: d.review_info || null,
-        return_express_no: d.return_express_no || ''
+        return_express_no: d.return_express_no || '',
+        creator_address_info: d.creator_address_info || null,
+        shipping_deadline: (d.shipping_deadline && typeof d.shipping_deadline === 'object')
+          ? d.shipping_deadline
+          : {
+              active: false,
+              mode: '',
+              deadline_type: '',
+              deadline_type_text: '',
+              deadline_date: '',
+              deadline_at: 0,
+              remaining_seconds: 0,
+              expired: false
+            },
+        pending_countdown: (d.pending_countdown && typeof d.pending_countdown === 'object')
+          ? d.pending_countdown
+          : {
+              active: false,
+              scene: '',
+              label: '',
+              total_seconds: 0,
+              deadline_at: 0,
+              remaining_seconds: 0,
+              expired: false
+            }
       })
       draftItems.value = d.draft_items || []
       applyFocusItemByID(focusItemID.value)
@@ -4333,6 +4559,20 @@ function stopPolling() {
   }
 }
 
+function startCountdownTicker() {
+  nowUnixSec.value = Math.floor(Date.now() / 1000)
+  if (countdownTicker) return
+  countdownTicker = setInterval(() => {
+    nowUnixSec.value = Math.floor(Date.now() / 1000)
+  }, 1000)
+}
+
+function stopCountdownTicker() {
+  if (!countdownTicker) return
+  clearInterval(countdownTicker)
+  countdownTicker = null
+}
+
 onLoad((opt) => {
   const snap = getCurrentPageSnapshot()
   const merged = Object.assign({}, opt || {}, snap?.opts || {})
@@ -4345,6 +4585,7 @@ onPageScroll((e) => {
 })
 onShow(() => {
   bindH5HashChangeListener()
+  startCountdownTicker()
   const snap = getCurrentPageSnapshot()
   const newKey = String(snap?.key || '')
   const snapSubmissionID = Number(snap?.opts?.submission_id || 0)
@@ -4373,11 +4614,13 @@ onHide(() => {
   unbindH5HashChangeListener()
   setH5PageScrollLock(false)
   stopPolling()
+  stopCountdownTicker()
 })
 onUnload(() => {
   unbindH5HashChangeListener()
   setH5PageScrollLock(false)
   stopPolling()
+  stopCountdownTicker()
 })
 </script>
 
@@ -5007,6 +5250,11 @@ $spacing-page: 30rpx;
   font-weight: bold;
 }
 
+.info-val-countdown {
+  color: #ff7fae;
+  letter-spacing: 1rpx;
+}
+
 /* 状态小标签 */
 .status-badge-sm {
   display: flex;
@@ -5322,6 +5570,69 @@ $spacing-page: 30rpx;
   color: #51627c;
   text-align: right;
   word-break: break-all;
+}
+.material-ship-address-card {
+  margin-top: 12rpx;
+  padding: 16rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.92);
+}
+.material-ship-address-card.modal {
+  margin-top: 16rpx;
+  margin-bottom: 12rpx;
+}
+.material-ship-address-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.material-ship-address-title {
+  font-size: 22rpx;
+  color: #7f8da5;
+}
+.material-ship-address-copy {
+  font-size: 22rpx;
+  color: #78daf5;
+}
+.material-ship-address-main {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+.material-ship-address-name,
+.material-ship-address-phone {
+  font-size: 26rpx;
+  color: #2b3648;
+  font-weight: 700;
+}
+.material-ship-address-line {
+  margin-top: 10rpx;
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #5f7088;
+  word-break: break-word;
+}
+.material-ship-deadline-card {
+  margin-top: 14rpx;
+  margin-bottom: 12rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 16rpx;
+  background: #f6faff;
+}
+.material-ship-deadline-label {
+  font-size: 22rpx;
+  color: #7f8da5;
+}
+.material-ship-deadline-value {
+  margin-top: 8rpx;
+  display: block;
+  font-size: 26rpx;
+  color: #2c3c51;
+  font-weight: 700;
 }
 .material-ship-btn {
   margin-top: 14rpx;

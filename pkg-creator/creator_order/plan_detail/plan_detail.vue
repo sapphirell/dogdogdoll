@@ -298,10 +298,10 @@
           <text v-else class="oc-empty">—</text>
         </view>
 
-        <view class="oc-label" v-if="!isHairstylist">
+        <view class="oc-label">
           <text class="font-title">寄送约定</text>
         </view>
-        <view class="oc-value oc-value-row" v-if="!isHairstylist">
+        <view class="oc-value oc-value-row">
           <text v-if="shippingText" class="oc-plain">{{ shippingText }}</text>
           <text v-else class="oc-empty">—</text>
           <uni-icons
@@ -536,12 +536,12 @@
         <view class="cm-title">寄送约定</view>
         <view class="cm-body">
           <view v-if="isUnifiedShipping">
-            <text class="cm-desc-text">需要在指定日期前寄送到妆师地址。</text>
-            <text class="cm-desc-text">如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师取消订单。</text>
+            <text class="cm-desc-text">需要在指定日期前{{ shippingDeadlineType === 'ship' ? '寄出' : '寄到' }}{{ creatorRoleText }}地址。</text>
+            <text class="cm-desc-text">如果未按要求完成寄送，该订单将不计入超时工期，且在开始之前{{ creatorRoleText }}有权取消订单。</text>
           </view>
           <view v-else>
-            <text class="cm-desc-text">会根据排单顺序约定寄送日期.</text>
-            <text class="cm-desc-text">如果未按要求在指定日期前寄到，该订单将不计入超时工期。且在开始之前妆师有权利取消订单。</text>
+            <text class="cm-desc-text">会根据排单顺序约定寄送日期。</text>
+            <text class="cm-desc-text">如果未按要求在指定日期前寄出，该订单将不计入超时工期，且在开始之前{{ creatorRoleText }}有权取消订单。</text>
           </view>
         </view>
       </view>
@@ -1138,10 +1138,18 @@ const blankOptions = computed(() => {
 
 const shipping = computed(() => plan.extra?.shipping || {})
 const isUnifiedShipping = computed(() => shipping.value?.mode === 'unified')
+const shippingDeadlineType = computed(() => (
+  shipping.value?.mode === 'unified'
+    ? (shipping.value?.deadline_type === 'ship' ? 'ship' : 'arrival')
+    : 'ship'
+))
+const creatorRoleText = computed(() => (isHairstylist.value ? '毛娘' : '妆师'))
 const shippingText = computed(() => {
   const s = shipping.value
   if (!s || !s.mode) return ''
-  if (s.mode === 'unified' && s.unified_date) return `统一寄送：${s.unified_date}`
+  if (s.mode === 'unified' && s.unified_date) {
+    return `统一${shippingDeadlineType.value === 'ship' ? '寄送' : '寄到'}：${s.unified_date}`
+  }
   if (s.mode === 'separate') {
     const n = Number(s.separate_days_before_start || 0)
     return `分批寄送：开始前 ${n} 天发出`

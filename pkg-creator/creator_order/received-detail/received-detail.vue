@@ -7,18 +7,13 @@
       scroll-y
       :show-scrollbar="false"
     >
-      <view v-if="loading" class="state-box">
-        <text class="state-title">加载中…</text>
-        <text class="state-desc">正在获取投递详情</text>
-      </view>
-
-      <view v-else-if="!queueInfo" class="state-box state-error">
+      <view v-if="!loading && !queueInfo" class="state-box state-error">
         <text class="state-title">获取失败</text>
         <text class="state-desc">{{ errorMsg || '暂时无法获取投递信息' }}</text>
         <button class="btn-retry" @tap="reload">重试</button>
       </view>
 
-	      <view v-else class="content">
+	      <view v-else-if="!loading" class="content">
 	        <view class="card status-card">
 	          <view class="status-row">
 	            <view class="status-left-group">
@@ -126,6 +121,7 @@
               v-if="activeItem"
               :key="`active-item-${getItemID(activeItem)}`"
               class="item-row item-row-active"
+              @tap="goSubmissionItemDetail(activeItem)"
             >
               <view class="item-main">
                 <view class="item-cover-wrap" v-if="getFirstImage(activeItem)">
@@ -215,7 +211,7 @@
                       已选毛坯：{{ activeItemBlankIntroText }}
                     </text>
                     <text v-if="activeItem.blank_check_note" class="item-blank-note">说明：{{ activeItem.blank_check_note }}</text>
-                    <text v-if="activeItem.blank_purchase_link" class="item-blank-link" @tap="openPurchaseLink(activeItem.blank_purchase_link)">
+                    <text v-if="activeItem.blank_purchase_link" class="item-blank-link" @tap.stop="openPurchaseLink(activeItem.blank_purchase_link)">
                       购买链接：{{ activeItem.blank_purchase_link }}
                     </text>
                   </view>
@@ -235,7 +231,7 @@
                 </view>
               </view>
 
-	              <view v-if="!activeItemFinalConfirmed" class="item-actions">
+	              <view v-if="!activeItemFinalConfirmed" class="item-actions" @tap.stop>
                   <template v-if="showBlankReviewActions">
                     <button
                       class="btn-mini blank-replace"
@@ -475,9 +471,25 @@
               <view class="history-main">
                 <view class="history-head">
                   <text class="history-title">{{ event.title }}</text>
-                  <text class="history-time font-title">{{ event.timeText }}</text>
+                  <view class="history-head-right">
+                    <text class="history-time font-title">{{ event.timeText }}</text>
+                    <text
+                      v-if="event.copyText"
+                      class="history-copy font-title"
+                      @tap.stop="copyHistoryLogistics(event)"
+                    >
+                      复制单号
+                    </text>
+                  </view>
                 </view>
-                <text v-if="event.desc" class="history-desc">{{ event.desc }}</text>
+                <text
+                  v-if="event.desc"
+                  class="history-desc"
+                  :class="{ copyable: !!event.copyText }"
+                  @tap.stop="handleHistoryDescTap(event)"
+                >
+                  {{ event.desc }}
+                </text>
                 <view v-if="event.images && event.images.length" class="history-image-list">
                   <image
                     v-for="(img, imgIdx) in event.images.slice(0, 3)"
@@ -533,6 +545,8 @@
         <view v-if="showBottomBar" :style="{ height: footerPlaceholderHeight }"></view>
       </view>
     </scroll-view>
+
+    <loading-toast :show="loading" text="正在获取投递详情..." />
 
     <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: bottomBarPadding }">
       <view
@@ -674,6 +688,13 @@
 	      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
 	        <text class="custom-modal-title">确认收到素材</text>
 	        <text class="custom-modal-desc">确认你已收到买家寄送的素材吗？</text>
+          <view v-if="materialConfirmHasExpressNo" class="material-confirm-logistics" @tap="copyMaterialConfirmExpressNo">
+            <text class="material-confirm-logistics-label">买家寄送单号</text>
+            <view class="material-confirm-logistics-main">
+              <text class="material-confirm-logistics-value">{{ materialConfirmExpressText }}</text>
+              <text class="material-confirm-logistics-copy">点击复制</text>
+            </view>
+          </view>
 	        <view class="custom-modal-actions">
 	          <button
 	            class="custom-modal-btn cancel"
@@ -697,16 +718,40 @@
 	    <common-modal v-model:visible="shipModalVisible" width="660rpx" :closeable="!shipSubmitting">
 	      <view class="ship-form-modal">
 	        <text class="ship-form-tip">{{ shipModalDescText }}</text>
-	        <view class="ship-form-address-card" @tap="copyReturnAddress">
-	          <view class="ship-form-address-badge">寄</view>
-	          <view class="ship-form-address-content">
-	            <view class="ship-form-address-top">
-	              <text class="ship-form-address-name">{{ shipModalAddressName }}</text>
-	              <text class="ship-form-address-phone">{{ shipModalAddressPhone }}</text>
-	            </view>
-	            <text class="ship-form-address-line">{{ shipModalAddressLine }}</text>
+	        <view v-if="creatorAddressInfo" class="ship-form-address-section">
+	          <view class="ship-form-address-label-row">
+	            <text class="ship-form-address-label-title">寄件信息</text>
+	            <text class="ship-form-address-copy-action" @tap.stop="copyCreatorAddress">复制地址</text>
 	          </view>
-	          <uni-icons type="right" size="18" color="#c0c8d7" />
+	          <view class="ship-form-address-card" @tap="copyCreatorAddress">
+	            <view class="ship-form-address-badge">寄</view>
+	            <view class="ship-form-address-content">
+	              <view class="ship-form-address-top">
+	                <text class="ship-form-address-name">{{ creatorAddressInfo.receiver_name || '-' }}</text>
+	                <text class="ship-form-address-phone">{{ creatorAddressInfo.receiver_phone || '-' }}</text>
+	              </view>
+	              <text class="ship-form-address-line">{{ creatorAddressInfo.full_address || '-' }}</text>
+	            </view>
+	            <uni-icons type="right" size="18" color="#c0c8d7" />
+	          </view>
+	        </view>
+
+	        <view class="ship-form-address-section">
+	          <view class="ship-form-address-label-row">
+	            <text class="ship-form-address-label-title">收件信息</text>
+	            <text class="ship-form-address-copy-action" @tap.stop="copyReturnAddress">复制地址</text>
+	          </view>
+	          <view class="ship-form-address-card" @tap="copyReturnAddress">
+	            <view class="ship-form-address-badge receive">收</view>
+	            <view class="ship-form-address-content">
+	              <view class="ship-form-address-top">
+	                <text class="ship-form-address-name">{{ shipModalAddressName }}</text>
+	                <text class="ship-form-address-phone">{{ shipModalAddressPhone }}</text>
+	              </view>
+	              <text class="ship-form-address-line">{{ shipModalAddressLine }}</text>
+	            </view>
+	            <uni-icons type="right" size="18" color="#c0c8d7" />
+	          </view>
 	        </view>
 
 	        <view v-if="shipModalNeedExpress" class="ship-form-row">
@@ -927,6 +972,7 @@ import { ref, computed, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import CommonModal from '@/components/common-modal/common-modal.vue' 
 import OrderStatus from '@/components/order_status/order_status.vue'
+import LoadingToast from '@/components/loading-toast/loading-toast.vue'
 import {
   websiteUrl,
   global,
@@ -969,6 +1015,18 @@ function setActiveItem(item) {
   if (id > 0) {
     activeItemId.value = id
   }
+}
+
+function goSubmissionItemDetail(item) {
+  const sid = Number(submissionId.value || queueInfo.value?.submission_id || 0)
+  const itemID = getItemID(item)
+  if (!sid || !itemID) {
+    uni.showToast({ title: '缺少投递信息', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/submission_item_detail/submission_item_detail?submission_id=${sid}&item_id=${itemID}`
+  })
 }
 
 function isActiveItem(item) {
@@ -1150,8 +1208,7 @@ const reviewInfo = computed(() => {
     images,
   }
 })
-const returnAddressInfo = computed(() => {
-  const raw = queueInfo.value?.return_address_info || queueInfo.value?.returnAddressInfo || null
+function parseAddressInfo(raw) {
   if (!raw || typeof raw !== 'object') return null
   const addressID = Number(raw.address_id ?? raw.addressId ?? raw.AddressID ?? 0)
   const receiverName = String(raw.receiver_name ?? raw.receiverName ?? raw.ReceiverName ?? '').trim()
@@ -1164,6 +1221,14 @@ const returnAddressInfo = computed(() => {
     receiver_phone: receiverPhone,
     full_address: fullAddress
   }
+}
+
+const returnAddressInfo = computed(() => {
+  return parseAddressInfo(queueInfo.value?.return_address_info || queueInfo.value?.returnAddressInfo || null)
+})
+
+const creatorAddressInfo = computed(() => {
+  return parseAddressInfo(queueInfo.value?.creator_address_info || queueInfo.value?.creatorAddressInfo || null)
 })
 const progressLogs = computed(() => {
   const q = queueInfo.value || {}
@@ -1266,6 +1331,29 @@ function parseLogExtra(row) {
   } catch (_) {
     return {}
   }
+}
+
+function resolveLogisticsCopyText(row) {
+  if (!row) return ''
+  const eventCode = String(row?.event_code || '').trim()
+  const logisticsEvents = new Set(['buyer_ship_material', 'return_shipped'])
+  if (!logisticsEvents.has(eventCode)) return ''
+
+  const extra = parseLogExtra(row)
+  const expressNo = String(
+    extra?.buyer_express_no ||
+    extra?.return_express_no ||
+    extra?.artist_express_no ||
+    extra?.express_no ||
+    ''
+  ).trim()
+  if (expressNo) return expressNo
+
+  const content = String(row?.content || '').trim()
+  if (!content) return ''
+  const matched = content.match(/[A-Za-z0-9-]{8,}/g)
+  if (!matched || !matched.length) return ''
+  return String(matched[matched.length - 1] || '').trim()
 }
 
 function isRejectNegotiatingLog(row) {
@@ -1396,6 +1484,7 @@ const creativeHistoryEvents = computed(() => {
         title: historyTitle(row),
         desc: historyDesc(row),
         images: parseHistoryImages(row),
+        copyText: resolveLogisticsCopyText(row),
         timeText: formatHistoryTime(row?.created_at),
         dotClass,
         logType,
@@ -1457,6 +1546,27 @@ const materialConfirmModalVisible = ref(false)
 const materialConfirmItemID = ref(0)
 const blankStockSnapshotMap = ref({})
 const blankStockSnapshotLoadingMap = ref({})
+
+const materialConfirmItem = computed(() => {
+  const targetID = Number(materialConfirmItemID.value || 0)
+  if (!targetID) return null
+  return items.value.find((row) => Number(row?.id || row?.ID || 0) === targetID) || null
+})
+
+const materialConfirmExpressNo = computed(() => {
+  return String(materialConfirmItem.value?.buyer_express_no || '').trim()
+})
+
+const materialConfirmExpressCompany = computed(() => {
+  return String(materialConfirmItem.value?.buyer_express_company || '').trim() || '快递'
+})
+
+const materialConfirmHasExpressNo = computed(() => !!materialConfirmExpressNo.value)
+
+const materialConfirmExpressText = computed(() => {
+  if (!materialConfirmExpressNo.value) return ''
+  return `${materialConfirmExpressCompany.value} ${materialConfirmExpressNo.value}`
+})
 
 // ================== 确认/审核弹窗状态 ==================
 const auditModalVisible = ref(false)
@@ -1703,11 +1813,11 @@ function formatItemStatus(st) {
   switch (s) {
     case 0: return '待处理/排队中'
     case 1: return '已抢到，待确认'
-    case 2: return `等待${creatorRoleText.value}确认`
-    case 3: return '待付款'
-    case 4: return '已下单/进行中'
-    case 5: return '未中选'
-    case 6: return '已放弃/取消'
+    case 2: return '待付款'
+    case 3: return '已下单/进行中'
+    case 4: return '未中选'
+    case 5: return '已放弃'
+    case 6: return '已过期'
     case 7: return '待寄送素材'
     case 8: return '素材寄送中'
     default: return '未知'
@@ -2786,8 +2896,7 @@ function confirmNegotiationModal() {
   submitNegotiationDecision()
 }
 
-function buildReturnAddressText() {
-  const info = effectiveReturnAddressInfo.value || {}
+function buildAddressText(info) {
   const name = String(info?.receiver_name || '').trim()
   const phone = String(info?.receiver_phone || '').trim()
   const addr = String(info?.full_address || '').trim()
@@ -2795,7 +2904,7 @@ function buildReturnAddressText() {
 }
 
 function copyReturnAddress() {
-  const text = buildReturnAddressText()
+  const text = buildAddressText(effectiveReturnAddressInfo.value || {})
   if (!text) {
     uni.showToast({ title: '暂无地址可复制', icon: 'none' })
     return
@@ -2804,6 +2913,40 @@ function copyReturnAddress() {
     data: text,
     success: () => {
       uni.showToast({ title: '地址已复制', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+    }
+  })
+}
+
+function copyCreatorAddress() {
+  const text = buildAddressText(creatorAddressInfo.value || {})
+  if (!text) {
+    uni.showToast({ title: '暂无地址可复制', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '地址已复制', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+    }
+  })
+}
+
+function copyMaterialConfirmExpressNo() {
+  const text = String(materialConfirmExpressNo.value || '').trim()
+  if (!text) {
+    uni.showToast({ title: '暂无单号可复制', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '单号已复制', icon: 'none' })
     },
     fail: () => {
       uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
@@ -2826,6 +2969,28 @@ function copyReturnExpressNo() {
       uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
     }
   })
+}
+
+function copyHistoryLogistics(event) {
+  const text = String(event?.copyText || '').trim()
+  if (!text) {
+    uni.showToast({ title: '暂无单号可复制', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '单号已复制', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+    }
+  })
+}
+
+function handleHistoryDescTap(event) {
+  if (!event?.copyText) return
+  copyHistoryLogistics(event)
 }
 
 const shipCompanyOptions = [
@@ -4333,6 +4498,14 @@ onShow(() => {
   gap: 10rpx;
 }
 
+.history-head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+  flex-shrink: 0;
+}
+
 .history-title {
   flex: 1;
   min-width: 0;
@@ -4343,10 +4516,15 @@ onShow(() => {
 }
 
 .history-time.font-title {
-  flex-shrink: 0;
   font-size: 23rpx;
   line-height: 1.4;
   color: #8e99aa;
+}
+
+.history-copy {
+  font-size: 20rpx;
+  line-height: 1.2;
+  color: #78daf5;
 }
 
 .history-desc {
@@ -4355,6 +4533,10 @@ onShow(() => {
   font-size: 23rpx;
   line-height: 1.6;
   color: #758096;
+}
+
+.history-desc.copyable {
+  color: #5c7898;
 }
 
 .history-image-list {
@@ -4973,6 +5155,47 @@ onShow(() => {
   padding: 0 20rpx;
 }
 
+.material-confirm-logistics {
+  width: 100%;
+  margin-top: -8rpx;
+  margin-bottom: 24rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 16rpx;
+  background: #f5f8fd;
+  box-sizing: border-box;
+}
+
+.material-confirm-logistics-label {
+  display: block;
+  font-size: 22rpx;
+  color: #8b97ac;
+  line-height: 1.2;
+}
+
+.material-confirm-logistics-main {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.material-confirm-logistics-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  color: #334258;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.material-confirm-logistics-copy {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #78daf5;
+  line-height: 1.2;
+}
+
 .blank-review-link-input {
   width: 100%;
   height: 84rpx;
@@ -5027,8 +5250,30 @@ onShow(() => {
   margin-bottom: 10rpx;
 }
 
-.ship-form-address-card {
+.ship-form-address-section + .ship-form-address-section {
+  margin-top: 12rpx;
+}
+
+.ship-form-address-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
   margin-top: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.ship-form-address-label-title {
+  font-size: 22rpx;
+  color: #7f8ba0;
+}
+
+.ship-form-address-copy-action {
+  font-size: 22rpx;
+  color: #78daf5;
+}
+
+.ship-form-address-card {
   background: #ffffff;
   border-radius: 12rpx;
   padding: 10rpx 0 18rpx;
@@ -5051,6 +5296,11 @@ onShow(() => {
   justify-content: center;
   flex-shrink: 0;
   margin-top: 6rpx;
+}
+
+.ship-form-address-badge.receive {
+  background: #78daf5;
+  color: #ffffff;
 }
 
 .ship-form-address-content {

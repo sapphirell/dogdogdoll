@@ -1,31 +1,33 @@
 <template>
   <view class="item-detail-page">
     <scroll-view class="scroll-body" scroll-y>
-      <view v-if="loading" class="state-box">
-        <text class="state-title">加载中…</text>
-        <text class="state-desc">正在获取作品详情</text>
-      </view>
-
-      <view v-else-if="errorMsg" class="state-box state-error">
+      <view v-if="!loading && errorMsg" class="state-box state-error">
         <text class="state-title">获取失败</text>
         <text class="state-desc">{{ errorMsg }}</text>
         <button class="btn-retry" @tap="fetchAll">重试</button>
       </view>
 
-      <view v-else-if="!currentItem" class="state-box state-error">
+      <view v-else-if="!loading && !currentItem" class="state-box state-error">
         <text class="state-title">作品不存在</text>
         <text class="state-desc">未找到对应的投递内容</text>
       </view>
 
-      <view v-else class="content" :class="{ 'with-bottom-actions': hasBottomActions }">
+      <view v-else-if="!loading" class="content" :class="{ 'with-bottom-actions': hasBottomActions }">
         <view class="card status-card">
-          <view class="status-row">
+          <view class="status-row status-row-link" @tap="goToSubmissionDetailPage">
             <text class="status-label">投递编号</text>
-            <text class="status-value font-title">#{{ queueInfo?.submission_id || submissionId }}</text>
+            <view class="status-link-value">
+              <text class="status-value font-title">#{{ queueInfo?.submission_id || submissionId }}</text>
+              <uni-icons type="arrow-right" size="14" color="#8fa0b5" />
+            </view>
           </view>
           <view class="status-row">
             <text class="status-label">订单状态</text>
-            <text class="status-value">{{ queueInfo?.status_text || '--' }}</text>
+            <view class="status-value status-pair">
+              <text class="status-main">{{ queueInfo?.status_text || '--' }}</text>
+              <text class="status-sep">-</text>
+              <text class="status-item">{{ currentItemStatusText }}</text>
+            </view>
           </view>
           <view class="status-row">
             <text class="status-label">付款状态</text>
@@ -50,6 +52,41 @@
                 <text class="price-symbol">¥</text>
                 <text class="price-value font-title">{{ formatAmount(currentItem.price_total) }}</text>
               </view>
+            </view>
+          </view>
+
+          <view v-if="showLogisticsInfoBlock" class="item-logistics-box">
+            <view class="item-logistics-row">
+              <text class="item-logistics-label">快递单号</text>
+              <view class="item-logistics-main">
+                <text class="item-logistics-value">
+                  {{ currentItemBuyerExpressNo ? (currentItemBuyerExpressCompany + ' ' + currentItemBuyerExpressNo) : '未提交' }}
+                </text>
+                <text
+                  v-if="currentItemBuyerExpressNo"
+                  class="item-logistics-copy font-title"
+                  @tap.stop="copyBuyerExpressNo"
+                >
+                  复制
+                </text>
+              </view>
+            </view>
+            <view class="item-logistics-row">
+              <text class="item-logistics-label">寄送时间</text>
+              <text class="item-logistics-value">{{ currentItemBuyerShippedAt > 0 ? formatTime(currentItemBuyerShippedAt) : '未提交' }}</text>
+            </view>
+            <view class="item-logistics-row">
+              <text class="item-logistics-label">{{ logisticsDeadlineLabel }}</text>
+              <text class="item-logistics-value">{{ logisticsDeadlineText }}</text>
+            </view>
+            <view class="item-logistics-row">
+              <text class="item-logistics-label">时效检查</text>
+              <text
+                class="item-logistics-value"
+                :class="{ 'item-logistics-overdue': logisticsOverdueResult.overdue }"
+              >
+                {{ logisticsOverdueResult.text }}
+              </text>
             </view>
           </view>
         </view>
@@ -146,6 +183,8 @@
         </view>
       </view>
     </scroll-view>
+
+    <loading-toast :show="loading" text="正在加载作品详情..." />
 
     <view v-if="hasBottomActions" class="bottom-action-bar">
       <view v-if="showBuyerDecisionActions" class="bottom-action-row buyer-triple">
@@ -389,6 +428,8 @@ const SubmissionStatusSelectedPay = 3
 const SubmissionStatusPaid = 4
 const SubmissionStatusReturned = 8
 const SubmissionStatusFinished = 9
+const ItemStatusWaitBuyerShip = 7
+const ItemStatusBuyerShipped = 8
 const PaymentMethodPlatform = 1
 const PaymentMethodQRCode = 2
 const PlanPaymentMethodQRCode = 1
@@ -443,7 +484,25 @@ const currentItem = computed(() => {
   return items.value.find((item) => Number(item?.id || 0) === id) || null
 })
 
+const nowUnixSec = computed(() => Math.floor(Date.now() / 1000))
+
 const currentItemId = computed(() => Number(currentItem.value?.id || 0))
+
+const currentItemStatusText = computed(() => {
+  const status = Number(currentItem.value?.status || 0)
+  switch (status) {
+    case 0: return '待处理/排队中'
+    case 1: return '已抢到，待确认'
+    case 2: return '待付款'
+    case 3: return '已下单/进行中'
+    case 4: return '未中选'
+    case 5: return '已放弃'
+    case 6: return '已过期'
+    case ItemStatusWaitBuyerShip: return '待寄送素材'
+    case ItemStatusBuyerShipped: return '待创作者签收'
+    default: return '未知状态'
+  }
+})
 
 const addonsText = computed(() => {
   const raw = currentItem.value?.addons_json
@@ -470,6 +529,83 @@ const paymentMethod = computed(() => {
   return Number(queueInfo.value?.payment_method || 0)
 })
 
+const shippingDeadlineInfo = computed(() => {
+  const raw = queueInfo.value?.shipping_deadline
+  if (!raw || typeof raw !== 'object' || !raw.active) return null
+  const deadlineAt = Number(raw.deadline_at || 0)
+  const remaining = deadlineAt > 0
+    ? Math.max(0, deadlineAt - Number(nowUnixSec.value || 0))
+    : Math.max(0, Number(raw.remaining_seconds || 0))
+  return {
+    active: true,
+    deadlineType: String(raw.deadline_type || '').trim() === 'ship' ? 'ship' : 'arrival',
+    deadlineTypeText: String(raw.deadline_type_text || '').trim(),
+    deadlineDate: String(raw.deadline_date || '').trim(),
+    deadlineAt,
+    remainingSeconds: remaining,
+    expired: !!raw.expired || (deadlineAt > 0 && remaining <= 0),
+  }
+})
+
+const currentItemBuyerExpressNo = computed(() => (
+  String(currentItem.value?.buyer_express_no || '').trim()
+))
+
+const currentItemBuyerExpressCompany = computed(() => (
+  String(currentItem.value?.buyer_express_company || '').trim() || '快递'
+))
+
+const currentItemBuyerShippedAt = computed(() => Number(currentItem.value?.buyer_shipped_at || 0))
+const currentItemArtistReceivedAt = computed(() => Number(currentItem.value?.artist_received_at || 0))
+
+const waitingArtistReceiveExpress = computed(() => (
+  Number(currentItem.value?.status || 0) === ItemStatusBuyerShipped
+))
+
+const showLogisticsInfoBlock = computed(() => {
+  if (!currentItem.value) return false
+  return waitingArtistReceiveExpress.value
+})
+
+const logisticsDeadlineLabel = computed(() => {
+  const deadline = shippingDeadlineInfo.value
+  if (!deadline) return '时间要求'
+  return deadline.deadlineType === 'ship' ? '最晚寄送时间' : '最晚寄到时间'
+})
+
+const logisticsDeadlineText = computed(() => {
+  const deadline = shippingDeadlineInfo.value
+  if (!deadline || !deadline.deadlineDate) return '未设置'
+  return deadline.deadlineDate
+})
+
+const logisticsOverdueResult = computed(() => {
+  const deadline = shippingDeadlineInfo.value
+  if (!deadline || !deadline.deadlineAt) {
+    return { overdue: false, text: '未设置时限' }
+  }
+  const shippedAt = Number(currentItemBuyerShippedAt.value || 0)
+  const receivedAt = Number(currentItemArtistReceivedAt.value || 0)
+  const now = Number(nowUnixSec.value || 0)
+  const deadlineAt = Number(deadline.deadlineAt || 0)
+
+  if (deadline.deadlineType === 'ship') {
+    if (shippedAt > 0) {
+      if (shippedAt > deadlineAt) return { overdue: true, text: '已超期寄送' }
+      return { overdue: false, text: '已按时寄送' }
+    }
+    if (now > deadlineAt) return { overdue: true, text: '已超期，尚未寄送' }
+    return { overdue: false, text: '未超期' }
+  }
+
+  if (receivedAt > 0) {
+    if (receivedAt > deadlineAt) return { overdue: true, text: '已超期寄到' }
+    return { overdue: false, text: '已按时寄到' }
+  }
+  if (now > deadlineAt) return { overdue: true, text: '已超期，待创作者签收' }
+  return { overdue: false, text: '待签收，未超期' }
+})
+
 const payStatus = computed(() => {
   return Number(queueInfo.value?.pay_status || 0)
 })
@@ -487,7 +623,7 @@ const paymentMethodText = computed(() => {
 const paymentStatusText = computed(() => {
   const status = Number(queueInfo.value?.status || 0)
   if ([SubmissionStatusPaid, SubmissionStatusReturned].includes(status)) {
-    return paymentMethod.value === PaymentMethodQRCode ? '已付款（扫码转账）' : '已付款（在线支付）'
+    return '已付款'
   }
   if (status === SubmissionStatusFinished) return '已结清'
   if (status === SubmissionStatusSelectedPay) return '待付款'
@@ -954,6 +1090,23 @@ function previewImages(list, index = 0) {
   })
 }
 
+function copyBuyerExpressNo() {
+  const text = String(currentItemBuyerExpressNo.value || '').trim()
+  if (!text) {
+    uni.showToast({ title: '暂无快递单号', icon: 'none' })
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '快递单号已复制', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请稍后重试', icon: 'none' })
+    }
+  })
+}
+
 function resetFinalPayState() {
   finalPayMethodOptions.value = []
   finalSelectedPayMethodId.value = 0
@@ -1149,6 +1302,17 @@ async function submitFinalBalancePayAndConfirm() {
   if (!shouldAutoConfirm) return
   finalPayPendingConfirm.value = false
   await doConfirmItemFinalRequest()
+}
+
+function goToSubmissionDetailPage() {
+  const sid = Number(submissionId.value || queueInfo.value?.submission_id || 0)
+  if (!sid) {
+    uni.showToast({ title: '缺少投递编号', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pkg-creator/creator_order/received-detail/received-detail?submission_id=${sid}`
+  })
 }
 
 function goStepSubmit() {
@@ -1606,6 +1770,7 @@ onShow(() => {
 
 <style scoped lang="scss">
 .item-detail-page {
+  position: relative;
   min-height: 100vh;
   background: linear-gradient(180deg, #f7f9fc 0%, #f3f5f9 45%, #f7f9fc 100%);
 }
@@ -1619,7 +1784,7 @@ onShow(() => {
 }
 
 .content.with-bottom-actions {
-  padding-bottom: 190rpx;
+  padding-bottom: 220rpx;
 }
 
 .card {
@@ -1661,6 +1826,28 @@ onShow(() => {
   color: #3a4659;
 }
 
+.status-value.status-pair {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.status-main,
+.status-item {
+  max-width: 220rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-sep {
+  color: #9aa6b8;
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+
 .item-main {
   display: flex;
   gap: 18rpx;
@@ -1700,6 +1887,57 @@ onShow(() => {
   display: flex;
   align-items: baseline;
   gap: 4rpx;
+}
+
+.item-logistics-box {
+  margin-top: 16rpx;
+  padding: 16rpx;
+  border-radius: 16rpx;
+  background: #f6faff;
+}
+
+.item-logistics-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.item-logistics-row + .item-logistics-row {
+  margin-top: 10rpx;
+}
+
+.item-logistics-label {
+  font-size: 23rpx;
+  color: #8995a8;
+}
+
+.item-logistics-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+
+.item-logistics-value {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #3b475a;
+  word-break: break-all;
+}
+
+.item-logistics-copy {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #78daf5;
+}
+
+.item-logistics-overdue {
+  color: #e08f8f;
 }
 
 .price-symbol {
@@ -1940,20 +2178,22 @@ onShow(() => {
 
 .bottom-action-bar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: calc(24rpx + constant(safe-area-inset-bottom));
+  bottom: calc(24rpx + env(safe-area-inset-bottom));
   z-index: 20;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 -8rpx 24rpx rgba(23, 34, 53, 0.08);
-  padding: 14rpx 20rpx calc(14rpx + constant(safe-area-inset-bottom));
-  padding: 14rpx 20rpx calc(14rpx + env(safe-area-inset-bottom));
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
   box-sizing: border-box;
+  pointer-events: none;
 }
 
 .bottom-action-row {
   display: flex;
   gap: 14rpx;
+  pointer-events: auto;
 }
 
 .bottom-action-row.single .bottom-action-btn {

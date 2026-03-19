@@ -251,8 +251,75 @@
           已开始的本平台计划不能将结束时间提前，只能维持或延后。
         </view>
       </view>
-	  
 
+      <view class="form-item">
+        <text class="label">寄送约定</text>
+        <view class="disabled-touch-wrap">
+          <picker
+            :range="shippingOptions"
+            range-key="text"
+            :value="shippingIndex"
+            :disabled="form.order_type === 1"
+            @change="onShippingChange"
+          >
+            <view class="picker">
+              {{
+                shippingOptions[shippingIndex].text +
+                  (form.order_type === 1 ? '（长期接单固定为分别寄送）' : '')
+              }}
+            </view>
+          </picker>
+          <view
+            v-if="isEditMode && form.order_type === 1"
+            class="disabled-touch-mask"
+            @tap.stop="showDisabledReason('长期接单固定为分别寄送，不能修改寄送约定。')"
+          />
+        </view>
+        <view class="tip" v-if="form.order_config.extra.shipping.mode === 'unified'">
+          统一寄送：要求本次投递的单主统一在一个日期之前{{ shippingDeadlineTypeText }}（仅可选“接单截止后 ≥{{ unifiedMinLeadDays }} 天”的日期）。
+        </view>
+        <view class="tip" v-else>
+          分别寄送：每个单主需在订单开始前的 N 天发出快递（注意是发出，不是寄到），请预留物流时间；未按要求寄出的订单不计入超时计算。
+        </view>
+      </view>
+
+      <view class="form-item" v-if="form.order_config.extra.shipping.mode === 'unified'">
+        <text class="label">统一时间类型</text>
+        <view class="size-row">
+          <view
+            v-for="opt in shippingDeadlineTypeOptions"
+            :key="opt.value"
+            class="size-tag"
+            :class="{ active: form.order_config.extra.shipping.deadline_type === opt.value }"
+            @click="onShippingDeadlineTypeChange(opt.value)"
+          >
+            {{ opt.text }}
+          </view>
+        </view>
+        <view class="tip">寄送时间按“寄出”计算，寄到时间按“送达创作者地址”计算。</view>
+      </view>
+
+      <view class="form-item" v-if="form.order_config.extra.shipping.mode === 'unified'">
+        <text class="label">统一时间节点</text>
+        <view class="picker" @click="showUnifiedDate = true">
+          {{ form.order_config.extra.shipping.unified_date || `选择日期（≥ 截止后${unifiedMinLeadDays}天）` }}
+        </view>
+        <common-date-picker
+          v-model:show="showUnifiedDate"
+          v-model="form.order_config.extra.shipping.unified_date"
+          :minDate="unifiedMinDate"
+          title="选择统一寄送日期"
+        />
+      </view>
+
+      <view class="form-item" v-if="form.order_config.extra.shipping.mode === 'separate'">
+        <text class="label">开始前 N 天发出</text>
+        <uni-number-box
+          v-model="form.order_config.extra.shipping.separate_days_before_start"
+          :min="0"
+          :max="60"
+        />
+      </view>
 
       <block v-if="form.service_scene === 2">
         <view class="form-item" v-if="form.order_type !== 5">
@@ -659,6 +726,10 @@ const shippingOptions = [
   { value: 'unified', text: '统一寄送' },
   { value: 'separate', text: '分别寄送' }
 ]
+const shippingDeadlineTypeOptions = [
+  { value: 'arrival', text: '寄到时间' },
+  { value: 'ship', text: '寄送时间' }
+]
 
 const allSizes = ['一分', '二分', '三分', '四分', '五分', '六分', '八分', '十二分']
 
@@ -841,6 +912,7 @@ const form = ref({
       shipping: {
         mode: 'separate',
         unified_date: '',
+        deadline_type: 'ship',
         separate_days_before_start: 0
       },
       size_surcharges: [],
@@ -1041,12 +1113,35 @@ const dummyShow = ref(false)
 
 const nowUnix = () => Math.floor(Date.now() / 1000)
 
+function normalizeShippingDeadlineType(mode, deadlineType) {
+  if (mode === 'separate') return 'ship'
+  return deadlineType === 'ship' ? 'ship' : 'arrival'
+}
+
+function normalizeShippingFormState(shipping) {
+  const mode = String(shipping?.mode || 'separate')
+  return {
+    mode,
+    unified_date: String(shipping?.unified_date || ''),
+    deadline_type: normalizeShippingDeadlineType(mode, String(shipping?.deadline_type || '')),
+    separate_days_before_start: Number(shipping?.separate_days_before_start || 0)
+  }
+}
+
+const unifiedMinLeadDays = computed(() => (
+  form.value.order_config.extra.shipping.deadline_type === 'ship' ? 3 : 7
+))
+
 const unifiedMinDate = computed(() => {
   const ct = toUnix(form.value.close_date, form.value.close_time)
   if (!ct) return ''
-  const d = new Date((ct + 10 * 86400) * 1000)
+  const d = new Date((ct + unifiedMinLeadDays.value * 86400) * 1000)
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 })
+
+const shippingDeadlineTypeText = computed(() => (
+  form.value.order_config.extra.shipping.deadline_type === 'ship' ? '寄送' : '寄到'
+))
 
 /* ====== 是否为长期接单 ====== */
 const isLongTermOrder = computed(() => form.value.order_type === 1)
@@ -1259,10 +1354,11 @@ function onOrderTypeChange(e) {
   if (!opt) return
   form.value.order_type = opt.value
 
-  // 长期接单时强制分别寄送（手改毛表单不再展示寄送 UI，仅内部保持默认值）
+  // 长期接单时强制分别寄送
   if (form.value.order_type === 1) {
     form.value.order_config.extra.shipping.mode = 'separate'
     form.value.order_config.extra.shipping.unified_date = ''
+    form.value.order_config.extra.shipping.deadline_type = 'ship'
   }
 }
 
@@ -1297,12 +1393,24 @@ function onServiceSceneSwitch(e) {
 
 function onShippingChange(e) {
   const idx = Number(e.detail.value || 0)
-  form.value.order_config.extra.shipping.mode = shippingOptions[idx].value
-  if (shippingOptions[idx].value === 'unified') {
+  const targetMode = shippingOptions[idx].value
+  form.value.order_config.extra.shipping.mode = targetMode
+  form.value.order_config.extra.shipping.deadline_type = normalizeShippingDeadlineType(
+    targetMode,
+    form.value.order_config.extra.shipping.deadline_type
+  )
+  if (targetMode === 'unified') {
     form.value.order_config.extra.shipping.separate_days_before_start = 0
   } else {
     form.value.order_config.extra.shipping.unified_date = ''
   }
+}
+
+function onShippingDeadlineTypeChange(type) {
+  form.value.order_config.extra.shipping.deadline_type = normalizeShippingDeadlineType(
+    form.value.order_config.extra.shipping.mode,
+    type
+  )
 }
 
 function onPremiumQueueSwitch(e) {
@@ -1793,6 +1901,7 @@ async function loadDetail(id) {
         shipping: {
           mode: 'separate',
           unified_date: '',
+          deadline_type: 'ship',
           separate_days_before_start: 0
         },
         size_surcharges: [],
@@ -1802,6 +1911,7 @@ async function loadDetail(id) {
       },
       cfg.extra || {}
     )
+    form.value.order_config.extra.shipping = normalizeShippingFormState(form.value.order_config.extra.shipping)
     originalPlan.value.has_qrcode_payment = originalPaymentMethods.includes(1)
     originalPlan.value.scan_deposit_rate = originalPlan.value.has_qrcode_payment
       ? normalizeScanDepositRate(form.value.order_config.extra.scan_deposit_rate)
@@ -1812,6 +1922,7 @@ async function loadDetail(id) {
     if (form.value.order_type === 1) {
       form.value.order_config.extra.shipping.mode = 'separate'
       form.value.order_config.extra.shipping.unified_date = ''
+      form.value.order_config.extra.shipping.deadline_type = 'ship'
     }
 
     // 兼容字符串数组 / 对象数组的 step_config_json
@@ -1999,11 +2110,23 @@ async function submitPlan() {
         scan_deposit_rate: hasQRCodePayment.value
           ? normalizeScanDepositRate(form.value.order_config.extra.scan_deposit_rate)
           : 0,
-        // 手改毛前端不展示寄送配置，这里用固定默认值占位，方便后端解包
         shipping: {
-          mode: 'separate',
-          unified_date: '',
-          separate_days_before_start: 0
+          mode: form.value.order_config.extra.shipping.mode,
+          unified_date:
+            form.value.order_config.extra.shipping.mode === 'unified'
+              ? form.value.order_config.extra.shipping.unified_date || ''
+              : '',
+          deadline_type:
+            form.value.order_config.extra.shipping.mode === 'unified'
+              ? normalizeShippingDeadlineType(
+                  form.value.order_config.extra.shipping.mode,
+                  form.value.order_config.extra.shipping.deadline_type
+                )
+              : 'ship',
+          separate_days_before_start:
+            form.value.order_config.extra.shipping.mode === 'separate'
+              ? Number(form.value.order_config.extra.shipping.separate_days_before_start || 0)
+              : 0
         },
         size_surcharges: (form.value.order_config.extra.size_surcharges || []).map(it => ({
           size: it.size,
