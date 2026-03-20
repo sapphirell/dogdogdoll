@@ -1,7 +1,6 @@
 {
     "version" : "1",
     "prompt" : "template",
-    "prompt" : "template",
     "title" : "服务协议和隐私政策",
     "message" : "请你务必审慎阅读、充分理解《服务协议》和《隐私政策》各条款。为了更好地向你提供服务，我们需要收集必要的设备标识和操作日志信息用于分析、保障安全与优化体验。<br/>你可阅读<a href=\"https://m.dogdogdoll.com/#/pages/permission/permission\">《服务协议》</a>和<a href=\"https://m.dogdogdoll.com/#/pages/private/private\">《隐私政策》</a>了解详情。若你同意，请点击下方按钮开始使用。",
     "buttonAccept" : "同意并接受",

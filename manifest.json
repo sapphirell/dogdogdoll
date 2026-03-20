@@ -44,7 +44,8 @@
                     "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
                 ],
                 "abiFilters" : [ "arm64-v8a", "x86" ],
-                "targetSdkVersion" : 30
+                "targetSdkVersion" : 30,
+                "schemes" : "dogdogdoll"
             },
             /* ios打包配置 */
             "ios" : {
@@ -63,7 +64,8 @@
                     "entitlements" : {
                         "com.apple.developer.associated-domains" : [ "applinks:m.dogdogdoll.com" ]
                     }
-                }
+                },
+                "urltypes" : "dogdogdoll"
             },
             /* SDK配置 */
             "sdkConfigs" : {

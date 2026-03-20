@@ -115,25 +115,25 @@
         <view class="substage-list">
           <view class="substage-item">
             <view class="substage-head">
-              <text class="substage-title">三要素预校验</text>
+              <text class="substage-title">身份信息核验</text>
               <text class="substage-value" :class="{ success: statusData.three_factor_passed, muted: !statusData.three_factor_passed }">
                 {{ statusData.three_factor_passed ? '已通过' : '待校验' }}
               </text>
             </view>
             <text class="substage-desc">
-              {{ statusData.three_factor_message || '提交姓名、身份证号、手机号后开始校验' }}
+              {{ threeFactorDisplayMessage }}
             </text>
           </view>
 
           <view class="substage-item">
             <view class="substage-head">
-              <text class="substage-title">活体核验</text>
+              <text class="substage-title">刷脸认证</text>
               <text class="substage-value" :class="{ success: statusData.liveness_passed, muted: !statusData.liveness_passed }">
                 {{ statusData.liveness_passed ? '已完成' : '待完成' }}
               </text>
             </view>
             <text class="substage-desc">
-              {{ statusData.liveness_message || '三要素通过后进入支付宝活体核验' }}
+              {{ livenessDisplayMessage }}
             </text>
           </view>
         </view>
@@ -282,6 +282,38 @@ const submitButtonText = computed(() => {
   if (statusData.value.next_action === 'go_liveness') return '继续前往支付宝认证'
   if (threeFactorInfoLocked.value) return '认证信息已提交'
   return '开始认证'
+})
+
+function isMeaninglessStageMessage (message) {
+  const text = String(message || '').trim()
+  if (!text) return true
+  const normalized = text.toLowerCase()
+  return [
+    '1000',
+    'true',
+    'false',
+    'success',
+    'passed',
+    'pass',
+    'ok'
+  ].includes(normalized)
+}
+
+const threeFactorDisplayMessage = computed(() => {
+  const message = String(statusData.value.three_factor_message || '').trim()
+  if (!isMeaninglessStageMessage(message)) return message
+  if (statusData.value.three_factor_passed) return '已完成身份信息核验。'
+  return '填写个人信息后开始核验。'
+})
+
+const livenessDisplayMessage = computed(() => {
+  const message = String(statusData.value.liveness_message || '').trim()
+  if (!isMeaninglessStageMessage(message)) return message
+  if (statusData.value.liveness_passed) return '已完成支付宝刷脸认证。'
+  if (statusData.value.three_factor_passed || statusData.value.next_action === 'go_liveness') {
+    return '前往支付宝完成刷脸认证。'
+  }
+  return '身份信息核验通过后，前往支付宝完成刷脸认证。'
 })
 
 async function fetchStatus () {
@@ -629,12 +661,15 @@ onMounted(() => {
   height: 76rpx;
   margin: 0 auto;
   border-radius: 50%;
-  background: linear-gradient(180deg, #fff3e2, #ffe2bd);
-  color: var(--primary-strong);
+  background: linear-gradient(180deg, #9adced, #63bcd4);
+  color: #ffffff;
   font-size: 30rpx;
   font-weight: 800;
   line-height: 76rpx;
   box-shadow: inset 0 0 0 1rpx rgba(217, 112, 46, 0.1);
+  box-shadow:
+    inset 0 0 0 1rpx rgba(255, 255, 255, 0.22),
+    0 10rpx 22rpx rgba(58, 155, 182, 0.22);
 }
 
 .flow-title {

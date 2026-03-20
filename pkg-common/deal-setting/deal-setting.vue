@@ -109,10 +109,10 @@ function getRealnameDisplayValue() {
     return realnameStatus.value.current_stage_text || '认证进行中'
   }
   if (realnameStatus.value.status === 'three_factor_failed') {
-    return '三要素未通过'
+    return '身份信息未通过'
   }
   if (realnameStatus.value.status === 'liveness_failed') {
-    return '活体未通过'
+    return '刷脸认证未通过'
   }
   return '去认证'
 }

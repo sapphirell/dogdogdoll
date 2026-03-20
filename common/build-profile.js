@@ -9,8 +9,8 @@
 // `allowSelectedServerOverride` 用来控制设备本地缓存的 `selectedServer`
 // 是否允许覆盖当前环境里的默认后端地址。
 export const BUILD_PROFILE = Object.freeze({
-  envFileName: 'development', // 本地开发
-  // envFileName: 'test',        // 测试环境
+  // envFileName: 'development', // 本地开发
+  envFileName: 'test',        // 测试环境
   // envFileName: 'production',  // 生产环境
   allowSelectedServerOverride: false
 })
