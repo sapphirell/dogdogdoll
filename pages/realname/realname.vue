@@ -144,7 +144,7 @@
         </view>
       </view>
 
-      <view class="section-card form-card">
+      <view v-if="!statusData.verified" class="section-card form-card">
         <view class="section-header">
           <text class="section-title">填写认证信息</text>
           <text class="section-mark">表单</text>
@@ -255,11 +255,10 @@ let statusPollTimer = null
 let statusPollRounds = 0
 
 const threeFactorInfoLocked = computed(() => {
+  if (statusData.value.status === 'three_factor_failed' || statusData.value.next_action === 'retry_three_factor') {
+    return false
+  }
   return Boolean(
-    statusData.value.real_name_masked ||
-    statusData.value.id_card_no_masked ||
-    statusData.value.mobile_masked ||
-    statusData.value.current_stage !== 'draft' ||
     statusData.value.next_action === 'go_liveness'
   )
 })
@@ -304,6 +303,9 @@ function isMeaninglessStageMessage (message) {
 
 const threeFactorDisplayMessage = computed(() => {
   const message = String(statusData.value.three_factor_message || '').trim()
+  if (statusData.value.status === 'three_factor_failed') {
+    return '填写的信息有误，请核对后重新填写。'
+  }
   if (!isMeaninglessStageMessage(message)) return message
   if (statusData.value.three_factor_passed) return '已完成身份信息核验。'
   return '填写个人信息后开始核验。'
@@ -334,6 +336,10 @@ async function fetchStatus () {
         form.value.real_name = statusData.value.real_name_masked || ''
         form.value.id_card_no = statusData.value.id_card_no_masked || ''
         form.value.mobile = statusData.value.mobile_masked || ''
+      } else if (statusData.value.status === 'three_factor_failed' || statusData.value.next_action === 'retry_three_factor') {
+        form.value.real_name = ''
+        form.value.id_card_no = ''
+        form.value.mobile = ''
       }
     }
   } catch (e) {}
