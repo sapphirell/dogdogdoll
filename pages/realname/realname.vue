@@ -219,7 +219,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { websiteUrl } from '@/common/config.js'
 
 const statusData = ref({
@@ -250,6 +251,8 @@ const form = ref({
 })
 
 const submitting = ref(false)
+let statusPollTimer = null
+let statusPollRounds = 0
 
 const threeFactorInfoLocked = computed(() => {
   return Boolean(
@@ -334,6 +337,42 @@ async function fetchStatus () {
       }
     }
   } catch (e) {}
+}
+
+function shouldPollStatus () {
+  return !statusData.value.verified && (
+    statusData.value.status === 'processing' ||
+    statusData.value.next_action === 'go_liveness' ||
+    statusData.value.next_action === 'wait_provider'
+  )
+}
+
+function stopStatusPolling () {
+  if (statusPollTimer) {
+    clearTimeout(statusPollTimer)
+    statusPollTimer = null
+  }
+  statusPollRounds = 0
+}
+
+async function pollStatusAfterReturn () {
+  if (!shouldPollStatus() || statusPollRounds >= 6) {
+    stopStatusPolling()
+    return
+  }
+  statusPollRounds += 1
+  await fetchStatus()
+  if (!shouldPollStatus() || statusData.value.verified) {
+    stopStatusPolling()
+    return
+  }
+  statusPollTimer = setTimeout(pollStatusAfterReturn, 1500)
+}
+
+function startStatusPolling () {
+  stopStatusPolling()
+  if (!shouldPollStatus()) return
+  statusPollTimer = setTimeout(pollStatusAfterReturn, 800)
 }
 
 function openLaunchURL (launchURL) {
@@ -435,6 +474,15 @@ async function submitVerify () {
 
 onMounted(() => {
   fetchStatus()
+})
+
+onShow(() => {
+  fetchStatus()
+  startStatusPolling()
+})
+
+onUnmounted(() => {
+  stopStatusPolling()
 })
 </script>
 
