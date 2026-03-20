@@ -303,7 +303,7 @@
 		{
 			"path": "creator_order/schedule_board/schedule_board",
 			"style": {
-				"navigationBarTitleText": "日历排期"
+				"navigationStyle": "custom"
 			}
 		},
 			{
