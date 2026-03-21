@@ -1,117 +1,151 @@
 <template>
   <view class="schedule-board-page">
+    <zhouWei-navBar
+      type="transparentFixed"
+      :scrollTop="scrollTop"
+      :backState="2000"
+      :homeState="2000"
+      bgColor="rgba(255,255,255,0.94)"
+      fontColor="#1a202b"
+      transparentFixedFontColor="#1a202b"
+      :shadow="false"
+      :titleCenter="true"
+      title="日历排期"
+    >
+      <template #left>
+        <view class="nav-back-pill" @click="goBack" aria-label="返回">
+          <uni-icons type="arrow-left" size="22" color="#1a202b" />
+        </view>
+      </template>
+      <template #transparentFixedLeft>
+        <view class="nav-back-pill" @click="goBack" aria-label="返回">
+          <uni-icons type="arrow-left" size="22" color="#1a202b" />
+        </view>
+      </template>
+    </zhouWei-navBar>
+
     <loading-toast :show="loading" text="排期加载中..." />
 
-    <view v-if="!loading && errorMsg" class="state-box state-error">
-      <text class="state-title">加载失败</text>
-      <text class="state-desc">{{ errorMsg }}</text>
-      <view class="retry-btn" @tap="fetchBoard">重试</view>
-    </view>
+    <view class="schedule-board-body" :style="{ paddingTop: headerPadPx }">
+      <view v-if="!loading && errorMsg" class="state-box state-error">
+        <text class="state-title">加载失败</text>
+        <text class="state-desc">{{ errorMsg }}</text>
+        <view class="retry-btn" @tap="fetchBoard">重试</view>
+      </view>
 
-    <view v-else-if="!loading" class="board-content">
-      <view class="hero-card">
-        <view class="hero-top">
-          <view class="hero-main">
-            <text class="hero-title font-alimamashuhei">日历排期</text>
-            <text class="hero-sub">{{ heroSubtitle }}</text>
-            <view class="hero-meta-row">
-              <text class="hero-meta-chip">Plan #{{ planId }}</text>
-              <text class="hero-meta-chip">今日 {{ todayLabel }}</text>
-              <text class="hero-meta-chip">{{ orderTypeText }}</text>
+      <view v-else-if="!loading" class="board-content">
+        <view class="hero-card">
+          <view class="hero-focus-row">
+            <view class="hero-focus-cover-wrap">
+              <image
+                v-if="selectedOrderCover"
+                class="hero-focus-cover"
+                :class="{ 'is-drag-pressing': selectedDragPressing }"
+                :src="selectedOrderCover"
+                mode="aspectFill"
+                @touchstart.stop.prevent="startSelectedDrag"
+              />
+              <view
+                v-else
+                class="hero-focus-cover hero-focus-cover-placeholder"
+                :class="{ 'is-drag-pressing': selectedDragPressing }"
+                @touchstart.stop.prevent="startSelectedDrag"
+              ></view>
+              <view class="hero-drop-btn" @tap="startSelectedDropDown" @touchstart.stop.prevent="startSelectedDrag">
+                <image class="hero-drop-btn-icon" src="/static/new-icon/hand.png" mode="aspectFit" />
+                <text class="hero-drop-btn-text font-alimamashuhei">拖下来</text>
+              </view>
             </view>
-            <view class="hero-period-row">
-              <text class="hero-period-label font-title">排期范围</text>
-              <view class="hero-period-trigger" @tap="openPeriodPopup">
-                <text class="hero-period-trigger-text">{{ selectedPeriodLabel }}</text>
-                <uni-icons type="bottom" size="14" color="#4b5a71" />
+            <view class="hero-focus-main">
+              <view class="hero-actions">
+                <view class="hero-action-btns">
+                  <button
+                    class="ghost-btn menu-btn"
+                    @tap="openActionPopup"
+                  >
+                    功能菜单
+                  </button>
+                  <button
+                    class="save-btn"
+                    :class="{ disabled: saving }"
+                    :disabled="saving"
+                    @tap="saveBoard"
+                  >
+                    {{ saving ? '保存中...' : '保存' }}
+                  </button>
+                </view>
+                <view class="hero-period-trigger hero-period-trigger-compact" @tap="openPeriodPopup">
+                  <view class="hero-period-trigger-main">
+                    <uni-icons type="calendar" size="16" color="#1a202b" />
+                    <text class="hero-period-trigger-text">{{ selectedPeriodLabel }}</text>
+                  </view>
+                  <view class="hero-period-trigger-arrow">
+                    <uni-icons type="redo" size="14" color="#ffffff" />
+                  </view>
+                </view>
+              </view>
+              <text class="hero-focus-range font-title">{{ selectedOrderRangeLabel }}</text>
+              <view class="hero-order-strip-row">
+                <scroll-view class="hero-order-strip-scroll" scroll-x show-scrollbar="false" @scroll="onHeroOrderStripScroll">
+                  <view class="hero-order-strip-inner">
+                    <view
+                      v-for="order in heroOrderStripOrders"
+                      :key="order.submission_item_id"
+                      class="hero-order-avatar-item"
+                      :class="{ active: Number(order.submission_item_id || 0) === Number(selectedOrderId || 0) }"
+                      @tap="selectHeroOrder(order.submission_item_id)"
+                    >
+                      <image
+                        v-if="getOrderCover(order)"
+                        class="hero-order-avatar"
+                        :src="getOrderCover(order)"
+                        mode="aspectFill"
+                      />
+                      <view v-else class="hero-order-avatar hero-order-avatar-placeholder"></view>
+                      <view class="hero-order-tags">
+                        <text v-if="!isOrderScheduled(order)" class="hero-order-tag hero-order-tag-unscheduled font-title">未排</text>
+                        <text v-else-if="isOrderWaitingMaterialShip(order)" class="hero-order-tag hero-order-tag-wait-ship font-title">待寄</text>
+                        <text v-else-if="isOrderWaitingMaterialReceive(order)" class="hero-order-tag hero-order-tag-wait-ship font-title">待收</text>
+                      </view>
+                    </view>
+                  </view>
+                </scroll-view>
+                <view v-if="heroOrderOverflowCount > 0" class="hero-overflow-tip">
+                  <image class="hero-overflow-ellipsis" src="/static/new-icon/ellipsis.png" mode="aspectFit" />
+                  <text class="hero-overflow-count font-title">+{{ heroOrderOverflowCount }}</text>
+                </view>
+              </view>
+              <view class="hero-summary-row">
+                <view class="hero-summary-item">
+                  <text class="metric-label">待创作数</text>
+                  <text class="metric-value font-title">{{ visibleOrders.length }}</text>
+                </view>
+                <view class="hero-summary-item">
+                  <text class="metric-label">已排期</text>
+                  <text class="metric-value font-title">{{ scheduledCount }}</text>
+                </view>
+                <view class="hero-summary-item">
+                  <text class="metric-label">加急单</text>
+                  <text class="metric-value font-title">{{ urgentCount }}</text>
+                </view>
               </view>
             </view>
           </view>
-          <view class="hero-actions">
-            <button
-              class="ghost-btn"
-              :class="{ disabled: autoArranging || !visibleOrders.length }"
-              :disabled="autoArranging || !visibleOrders.length"
-              @tap="autoArrangeBoard"
-            >
-              {{ autoArranging ? '排单中...' : autoArrangeButtonText }}
-            </button>
-            <button
-              class="save-btn"
-              :class="{ disabled: saving }"
-              :disabled="saving"
-              @tap="saveBoard"
-            >
-              {{ saving ? '保存中...' : '保存排期' }}
-            </button>
-          </view>
-        </view>
-        <view class="hero-summary-row">
-          <view class="hero-summary-item">
-            <text class="metric-label">子单总数</text>
-            <text class="metric-value font-title">{{ visibleOrders.length }}</text>
-          </view>
-          <view class="hero-summary-item">
-            <text class="metric-label">已排期</text>
-            <text class="metric-value">{{ scheduledCount }}</text>
-          </view>
-          <view class="hero-summary-item">
-            <text class="metric-label">加急单</text>
-            <text class="metric-value">{{ urgentCount }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="quick-card">
-        <view class="quick-head">
-          <text class="quick-title font-alimamashuhei">当前订单快捷操作</text>
-          <text v-if="selectedOrder" class="quick-order-name">
-            {{ selectedOrder.work_subject || `子单#${selectedOrder.submission_item_id}` }}
-          </text>
-        </view>
-        <view v-if="selectedOrder" class="quick-body">
-          <view class="quick-summary-row">
-            <text class="summary-chip">顺序 {{ effectiveSequenceNo(selectedOrder) }}</text>
-            <text class="summary-chip">状态 {{ selectedOrder.material_status_text || '待确认' }}</text>
-            <text class="summary-chip">{{ selectedOrderRangeText }}</text>
-          </view>
-          <view class="quick-urgent-row">
-            <text class="quick-label">加急订单</text>
-            <switch :checked="!!selectedOrder.is_urgent" color="#78daf5" @change="onUrgentSwitchChange" />
-          </view>
-          <view class="quick-actions">
-            <view class="quick-btn" @tap="moveSelectedSequence(-1)">前移一位</view>
-            <view class="quick-btn" @tap="moveSelectedSequence(1)">后移一位</view>
-            <view class="quick-btn" @tap="clearSelectedSchedule">清空排期</view>
-          </view>
-          <text class="quick-tip">{{ quickActionTip }}</text>
-        </view>
-        <view v-else class="quick-empty">
-          <text>请先在下方列表点选一个订单，再进行排期调整。</text>
-        </view>
-      </view>
-
-      <view class="calendar-card">
-        <view class="calendar-head">
-          <view class="calendar-head-main">
-            <text class="calendar-title font-alimamashuhei">排期面板</text>
-            <text class="calendar-sub">先选订单，再拖拽到日期格；支持前移、后移和清空排期</text>
-            <text class="calendar-sub-note">建议先用自动排单生成初稿，再对重点订单做微调。</text>
-          </view>
-          <view class="rule-chip">单日上限 {{ maxPerDay }} 单</view>
         </view>
 
-        <order-schedule-calendar
-          :orders="visibleOrders"
-          :selected-order-id="selectedOrderId"
-          :default-duration-days="defaultDurationDays"
-          :max-per-day="maxPerDay"
-          :today="today"
-          @update:selectedOrderId="onUpdateSelectedOrder"
-          @change="onCalendarChange"
-          @invalid="onCalendarInvalid"
-        />
-      </view>
+        <view class="calendar-card">
+          <order-schedule-calendar
+            ref="scheduleCalendarRef"
+            :orders="visibleOrders"
+            :selected-order-id="selectedOrderId"
+            :default-duration-days="defaultDurationDays"
+            :max-per-day="maxPerDay"
+            :today="today"
+            @update:selectedOrderId="onUpdateSelectedOrder"
+            @change="onCalendarChange"
+            @invalid="onCalendarInvalid"
+          />
+        </view>
 
       <uni-popup
         ref="periodPopupRef"
@@ -146,18 +180,111 @@
         </view>
       </uni-popup>
 
-      <view class="foot-tip">
-        <uni-icons type="info" size="16" color="#8a96a8" />
-        <text>规则：单日最多同时{{ maxPerDay }}单（允许最多重叠{{ maxPerDay - 1 }}个订单）。</text>
+      <uni-popup
+        ref="actionPopupRef"
+        type="bottom"
+        :mask-click="true"
+      >
+        <view class="period-popup-sheet">
+          <view class="period-popup-head">
+            <text class="period-popup-title font-alimamashuhei">功能菜单</text>
+            <text class="period-popup-close font-title" @tap="closeActionPopup">关闭</text>
+          </view>
+          <view class="action-menu-list">
+            <view class="action-menu-item" @tap="handleMenuAction('auto')">
+              <view class="action-menu-main">
+                <text class="action-menu-title font-alimamashuhei">{{ autoArrangeButtonText }}</text>
+                <text class="action-menu-desc font-title">{{ autoArrangeButtonDesc }}</text>
+              </view>
+              <uni-icons type="arrow-right" size="16" color="#78daf5" />
+            </view>
+            <view class="action-menu-item" @tap="handleMenuAction('toggleUrgent')">
+              <view class="action-menu-main">
+                <text class="action-menu-title font-alimamashuhei">切换加急</text>
+                <text class="action-menu-desc font-title">
+                  {{ selectedOrder ? (selectedOrder.is_urgent ? '当前为加急，点击可取消' : '当前为普通，点击改为加急') : '请先选择一个订单' }}
+                </text>
+              </view>
+              <uni-icons type="arrow-right" size="16" color="#78daf5" />
+            </view>
+            <view class="action-menu-grid">
+              <view class="action-menu-chip" @tap="handleMenuAction('movePrev')">前移一位</view>
+              <view class="action-menu-chip" @tap="handleMenuAction('moveNext')">后移一位</view>
+              <view class="action-menu-chip" @tap="handleMenuAction('clear')">清空排期</view>
+            </view>
+          </view>
+        </view>
+      </uni-popup>
+
+      <uni-popup
+        ref="autoArrangePopupRef"
+        type="bottom"
+        :mask-click="true"
+      >
+        <view class="period-popup-sheet auto-arrange-popup-sheet">
+          <view class="period-popup-head">
+            <text class="period-popup-title font-alimamashuhei">一键排单</text>
+            <text class="period-popup-close font-title" @tap="closeAutoArrangePopup">关闭</text>
+          </view>
+          <view class="auto-arrange-panel">
+            <view class="auto-arrange-option">
+              <view class="auto-arrange-option-head">
+                <text class="auto-arrange-option-title font-alimamashuhei">按每个头/毛工期排单</text>
+                <text class="auto-arrange-option-sub font-title">默认 7 天</text>
+              </view>
+              <view class="auto-arrange-days-row">
+                <text class="auto-arrange-days-label font-title">工期</text>
+                <input
+                  class="auto-arrange-days-input font-title"
+                  type="number"
+                  :value="fixedArrangeDaysInput"
+                  @input="onFixedArrangeDaysInput"
+                />
+                <text class="auto-arrange-days-unit font-title">天</text>
+                <view class="auto-arrange-submit" @tap="triggerFixedDurationAutoArrange">立即排单</view>
+              </view>
+            </view>
+            <view class="auto-arrange-option">
+              <view class="auto-arrange-option-head">
+                <text class="auto-arrange-option-title font-alimamashuhei">平均分自由模式工期</text>
+                <text class="auto-arrange-option-sub font-title">按本期开单总工期平均分配</text>
+              </view>
+              <view class="auto-arrange-submit auto-arrange-submit-secondary" @tap="triggerAverageAutoArrange">
+                使用平均分排单
+              </view>
+            </view>
+          </view>
+        </view>
+      </uni-popup>
+
+        <view class="foot-tip">
+          <uni-icons type="info" size="16" color="#8a96a8" />
+          <text>规则：单日最多同时{{ maxPerDay }}单（允许最多重叠{{ maxPerDay - 1 }}个订单）。</text>
+        </view>
+
+        <view
+          v-if="selectedDragGhostVisible"
+          class="selected-drag-ghost"
+          :class="{ morphing: selectedDragGhostMorphing }"
+          :style="selectedDragGhostStyle"
+        >
+          <image
+            v-if="selectedOrderCover"
+            class="selected-drag-ghost-image"
+            :src="selectedOrderCover"
+            mode="aspectFill"
+          />
+          <view v-else class="selected-drag-ghost-image selected-drag-ghost-placeholder"></view>
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
-import { websiteUrl } from '@/common/config.js'
+import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onLoad, onPageScroll, onShow } from '@dcloudio/uni-app'
+import { getNavBarHeight, getStatusBarHeight, toPx, websiteUrl } from '@/common/config.js'
 import OrderScheduleCalendar from '@/components/order-schedule-calendar/order-schedule-calendar.vue'
 
 const planId = ref(0)
@@ -171,8 +298,37 @@ const defaultDurationDays = ref(7)
 const today = ref('')
 const orderType = ref(0)
 const maxPerDay = 3
+const scheduleCalendarRef = ref(null)
 const periodPopupRef = ref(null)
+const actionPopupRef = ref(null)
+const autoArrangePopupRef = ref(null)
 const selectedPeriodValue = ref('all')
+const periodOptionRows = ref([])
+const fixedArrangeDaysInput = ref('7')
+const heroOrderStripScrollLeft = ref(0)
+const heroOrderStripViewportWidth = ref(0)
+const heroOrderItemWidth = ref(0)
+const heroOrderItemGap = ref(0)
+const scrollTop = ref(0)
+const selectedDragPressing = ref(false)
+const selectedDragGhostVisible = ref(false)
+const selectedDragGhostMorphing = ref(false)
+const selectedDragGhostLeft = ref(-9999)
+const selectedDragGhostTop = ref(-9999)
+const selectedDragGhostWidth = ref(0)
+const selectedDragGhostHeight = ref(0)
+const selectedDragGhostCircleSize = ref(0)
+const instance = getCurrentInstance()
+const headerPadPx = computed(() => toPx(getStatusBarHeight() + getNavBarHeight()))
+
+let selectedDragSession = 0
+let selectedDragMorphTimer = 0
+let selectedDragGlobalBound = false
+let selectedDragMoveHandler = null
+let selectedDragEndHandler = null
+let selectedDragLastMoveLogAt = 0
+const selectedDragTouchOffsetX = 0
+const selectedDragTouchOffsetY = 0
 
 const orderTypeTextMap = {
   1: '长期接单',
@@ -186,20 +342,24 @@ const todayLabel = computed(() => {
 })
 
 const periodOptions = computed(() => {
-  const map = new Map()
-  allOrders.value.forEach((row) => {
-    const sid = Number(row?.submission_id || 0)
-    if (sid <= 0) return
-    if (!map.has(sid)) {
-      map.set(sid, { submissionId: sid, count: 0 })
-    }
-    map.get(sid).count += 1
-  })
-  const sorted = Array.from(map.values()).sort((a, b) => a.submissionId - b.submissionId)
-  const issueOptions = sorted.map((item, idx) => ({
+  const source = periodOptionRows.value.length
+    ? periodOptionRows.value
+    : (() => {
+      const map = new Map()
+      allOrders.value.forEach((row) => {
+        const sid = Number(row?.submission_id || 0)
+        if (sid <= 0) return
+        if (!map.has(sid)) {
+          map.set(sid, { submissionId: sid, itemCount: 0, createdAt: 0 })
+        }
+        map.get(sid).itemCount += 1
+      })
+      return Array.from(map.values()).sort((a, b) => a.submissionId - b.submissionId)
+    })()
+  const issueOptions = source.map((item) => ({
     value: `submission:${item.submissionId}`,
-    label: `第${idx + 1}期开单`,
-    desc: `${item.count} 个投递内容`,
+    label: formatPeriodOpenDateLabel(item.createdAt, item.submissionId),
+    desc: `${item.itemCount} 个投递内容`,
     submissionId: item.submissionId,
   }))
   return [
@@ -240,51 +400,100 @@ const urgentCount = computed(() =>
 
 const orderTypeText = computed(() => orderTypeTextMap[Number(orderType.value || 0)] || '排单计划')
 
-const heroSubtitle = computed(() => {
-  if (Number(orderType.value || 0) === 2) {
-    return '手速模式优先按顺序出结果，可对重点订单做加急和调序'
-  }
-  if (Number(orderType.value || 0) === 5) {
-    return '自由模式可手动拖拽排期，也支持一键按顺序自动铺排'
-  }
-  return '长期接单支持滚动排期，建议先自动生成再按实际微调'
-})
-
 const autoArrangeButtonText = computed(() => {
   if (Number(orderType.value || 0) === 2) return '按手速自动排单'
   if (Number(orderType.value || 0) === 5) return '一键顺序排单'
   return '自动排到日历'
 })
 
-const quickActionTip = computed(() => {
-  const type = Number(orderType.value || 0)
-  if (type === 2) {
-    return '手速模式建议优先使用“前移一位”处理加急，避免频繁改动整体顺序。'
-  }
-  if (type === 5) {
-    return '自由模式可先一键排单，再根据寄送/沟通情况做少量微调。'
-  }
-  return '长期接单建议每次只调整少量订单，保存后再继续修改。'
+const autoArrangeButtonDesc = computed(() => {
+  if (Number(orderType.value || 0) === 5) return '先选工期方式，再生成排单'
+  return '按当前顺序与工期自动生成排单'
 })
 
 const selectedOrder = computed(() =>
   visibleOrders.value.find((row) => Number(row.submission_item_id || 0) === Number(selectedOrderId.value || 0)) || null
 )
 
-const selectedOrderRangeText = computed(() => {
-  const row = selectedOrder.value
-  if (!row) return '未排期'
-  if (!row.start_date || !row.end_date) {
-    return `未排期 · ${Number(row.duration_days || defaultDurationDays.value || 1)}天`
-  }
-  return `${row.start_date} 至 ${row.end_date}`
+const heroOrderStripOrders = computed(() => {
+  return [...visibleOrders.value].sort((left, right) => {
+    const leftSeq = effectiveSequenceNo(left)
+    const rightSeq = effectiveSequenceNo(right)
+    if (leftSeq !== rightSeq) return leftSeq - rightSeq
+    return Number(left?.submission_item_id || 0) - Number(right?.submission_item_id || 0)
+  })
 })
+
+const selectedOrderCover = computed(() => getOrderCover(selectedOrder.value))
+
+const selectedOrderRangeLabel = computed(() => {
+  const row = selectedOrder.value
+  if (!row) return '工期：请先选择订单'
+  const start = normalizeDateText(row?.start_date || '')
+  const end = normalizeDateText(row?.end_date || '')
+  const duration = Number(row?.duration_days || defaultDurationDays.value || 7)
+  if (!start || !end) return `工期：待排期（预计${duration}天）`
+  return `工期：${formatHumanRange(start, end, duration)}`
+})
+
+const heroOrderVisibleCount = computed(() => {
+  const viewport = Number(heroOrderStripViewportWidth.value || 0)
+  const unit = getHeroOrderUnitPx()
+  if (viewport <= 0 || unit <= 0) return 3
+  const gap = getHeroOrderGapPx()
+  return Math.max(1, Math.floor((viewport + gap) / unit))
+})
+
+const heroOrderFirstIndex = computed(() => {
+  const unit = getHeroOrderUnitPx()
+  if (unit <= 0) return 0
+  return Math.max(0, Math.floor(Number(heroOrderStripScrollLeft.value || 0) / unit))
+})
+
+const heroOrderOverflowCount = computed(() => {
+  const total = heroOrderStripOrders.value.length
+  const remain = total - heroOrderFirstIndex.value - heroOrderVisibleCount.value
+  return remain > 0 ? remain : 0
+})
+
+const selectedDragGhostStyle = computed(() => ({
+  left: `${Math.round(Number(selectedDragGhostLeft.value || 0))}px`,
+  top: `${Math.round(Number(selectedDragGhostTop.value || 0))}px`,
+  width: `${Math.max(0, Number(selectedDragGhostWidth.value || 0))}px`,
+  height: `${Math.max(0, Number(selectedDragGhostHeight.value || 0))}px`,
+  borderRadius: selectedDragGhostMorphing.value ? '999px' : `${Math.max(12, upxToPx(44))}px`,
+}))
 
 function formatDate(date) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
+}
+
+function formatPeriodOpenDateLabel(createdAt, submissionId) {
+  const ts = Number(createdAt || 0)
+  if (ts > 0) {
+    const ms = ts > 1e12 ? ts : ts * 1000
+    const dt = new Date(ms)
+    if (!Number.isNaN(dt.getTime())) {
+      return formatDate(dt)
+    }
+  }
+  return `开单#${Number(submissionId || 0)}`
+}
+
+function parseDate(raw) {
+  const txt = String(raw || '').trim()
+  const m = txt.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return null
+  const y = Number(m[1])
+  const mm = Number(m[2])
+  const d = Number(m[3])
+  if (!y || mm < 1 || mm > 12 || d < 1 || d > 31) return null
+  const dt = new Date(y, mm - 1, d)
+  if (dt.getFullYear() !== y || dt.getMonth() !== mm - 1 || dt.getDate() !== d) return null
+  return dt
 }
 
 function normalizeDateText(raw) {
@@ -299,6 +508,350 @@ function normalizeDateText(raw) {
   const m = txt.match(/(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/)
   if (!m) return ''
   return `${m[1]}-${String(Number(m[2])).padStart(2, '0')}-${String(Number(m[3])).padStart(2, '0')}`
+}
+
+function parseRefImages(raw) {
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    return raw.map((v) => String(v || '').trim()).filter(Boolean)
+  }
+  const txt = String(raw).trim()
+  if (!txt) return []
+  if (txt.startsWith('[') && txt.endsWith(']')) {
+    try {
+      const arr = JSON.parse(txt)
+      if (Array.isArray(arr)) return arr.map((v) => String(v || '').trim()).filter(Boolean)
+    } catch (_) {}
+  }
+  return txt.split(',').map((part) => String(part || '').trim().replace(/^"+|"+$/g, '')).filter(Boolean)
+}
+
+function getOrderCover(order) {
+  const direct = String(order?.cover_image || order?.coverImage || '').trim()
+  if (direct) return direct
+  const fromRef = parseRefImages(order?.ref_images || order?.refImages || '')
+  return fromRef[0] || ''
+}
+
+function formatHumanDate(dateText, withYear = true) {
+  const dt = parseDate(dateText)
+  if (!dt) return dateText || '-'
+  const y = dt.getFullYear()
+  const m = dt.getMonth() + 1
+  const d = dt.getDate()
+  if (withYear) return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+function daysBetweenInclusive(startDate, endDate) {
+  const start = parseDate(startDate)
+  const end = parseDate(endDate)
+  if (!start || !end) return 0
+  return Math.floor((end.getTime() - start.getTime()) / 86400000) + 1
+}
+
+function formatHumanRange(startDate, endDate, durationDays = 0) {
+  const start = normalizeDateText(startDate)
+  const end = normalizeDateText(endDate)
+  if (!start || !end) return ''
+  const startDateObj = parseDate(start)
+  const endDateObj = parseDate(end)
+  const sameYear = !!startDateObj && !!endDateObj && startDateObj.getFullYear() === endDateObj.getFullYear()
+  const left = formatHumanDate(start, true)
+  const right = formatHumanDate(end, !sameYear)
+  const days = Number(durationDays || daysBetweenInclusive(start, end) || 0)
+  return `${left} ~ ${right}${days > 0 ? `（${days}天）` : ''}`
+}
+
+function isOrderScheduled(order) {
+  const start = normalizeDateText(order?.start_date || '')
+  const end = normalizeDateText(order?.end_date || '')
+  return !!start && !!end
+}
+
+function isOrderWaitingMaterialShip(order) {
+  const status = Number(order?.submission_item_status || 0)
+  if (status === 7) return true
+  const statusText = String(order?.material_status_text || '').trim()
+  if (!statusText) return false
+  return statusText.includes('待寄送') || statusText.includes('待寄')
+}
+
+function isOrderWaitingMaterialReceive(order) {
+  const status = Number(order?.submission_item_status || 0)
+  if (status === 8) return true
+  const statusText = String(order?.material_status_text || '').trim()
+  if (!statusText) return false
+  return statusText.includes('寄送中') || statusText.includes('待收到') || statusText.includes('待收')
+}
+
+function upxToPx(value) {
+  const n = Number(value || 0)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  try {
+    if (typeof uni !== 'undefined' && typeof uni.upx2px === 'function') {
+      return Number(uni.upx2px(n) || 0)
+    }
+  } catch (_) {}
+  return n / 2
+}
+
+function getHeroOrderGapPx() {
+  const measured = Number(heroOrderItemGap.value || 0)
+  if (measured > 0) return measured
+  return upxToPx(14)
+}
+
+function getHeroOrderUnitPx() {
+  const width = Number(heroOrderItemWidth.value || 0)
+  if (width > 0) return width + getHeroOrderGapPx()
+  return upxToPx(84) + getHeroOrderGapPx()
+}
+
+function measureHeroOrderStripViewport() {
+  nextTick(() => {
+    const query = uni.createSelectorQuery().in(instance?.proxy)
+    query.select('.hero-order-strip-scroll').boundingClientRect()
+    query.selectAll('.hero-order-avatar-item').boundingClientRect()
+    query.exec((res) => {
+      const viewportRect = Array.isArray(res) ? res[0] : null
+      const itemRects = Array.isArray(res?.[1]) ? res[1] : []
+      heroOrderStripViewportWidth.value = Number(viewportRect?.width || 0)
+      const first = itemRects[0]
+      const second = itemRects[1]
+      heroOrderItemWidth.value = Number(first?.width || 0)
+      if (first && second) {
+        const gap = Number((second.left || 0) - (first.left || 0) - (first.width || 0))
+        heroOrderItemGap.value = gap > 0 ? gap : 0
+      } else {
+        heroOrderItemGap.value = 0
+      }
+    })
+  })
+}
+
+function onHeroOrderStripScroll(e) {
+  heroOrderStripScrollLeft.value = Number(e?.detail?.scrollLeft || 0)
+}
+
+function selectHeroOrder(itemID) {
+  const id = Number(itemID || 0)
+  if (!id) return
+  selectedOrderId.value = id
+}
+
+function getTouchPoint(event) {
+  return event?.touches?.[0] || event?.changedTouches?.[0] || null
+}
+
+function resolveTouchXY(event) {
+  const touch = getTouchPoint(event)
+  const detail = event?.detail || {}
+  const rawClientX = Number(
+    touch?.clientX ??
+    touch?.x ??
+    detail?.clientX ??
+    detail?.x ??
+    NaN
+  )
+  const rawClientY = Number(
+    touch?.clientY ??
+    touch?.y ??
+    detail?.clientY ??
+    detail?.y ??
+    NaN
+  )
+  const rawPageX = Number(
+    touch?.pageX ??
+    detail?.pageX ??
+    NaN
+  )
+  const rawPageY = Number(
+    touch?.pageY ??
+    detail?.pageY ??
+    NaN
+  )
+  const pageOffsetX = (typeof window !== 'undefined' && Number.isFinite(Number(window.pageXOffset))) ? Number(window.pageXOffset) : 0
+  const pageOffsetY = (typeof window !== 'undefined' && Number.isFinite(Number(window.pageYOffset))) ? Number(window.pageYOffset) : 0
+  const x = Number.isFinite(rawClientX)
+    ? rawClientX
+    : (Number.isFinite(rawPageX) ? rawPageX - pageOffsetX : 0)
+  const y = Number.isFinite(rawClientY)
+    ? rawClientY
+    : (Number.isFinite(rawPageY) ? rawPageY - pageOffsetY : 0)
+  return {
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
+    touch,
+  }
+}
+
+function clearSelectedDragMorphTimer() {
+  if (!selectedDragMorphTimer) return
+  clearTimeout(selectedDragMorphTimer)
+  selectedDragMorphTimer = 0
+}
+
+function unbindSelectedDragGlobal() {
+  if (!selectedDragGlobalBound || typeof window === 'undefined') return
+  if (selectedDragMoveHandler) {
+    window.removeEventListener('touchmove', selectedDragMoveHandler)
+  }
+  if (selectedDragEndHandler) {
+    window.removeEventListener('touchend', selectedDragEndHandler)
+    window.removeEventListener('touchcancel', selectedDragEndHandler)
+  }
+  selectedDragGlobalBound = false
+  selectedDragMoveHandler = null
+  selectedDragEndHandler = null
+}
+
+function moveSelectedDragGhostToTouch(point) {
+  const x = Number(point?.x || 0)
+  const y = Number(point?.y || 0)
+  if (!x && !y) return
+  const defaultSize = Number(selectedDragGhostCircleSize.value || 0)
+  const width = selectedDragGhostMorphing.value
+    ? defaultSize
+    : Number(selectedDragGhostWidth.value || defaultSize)
+  const height = selectedDragGhostMorphing.value
+    ? defaultSize
+    : Number(selectedDragGhostHeight.value || defaultSize)
+  selectedDragGhostLeft.value = x - width / 2 + selectedDragTouchOffsetX
+  selectedDragGhostTop.value = y - height / 2 + selectedDragTouchOffsetY
+}
+
+function bindSelectedDragGlobal() {
+  if (selectedDragGlobalBound || typeof window === 'undefined') return
+  selectedDragMoveHandler = (e) => {
+    const point = resolveTouchXY(e)
+    if ((!point.x && !point.y) || !selectedDragGhostVisible.value) return
+    selectedDragGhostMorphing.value = true
+    const size = Number(selectedDragGhostCircleSize.value || 0)
+    selectedDragGhostWidth.value = size
+    selectedDragGhostHeight.value = size
+    moveSelectedDragGhostToTouch(point)
+    const now = Date.now()
+    if (now - selectedDragLastMoveLogAt > 180) {
+      selectedDragLastMoveLogAt = now
+      console.log('[schedule-drag] move', {
+        x: Math.round(point.x),
+        y: Math.round(point.y),
+        left: Math.round(selectedDragGhostLeft.value),
+        top: Math.round(selectedDragGhostTop.value),
+      })
+    }
+    if (typeof e.preventDefault === 'function') e.preventDefault()
+  }
+  selectedDragEndHandler = () => {
+    if (!selectedDragGhostVisible.value && !selectedDragPressing.value) return
+    finishSelectedDragVisual()
+  }
+  window.addEventListener('touchmove', selectedDragMoveHandler, { passive: false })
+  window.addEventListener('touchend', selectedDragEndHandler, { passive: false })
+  window.addEventListener('touchcancel', selectedDragEndHandler, { passive: false })
+  selectedDragGlobalBound = true
+}
+
+function finishSelectedDragVisual() {
+  selectedDragSession += 1
+  selectedDragPressing.value = false
+  selectedDragGhostVisible.value = false
+  selectedDragGhostMorphing.value = false
+  selectedDragGhostWidth.value = 0
+  selectedDragGhostHeight.value = 0
+  selectedDragGhostLeft.value = -9999
+  selectedDragGhostTop.value = -9999
+  clearSelectedDragMorphTimer()
+  unbindSelectedDragGlobal()
+}
+
+function startSelectedDragVisual(event) {
+  const startPoint = resolveTouchXY(event)
+  const startTouchX = Number(startPoint.x || 0)
+  const startTouchY = Number(startPoint.y || 0)
+  const hasStartTouch = startTouchX > 0 || startTouchY > 0
+  const circleSize = Math.max(40, Math.round(upxToPx(100) || 52))
+  const startWidth = Math.round(circleSize * 1.75)
+  const startHeight = Math.round(circleSize * 1.3)
+  selectedDragSession += 1
+  const session = selectedDragSession
+  selectedDragLastMoveLogAt = 0
+  console.log('[schedule-drag] start', {
+    hasStartTouch,
+    startTouchX: Math.round(startTouchX),
+    startTouchY: Math.round(startTouchY),
+    rawTouch: startPoint.touch || null,
+    rawDetail: event?.detail || null,
+  })
+  selectedDragGhostCircleSize.value = circleSize
+  selectedDragPressing.value = true
+  selectedDragGhostVisible.value = true
+  selectedDragGhostMorphing.value = false
+  selectedDragGhostWidth.value = startWidth
+  selectedDragGhostHeight.value = startHeight
+  if (hasStartTouch) {
+    selectedDragGhostLeft.value = startTouchX - startWidth / 2 + selectedDragTouchOffsetX
+    selectedDragGhostTop.value = startTouchY - startHeight / 2 + selectedDragTouchOffsetY
+  }
+  bindSelectedDragGlobal()
+  clearSelectedDragMorphTimer()
+  selectedDragMorphTimer = setTimeout(() => {
+    if (session !== selectedDragSession || !selectedDragGhostVisible.value) return
+    selectedDragGhostMorphing.value = true
+    selectedDragGhostWidth.value = circleSize
+    selectedDragGhostHeight.value = circleSize
+    if (hasStartTouch) {
+      selectedDragGhostLeft.value = startTouchX - circleSize / 2 + selectedDragTouchOffsetX
+      selectedDragGhostTop.value = startTouchY - circleSize / 2 + selectedDragTouchOffsetY
+    }
+    console.log('[schedule-drag] morph', {
+      left: Math.round(selectedDragGhostLeft.value),
+      top: Math.round(selectedDragGhostTop.value),
+      width: Math.round(selectedDragGhostWidth.value),
+      height: Math.round(selectedDragGhostHeight.value),
+    })
+  }, 24)
+}
+
+function startSelectedDrag(event) {
+  const row = selectedOrder.value
+  if (!row) {
+    uni.showToast({ title: '请先选择订单', icon: 'none' })
+    return
+  }
+  const itemID = Number(row?.submission_item_id || 0)
+  if (!itemID) {
+    uni.showToast({ title: '订单参数异常', icon: 'none' })
+    return
+  }
+  const ok = scheduleCalendarRef.value?.startExternalPlaceDrag?.(itemID, event)
+  if (!ok) {
+    uni.showToast({ title: '拖拽未启动，请重试', icon: 'none' })
+    finishSelectedDragVisual()
+    return
+  }
+  startSelectedDragVisual(event)
+}
+
+function startSelectedDropDown() {
+  const row = selectedOrder.value
+  if (!row) {
+    uni.showToast({ title: '请先选择订单', icon: 'none' })
+    return
+  }
+  const itemID = Number(row?.submission_item_id || 0)
+  if (!itemID) {
+    uni.showToast({ title: '订单参数异常', icon: 'none' })
+    return
+  }
+  scheduleCalendarRef.value?.beginQuickPlace?.(itemID)
+  scheduleCalendarRef.value?.focusSelectedOrderCalendar?.()
+  uni.showToast({ title: '点日历日期可放置该订单', icon: 'none' })
+}
+
+function goBack() {
+  uni.navigateBack({ delta: 1 })
 }
 
 function normalizeScheduleSource(raw) {
@@ -417,6 +970,21 @@ function normalizeOrders(items) {
   })))
 }
 
+function normalizePeriodOptionRows(list) {
+  if (!Array.isArray(list)) return []
+  const rows = list.map((row) => ({
+    submissionId: Number(row?.submission_id || row?.submissionId || 0),
+    itemCount: Number(row?.item_count || row?.itemCount || 0),
+    createdAt: Number(row?.created_at || row?.createdAt || 0),
+  })).filter((row) => row.submissionId > 0 && row.itemCount > 0)
+  return rows.sort((a, b) => {
+    const aTime = Number(a?.createdAt || 0)
+    const bTime = Number(b?.createdAt || 0)
+    if (aTime && bTime && aTime !== bTime) return bTime - aTime
+    return Number(b?.submissionId || 0) - Number(a?.submissionId || 0)
+  })
+}
+
 async function fetchBoard() {
   if (loading.value) return
   errorMsg.value = ''
@@ -430,11 +998,18 @@ async function fetchBoard() {
 
   loading.value = true
   try {
+    const scopeSubmissionID = Number(selectedSubmissionIdFilter.value || 0)
+    const requestData = {
+      plan_id: planId.value,
+    }
+    if (scopeSubmissionID > 0) {
+      requestData.submission_id = scopeSubmissionID
+    }
     const res = await uni.request({
       url: `${websiteUrl.value}/with-state/artist-order/schedule/board`,
       method: 'GET',
       header: { Authorization: token },
-      data: { plan_id: planId.value },
+      data: requestData,
     })
     const body = res?.data || {}
     if (String(body.status).toLowerCase() !== 'success') {
@@ -444,11 +1019,13 @@ async function fetchBoard() {
     orderType.value = Number(data?.order_type || 0)
     defaultDurationDays.value = Number(data?.default_duration_days || 7) || 7
     today.value = String(data?.today || '').trim()
+    periodOptionRows.value = normalizePeriodOptionRows(data?.period_options || data?.periodOptions || [])
     allOrders.value = normalizeOrders(data?.items || [])
     const hasSelected = allOrders.value.some((row) => Number(row?.submission_item_id || 0) === Number(selectedOrderId.value || 0))
     if ((!selectedOrderId.value || !hasSelected) && allOrders.value.length) {
       selectedOrderId.value = Number(allOrders.value[0]?.submission_item_id || 0)
     }
+    measureHeroOrderStripViewport()
   } catch (e) {
     errorMsg.value = e?.message || '加载失败'
   } finally {
@@ -503,49 +1080,81 @@ function updateSelectedOrderField(field, value) {
   }))
 }
 
-function onUrgentSwitchChange(event) {
-  const checked = !!event?.detail?.value
+function setSelectedUrgent(checked) {
+  const hasSelected = !!selectedOrder.value
+  if (!hasSelected) {
+    uni.showToast({ title: '请先选择一个订单', icon: 'none' })
+    return
+  }
   updateSelectedOrderField('is_urgent', checked)
   if (!checked) {
     updateSelectedOrderField('urgent_mode', 'normal')
     updateSelectedOrderField('urgent_reduce_days', 0)
-    return
+    return uni.showToast({ title: '已切换为普通订单', icon: 'none' })
   }
   const type = Number(orderType.value || 0)
   if (type === 2) {
     updateSelectedOrderField('urgent_mode', 'advance')
     updateSelectedOrderField('urgent_reduce_days', 0)
-    return
+    return uni.showToast({ title: '已切换为加急订单', icon: 'none' })
   }
   updateSelectedOrderField('urgent_mode', 'advance_compress')
   const prevReduce = Number(selectedOrder.value?.urgent_reduce_days || 0)
   updateSelectedOrderField('urgent_reduce_days', prevReduce > 0 ? prevReduce : 1)
+  uni.showToast({ title: '已切换为加急订单', icon: 'none' })
 }
 
 function moveSelectedSequence(offset) {
   const current = selectedOrder.value
   if (!current) return
   const currentId = Number(current.submission_item_id || 0)
-  const sorted = sortOrdersForBoard(visibleOrders.value)
-  const index = sorted.findIndex((row) => Number(row.submission_item_id || 0) === currentId)
+  const ordered = [...heroOrderStripOrders.value]
+  if (ordered.length <= 1) {
+    uni.showToast({ title: '当前范围只有1个订单', icon: 'none' })
+    return
+  }
+  const index = ordered.findIndex((row) => Number(row.submission_item_id || 0) === currentId)
   const targetIndex = index + Number(offset || 0)
-  if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) {
+  if (index < 0 || targetIndex < 0 || targetIndex >= ordered.length) {
     uni.showToast({ title: '已经到头了', icon: 'none' })
     return
   }
-  const target = sorted[targetIndex]
-  const currentSeq = effectiveSequenceNo(current)
-  const targetSeq = effectiveSequenceNo(target)
+  const target = ordered[targetIndex]
+  const currentStart = normalizeDateText(current?.start_date || '')
+  const currentEnd = normalizeDateText(current?.end_date || '')
+  const currentDuration = Number(current?.duration_days || 0)
+  const targetStart = normalizeDateText(target?.start_date || '')
+  const targetEnd = normalizeDateText(target?.end_date || '')
+  const targetDuration = Number(target?.duration_days || 0)
+
+  if (!currentStart && !currentEnd && !targetStart && !targetEnd) {
+    uni.showToast({ title: '这两单都还未排期', icon: 'none' })
+    return
+  }
+
   allOrders.value = sortOrdersForBoard(allOrders.value.map((row) => {
     const rowId = Number(row.submission_item_id || 0)
     if (rowId === currentId) {
-      return { ...row, sequence_no: targetSeq, schedule_source: 'manual' }
+      return {
+        ...row,
+        start_date: targetStart,
+        end_date: targetEnd,
+        duration_days: targetDuration,
+        schedule_source: 'manual',
+      }
     }
     if (rowId === Number(target.submission_item_id || 0)) {
-      return { ...row, sequence_no: currentSeq, schedule_source: 'manual' }
+      return {
+        ...row,
+        start_date: currentStart,
+        end_date: currentEnd,
+        duration_days: currentDuration,
+        schedule_source: 'manual',
+      }
     }
     return row
   }))
+  uni.showToast({ title: Number(offset || 0) < 0 ? '已与前一单对调日期' : '已与后一单对调日期', icon: 'none' })
 }
 
 function clearSelectedSchedule() {
@@ -563,13 +1172,63 @@ function clearSelectedSchedule() {
   }))
 }
 
-async function autoArrangeBoard() {
+function normalizeFixedArrangeDays(raw) {
+  const n = Number(String(raw ?? '').replace(/[^\d]/g, ''))
+  if (!Number.isFinite(n) || n <= 0) return 7
+  if (n > 365) return 365
+  return Math.floor(n)
+}
+
+function onFixedArrangeDaysInput(e) {
+  const value = String(e?.detail?.value || '').replace(/[^\d]/g, '').slice(0, 3)
+  fixedArrangeDaysInput.value = value || ''
+}
+
+function openAutoArrangePopup() {
+  fixedArrangeDaysInput.value = String(normalizeFixedArrangeDays(fixedArrangeDaysInput.value))
+  autoArrangePopupRef.value?.open?.()
+}
+
+function closeAutoArrangePopup() {
+  autoArrangePopupRef.value?.close?.()
+}
+
+async function triggerFixedDurationAutoArrange() {
+  const days = normalizeFixedArrangeDays(fixedArrangeDaysInput.value)
+  fixedArrangeDaysInput.value = String(days)
+  closeAutoArrangePopup()
+  await autoArrangeBoard({
+    mode: 'fixed_duration',
+    duration_days: days,
+  })
+}
+
+async function triggerAverageAutoArrange() {
+  closeAutoArrangePopup()
+  await autoArrangeBoard({
+    mode: 'average_free_cycle',
+  })
+}
+
+async function autoArrangeBoard(options = {}) {
   if (autoArranging.value) return
   const token = ensureLoginToken()
   if (!token) return
   autoArranging.value = true
   uni.showLoading({ title: '自动排单中' })
   try {
+    const payload = {
+      plan_id: planId.value,
+      anchor_date: today.value || todayLabel.value,
+    }
+    const scopeSubmissionID = Number(selectedSubmissionIdFilter.value || 0)
+    if (scopeSubmissionID > 0) {
+      payload.submission_id = scopeSubmissionID
+    }
+    const mode = String(options?.mode || '').trim()
+    if (mode) payload.mode = mode
+    const durationDays = Number(options?.duration_days || 0)
+    if (durationDays > 0) payload.duration_days = durationDays
     const res = await uni.request({
       url: `${websiteUrl.value}/with-state/artist-order/schedule/board/auto-arrange`,
       method: 'POST',
@@ -577,10 +1236,7 @@ async function autoArrangeBoard() {
         Authorization: token,
         'Content-Type': 'application/json',
       },
-      data: {
-        plan_id: planId.value,
-        anchor_date: today.value || todayLabel.value,
-      },
+      data: payload,
     })
     const body = res?.data || {}
     if (String(body.status).toLowerCase() !== 'success') {
@@ -674,9 +1330,70 @@ function closePeriodPopup() {
   periodPopupRef.value?.close?.()
 }
 
-function selectPeriodOption(value) {
+async function selectPeriodOption(value) {
   selectedPeriodValue.value = String(value || 'all')
   closePeriodPopup()
+  await fetchBoard()
+}
+
+function openActionPopup() {
+  actionPopupRef.value?.open?.()
+}
+
+function closeActionPopup() {
+  actionPopupRef.value?.close?.()
+}
+
+function ensureSelectedForMenuAction() {
+  if (selectedOrder.value) return true
+  uni.showToast({ title: '请先选择一个订单', icon: 'none' })
+  return false
+}
+
+async function handleMenuAction(type) {
+  closeActionPopup()
+  try {
+    if (type === 'auto') {
+      if (!visibleOrders.value.length) {
+        uni.showToast({ title: '当前范围没有可排订单', icon: 'none' })
+        return
+      }
+      if (Number(orderType.value || 0) === 5) {
+        setTimeout(() => {
+          openAutoArrangePopup()
+        }, 120)
+        return
+      }
+      await autoArrangeBoard()
+      return
+    }
+    if (type === 'toggleUrgent') {
+      if (!ensureSelectedForMenuAction()) return
+      setSelectedUrgent(!selectedOrder.value?.is_urgent)
+      return
+    }
+    if (type === 'movePrev') {
+      if (!ensureSelectedForMenuAction()) return
+      moveSelectedSequence(-1)
+      return
+    }
+    if (type === 'moveNext') {
+      if (!ensureSelectedForMenuAction()) return
+      moveSelectedSequence(1)
+      return
+    }
+    if (type === 'clear') {
+      if (!ensureSelectedForMenuAction()) return
+      clearSelectedSchedule()
+    }
+  } catch (e) {
+    const msg = String(e?.message || '').trim()
+    if (msg) {
+      uni.showToast({ title: msg, icon: 'none' })
+      return
+    }
+    uni.showToast({ title: '操作失败，请稍后重试', icon: 'none' })
+  }
 }
 
 watch(
@@ -705,14 +1422,34 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => heroOrderStripOrders.value.length,
+  () => {
+    heroOrderStripScrollLeft.value = 0
+    measureHeroOrderStripViewport()
+  },
+  { immediate: true }
+)
+
 onLoad((options) => {
-  uni.setNavigationBarTitle({ title: '日历排期' })
   planId.value = Number(options?.plan_id || 0)
   fetchBoard()
 })
 
 onShow(() => {
   if (planId.value > 0) fetchBoard()
+})
+
+onPageScroll((e) => {
+  scrollTop.value = Number(e?.scrollTop || 0)
+})
+
+onMounted(() => {
+  measureHeroOrderStripViewport()
+})
+
+onBeforeUnmount(() => {
+  finishSelectedDragVisual()
 })
 </script>
 
@@ -727,10 +1464,38 @@ onShow(() => {
   --primary: #78daf5;
   --primary-press: #2db5dc;
   --primary-soft: rgba(120, 218, 245, 0.18);
+  --btn-pastel-blue: #bfefff;
+  --btn-pastel-yellow: #f8eeb7;
+  --btn-pastel-purple: #e7dcff;
+  --btn-pastel-green: #bef2dc;
+  --btn-pastel-text: #253246;
   min-height: 100vh;
-  background: #f6f8fb;
+  width: 100%;
+  max-width: 100vw;
+  background: linear-gradient(180deg, #f8f8f8 0%, #f4f7fb 42%, #f6f8fb 100%);
   padding: 22rpx;
   box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.schedule-board-body {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.nav-back-pill {
+  margin-left: 14rpx;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 999rpx;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
 }
 
 .board-content {
@@ -738,94 +1503,329 @@ onShow(() => {
   flex-direction: column;
   gap: 20rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 100%;
   overflow: visible;
-}
-
-.hero-main {
-  flex: 1;
-  min-width: 0;
+  overflow-x: hidden;
 }
 
 .hero-card {
   border-radius: 22rpx;
-  background: var(--surface);
-  box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.05);
+  background: linear-gradient(160deg, #ffffff 0%, #f9fdff 100%);
+  box-shadow: 0 12rpx 30rpx rgba(76, 104, 140, 0.08);
   padding: 24rpx;
-}
-
-.hero-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16rpx;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .hero-actions {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14rpx;
+  width: 100%;
+  flex-shrink: 1;
+}
+
+.hero-action-btns {
+  display: flex;
   align-items: center;
   gap: 10rpx;
+  width: 100%;
 }
 
-.hero-title {
-  display: block;
-  font-size: 40rpx;
-  color: #131a27;
-  font-weight: 700;
-  letter-spacing: 0.4rpx;
-}
-
-.hero-sub {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 23rpx;
-  color: #6d7788;
-}
-
-.hero-meta-row {
-  margin-top: 12rpx;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-}
-
-.hero-meta-chip {
-  border-radius: 999rpx;
-  padding: 4rpx 14rpx;
-  font-size: 20rpx;
-  color: #4b5563;
-  background: #f3f6fa;
-}
-
-.hero-period-row {
-  margin-top: 14rpx;
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.hero-period-label {
-  font-size: 22rpx;
-  color: #7a8798;
+.hero-action-btns .ghost-btn,
+.hero-action-btns .save-btn {
+  flex: 1;
+  width: auto;
+  min-width: 0;
 }
 
 .hero-period-trigger {
-  min-height: 52rpx;
-  padding: 8rpx 16rpx;
+  min-height: 74rpx;
+  padding: 8rpx 10rpx 8rpx 16rpx;
   border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  background: #dff4ff;
+  box-shadow:
+    inset 0 0 0 3rpx rgba(33, 42, 54, 0.92),
+    0 6rpx 14rpx rgba(114, 128, 154, 0.14);
+  box-sizing: border-box;
+}
+
+.hero-period-trigger-main {
   display: inline-flex;
   align-items: center;
-  gap: 8rpx;
-  background: #f2f8fc;
-  box-shadow: inset 0 0 0 2rpx rgba(120, 218, 245, 0.22);
+  gap: 10rpx;
+  min-width: 0;
 }
 
 .hero-period-trigger-text {
-  font-size: 22rpx;
-  color: #2c4f63;
+  font-size: 26rpx;
+  color: #1f2c3d;
+  font-weight: 600;
+}
+
+.hero-period-trigger-compact {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 2rpx;
+}
+
+.hero-period-trigger-arrow {
+  width: 46rpx;
+  height: 46rpx;
+  border-radius: 999rpx;
+  background: #111721;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-focus-row {
+  margin-top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+}
+
+.hero-focus-cover-wrap {
+  width: 246rpx;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hero-focus-cover {
+  width: 100%;
+  height: 369rpx;
+  border-radius: 44rpx;
+  background: #dce5ef;
+  box-shadow: none;
+}
+
+.hero-focus-cover.is-drag-pressing {
+  box-shadow: inset 0 0 0 4rpx #ffa4ce;
+  transform: scale(0.99);
+}
+
+.hero-focus-cover-placeholder {
+  background: linear-gradient(145deg, #d8dee8 0%, #edf2f8 100%);
+}
+
+.hero-drop-btn {
+  position: absolute;
+  left: 50%;
+  bottom: -18rpx;
+  transform: translateX(-50%);
+  min-width: 154rpx;
+  height: 46rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  box-shadow: none;
+  padding: 0 12rpx;
+  z-index: 3;
+}
+
+.hero-drop-btn-text {
+  font-size: 28rpx;
+  color: #111722;
+  line-height: 1;
+}
+
+.hero-drop-btn-icon {
+  width: 24rpx;
+  height: 24rpx;
+  flex-shrink: 0;
+}
+
+.hero-focus-cover,
+.hero-drop-btn {
+  transition: transform 0.16s ease;
+}
+
+.hero-focus-cover:active {
+  transform: translateY(2rpx) scale(0.99);
+}
+
+.hero-drop-btn:active {
+  transform: translateX(-50%) translateY(2rpx) scale(0.99);
+}
+
+.selected-drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: hidden;
+  background: #e2ebf5;
+  box-shadow:
+    inset 0 0 0 4rpx #ffa4ce,
+    0 10rpx 24rpx rgba(44, 59, 80, 0.24);
+  transition:
+    left 0.05s linear,
+    top 0.05s linear,
+    width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-radius 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: left, top, width, height, border-radius;
+}
+
+.selected-drag-ghost.morphing {
+  box-shadow:
+    inset 0 0 0 4rpx #ffa4ce,
+    0 8rpx 18rpx rgba(255, 132, 190, 0.28);
+}
+
+.selected-drag-ghost-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: blur(16px) saturate(0.88) brightness(1.04);
+  transition: filter 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.selected-drag-ghost-placeholder {
+  background: linear-gradient(145deg, #d7dce8 0%, #ecf2f8 100%);
+}
+
+.selected-drag-ghost.morphing .selected-drag-ghost-image {
+  filter: blur(0) saturate(1) brightness(1);
+}
+
+.hero-focus-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  padding-top: 4rpx;
+}
+
+.hero-focus-range {
+  font-size: 24rpx;
+  color: #1f2937;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2rpx;
+}
+
+.hero-order-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.hero-order-strip-scroll {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+:deep(.hero-order-strip-scroll .uni-scroll-view-content) {
+  padding: 10rpx 0 18rpx;
+  padding-left: 10rpx;
+  box-sizing: border-box;
+}
+
+.hero-order-strip-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14rpx;
+  padding-right: 10rpx;
+}
+
+.hero-order-avatar-item {
+  width: 84rpx;
+  height: 84rpx;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.hero-order-avatar {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  background: #dce4ee;
+  box-shadow: 0 4rpx 12rpx rgba(60, 74, 95, 0.12);
+}
+
+.hero-order-avatar-placeholder {
+  background: linear-gradient(145deg, #d7dce8 0%, #eef3f8 100%);
+}
+
+.hero-order-avatar-item.active .hero-order-avatar {
+  box-shadow: 0 0 0 5rpx rgba(120, 218, 245, 0.42), 0 4rpx 12rpx rgba(45, 80, 110, 0.2);
+}
+
+.hero-order-tags {
+  position: absolute;
+  left: 50%;
+  bottom: -14rpx;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.hero-order-tag {
+  min-width: 48rpx;
+  height: 26rpx;
+  border-radius: 999rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18rpx;
+  padding: 0 8rpx;
+  line-height: 1;
+}
+
+.hero-order-tag-wait-ship {
+  background: #c6ccd8;
+  color: #ffffff;
+  box-shadow: 0 3rpx 8rpx rgba(121, 131, 148, 0.22);
+}
+
+.hero-order-tag-unscheduled {
+  background: #ff7878;
+  color: #000000;
+  box-shadow: 0 3rpx 8rpx rgba(255, 120, 120, 0.26);
+}
+
+.hero-overflow-tip {
+  flex-shrink: 0;
+  min-width: 72rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4rpx;
+}
+
+.hero-overflow-ellipsis {
+  width: 32rpx;
+  height: 14rpx;
+}
+
+.hero-overflow-count {
+  font-size: 34rpx;
+  color: #4a5366;
+  line-height: 1;
 }
 
 .hero-summary-row {
-  margin-top: 16rpx;
+  margin-top: 2rpx;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12rpx;
@@ -834,21 +1834,21 @@ onShow(() => {
 .hero-summary-item {
   border-radius: 16rpx;
   padding: 14rpx 12rpx;
-  background: var(--surface-subtle);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .save-btn {
   margin: 0;
-  width: 188rpx;
+  width: 164rpx;
   height: 70rpx;
   line-height: 70rpx;
   border-radius: 999rpx;
   border: none;
-  background: #78daf5;
-  color: #ffffff;
+  background: var(--btn-pastel-yellow);
+  color: var(--btn-pastel-text);
   font-size: 24rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 18rpx rgba(120, 218, 245, 0.36);
+  box-shadow: 0 6rpx 14rpx rgba(151, 161, 180, 0.18);
 }
 
 .save-btn::after {
@@ -857,16 +1857,20 @@ onShow(() => {
 
 .ghost-btn {
   margin: 0;
-  min-width: 210rpx;
+  min-width: 188rpx;
   height: 70rpx;
   line-height: 70rpx;
   border-radius: 999rpx;
   border: none;
-  background: #ffffff;
-  color: #2f6c86;
+  background: var(--btn-pastel-blue);
+  color: var(--btn-pastel-text);
   font-size: 24rpx;
   font-weight: 600;
-  box-shadow: inset 0 0 0 2rpx rgba(120, 218, 245, 0.28);
+  box-shadow: 0 6rpx 14rpx rgba(151, 161, 180, 0.14);
+}
+
+.menu-btn {
+  min-width: 0;
 }
 
 .ghost-btn::after {
@@ -874,8 +1878,8 @@ onShow(() => {
 }
 
 .save-btn.disabled {
-  background: linear-gradient(180deg, #b8e9f7 0%, #a4e2f4 100%);
-  color: rgba(255, 255, 255, 0.84);
+  background: #ecf0f5;
+  color: #a1acbd;
   box-shadow: none;
 }
 
@@ -893,106 +1897,9 @@ onShow(() => {
 .metric-value {
   display: block;
   margin-top: 6rpx;
-  font-size: 32rpx;
+  font-size: 26rpx;
   font-weight: 700;
   color: #1f2937;
-}
-
-.quick-card {
-  border-radius: 22rpx;
-  background: #ffffff;
-  box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.05);
-  padding: 22rpx;
-}
-
-.quick-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16rpx;
-}
-
-.quick-title {
-  display: block;
-  font-size: 32rpx;
-  color: #1f2937;
-}
-
-.quick-order-name {
-  border-radius: 999rpx;
-  padding: 8rpx 16rpx;
-  background: rgba(120, 218, 245, 0.2);
-  color: #2a6f89;
-  font-size: 21rpx;
-}
-
-.quick-body {
-  margin-top: 18rpx;
-}
-
-.quick-summary-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-}
-
-.summary-chip {
-  border-radius: 999rpx;
-  padding: 6rpx 14rpx;
-  background: #f3f6fa;
-  color: #516173;
-  font-size: 21rpx;
-}
-
-.quick-urgent-row {
-  margin-top: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.quick-label {
-  font-size: 24rpx;
-  color: #3f4d62;
-}
-
-.quick-actions {
-  margin-top: 16rpx;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-}
-
-.quick-btn {
-  min-width: 150rpx;
-  height: 58rpx;
-  line-height: 58rpx;
-  text-align: center;
-  border-radius: 999rpx;
-  background: #ffffff;
-  color: #2f5f77;
-  font-size: 22rpx;
-  box-shadow: inset 0 0 0 2rpx rgba(120, 218, 245, 0.24);
-}
-
-.quick-empty {
-  margin-top: 18rpx;
-  border-radius: 16rpx;
-  background: #f7f9fc;
-  padding: 18rpx;
-}
-
-.quick-empty text {
-  font-size: 23rpx;
-  color: #7b8494;
-}
-
-.quick-tip {
-  margin-top: 12rpx;
-  display: block;
-  font-size: 22rpx;
-  color: #7b8494;
-  line-height: 1.5;
 }
 
 .calendar-card {
@@ -1000,20 +1907,9 @@ onShow(() => {
   background: var(--surface);
   box-shadow: 0 10rpx 24rpx rgba(15, 23, 42, 0.05);
   padding: 20rpx;
-  overflow: hidden;
-}
-
-.calendar-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12rpx;
-  padding: 8rpx 6rpx 14rpx;
-}
-
-.calendar-head-main {
-  flex: 1;
-  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 .calendar-title {
@@ -1036,21 +1932,14 @@ onShow(() => {
   color: #93a0b2;
 }
 
-.rule-chip {
-  padding: 10rpx 16rpx;
-  border-radius: 999rpx;
-  font-size: 20rpx;
-  color: #2b6580;
-  background: rgba(120, 218, 245, 0.2);
-  font-weight: 600;
-}
-
 .period-popup-sheet {
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
   border-radius: 24rpx 24rpx 0 0;
   background: #ffffff;
   padding: 18rpx 20rpx calc(24rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -12rpx 24rpx rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
 }
 
 .period-popup-head {
@@ -1093,8 +1982,8 @@ onShow(() => {
 }
 
 .period-popup-item.active {
-  background: #edf8fc;
-  box-shadow: inset 0 0 0 2rpx rgba(120, 218, 245, 0.32);
+  background: var(--btn-pastel-blue);
+  box-shadow: inset 0 0 0 2rpx rgba(80, 140, 170, 0.12);
 }
 
 .period-popup-item-main {
@@ -1114,6 +2003,138 @@ onShow(() => {
   color: #8b97a9;
 }
 
+.action-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.action-menu-item {
+  border-radius: 16rpx;
+  padding: 16rpx;
+  background: #ffffff;
+  box-shadow: 0 6rpx 14rpx rgba(96, 110, 131, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+}
+
+.action-menu-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 0;
+}
+
+.action-menu-title {
+  font-size: 28rpx;
+  color: #1f2937;
+}
+
+.action-menu-desc {
+  font-size: 20rpx;
+  color: #8a94a5;
+}
+
+.action-menu-grid {
+  margin-top: 4rpx;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10rpx;
+}
+
+.action-menu-chip {
+  height: 64rpx;
+  border-radius: 999rpx;
+  background: #f4f6f8;
+  color: #1f2937;
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auto-arrange-popup-sheet {
+  padding-bottom: calc(28rpx + env(safe-area-inset-bottom));
+}
+
+.auto-arrange-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.auto-arrange-option {
+  border-radius: 18rpx;
+  background: #f7f9fc;
+  padding: 16rpx;
+  box-shadow: inset 0 0 0 2rpx rgba(120, 218, 245, 0.08);
+}
+
+.auto-arrange-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.auto-arrange-option-title {
+  font-size: 28rpx;
+  color: #1f2937;
+}
+
+.auto-arrange-option-sub {
+  font-size: 21rpx;
+  color: #7d8898;
+}
+
+.auto-arrange-days-row {
+  margin-top: 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.auto-arrange-days-label,
+.auto-arrange-days-unit {
+  font-size: 23rpx;
+  color: #667487;
+}
+
+.auto-arrange-days-input {
+  width: 128rpx;
+  height: 62rpx;
+  border-radius: 14rpx;
+  background: #eef2f6;
+  text-align: center;
+  font-size: 26rpx;
+  color: #1f2937;
+}
+
+.auto-arrange-submit {
+  margin-left: auto;
+  min-width: 142rpx;
+  height: 62rpx;
+  border-radius: 999rpx;
+  background: #78daf5;
+  color: #1f2937;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20rpx;
+  font-weight: 600;
+}
+
+.auto-arrange-submit-secondary {
+  margin-top: 14rpx;
+  margin-left: 0;
+  width: 100%;
+  background: #ecf0f5;
+  color: #2a3545;
+}
+
 .foot-tip {
   display: flex;
   align-items: center;
@@ -1122,6 +2143,8 @@ onShow(() => {
   border-radius: 14rpx;
   background: #ffffff;
   padding: 14rpx 16rpx;
+  max-width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 6rpx 16rpx rgba(15, 23, 42, 0.04);
 
   text {
@@ -1136,6 +2159,8 @@ onShow(() => {
   text-align: center;
   border-radius: 24rpx;
   background: #ffffff;
+  max-width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 12rpx 24rpx rgba(15, 23, 42, 0.06);
 }
 
@@ -1172,13 +2197,13 @@ onShow(() => {
 }
 
 :deep(.schedule-calendar) {
-  --status-c0: #eef1f4;
-  --status-c1: #e8edf1;
-  --status-c2: #e3e8ee;
-  --status-c3: #dde4eb;
-  --status-c4: #d8e0e8;
-  --status-c5: #d1dae4;
-  --status-c6: #b7c3d1;
+  --status-c0: #cdefff;
+  --status-c1: #ffeabf;
+  --status-c2: #d6f6e8;
+  --status-c3: #efe2ff;
+  --status-c4: #ffddea;
+  --status-c5: #dbe8ff;
+  --status-c6: #ffe7d4;
 }
 
 :deep(.schedule-calendar .month-btn) {
@@ -1195,16 +2220,18 @@ onShow(() => {
 
 :deep(.schedule-calendar .schedule-day-cell) {
   background: #fafbfc;
-  box-shadow: inset 0 0 0 1rpx #e6eaf0;
+  border: none;
+  box-shadow: none;
 }
 
 :deep(.schedule-calendar .schedule-day-cell.today) {
   background: #f1f9fc;
-  box-shadow: inset 0 0 0 1rpx rgba(120, 218, 245, 0.5);
+  box-shadow: none;
 }
 
 :deep(.schedule-calendar .schedule-day-cell.hover) {
-  box-shadow: inset 0 0 0 2rpx rgba(120, 218, 245, 0.42);
+  background: #edf5fb;
+  box-shadow: none;
 }
 
 :deep(.schedule-calendar .selected-panel) {
@@ -1216,23 +2243,23 @@ onShow(() => {
 }
 
 :deep(.schedule-calendar .selected-action-chip.drag-chip) {
-  background: #78daf5;
-  color: #ffffff;
+  background: #d9f2fb;
+  color: #253246;
 }
 
-:deep(.schedule-calendar .selected-action-chip.resize-chip) {
-  background: #eef3f9;
-  color: #1f2937;
+:deep(.schedule-calendar .selected-action-chip.detail-chip) {
+  background: #e6eef7;
+  color: #253246;
 }
 
-:deep(.schedule-calendar .selected-action-chip.clear-chip) {
-  background: #f4f7fb;
-  color: #1f2937;
+:deep(.schedule-calendar .selected-tip-bubble) {
+  color: #253246;
+  background: #e6f3fa;
 }
 
 :deep(.schedule-calendar .order-item-drag) {
-  background: rgba(120, 218, 245, 0.2);
-  color: #1f5b73;
+  background: #e6f3fa;
+  color: #253246;
 }
 
 :deep(.schedule-calendar .drag-float) {
@@ -1243,52 +2270,60 @@ onShow(() => {
   .hero-card {
     padding: 22rpx 20rpx;
   }
-
-  .hero-top {
-    flex-direction: column;
-  }
-
   .hero-actions {
     width: 100%;
-    flex-direction: column;
   }
 
-  .save-btn {
+  .hero-action-btns {
     width: 100%;
   }
 
-  .ghost-btn {
-    width: 100%;
+  .hero-action-btns .save-btn,
+  .hero-action-btns .ghost-btn {
+    width: auto;
+  }
+  .hero-focus-row {
+    gap: 14rpx;
   }
 
-  .hero-title {
-    font-size: 36rpx;
+  .hero-focus-cover-wrap {
+    width: 218rpx;
+  }
+
+  .hero-focus-cover {
+    height: 327rpx;
+  }
+
+  .hero-drop-btn {
+    min-width: 170rpx;
+    height: 42rpx;
+  }
+
+  .hero-drop-btn-text {
+    font-size: 32rpx;
+  }
+
+  .hero-focus-range {
+    font-size: 22rpx;
+  }
+
+  .hero-order-avatar-item,
+  .hero-order-avatar {
+    width: 76rpx;
+    height: 76rpx;
+  }
+
+  .hero-order-strip-inner {
+    gap: 12rpx;
   }
 
   .hero-summary-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .calendar-head {
-    flex-direction: column;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8rpx;
   }
 
-  .quick-head {
-    flex-direction: column;
-  }
-
-  .quick-actions {
-    gap: 8rpx;
-  }
-
-  .quick-btn {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .rule-chip {
-    align-self: flex-start;
+  .hero-summary-item {
+    padding: 12rpx 10rpx;
   }
 }
 </style>
