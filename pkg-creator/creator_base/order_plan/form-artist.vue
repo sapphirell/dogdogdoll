@@ -1062,9 +1062,7 @@ function normalizeShippingFormState(shipping) {
   }
 }
 
-const unifiedMinLeadDays = computed(() => (
-  form.value.order_config.extra.shipping.deadline_type === 'ship' ? 3 : 7
-))
+const unifiedMinLeadDays = computed(() => 7)
 
 const unifiedMinDate = computed(() => {
   const ct = toUnix(form.value.close_date, form.value.close_time)
@@ -1797,6 +1795,21 @@ async function submitPlan() {
   }
   if (closeUnix <= openUnix) {
     return uni.showToast({ title: '结束时间必须晚于开始时间', icon: 'none' })
+  }
+
+  const shippingCfg = form.value.order_config?.extra?.shipping || {}
+  const shippingMode = String(shippingCfg.mode || 'separate')
+  if (shippingMode === 'unified') {
+    const unifiedDate = String(shippingCfg.unified_date || '').trim()
+    if (!unifiedDate) {
+      return uni.showToast({ title: '请选择统一寄送日期', icon: 'none' })
+    }
+    if (unifiedMinDate.value && unifiedDate < unifiedMinDate.value) {
+      return uni.showToast({
+        title: `${shippingDeadlineTypeText.value}时间最早只能选择接单截止后 ${unifiedMinLeadDays.value} 天`,
+        icon: 'none'
+      })
+    }
   }
 
   if (isEditMode.value && originalPlan.value.service_scene === 2 && originalPlan.value.open_time) {
