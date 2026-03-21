@@ -85,8 +85,8 @@
               <text class="val">{{ avgCycleDaysText }}</text>
             </view>
             <view class="stat">
-              <text class="label font-title">准时率</text>
-              <text class="val">{{ punctualityRateText }}</text>
+              <text class="label font-title">延期率</text>
+              <text class="val">{{ delayRateText }}</text>
             </view>
           </view>
 
@@ -282,9 +282,17 @@ const avgCycleDaysText = computed(() => {
   const d = Number(info.artist_stats?.avg_cycle_days || 0)
   return d ? `${toFixed2(d)}天` : '—'
 })
-const punctualityRateText = computed(() => {
-  const r = Number(info.artist_stats?.punctuality_rate || 0)
-  return `${Math.round(r * 100)}%`
+const delayRateText = computed(() => {
+  let rate = Number(info.artist_stats?.delay_rate)
+  if (!Number.isFinite(rate)) {
+    const punctuality = Number(info.artist_stats?.punctuality_rate || 0)
+    rate = 1 - punctuality
+  }
+  if (!Number.isFinite(rate)) {
+    rate = 0
+  }
+  rate = Math.max(0, Math.min(1, rate))
+  return `${Math.round(rate * 100)}%`
 })
 
 /** 链接信息（来自 info.brand） */

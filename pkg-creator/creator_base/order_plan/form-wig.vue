@@ -290,7 +290,10 @@
             v-for="opt in shippingDeadlineTypeOptions"
             :key="opt.value"
             class="size-tag"
-            :class="{ active: form.order_config.extra.shipping.deadline_type === opt.value }"
+            :class="{
+              active: form.order_config.extra.shipping.deadline_type === opt.value,
+              disabled: isShippingDeadlineTypeDisabled(opt.value)
+            }"
             @click="onShippingDeadlineTypeChange(opt.value)"
           >
             {{ opt.text }}
@@ -1405,10 +1408,17 @@ function onShippingChange(e) {
 }
 
 function onShippingDeadlineTypeChange(type) {
+  if (isShippingDeadlineTypeDisabled(type)) {
+    return
+  }
   form.value.order_config.extra.shipping.deadline_type = normalizeShippingDeadlineType(
     form.value.order_config.extra.shipping.mode,
     type
   )
+}
+
+function isShippingDeadlineTypeDisabled(type) {
+  return String(type || '').trim() === 'arrival'
 }
 
 function onPremiumQueueSwitch(e) {
@@ -2581,6 +2591,12 @@ onMounted(() => {
 .size-tag.active {
   background: #171e22;
   color: #fff;
+}
+
+.size-tag.disabled,
+.size-tag.disabled.active {
+  background: #e6e8ec;
+  color: #a1a8b3;
 }
 
 .size-price-list {
