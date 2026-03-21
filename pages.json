@@ -489,7 +489,7 @@
   "app-plus": { "popGesture": "close" },
   "mp-weixin": { "disableSwipeBack": false },
 	"condition" : { //模式配置，仅开发期间生效
-		"current": 0, //当前激活的模式(list 的索引项)
+		"current": -1, //关闭启动模式，避免默认跳转到调试页
 		"list": [
 			{
 				"name": "", //模式名称
