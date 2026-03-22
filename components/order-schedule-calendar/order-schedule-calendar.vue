@@ -26,6 +26,7 @@
       @touchmove.stop="onRootTouchMove"
       @touchend.stop="onRootTouchEnd"
       @touchcancel.stop="onRootTouchCancel"
+      @scroll="handleCalendarScroll"
       @scrolltoupper="handleCalendarScrollToUpper"
       @scrolltolower="handleCalendarScrollToLower"
     >
@@ -53,7 +54,8 @@
                 :style="getDayCellStyle(month, idx)"
                 :class="{
                   today: day.date === todayText,
-                  hover: dragState.active && dragState.hoverDate === day.date,
+                  past: day.date < todayText,
+                  hover: dragState.active && dragState.mode === 'place' && dragState.hoverDate === day.date,
                   flash: isDayFlashing(day.date)
                 }"
                 @tap="handleDayTap(day)"
@@ -63,6 +65,47 @@
             </view>
 
             <view class="month-grid-overlay">
+              <view
+                v-for="segment in resizePreviewSegmentsMap[month.monthKey] || []"
+                :key="segment.key"
+                class="floating-segment preview"
+                :class="[
+                  segment.tone,
+                  {
+                    single: segment.single,
+                    'has-start': segment.showStartAvatar,
+                    'has-end': segment.showEndAvatar,
+                    invalid: segment.invalid,
+                  }
+                ]"
+                :style="getFloatingSegmentStyle(segment)"
+              >
+                <view class="floating-segment-line"></view>
+                <view
+                  v-if="segment.showStartAvatar"
+                  class="floating-avatar-wrap start"
+                >
+                  <image
+                    v-if="getOrderCover(segment.order)"
+                    class="floating-avatar"
+                    :src="getOrderCover(segment.order)"
+                    mode="aspectFill"
+                  />
+                  <view v-else class="floating-avatar placeholder"></view>
+                </view>
+                <view
+                  v-if="segment.showEndAvatar"
+                  class="floating-avatar-wrap end"
+                >
+                  <image
+                    v-if="getOrderCover(segment.order)"
+                    class="floating-avatar"
+                    :src="getOrderCover(segment.order)"
+                    mode="aspectFill"
+                  />
+                  <view v-else class="floating-avatar placeholder"></view>
+                </view>
+              </view>
               <view
                 v-for="segment in floatingSegmentsMap[month.monthKey] || []"
                 :key="segment.key"
@@ -74,6 +117,7 @@
                     single: segment.single,
                     'has-start': segment.showStartAvatar,
                     'has-end': segment.showEndAvatar,
+                    'previewing-origin': isResizePreviewingOrder(segment.orderId),
                   }
                 ]"
                 :style="getFloatingSegmentStyle(segment)"
@@ -162,7 +206,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['change', 'update:selectedOrderId', 'invalid'])
+const emit = defineEmits(['change', 'update:selectedOrderId', 'invalid', 'calendar-scroll'])
 
 const weekNames = ['一', '二', '三', '四', '五', '六', '日']
 const submissionStatusTextMap = {
@@ -645,6 +689,76 @@ function getOrderTone(order) {
   return `tone-${idx}`
 }
 
+function buildRangeSegmentsForMonth({
+  monthKey,
+  monthDays,
+  firstWeekday,
+  orderID,
+  order = null,
+  lane,
+  tone,
+  startDate,
+  endDate,
+  boundaryStartDate = '',
+  boundaryEndDate = '',
+  invalid = false,
+  keyPrefix = 'segment',
+}) {
+  const segments = []
+  const dayCount = Number(monthDays?.length || 0)
+  const offset = Number(firstWeekday || 0)
+  const monthStartDate = String(monthDays?.[0]?.date || '')
+  const monthEndDate = String(monthDays?.[monthDays.length - 1]?.date || '')
+  if (!monthStartDate || !monthEndDate) return segments
+  const orderStartDate = normalizeDateText(startDate || '')
+  const orderEndDate = normalizeDateText(endDate || '')
+  const avatarStartDate = normalizeDateText(boundaryStartDate || orderStartDate)
+  const avatarEndDate = normalizeDateText(boundaryEndDate || orderEndDate)
+  if (!orderStartDate || !orderEndDate) return segments
+  if (orderEndDate < monthStartDate || orderStartDate > monthEndDate) return segments
+  const visibleStart = orderStartDate < monthStartDate ? monthStartDate : orderStartDate
+  const visibleEnd = orderEndDate > monthEndDate ? monthEndDate : orderEndDate
+  const startDay = Number(String(visibleStart).slice(8, 10) || 0)
+  const endDay = Number(String(visibleEnd).slice(8, 10) || 0)
+  if (startDay <= 0 || endDay <= 0 || startDay > endDay || endDay > dayCount) return segments
+  let startIndex = offset + startDay - 1
+  const endIndex = offset + endDay - 1
+  if (endIndex < startIndex) return segments
+  while (startIndex <= endIndex) {
+    const row = Math.floor(startIndex / 7)
+    const rowStartIndex = row * 7
+    const rowEndIndex = rowStartIndex + 6
+    const segmentEndIndex = Math.min(endIndex, rowEndIndex)
+    const startCol = startIndex - rowStartIndex
+    const endCol = segmentEndIndex - rowStartIndex
+    const segmentStartDay = startIndex - offset + 1
+    const segmentEndDay = segmentEndIndex - offset + 1
+    const segmentStartDate = segmentStartDay >= 1 && segmentStartDay <= dayCount
+      ? `${monthKey}-${String(segmentStartDay).padStart(2, '0')}`
+      : ''
+    const segmentEndDate = segmentEndDay >= 1 && segmentEndDay <= dayCount
+      ? `${monthKey}-${String(segmentEndDay).padStart(2, '0')}`
+      : ''
+    segments.push({
+      key: `${keyPrefix}-${monthKey}-r${row}-l${Number(lane || 0)}-s${startCol}-e${endCol}-i${Number(orderID || 0)}`,
+      row,
+      lane: Number(lane || 0),
+      startCol,
+      endCol,
+      single: endCol === startCol,
+      order,
+      orderId: Number(orderID || 0),
+      selected: false,
+      tone: String(tone || 'tone-0'),
+      showStartAvatar: !!segmentStartDate && segmentStartDate === avatarStartDate,
+      showEndAvatar: !!segmentEndDate && segmentEndDate === avatarEndDate,
+      invalid: !!invalid,
+    })
+    startIndex = segmentEndIndex + 1
+  }
+  return segments
+}
+
 function buildFloatingSegmentsForMonth(monthKey, monthDays, firstWeekday) {
   const segments = []
   const dayCount = Number(monthDays?.length || 0)
@@ -664,48 +778,26 @@ function buildFloatingSegmentsForMonth(monthKey, monthDays, firstWeekday) {
     const lane = Number(orderLaneMap.value[itemID] ?? -1)
     if (lane < 0) return
 
-    const visibleStart = orderStartDate < monthStartDate ? monthStartDate : orderStartDate
-    const visibleEnd = orderEndDate > monthEndDate ? monthEndDate : orderEndDate
-    const startDay = Number(String(visibleStart).slice(8, 10) || 0)
-    const endDay = Number(String(visibleEnd).slice(8, 10) || 0)
-    if (startDay <= 0 || endDay <= 0 || startDay > endDay || endDay > dayCount) return
-    let startIndex = offset + startDay - 1
-    const endIndex = offset + endDay - 1
-    if (endIndex < startIndex) return
-
-    while (startIndex <= endIndex) {
-      const row = Math.floor(startIndex / 7)
-      const rowStartIndex = row * 7
-      const rowEndIndex = rowStartIndex + 6
-      const segmentEndIndex = Math.min(endIndex, rowEndIndex)
-      const startCol = startIndex - rowStartIndex
-      const endCol = segmentEndIndex - rowStartIndex
-      const segmentStartDay = startIndex - offset + 1
-      const segmentEndDay = segmentEndIndex - offset + 1
-      const segmentStartDate = segmentStartDay >= 1 && segmentStartDay <= dayCount
-        ? `${monthKey}-${String(segmentStartDay).padStart(2, '0')}`
-        : ''
-      const segmentEndDate = segmentEndDay >= 1 && segmentEndDay <= dayCount
-        ? `${monthKey}-${String(segmentEndDay).padStart(2, '0')}`
-        : ''
-      const showStartAvatar = segmentStartDate && segmentStartDate === orderStartDate
-      const showEndAvatar = segmentEndDate && segmentEndDate === orderEndDate
+    const baseSegments = buildRangeSegmentsForMonth({
+      monthKey,
+      monthDays,
+      firstWeekday: offset,
+      orderID: itemID,
+      order,
+      lane,
+      tone: getOrderTone(order),
+      startDate: orderStartDate,
+      endDate: orderEndDate,
+      boundaryStartDate: orderStartDate,
+      boundaryEndDate: orderEndDate,
+      keyPrefix: 'segment',
+    })
+    baseSegments.forEach((segment) => {
       segments.push({
-        key: `${monthKey}-r${row}-l${lane}-s${startCol}-e${endCol}-i${itemID}`,
-        row,
-        lane,
-        startCol,
-        endCol,
-        single: endCol === startCol,
-        order,
-        orderId: itemID,
+        ...segment,
         selected: itemID === Number(selectedOrderId.value || 0),
-        tone: getOrderTone(order),
-        showStartAvatar,
-        showEndAvatar,
       })
-      startIndex = segmentEndIndex + 1
-    }
+    })
   })
 
   segments.sort((a, b) => {
@@ -727,6 +819,67 @@ const floatingSegmentsMap = computed(() => {
   })
   return map
 })
+
+const resizePreviewRange = computed(() => {
+  if (!dragState.active || dragState.mode !== 'resize') return null
+  const orderID = Number(dragState.orderId || 0)
+  if (!orderID) return null
+  const row = localOrders.value.find((order) => Number(order?.submission_item_id || 0) === orderID)
+  if (!row) return null
+  const targetDate = normalizeDateText(dragState.hoverDate || '')
+  if (!targetDate) return null
+  const start = normalizeDateText(row?.start_date || '')
+  const end = normalizeDateText(row?.end_date || '')
+  if (!start || !end) return null
+  const edge = resolveResizeEdgeByAnchor(row, targetDate, dragState.resizeAnchor)
+  let nextStart = start
+  let nextEnd = end
+  if (edge === 'start') {
+    nextStart = targetDate > end ? end : targetDate
+  } else {
+    nextEnd = targetDate < start ? start : targetDate
+  }
+  const lane = Number(orderLaneMap.value[orderID] ?? 0)
+  const valid = canApplyRange(orderID, nextStart, nextEnd)
+  return {
+    orderID,
+    order: row,
+    lane: lane >= 0 ? lane : 0,
+    tone: getOrderTone(row),
+    startDate: nextStart,
+    endDate: nextEnd,
+    valid,
+  }
+})
+
+const resizePreviewSegmentsMap = computed(() => {
+  const map = {}
+  const preview = resizePreviewRange.value
+  if (!preview) return map
+  visibleMonthBlocks.value.forEach((block) => {
+    map[block.monthKey] = buildRangeSegmentsForMonth({
+      monthKey: block.monthKey,
+      monthDays: block.days || [],
+      firstWeekday: Number(block.firstWeekday || 0),
+      orderID: preview.orderID,
+      order: preview.order,
+      lane: preview.lane,
+      tone: preview.tone,
+      startDate: preview.startDate,
+      endDate: preview.endDate,
+      boundaryStartDate: preview.startDate,
+      boundaryEndDate: preview.endDate,
+      invalid: !preview.valid,
+      keyPrefix: 'preview',
+    })
+  })
+  return map
+})
+
+function isResizePreviewingOrder(orderID) {
+  if (!dragState.active || dragState.mode !== 'resize') return false
+  return Number(orderID || 0) > 0 && Number(orderID || 0) === Number(resizePreviewRange.value?.orderID || 0)
+}
 
 function getFloatingSegmentStyle(segment) {
   const cellHeight = Number(dayCellHeightPx.value || 0)
@@ -985,6 +1138,10 @@ function handleCalendarScrollToLower() {
   })
 }
 
+function handleCalendarScroll(e) {
+  emit('calendar-scroll', Number(e?.detail?.scrollTop || 0))
+}
+
 function emitInvalid(msg) {
   emit('invalid', msg || '操作失败')
 }
@@ -1166,6 +1323,13 @@ function findDateByPoint(x, y) {
   return ''
 }
 
+function resolveDropDateFromCurrentTouch() {
+  const x = Number(dragState.touchX || 0)
+  const y = Number(dragState.touchY || 0)
+  if (!x && !y) return ''
+  return findDateByPoint(x, y)
+}
+
 function onRootTouchMove(e) {
   if (!dragState.active) return
   const touch = getTouchPoint(e)
@@ -1173,7 +1337,12 @@ function onRootTouchMove(e) {
   if (typeof e.preventDefault === 'function' && e.cancelable) e.preventDefault()
   dragState.touchX = touch.clientX
   dragState.touchY = touch.clientY
-  dragState.hoverDate = findDateByPoint(touch.clientX, touch.clientY)
+  const hitDate = findDateByPoint(touch.clientX, touch.clientY)
+  if (hitDate) {
+    dragState.hoverDate = hitDate
+  } else if (!dragState.hoverDate && dragState.mode === 'place') {
+    dragState.hoverDate = ''
+  }
 }
 
 function resolveResizeEdgeByAnchor(order, targetDate, anchor) {
@@ -1208,7 +1377,7 @@ function resizeOrderRange(orderID, targetDate, anchor) {
 
 function finishDrag() {
   if (!dragState.active) return
-  const targetDate = dragState.hoverDate
+  const targetDate = normalizeDateText(resolveDropDateFromCurrentTouch() || '')
   const mode = dragState.mode
   const orderID = Number(dragState.orderId || 0)
   const resizeAnchor = String(dragState.resizeAnchor || '')
@@ -1442,6 +1611,16 @@ defineExpose({
   z-index: 12;
 }
 
+.floating-segment.preview {
+  pointer-events: none;
+  z-index: 26;
+}
+
+.floating-segment.previewing-origin {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .floating-segment.selected {
   z-index: 24;
 }
@@ -1455,6 +1634,36 @@ defineExpose({
   height: var(--segment-track-height, 10px);
   border-radius: 999px;
   background: var(--segment-bg, #dce6ef);
+}
+
+.floating-segment.preview .floating-segment-line {
+  height: 6px;
+  background:
+    repeating-linear-gradient(
+      -28deg,
+      rgba(144, 154, 168, 0.78) 0 2px,
+      rgba(144, 154, 168, 0.16) 2px 6px
+    );
+  box-shadow: inset 0 0 0 1px rgba(129, 139, 153, 0.34);
+}
+
+.floating-segment.preview.invalid .floating-segment-line {
+  height: 6px;
+  background:
+    repeating-linear-gradient(
+      -28deg,
+      rgba(124, 134, 149, 0.84) 0 2px,
+      rgba(124, 134, 149, 0.2) 2px 6px
+    );
+  box-shadow: inset 0 0 0 1px rgba(116, 126, 140, 0.4);
+}
+
+.floating-segment.preview .floating-avatar-wrap {
+  box-shadow: 0 3px 10px rgba(90, 112, 144, 0.18);
+}
+
+.floating-segment.preview .floating-avatar {
+  opacity: 0.96;
 }
 
 .floating-segment.has-start .floating-segment-line {
@@ -1578,6 +1787,14 @@ defineExpose({
 
 .schedule-day-cell.today {
   background: #f2f7fb;
+}
+
+.schedule-day-cell.past {
+  background: #eef2f6;
+}
+
+.schedule-day-cell.past .day-num {
+  color: #90a0b5;
 }
 
 .schedule-day-cell.hover {

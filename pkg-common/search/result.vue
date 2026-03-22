@@ -51,12 +51,12 @@
         </template>
         <template #left>
           <view class="nav-back-pill" @tap="goBack">
-            <uni-icons type="left" size="22" color="#1d2c3f" />
+            <uni-icons type="arrow-left" size="22" color="#1d2c3f" />
           </view>
         </template>
         <template #transparentFixedLeft>
           <view class="nav-back-pill" @tap="goBack">
-            <uni-icons type="left" size="22" color="#1d2c3f" />
+            <uni-icons type="arrow-left" size="22" color="#1d2c3f" />
           </view>
         </template>
         <template #right>
@@ -102,7 +102,7 @@
               <text
                 v-for="s in effectiveSizes"
                 :key="`active-size-${s}`"
-                class="active-tag"
+                class="active-tag active-tag--size"
               >
                 尺寸：{{ s }}
               </text>
@@ -168,38 +168,108 @@
       </z-paging>
     </view>
 
-    <common-modal v-model:visible="showFilterModal" width="680rpx" top="18vh">
-      <view class="filter-modal">
-        <view class="filter-title font-alimamashuhei">筛选分类</view>
-        <view class="filter-sub">可多选，结果会叠加到搜索条件</view>
-        <view class="filter-chip-wrap">
-          <view
-            v-for="item in GOODS_CATEGORY_DEFS"
-            :key="`filter-${item.value}`"
-            :class="['filter-chip', { active: filterDraftCategories.includes(item.value) }]"
-            @tap="toggleFilterDraft(item.value)"
+    <uni-popup
+      ref="filterPopupRef"
+      type="bottom"
+      :mask-click="true"
+      @change="onFilterPopupChange"
+    >
+      <view class="filter-sheet" :style="{ paddingBottom: `${filterPopupSafeBottom}px` }">
+        <view class="filter-sheet-header">
+          <text class="sheet-cancel" @tap="closeFilterPopup">取消</text>
+          <text class="sheet-title font-alimamashuhei">
+            {{ filterPopupStage === 'picker' ? filterPickerTitle : '筛选条件' }}
+          </text>
+          <text
+            class="sheet-action"
+            @tap="filterPopupStage === 'picker' ? backToFilterEntry() : applyFilterAndClose()"
           >
-            {{ item.value }}
+            {{ filterPopupStage === 'picker' ? '返回' : '完成' }}
+          </text>
+        </view>
+
+        <view v-if="filterPopupStage === 'entry'" class="filter-entry-body">
+          <view class="filter-entry-row" @tap="openFilterPicker('size')">
+            <view class="entry-main">
+              <text class="entry-label font-alimamashuhei">尺寸</text>
+              <text class="entry-value">{{ filterDraftSize || '不限' }}</text>
+            </view>
+            <uni-icons type="right" size="15" color="#8697a8" />
+          </view>
+
+          <view class="filter-entry-row" @tap="openFilterPicker('category')">
+            <view class="entry-main">
+              <text class="entry-label font-alimamashuhei">分类</text>
+              <text class="entry-value">{{ filterDraftCategory || '不限' }}</text>
+            </view>
+            <uni-icons type="right" size="15" color="#8697a8" />
+          </view>
+
+          <view class="filter-entry-actions">
+            <button class="btn-ghost" @tap="resetFilterDraft">重置</button>
+            <button class="btn-primary" @tap="applyFilterAndClose">应用</button>
           </view>
         </view>
-        <view class="filter-actions">
-          <button class="btn-ghost" @tap="clearFilterDraft">清空</button>
-          <button class="btn-primary" @tap="applyFilterDraft">应用筛选</button>
+
+        <view v-else class="filter-picker-body">
+          <picker-view
+            v-if="filterPopupMounted"
+            :class="['filter-picker', { 'filter-picker--size': filterPickerType === 'size' }]"
+            :indicator-style="filterPickerIndicatorStyle"
+            :value="filterPickerType === 'size' ? [filterSizeCategoryPickerIndex, filterSizeDetailPickerIndex] : [filterPickerIndex]"
+            @change="onFilterPickerChange"
+          >
+            <picker-view-column v-if="filterPickerType === 'size'">
+              <view
+                v-for="option in filterSizeCategoryPickerOptions"
+                :key="`size-category-${option}`"
+                class="filter-picker-item"
+              >
+                {{ option }}
+              </view>
+            </picker-view-column>
+            <picker-view-column v-if="filterPickerType === 'size'">
+              <view
+                v-for="option in filterSizeDetailPickerOptions"
+                :key="`size-detail-${option}`"
+                class="filter-picker-item filter-picker-item--sub"
+              >
+                {{ option }}
+              </view>
+            </picker-view-column>
+            <picker-view-column v-else>
+              <view
+                v-for="option in currentFilterPickerOptions"
+                :key="`${filterPickerType}-${option}`"
+                class="filter-picker-item"
+              >
+                {{ option }}
+              </view>
+            </picker-view-column>
+          </picker-view>
+
+          <view class="filter-picker-footer">
+            <button class="btn-primary picker-confirm-btn" @tap="confirmFilterPicker">选择</button>
+          </view>
         </view>
       </view>
-    </common-modal>
+    </uni-popup>
   </view>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { onLoad, onPageScroll } from '@dcloudio/uni-app'
 import { websiteUrl, getStatusBarHeight, getNavBarHeight, toPx } from '@/common/config.js'
 import {
   DEFAULT_GOODS_TYPE_OPTIONS,
+  DEFAULT_SALE_SIZE_CATEGORIES,
+  buildSizeCategoryOptions,
+  buildSizeDetailOptions,
   buildGoodsCategoryAliasMap,
   buildGoodsCategoryDefsFromTypes,
-  requestGoodsTypes
+  requestGoodsTypes,
+  requestSizeMap
 } from '@/common/goods-meta.js'
 
 const pageSize = 20
@@ -211,10 +281,20 @@ const scrollTop = ref(0)
 const navOffsetPx = ref(0)
 const lastScrollTopPx = ref(0)
 const scrollInited = ref(false)
-const showFilterModal = ref(false)
 const filterCategories = ref([])
-const filterDraftCategories = ref([])
 const filterSizes = ref([])
+const filterPopupRef = ref(null)
+const filterPopupMounted = ref(false)
+const filterPopupSafeBottom = ref(0)
+const filterPopupStage = ref('entry')
+const filterPickerType = ref('size')
+const filterPickerIndex = ref(0)
+const filterSizeCategoryPickerIndex = ref(0)
+const filterSizeDetailPickerIndex = ref(0)
+const filterDraftCategory = ref('')
+const filterDraftSize = ref('')
+const filterSizeMap = ref({})
+const filterSizeCategoryOptions = ref([...DEFAULT_SALE_SIZE_CATEGORIES])
 const manualBrandId = ref(0)
 const manualBrandName = ref('')
 const token = ref('')
@@ -255,10 +335,35 @@ const effectiveSizes = computed(() => {
 
 const GOODS_CATEGORY_DEFS = ref(buildGoodsCategoryDefsFromTypes(DEFAULT_GOODS_TYPE_OPTIONS))
 const GOODS_CATEGORY_ALIAS_MAP = computed(() => buildGoodsCategoryAliasMap(GOODS_CATEGORY_DEFS.value))
+const filterPickerIndicatorStyle = 'height:64px;'
+const filterPickerTitle = computed(() => (filterPickerType.value === 'size' ? '选择尺寸' : '选择分类'))
+const filterCategoryPickerOptions = computed(() => ['不限', ...GOODS_CATEGORY_DEFS.value.map(item => item.value)])
+const filterSizeCategoryPickerOptions = computed(() => ['不限', ...(filterSizeCategoryOptions.value || [])])
+const filterSizeCurrentCategory = computed(() => String(filterSizeCategoryPickerOptions.value[filterSizeCategoryPickerIndex.value] || '不限'))
+const filterSizeDetailPickerOptions = computed(() => {
+  if (filterSizeCurrentCategory.value === '不限') return ['不限']
+  const details = buildSizeDetailOptions(filterSizeMap.value || {}, filterSizeCurrentCategory.value)
+  return ['全部', ...details]
+})
+const currentFilterPickerOptions = computed(() => {
+  return filterCategoryPickerOptions.value
+})
 
 async function initGoodsCategoryDefs() {
   const types = await requestGoodsTypes()
   GOODS_CATEGORY_DEFS.value = buildGoodsCategoryDefsFromTypes(types)
+}
+
+async function initSizeOptions(seed = []) {
+  const sizeMap = await requestSizeMap()
+  filterSizeMap.value = sizeMap && typeof sizeMap === 'object' ? sizeMap : {}
+  const fromMap = buildSizeCategoryOptions(filterSizeMap.value || {})
+  const fromSeed = inferSizeCategories(seed)
+  filterSizeCategoryOptions.value = uniqTrimmed([
+    ...fromMap,
+    ...fromSeed,
+    ...DEFAULT_SALE_SIZE_CATEGORIES,
+  ])
 }
 
 function updateNavByScrollTop(nextTop) {
@@ -598,29 +703,101 @@ function normalizeGoods(item) {
   }
 }
 
-function openFilterModal() {
-  filterDraftCategories.value = [...filterCategories.value]
-  showFilterModal.value = true
+function syncFilterDraftFromCurrent() {
+  filterDraftCategory.value = String((filterCategories.value || [])[0] || '').trim()
+  filterDraftSize.value = String((filterSizes.value || [])[0] || '').trim()
 }
 
-function toggleFilterDraft(value) {
-  const v = String(value || '').trim()
-  if (!v) return
-  const idx = filterDraftCategories.value.indexOf(v)
-  if (idx >= 0) {
-    filterDraftCategories.value.splice(idx, 1)
-  } else {
-    filterDraftCategories.value.push(v)
+async function openFilterModal() {
+  syncFilterDraftFromCurrent()
+  filterPopupStage.value = 'entry'
+  try {
+    const wi = (uni.getWindowInfo && uni.getWindowInfo()) || uni.getSystemInfoSync()
+    filterPopupSafeBottom.value = wi?.safeAreaInsets?.bottom ?? 0
+  } catch (_) {
+    filterPopupSafeBottom.value = 0
   }
+  await nextTick()
+  filterPopupRef.value?.open?.()
 }
 
-function clearFilterDraft() {
-  filterDraftCategories.value = []
+function closeFilterPopup() {
+  filterPopupRef.value?.close?.()
 }
 
-function applyFilterDraft() {
-  filterCategories.value = [...filterDraftCategories.value]
-  showFilterModal.value = false
+function onFilterPopupChange(e) {
+  if (e?.show) {
+    nextTick(() => { filterPopupMounted.value = true })
+    return
+  }
+  filterPopupMounted.value = false
+  filterPopupStage.value = 'entry'
+}
+
+function openFilterPicker(type) {
+  filterPickerType.value = type === 'category' ? 'category' : 'size'
+  if (filterPickerType.value === 'size') {
+    syncSizePickerFromDraft()
+  } else {
+    const current = filterDraftCategory.value
+    const options = currentFilterPickerOptions.value
+    const target = current || '不限'
+    const found = options.indexOf(target)
+    filterPickerIndex.value = found >= 0 ? found : 0
+  }
+  filterPopupStage.value = 'picker'
+}
+
+function onFilterPickerChange(e) {
+  if (filterPickerType.value === 'size') {
+    const values = Array.isArray(e?.detail?.value) ? e.detail.value : []
+    const nextCategoryIndex = safePickerIndex(values[0], filterSizeCategoryPickerOptions.value.length)
+    const categoryChanged = nextCategoryIndex !== filterSizeCategoryPickerIndex.value
+    filterSizeCategoryPickerIndex.value = nextCategoryIndex
+
+    const detailOptions = filterSizeDetailPickerOptions.value
+    const rawDetailIndex = values.length > 1 ? values[1] : 0
+    let nextDetailIndex = safePickerIndex(rawDetailIndex, detailOptions.length)
+    if (categoryChanged) nextDetailIndex = 0
+    filterSizeDetailPickerIndex.value = nextDetailIndex
+    return
+  }
+  const val = Array.isArray(e?.detail?.value) ? Number(e.detail.value[0]) : 0
+  filterPickerIndex.value = Number.isFinite(val) && val >= 0 ? val : 0
+}
+
+function confirmFilterPicker() {
+  if (filterPickerType.value === 'size') {
+    const category = String(filterSizeCategoryPickerOptions.value[filterSizeCategoryPickerIndex.value] || '不限')
+    const detail = String(filterSizeDetailPickerOptions.value[filterSizeDetailPickerIndex.value] || '不限')
+    if (category === '不限') {
+      filterDraftSize.value = ''
+    } else if (detail === '全部' || detail === '不限') {
+      filterDraftSize.value = category
+    } else {
+      filterDraftSize.value = detail
+    }
+  } else {
+    const options = currentFilterPickerOptions.value || []
+    const picked = String(options[filterPickerIndex.value] || '不限')
+    filterDraftCategory.value = picked === '不限' ? '' : picked
+  }
+  filterPopupStage.value = 'entry'
+}
+
+function backToFilterEntry() {
+  filterPopupStage.value = 'entry'
+}
+
+function resetFilterDraft() {
+  filterDraftCategory.value = ''
+  filterDraftSize.value = ''
+}
+
+function applyFilterAndClose() {
+  filterCategories.value = filterDraftCategory.value ? [filterDraftCategory.value] : []
+  filterSizes.value = filterDraftSize.value ? [filterDraftSize.value] : []
+  closeFilterPopup()
   reloadList()
 }
 
@@ -711,6 +888,75 @@ function goGoods(goodsId) {
   uni.navigateTo({ url: `/pages/goods/goods?goods_id=${goodsId}` })
 }
 
+function safePickerIndex(rawIndex, length) {
+  const idx = Number(rawIndex)
+  if (!Number.isFinite(idx) || idx < 0) return 0
+  if (length <= 0) return 0
+  return Math.max(0, Math.min(length - 1, Math.floor(idx)))
+}
+
+function collectSizeCategoryCandidates() {
+  return uniqTrimmed([
+    ...buildSizeCategoryOptions(filterSizeMap.value || {}),
+    ...(filterSizeCategoryOptions.value || []),
+    ...DEFAULT_SALE_SIZE_CATEGORIES,
+  ])
+}
+
+function inferCategoryBySize(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  const candidates = collectSizeCategoryCandidates()
+  if (candidates.includes(text)) return text
+  const matched = candidates.find((category) => {
+    const details = buildSizeDetailOptions(filterSizeMap.value || {}, category)
+    return details.includes(text) || text.includes(category)
+  })
+  return matched || ''
+}
+
+function inferSizeCategories(values = []) {
+  const out = []
+  const seen = new Set()
+  ;(Array.isArray(values) ? values : []).forEach((raw) => {
+    const text = String(raw || '').trim()
+    if (!text) return
+    const category = inferCategoryBySize(text)
+    if (!category || seen.has(category)) return
+    seen.add(category)
+    out.push(category)
+  })
+  return out
+}
+
+function resolveDraftSizeSelection(value) {
+  const text = String(value || '').trim()
+  if (!text) return { category: '不限', detail: '不限' }
+  if (filterSizeCategoryOptions.value.includes(text)) {
+    return { category: text, detail: '全部' }
+  }
+  const matchedCategory = inferCategoryBySize(text)
+  if (!matchedCategory) {
+    return { category: '不限', detail: '不限' }
+  }
+  const details = buildSizeDetailOptions(filterSizeMap.value || {}, matchedCategory)
+  if (details.includes(text)) {
+    return { category: matchedCategory, detail: text }
+  }
+  return { category: matchedCategory, detail: '全部' }
+}
+
+function syncSizePickerFromDraft() {
+  const { category, detail } = resolveDraftSizeSelection(filterDraftSize.value)
+  const categoryOptions = filterSizeCategoryPickerOptions.value
+  const nextCategoryIndex = safePickerIndex(categoryOptions.indexOf(category), categoryOptions.length)
+  filterSizeCategoryPickerIndex.value = nextCategoryIndex
+
+  const detailOptions = filterSizeDetailPickerOptions.value
+  const nextDetailIndex = safePickerIndex(detailOptions.indexOf(detail), detailOptions.length)
+  filterSizeDetailPickerIndex.value = nextDetailIndex
+}
+
 onLoad(async (options) => {
   navOffsetPx.value = 0
   lastScrollTopPx.value = 0
@@ -731,6 +977,7 @@ onLoad(async (options) => {
   filterSizes.value = decodeAndSplitMultiValue(options?.sizes || options?.size || options?.goods_size)
 
   await initGoodsCategoryDefs()
+  await initSizeOptions(filterSizes.value)
   await prepareSearchPlan()
   reloadList()
 })
@@ -750,7 +997,7 @@ onLoad(async (options) => {
   --c-text-sub: #667488;
   --c-text-muted: #94a3b5;
   min-height: 100vh;
-  background: var(--c-bg);
+  background: linear-gradient(180deg, #f4f6f9 0%, #f7f9fc 48%, #ffffff 100%);
 }
 
 .nav-shell {
@@ -761,13 +1008,13 @@ onLoad(async (options) => {
   z-index: 30;
   will-change: transform, opacity;
   transition: transform 0.2s ease, opacity 0.2s ease;
+  background: linear-gradient(180deg, #f4f6f9 0%, #f7f9fc 68%, rgba(247, 249, 252, 0.92) 100%);
 }
 
 .nav-back-pill {
   width: 64rpx;
   height: 64rpx;
-  border-radius: 32rpx;
-  background: var(--c-chip);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -819,7 +1066,7 @@ onLoad(async (options) => {
 
 .search-panel {
   padding: 8rpx 16rpx 12rpx;
-  background: linear-gradient(180deg, #eef9ff 0%, #e9f3fb 42%, #edf2f7 100%);
+  background: linear-gradient(180deg, #f4f6f9 0%, #f7f9fc 100%);
 }
 
 .sort-row {
@@ -833,17 +1080,19 @@ onLoad(async (options) => {
   height: 56rpx;
   padding: 0 18rpx;
   border-radius: 28rpx;
-  background: var(--c-chip);
-  color: var(--c-text-sub);
+  background: #e9edf2;
+  color: #708092;
   font-size: 22rpx;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .sort-pill.active {
-  background: #d4e6f5;
-  color: #2d4b66;
+  background: linear-gradient(180deg, #d7f1fb 0%, #c6e8f7 100%);
+  color: #33596d;
+  box-shadow: 0 6rpx 14rpx rgba(120, 218, 245, 0.25);
 }
 
 .active-tags {
@@ -859,13 +1108,18 @@ onLoad(async (options) => {
 }
 
 .active-tag {
-  height: 44rpx;
-  line-height: 44rpx;
-  padding: 0 14rpx;
-  border-radius: 22rpx;
-  background: #e5edf4;
-  color: #4b6077;
-  font-size: 21rpx;
+  padding: 8rpx 12rpx;
+  border-radius: 12rpx;
+  background: #8affbf;
+  color: #000000;
+  font-size: 24rpx;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.active-tag--size {
+  background: #ffc8a4;
+  color: #000000;
 }
 
 .result-paging {
@@ -986,71 +1240,142 @@ onLoad(async (options) => {
   color: var(--c-text-muted);
 }
 
-.filter-modal {
-  padding-bottom: 20rpx;
+.filter-sheet {
+  width: 100vw;
+  background: #ffffff;
+  border-top-left-radius: 24rpx;
+  border-top-right-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 -10rpx 28rpx rgba(0, 0, 0, 0.06);
 }
 
-.filter-title {
-  font-size: 34rpx;
-  color: var(--c-text-main);
-  text-align: center;
+.filter-sheet-header {
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.filter-sub {
-  margin-top: 10rpx;
-  text-align: center;
-  font-size: 23rpx;
-  color: var(--c-text-muted);
+.sheet-title {
+  font-size: 32rpx;
+  color: #2a3c52;
+  font-weight: 700;
 }
 
-.filter-chip-wrap {
+.sheet-cancel,
+.sheet-action {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 26rpx;
+}
+
+.sheet-cancel {
+  left: 28rpx;
+  color: #94a5b8;
+}
+
+.sheet-action {
+  right: 28rpx;
+  color: #4c677f;
+}
+
+.filter-entry-body {
+  padding: 10rpx 24rpx 28rpx;
+}
+
+.filter-entry-row {
+  min-height: 96rpx;
+  background: #f3f6fa;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24rpx;
+  margin-bottom: 14rpx;
+}
+
+.entry-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.entry-label {
+  font-size: 28rpx;
+  color: #314a64;
+}
+
+.entry-value {
+  max-width: 420rpx;
+  font-size: 24rpx;
+  color: #6f8094;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-entry-actions {
   margin-top: 20rpx;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-}
-
-.filter-chip {
-  height: 54rpx;
-  padding: 0 16rpx;
-  border-radius: 27rpx;
-  background: var(--c-chip);
-  color: var(--c-text-sub);
-  font-size: 23rpx;
-  display: inline-flex;
-  align-items: center;
-}
-
-.filter-chip.active {
-  background: var(--c-accent-soft);
-  color: var(--c-accent-strong);
-}
-
-.filter-actions {
-  margin-top: 26rpx;
-  display: flex;
   gap: 14rpx;
+}
+
+.filter-picker-body {
+  padding: 6rpx 0 0;
+}
+
+.filter-picker {
+  height: 420px;
+  padding: 20rpx 0;
+  background: #ffffff;
+}
+
+.filter-picker-item {
+  height: 64px;
+  line-height: 64px;
+  text-align: center;
+  font-size: 30rpx;
+  color: #273a50;
+  padding: 0 10rpx;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-picker-item--sub {
+  color: #445a72;
+}
+
+.filter-picker-footer {
+  padding: 14rpx 24rpx 24rpx;
+}
+
+.picker-confirm-btn {
+  width: 100%;
 }
 
 .btn-ghost,
 .btn-primary {
   flex: 1;
-  height: 76rpx;
-  line-height: 76rpx;
-  border-radius: 38rpx;
-  border: none;
+  height: 78rpx;
+  line-height: 78rpx;
+  border-radius: 40rpx;
   font-size: 28rpx;
+  border: none;
 }
 
 .btn-ghost {
-  background: var(--c-card);
-  color: var(--c-text-main);
-  border: 1rpx solid var(--c-line);
+  background: #edf2f8;
+  color: #5f7289;
 }
 
 .btn-primary {
-  background: var(--c-accent);
-  color: #fff;
+  background: #78daf5;
+  color: #ffffff;
 }
 
 .btn-ghost::after,

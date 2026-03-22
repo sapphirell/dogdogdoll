@@ -54,7 +54,10 @@
 
 						<view class="info-container" :class="{ compact: shouldUseCompactInfo() }" v-if="shouldShowInfoArea()">
 							<text class="name">{{ item.name }}</text>
-							<text v-if="props.showPriceTag" class="price">{{ getDisplayPrice(item.price) }}</text>
+							<view v-if="props.showPriceTag" class="price-row">
+								<image class="price-unit-icon" src="/static/hlb.png" mode="aspectFit" />
+								<text class="price font-number">{{ getDisplayPrice(item.price) }}</text>
+							</view>
 						</view>
 						<text v-if="props.showTypeTag" class="type">{{ item.type }}</text>
 						<view
@@ -932,12 +935,25 @@
     text-align: center;
   }
   .price {
-    font-size: 26rpx;
+    font-size: 32rpx;
     color: #ff9c9a;
-    margin-top: 4rpx;
     text-align: center;
     font-weight: 1000;
   }
+}
+
+.price-row {
+  margin-top: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+}
+
+.price-unit-icon {
+  width: 24rpx;
+  height: 24rpx;
+  display: block;
 }
 
 .type {

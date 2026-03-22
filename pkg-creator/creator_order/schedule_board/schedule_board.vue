@@ -34,8 +34,45 @@
       </view>
 
       <view v-else-if="!loading" class="board-content">
-        <view class="hero-card">
-          <view class="hero-focus-row">
+        <view class="hero-card" :class="{ collapsed: heroCollapsed, animating: heroAnimating }">
+          <transition name="hero-fold-morph" mode="out-in">
+            <view v-if="heroCollapsed" key="collapsed" class="hero-fold-row">
+            <view class="hero-fold-cover-wrap">
+              <image
+                v-if="selectedOrderCover"
+                class="hero-fold-cover"
+                :class="{ 'is-drag-pressing': selectedDragPressing }"
+                :src="selectedOrderCover"
+                mode="aspectFill"
+                @touchstart.stop.prevent="startSelectedDrag"
+              />
+              <view
+                v-else
+                class="hero-fold-cover hero-fold-cover-placeholder"
+                :class="{ 'is-drag-pressing': selectedDragPressing }"
+                @touchstart.stop.prevent="startSelectedDrag"
+              ></view>
+            </view>
+            <view class="hero-fold-actions">
+              <view class="hero-fold-btn period font-title" @tap="openPeriodPopup">{{ foldPeriodButtonLabel }}</view>
+              <view class="hero-fold-btn menu font-title" @tap="openActionPopup">功能菜单</view>
+              <view
+                class="hero-fold-save"
+                :class="{
+                  disabled: saving,
+                  pending: !saving && hasPendingChanges,
+                  idle: !saving && !hasPendingChanges,
+                }"
+                @tap="saveBoard"
+              >
+                <text class="hero-fold-save-text font-title">{{ saving ? '保存中...' : (hasPendingChanges ? '保存' : '已保存') }}</text>
+                <text v-if="!saving && hasPendingChanges" class="save-btn-attention-mark">!</text>
+              </view>
+              <view class="hero-fold-btn nav font-title" @tap="selectPrevHeroOrder">上个</view>
+              <view class="hero-fold-btn nav font-title" @tap="selectNextHeroOrder">下个</view>
+            </view>
+            </view>
+            <view v-else key="expanded" class="hero-focus-row">
             <view class="hero-focus-cover-wrap">
               <image
                 v-if="selectedOrderCover"
@@ -67,11 +104,16 @@
                   </button>
                   <button
                     class="save-btn"
-                    :class="{ disabled: saving }"
+                    :class="{
+                      disabled: saving,
+                      pending: !saving && hasPendingChanges,
+                      idle: !saving && !hasPendingChanges,
+                    }"
                     :disabled="saving"
                     @tap="saveBoard"
                   >
-                    {{ saving ? '保存中...' : '保存' }}
+                    <text class="save-btn-text">{{ saving ? '保存中...' : (hasPendingChanges ? '保存' : '已保存') }}</text>
+                    <text v-if="!saving && hasPendingChanges" class="save-btn-attention-mark">!</text>
                   </button>
                 </view>
                 <view class="hero-period-trigger hero-period-trigger-compact" @tap="openPeriodPopup">
@@ -130,7 +172,8 @@
                 </view>
               </view>
             </view>
-          </view>
+            </view>
+          </transition>
         </view>
 
         <view class="calendar-card">
@@ -144,6 +187,7 @@
             @update:selectedOrderId="onUpdateSelectedOrder"
             @change="onCalendarChange"
             @invalid="onCalendarInvalid"
+            @calendar-scroll="onCalendarInnerScroll"
           />
         </view>
 
@@ -310,6 +354,9 @@ const heroOrderStripViewportWidth = ref(0)
 const heroOrderItemWidth = ref(0)
 const heroOrderItemGap = ref(0)
 const scrollTop = ref(0)
+const savedBoardSignature = ref('[]')
+const heroCollapsed = ref(false)
+const heroAnimating = ref(false)
 const selectedDragPressing = ref(false)
 const selectedDragGhostVisible = ref(false)
 const selectedDragGhostMorphing = ref(false)
@@ -327,6 +374,11 @@ let selectedDragGlobalBound = false
 let selectedDragMoveHandler = null
 let selectedDragEndHandler = null
 let selectedDragLastMoveLogAt = 0
+let foldTrackDirection = ''
+let foldTrackStartAt = 0
+let lastPageScrollTop = 0
+let lastCalendarScrollTop = 0
+let heroAnimTimer = 0
 const selectedDragTouchOffsetX = 0
 const selectedDragTouchOffsetY = 0
 
@@ -376,6 +428,13 @@ const periodOptions = computed(() => {
 const selectedPeriodLabel = computed(() => {
   const target = periodOptions.value.find((item) => item.value === selectedPeriodValue.value)
   return target?.label || '全部开单'
+})
+
+const foldPeriodButtonLabel = computed(() => {
+  const raw = String(selectedPeriodLabel.value || '').trim()
+  if (!raw) return '开单'
+  if (raw === '全部开单') return raw
+  return raw.includes('开单') ? raw : `${raw}开单`
 })
 
 const selectedSubmissionIdFilter = computed(() => {
@@ -464,11 +523,47 @@ const selectedDragGhostStyle = computed(() => ({
   borderRadius: selectedDragGhostMorphing.value ? '999px' : `${Math.max(12, upxToPx(44))}px`,
 }))
 
+const hasPendingChanges = computed(() => buildScheduleBoardSignature(allOrders.value) !== savedBoardSignature.value)
+
 function formatDate(date) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
+}
+
+function normalizeScheduleCompareText(raw) {
+  return String(raw || '').trim()
+}
+
+function buildScheduleCompareRow(row) {
+  return {
+    submission_item_id: Number(row?.submission_item_id || 0),
+    start_date: normalizeDateText(row?.start_date || ''),
+    end_date: normalizeDateText(row?.end_date || ''),
+    duration_days: Number(row?.duration_days || 0),
+    sequence_no: Number(row?.sequence_no || 0),
+    priority_level: Number(row?.priority_level || 0),
+    is_urgent: !!row?.is_urgent,
+    urgent_mode: normalizeUrgentMode(row?.urgent_mode),
+    urgent_reduce_days: Number(row?.urgent_reduce_days || 0),
+    is_locked: !!row?.is_locked,
+    lock_reason: normalizeScheduleCompareText(row?.lock_reason),
+    earliest_start_date: normalizeDateText(row?.earliest_start_date || ''),
+    latest_end_date: normalizeDateText(row?.latest_end_date || ''),
+    material_ready_date: normalizeDateText(row?.material_ready_date || ''),
+    schedule_note: normalizeScheduleCompareText(row?.schedule_note),
+    schedule_source: normalizeScheduleSource(row?.schedule_source),
+  }
+}
+
+function buildScheduleBoardSignature(list) {
+  if (!Array.isArray(list) || !list.length) return '[]'
+  const rows = list
+    .map((row) => buildScheduleCompareRow(row))
+    .filter((row) => Number(row.submission_item_id || 0) > 0)
+    .sort((a, b) => Number(a.submission_item_id || 0) - Number(b.submission_item_id || 0))
+  return JSON.stringify(rows)
 }
 
 function formatPeriodOpenDateLabel(createdAt, submissionId) {
@@ -638,6 +733,83 @@ function selectHeroOrder(itemID) {
   const id = Number(itemID || 0)
   if (!id) return
   selectedOrderId.value = id
+}
+
+function shiftSelectedHeroOrder(offset) {
+  const orders = heroOrderStripOrders.value || []
+  if (!orders.length) return
+  const currentId = Number(selectedOrderId.value || 0)
+  const currentIndex = orders.findIndex((row) => Number(row?.submission_item_id || 0) === currentId)
+  const baseIndex = currentIndex >= 0 ? currentIndex : 0
+  const targetIndex = baseIndex + Number(offset || 0)
+  if (targetIndex < 0 || targetIndex >= orders.length) return
+  selectedOrderId.value = Number(orders[targetIndex]?.submission_item_id || 0)
+}
+
+function selectPrevHeroOrder() {
+  shiftSelectedHeroOrder(-1)
+}
+
+function selectNextHeroOrder() {
+  shiftSelectedHeroOrder(1)
+}
+
+function resetFoldScrollTrack() {
+  foldTrackDirection = ''
+  foldTrackStartAt = 0
+}
+
+function clearHeroAnimTimer() {
+  if (!heroAnimTimer) return
+  clearTimeout(heroAnimTimer)
+  heroAnimTimer = 0
+}
+
+function setHeroCollapsed(nextValue) {
+  const target = !!nextValue
+  if (heroCollapsed.value === target) return true
+  if (heroAnimating.value) return false
+  heroAnimating.value = true
+  heroCollapsed.value = target
+  clearHeroAnimTimer()
+  heroAnimTimer = setTimeout(() => {
+    heroAnimating.value = false
+    heroAnimTimer = 0
+  }, 340)
+  return true
+}
+
+function updateHeroCollapseByScroll(nextTop, source = 'page') {
+  if (heroAnimating.value) return
+  const top = Number(nextTop || 0)
+  const isCalendar = source === 'calendar'
+  const prev = isCalendar ? Number(lastCalendarScrollTop || 0) : Number(lastPageScrollTop || 0)
+  if (isCalendar) {
+    lastCalendarScrollTop = top
+  } else {
+    lastPageScrollTop = top
+  }
+  const delta = top - prev
+  if (Math.abs(delta) < 0.5) return
+  const direction = delta > 0 ? 'up' : 'down'
+  const now = Date.now()
+  if (direction !== foldTrackDirection) {
+    foldTrackDirection = direction
+    foldTrackStartAt = now
+    return
+  }
+  const holdMs = now - Number(foldTrackStartAt || 0)
+  if (direction === 'up' && !heroCollapsed.value && holdMs >= 800) {
+    if (setHeroCollapsed(true)) resetFoldScrollTrack()
+    return
+  }
+  if (direction === 'down' && heroCollapsed.value && holdMs >= 1200) {
+    if (setHeroCollapsed(false)) resetFoldScrollTrack()
+  }
+}
+
+function onCalendarInnerScroll(scrollValue) {
+  updateHeroCollapseByScroll(scrollValue, 'calendar')
 }
 
 function getTouchPoint(event) {
@@ -1021,6 +1193,7 @@ async function fetchBoard() {
     today.value = String(data?.today || '').trim()
     periodOptionRows.value = normalizePeriodOptionRows(data?.period_options || data?.periodOptions || [])
     allOrders.value = normalizeOrders(data?.items || [])
+    savedBoardSignature.value = buildScheduleBoardSignature(allOrders.value)
     const hasSelected = allOrders.value.some((row) => Number(row?.submission_item_id || 0) === Number(selectedOrderId.value || 0))
     if ((!selectedOrderId.value || !hasSelected) && allOrders.value.length) {
       selectedOrderId.value = Number(allOrders.value[0]?.submission_item_id || 0)
@@ -1261,6 +1434,10 @@ async function autoArrangeBoard(options = {}) {
 
 async function saveBoard(silent = false) {
   if (saving.value) return
+  if (!silent && !hasPendingChanges.value) {
+    uni.showToast({ title: '当前没有待保存内容', icon: 'none' })
+    return
+  }
   const token = ensureLoginToken()
   if (!token) return
   if (planId.value <= 0) {
@@ -1307,6 +1484,7 @@ async function saveBoard(silent = false) {
     if (String(body.status).toLowerCase() !== 'success') {
       throw new Error(body.msg || '保存失败')
     }
+    savedBoardSignature.value = buildScheduleBoardSignature(allOrders.value)
     if (!silent) {
       uni.showToast({ title: '保存成功', icon: 'success' })
       await fetchBoard()
@@ -1437,11 +1615,16 @@ onLoad((options) => {
 })
 
 onShow(() => {
+  resetFoldScrollTrack()
+  lastPageScrollTop = 0
+  lastCalendarScrollTop = 0
   if (planId.value > 0) fetchBoard()
 })
 
 onPageScroll((e) => {
-  scrollTop.value = Number(e?.scrollTop || 0)
+  const top = Number(e?.scrollTop || 0)
+  scrollTop.value = top
+  updateHeroCollapseByScroll(top, 'page')
 })
 
 onMounted(() => {
@@ -1449,6 +1632,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  resetFoldScrollTrack()
+  clearHeroAnimTimer()
+  heroAnimating.value = false
   finishSelectedDragVisual()
 })
 </script>
@@ -1516,6 +1702,150 @@ onBeforeUnmount(() => {
   padding: 24rpx;
   max-width: 100%;
   box-sizing: border-box;
+  transition: padding 0.22s ease;
+}
+
+.hero-card.collapsed {
+  padding: 16rpx;
+}
+
+.hero-card.animating {
+  overflow: hidden;
+}
+
+.hero-fold-morph-enter-active,
+.hero-fold-morph-leave-active {
+  transition:
+    opacity 0.34s cubic-bezier(0.28, 0.11, 0.32, 1),
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.34s ease;
+  transform-origin: 50% 0%;
+}
+
+.hero-fold-morph-leave-from {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0) saturate(1);
+}
+
+.hero-fold-morph-leave-to {
+  opacity: 0;
+  transform: translate3d(-10rpx, -6rpx, 0) scale(0.72);
+  filter: blur(3px) saturate(0.92);
+}
+
+.hero-fold-morph-enter-from {
+  opacity: 0;
+  transform: translate3d(-10rpx, -6rpx, 0) scale(0.72);
+  filter: blur(3px) saturate(0.92);
+}
+
+.hero-fold-morph-enter-to {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0) saturate(1);
+}
+
+.hero-fold-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.hero-fold-cover-wrap {
+  width: 92rpx;
+  height: 138rpx;
+  flex-shrink: 0;
+  border-radius: 20rpx;
+  overflow: hidden;
+  background: #dee5ef;
+}
+
+.hero-fold-cover {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #dce5ef;
+}
+
+.hero-fold-cover.is-drag-pressing {
+  box-shadow: inset 0 0 0 4rpx #ffa4ce;
+}
+
+.hero-fold-cover-placeholder {
+  background: linear-gradient(145deg, #d8dee8 0%, #edf2f8 100%);
+}
+
+.hero-fold-actions {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  overflow-x: auto;
+  overflow-y: visible;
+  white-space: nowrap;
+  padding-top: 16rpx;
+  margin-top: -16rpx;
+  padding-bottom: 4rpx;
+}
+
+.hero-fold-btn,
+.hero-fold-save {
+  flex-shrink: 0;
+  min-width: 82rpx;
+  height: 58rpx;
+  border-radius: 999rpx;
+  padding: 0 14rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  line-height: 1;
+  color: #2a374a;
+  background: #e8edf5;
+  box-sizing: border-box;
+}
+
+.hero-fold-btn.period {
+  min-width: 170rpx;
+  background: #dff4ff;
+}
+
+.hero-fold-btn.menu {
+  background: #cdeefe;
+}
+
+.hero-fold-btn.nav {
+  background: #ebeff5;
+}
+
+.hero-fold-save {
+  min-width: 96rpx;
+  position: relative;
+  overflow: visible;
+  padding-right: 20rpx;
+}
+
+.hero-fold-save.pending {
+  background: var(--btn-pastel-yellow);
+  color: var(--btn-pastel-text);
+}
+
+.hero-fold-save.idle {
+  background: #e2e6ee;
+  color: #7e8899;
+}
+
+.hero-fold-save.disabled {
+  background: #ecf0f5;
+  color: #a1acbd;
+}
+
+.hero-fold-save-text {
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .hero-actions {
@@ -1844,15 +2174,80 @@ onBeforeUnmount(() => {
   line-height: 70rpx;
   border-radius: 999rpx;
   border: none;
-  background: var(--btn-pastel-yellow);
-  color: var(--btn-pastel-text);
+  background: #e2e6ee;
+  color: #7e8899;
   font-size: 24rpx;
   font-weight: 600;
-  box-shadow: 0 6rpx 14rpx rgba(151, 161, 180, 0.18);
+  box-shadow: none;
+  position: relative;
+  overflow: visible;
 }
 
 .save-btn::after {
   border: none;
+}
+
+.save-btn-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.save-btn.pending {
+  background: var(--btn-pastel-yellow);
+  color: var(--btn-pastel-text);
+  box-shadow: 0 6rpx 14rpx rgba(151, 161, 180, 0.18);
+}
+
+.save-btn.idle {
+  background: #e2e6ee;
+  color: #7e8899;
+  box-shadow: none;
+}
+
+.save-btn-attention-mark {
+  position: absolute;
+  right: -5rpx;
+  top: -20rpx;
+  display: inline-block;
+  font-size: 52rpx;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffa4ce;
+  -webkit-text-fill-color: #ffa4ce;
+  text-shadow: 0 0 10rpx rgba(255, 164, 206, 0.45);
+  transform-origin: 50% 82%;
+  animation: save-btn-attention-wobble 1s ease-in-out infinite;
+}
+
+.hero-fold-save .save-btn-attention-mark {
+  right: 4rpx;
+  top: 2rpx;
+  font-size: 38rpx;
+}
+
+@keyframes save-btn-attention-wobble {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  10% {
+    transform: translate3d(-1rpx, 0, 0) rotate(-18deg) scale(1.02);
+  }
+  20% {
+    transform: translate3d(1rpx, 0, 0) rotate(14deg) scale(1.02);
+  }
+  30% {
+    transform: translate3d(-1rpx, 0, 0) rotate(-11deg) scale(1.01);
+  }
+  40% {
+    transform: translate3d(1rpx, 0, 0) rotate(8deg) scale(1.01);
+  }
+  50% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
 }
 
 .ghost-btn {
@@ -2222,6 +2617,14 @@ onBeforeUnmount(() => {
   background: #fafbfc;
   border: none;
   box-shadow: none;
+}
+
+:deep(.schedule-calendar .schedule-day-cell.past) {
+  background: #edf1f6;
+}
+
+:deep(.schedule-calendar .schedule-day-cell.past .day-num) {
+  color: #8e9aab;
 }
 
 :deep(.schedule-calendar .schedule-day-cell.today) {

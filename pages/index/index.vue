@@ -32,7 +32,6 @@
                 mode="widthFix"
                 style="width: 300rpx;max-height: 150rpx;  position: relative;left: -20rpx;margin-bottom: 10rpx;"
               />
-              <server-selector @server-change="handleServerChange"></server-selector>
             </view>
 
             <view
@@ -233,10 +232,6 @@
               v-else-if="activeTab === 'second'"
               class="treehole-box"
             >
-              <view class="publish-btn" @click="handlePublish">
-                <uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
-              </view>
-
               <view
                 v-for="item in treeholeList"
                 :key="item.id"
@@ -323,12 +318,24 @@
         </view>
       </z-paging>
 
-      <view
-        v-if="showBackTop"
-        class="back-top-btn"
-        @tap="handleBackTop"
-      >
-        <uni-icons type="arrow-up" size="24" color="#222"></uni-icons>
+      <view class="home-fab-stack">
+        <view
+          v-if="activeTab === 'second'"
+          class="home-fab-btn is-publish"
+          @click="handlePublish"
+        >
+          <uni-icons type="plusempty" size="30" color="#fff"></uni-icons>
+        </view>
+
+        <view
+          v-if="showBackTop"
+          class="home-fab-btn is-top"
+          @tap="handleBackTop"
+        >
+          <uni-icons type="arrow-up" size="22" color="#37505f"></uni-icons>
+        </view>
+
+        <server-selector class="home-fab-btn is-ping" @server-change="handleServerChange"></server-selector>
       </view>
     </view>
   </view>
@@ -1193,35 +1200,78 @@ onReady(() => {
   }
 }
 
-.publish-btn {
+.home-fab-stack {
   position: fixed;
-  right: 40rpx;
-  bottom: 280rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background: #4cbbd0;
-  border-radius: 50%;
+  right: 28rpx;
+  bottom: calc(180rpx + env(safe-area-inset-bottom));
+  z-index: 1002;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  box-shadow: 0 8rpx 20rpx rgba(76, 187, 208, 0.3);
-  z-index: 999;
+  gap: 18rpx;
 }
 
-/* 回到顶部按钮 */
-.back-top-btn {
-  position: fixed;
-  right: 40rpx;
-  bottom: 260rpx;
-  width: 90rpx;
-  height: 90rpx;
-  border-radius: 50%;
-  background: #4cbbd0;
+.home-fab-stack .home-fab-btn.is-publish,
+.home-fab-stack .home-fab-btn.is-top {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 48rpx;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 8rpx 20rpx rgba(76, 187, 208, 0.3);
-  z-index: 998;
+  box-shadow: 0 8rpx 20rpx rgba(120, 218, 245, 0.26);
+}
+
+.home-fab-stack .home-fab-btn.is-publish {
+  background: linear-gradient(180deg, #8ee6fc 0%, #78daf5 100%);
+}
+
+.home-fab-stack .home-fab-btn.is-top {
+  background: #ffffff;
+}
+
+.home-fab-stack :deep(.server-selector-trigger) {
+  position: relative !important;
+  bottom: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  min-width: 96rpx;
+  height: 84rpx;
+  padding: 0 22rpx;
+  background: #ffffff;
+  border-radius: 42rpx;
+  box-shadow: 0 8rpx 20rpx rgba(120, 218, 245, 0.2);
+  color: #4d6b7d;
+}
+
+.home-fab-stack :deep(.server-selector-trigger text) {
+  margin-left: 0;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.home-fab-stack :deep(.server-selector-trigger:active) {
+  transform: scale(0.98);
+}
+
+@media (max-width: 380px) {
+  .home-fab-stack {
+    right: 20rpx;
+    gap: 14rpx;
+  }
+
+  .home-fab-stack .home-fab-btn.is-publish,
+  .home-fab-stack .home-fab-btn.is-top {
+    width: 88rpx;
+    height: 88rpx;
+    border-radius: 44rpx;
+  }
+
+  .home-fab-stack :deep(.server-selector-trigger) {
+    height: 76rpx;
+    border-radius: 38rpx;
+    padding: 0 18rpx;
+  }
 }
 
 /* 图片 loading 公共样式 */

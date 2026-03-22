@@ -36,6 +36,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, getCurrentInstance, nextTick } from 'vue'
+import { image1Url } from '@/common/config.js'
 
 const props = defineProps({
   src: { type: String, default: '' },
@@ -57,6 +58,7 @@ const showImg = ref(false) // 是否渲染 image 标签
 const showSrc = ref('')    // 实际传给 image 的 src
 const isLoaded = ref(false)
 const isError = ref(false)
+const fallbackTried = ref(false) // 是否已尝试过兼容地址回退
 
 // 获取当前组件实例，用于 IntersectionObserver 的作用域绑定
 const instance = getCurrentInstance()
@@ -109,10 +111,86 @@ const initObserver = () => {
   })
 }
 
+// 图片地址工具：统一裁剪空白
+const normalizeSource = (value) => {
+  if (value === undefined || value === null) return ''
+  const src = String(value).trim()
+  if (!src) return ''
+  if (/^\/\//.test(src)) return `https:${src}`
+  if (/^(https?:|blob:|data:|file:|wxfile:)/i.test(src)) return src
+  if (/^(\/)?static\//i.test(src)) return src
+
+  // 兼容后端仅返回七牛 key（如 box/xxx 或 /box/xxx）
+  const key = src.replace(/^\/+/, '')
+  const qiniuDirs = [
+    'box/',
+    'home/',
+    'goods/',
+    'spd/',
+    'brand-avatar/',
+    'admin/',
+    'wgt/',
+    'apk/',
+    'artist/'
+  ]
+  if (qiniuDirs.some((dir) => key.startsWith(dir))) {
+    return `${String(image1Url || 'https://images1.fantuanpu.com/').replace(/\/+$/, '')}/${key}`
+  }
+  return src
+}
+
+// 是否可走七牛图片处理参数（当前只对主图片域名启用）
+const canUseQiniuProcess = (url) => {
+  if (!/^https?:\/\//i.test(url)) return false
+  try {
+    const parsed = new URL(url)
+    const host = (parsed.hostname || '').toLowerCase()
+    return host === 'images1.fantuanpu.com' || host.endsWith('.images1.fantuanpu.com')
+  } catch (err) {
+    return false
+  }
+}
+
+// 是否是 heic/heif 扩展名
+const isHeicLike = (url) => {
+  try {
+    const parsed = new URL(url)
+    return /\.(heic|heif)$/i.test(parsed.pathname || '')
+  } catch (err) {
+    return /\.(heic|heif)(\?|$)/i.test(url)
+  }
+}
+
+// 给地址附加七牛转码参数（转成 jpg，兼容无扩展名与 HEIC）
+const appendQiniuProcess = (url) => {
+  if (!url || /imageMogr2\/auto-orient\/format\/jpg/i.test(url)) return url
+  const join = url.includes('?') ? '&' : '?'
+  return `${url}${join}imageMogr2/auto-orient/format/jpg`
+}
+
+// 是否允许在加载失败后走兼容回退
+const canFallbackToCompatible = (url) => {
+  if (!url) return false
+  if (!canUseQiniuProcess(url)) return false
+  if (/^(blob:|data:|file:|wxfile:)/i.test(url)) return false
+  return true
+}
+
+// 计算首选加载地址：heic/heif 直接优先转码，其它先走原图
+const resolvePreferredSrc = (raw) => {
+  const src = normalizeSource(raw)
+  if (!src) return ''
+  if (isHeicLike(src) && canUseQiniuProcess(src)) {
+    return appendQiniuProcess(src)
+  }
+  return src
+}
+
 // 立即加载图片
 const loadImmediately = () => {
+  fallbackTried.value = false
   showImg.value = true
-  showSrc.value = props.src
+  showSrc.value = resolvePreferredSrc(props.src)
 }
 
 // 断开观察器
@@ -128,6 +206,7 @@ watch(() => props.src, (newVal) => {
   // 重置状态
   isLoaded.value = false
   isError.value = false
+  fallbackTried.value = false
   
   if (props.lazy) {
     // 如果是懒加载，重置显示状态并重新观察
@@ -136,7 +215,7 @@ watch(() => props.src, (newVal) => {
     initObserver()
   } else {
     // 非懒加载直接更新
-    showSrc.value = newVal
+    showSrc.value = resolvePreferredSrc(newVal)
   }
 })
 
@@ -173,6 +252,18 @@ const handleLoad = (e) => {
 }
 
 const handleError = (e) => {
+  const raw = normalizeSource(props.src)
+  // 首次加载失败时，自动回退到兼容地址重试一次
+  if (!fallbackTried.value && canFallbackToCompatible(raw)) {
+    fallbackTried.value = true
+    const retrySrc = appendQiniuProcess(raw)
+    if (retrySrc && retrySrc !== showSrc.value) {
+      isError.value = false
+      isLoaded.value = false
+      showSrc.value = retrySrc
+      return
+    }
+  }
   isError.value = true
   emit('error', e)
 }

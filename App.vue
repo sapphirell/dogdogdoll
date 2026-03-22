@@ -107,6 +107,14 @@ function loadFonts() {
 	/*每个页面公共css */
 	@import 'common/font.css';
 
+	@font-face {
+		font-family: "univers-number";
+		src: url('/static/Teko-Bold-5.ttf') format('truetype');
+		font-weight: normal;
+		font-style: normal;
+		font-display: swap;
+	}
+
 	:root {
 		/* 全局建议色：用于主要操作按钮 */
 		--app-recommend-color: #78daf5;
@@ -147,6 +155,11 @@ function loadFonts() {
 	
 	.font-title {
 		font-family: "title-font"!important;
+	}
+
+	.font-number {
+		font-family: "univers-number" !important;
+		font-variant-numeric: tabular-nums;
 	}
 	
 	.font-doll {

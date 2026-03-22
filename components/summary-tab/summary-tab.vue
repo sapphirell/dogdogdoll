@@ -16,7 +16,7 @@
       <view class="header-main">
         <view class="hero-sale-card" @tap="scrollToSection('today')">
           <view class="hero-chip font-alimamashuhei">🔥 热门Hot</view>
-          <text class="hero-main-title font-title">今日特卖</text>
+          <text class="hero-main-title font-title">近期贩售</text>
           <text class="hero-main-sub font-alimamashuhei">Daily Sales · New arrivals today</text>
           <view class="hero-bottom">
             <view class="hero-avatar-row">
@@ -33,7 +33,7 @@
               />
               <view v-if="heroMoreCount > 0" class="hero-avatar-more font-alimamashuhei">+{{ heroMoreCount }}</view>
             </view>
-            <view class="hero-action font-alimamashuhei">查看详情</view>
+            <view class="hero-action font-alimamashuhei" @tap.stop="goCalendar">查看详情</view>
           </view>
         </view>
 

@@ -16,7 +16,7 @@
 
         <text class="manage-btn" @tap="openTypeToolsPopup">
           <uni-icons type="more-filled" size="18" color="#fff" />
-          <text class="font-title">分类工具</text>
+          <text>分类工具</text>
         </text>
 
         <view class="setting-icon-btn" @click="openDisplaySettingPage">
@@ -37,7 +37,7 @@
 
         <text class="manage-btn" @tap="openTypeToolsPopup">
           <uni-icons type="more-filled" size="18" color="#fff" />
-          <text class="font-title">分类工具</text>
+          <text>分类工具</text>
         </text>
 
         <view class="setting-icon-btn" @click="openDisplaySettingPage">
@@ -56,7 +56,7 @@
         <view class="summary-main">
           <text class="summary-label font-alimamashuhei">当前分类合计</text>
           <view class="summary-price-row">
-            <text class="summary-currency font-title">¥</text>
+            <image class="summary-currency-icon" src="/static/hlb.png" mode="aspectFit" />
             <text v-if="isPriceVisible" class="summary-price font-title">{{ totalPrice }}</text>
             <text v-else class="summary-mask font-title">******</text>
           </view>
@@ -130,7 +130,7 @@
       <view class="type-popup">
         <view class="popup-head">
           <text class="popup-title font-alimamashuhei">切换分类</text>
-          <text class="popup-close font-title" @tap="closeTypeSelectPopup">关闭</text>
+          <text class="popup-close" @tap="closeTypeSelectPopup">关闭</text>
         </view>
         <scroll-view scroll-y class="popup-scroll">
           <view
@@ -152,20 +152,20 @@
       <view class="type-popup">
         <view class="popup-head">
           <text class="popup-title font-alimamashuhei">分类工具</text>
-          <text class="popup-close font-title" @tap="closeTypeToolsPopup">关闭</text>
+          <text class="popup-close" @tap="closeTypeToolsPopup">关闭</text>
         </view>
         <view class="popup-tools">
           <view class="popup-item" @tap="handleTypeToolAction('manage')">
             <view class="popup-item-texts">
               <text class="popup-item-name font-alimamashuhei">管理分类</text>
-              <text class="popup-item-desc font-title">新增、编辑、删除分类</text>
+              <text class="popup-item-desc">新增、编辑、删除分类</text>
             </view>
             <uni-icons type="right" size="16" color="#9aabbd" />
           </view>
           <view class="popup-item" @tap="handleTypeToolAction('refresh')">
             <view class="popup-item-texts">
               <text class="popup-item-name font-alimamashuhei">刷新分类</text>
-              <text class="popup-item-desc font-title">重新获取最新分类列表</text>
+              <text class="popup-item-desc">重新获取最新分类列表</text>
             </view>
             <uni-icons type="reload" size="16" color="#9aabbd" />
           </view>
@@ -176,7 +176,7 @@
           >
             <view class="popup-item-texts">
               <text class="popup-item-name font-alimamashuhei">切换到全部</text>
-              <text class="popup-item-desc font-title">清空当前分类筛选</text>
+              <text class="popup-item-desc">清空当前分类筛选</text>
             </view>
             <uni-icons type="undo" size="16" color="#9aabbd" />
           </view>
@@ -845,14 +845,15 @@ function getCabinetItemImage(item) {
 
 .summary-price-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 4rpx;
   color: #35485f;
 }
 
-.summary-currency {
-  font-size: 24rpx;
-  color: #6b84a3;
+.summary-currency-icon {
+  width: 26rpx;
+  height: 26rpx;
+  display: block;
 }
 
 .summary-price {

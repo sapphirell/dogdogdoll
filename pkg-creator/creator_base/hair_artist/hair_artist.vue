@@ -71,22 +71,22 @@
         <view class="info-card">
           <view class="row-1">
             <text class="brand-name font-alimamashuhei">{{ info.brand_name || '—' }}</text>
-            <text class="last-time">{{ lastLoginText }}</text>
+            <text class="last-time font-number">{{ lastLoginText }}</text>
           </view>
 
           <!-- 未入驻：不展示接单统计 -->
           <view v-if="isSettled" class="row-2">
             <view class="stat">
               <text class="label font-title">完成单数</text>
-              <text class="val">{{ info.artist_stats?.finished_count ?? 0 }}</text>
+              <text class="val font-number">{{ info.artist_stats?.finished_count ?? 0 }}</text>
             </view>
             <view class="stat">
               <text class="label font-title">平均工期</text>
-              <text class="val">{{ avgCycleDaysText }}</text>
+              <text class="val font-number">{{ avgCycleDaysText }}</text>
             </view>
             <view class="stat">
               <text class="label font-title">延期率</text>
-              <text class="val">{{ delayRateText }}</text>
+              <text class="val font-number">{{ delayRateText }}</text>
             </view>
           </view>
 
@@ -116,13 +116,19 @@
               v-for="m in monthBusyList"
               :key="m.key"
               class="month-pill"
-              :class="{ current: m.isCurrent }"
+              :class="{ current: selectedBusyMonthKey === m.key }"
+              @click="selectBusyMonth(m.key)"
             >
               <view class="m1 font-title">{{ m.label }}</view>
-              <view class="m2 font-title">{{ m.busy_days }}/{{ m.total_days }}</view>
+              <view class="m2 font-title" :style="monthBusyColorStyle(m)">{{ m.busy_days }}/{{ m.total_days }}</view>
             </view>
           </view>
         </scroll-view>
+        <view v-if="selectedBusyMonthInfo" class="cal-summary">
+          <text class="cal-summary-text font-number">
+            {{ selectedBusyMonthInfo.label }}占用{{ selectedBusyMonthInfo.busy_days }}天 · 排期{{ selectedBusyMonthInfo.scheduled_heads }}顶手改毛 · 进行中{{ selectedBusyMonthInfo.in_progress_heads }}顶手改毛
+          </text>
+        </view>
       </view>
     </view>
 
@@ -217,8 +223,8 @@
             <view class="order-title font-title">{{ p.brand_name }} · 开单</view>
             <view class="order-meta">
               <text class="chip" :class="statusClass(p)">{{ statusText(p) }}</text>
-              <text class="time">开：{{ formatTime(p.open_time) }}</text>
-              <text class="time">截：{{ formatTime(p.close_time) }}</text>
+              <text class="time font-number">开：{{ formatTime(p.open_time) }}</text>
+              <text class="time font-number">截：{{ formatTime(p.close_time) }}</text>
             </view>
             <view class="tier-line">{{ tierRange(p) }}</view>
           </view>
@@ -402,7 +408,61 @@ async function fetchWigs() {
 
 /** 档期（月度忙碌天数） */
 const monthBusyList = ref([])
+const selectedBusyMonthKey = ref('')
 const MONTH_NAMES = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
+const MONTH_BUSY_COLOR_EMPTY = '#78daf5'
+const MONTH_BUSY_COLOR_MID = '#fb8ec0'
+const MONTH_BUSY_COLOR_FULL = '#ff6d4a'
+const selectedBusyMonthInfo = computed(() => {
+  if (!selectedBusyMonthKey.value) return null
+  return monthBusyList.value.find(item => item.key === selectedBusyMonthKey.value) || null
+})
+
+// monthBusyColorStyle 根据占用比例返回从天蓝到粉色的字色渐变。
+function monthBusyColorStyle(monthRow) {
+  const ratio = resolveMonthBusyRatio(monthRow)
+  let color = MONTH_BUSY_COLOR_EMPTY
+  if (ratio <= 0.5) {
+    color = interpolateHexColor(MONTH_BUSY_COLOR_EMPTY, MONTH_BUSY_COLOR_MID, ratio / 0.5)
+  } else {
+    color = interpolateHexColor(MONTH_BUSY_COLOR_MID, MONTH_BUSY_COLOR_FULL, (ratio - 0.5) / 0.5)
+  }
+  return {
+    color
+  }
+}
+
+// resolveMonthBusyRatio 计算并规整占用比例（0~1）。
+function resolveMonthBusyRatio(monthRow) {
+  const busy = Number(monthRow?.busy_days || 0)
+  const total = Number(monthRow?.total_days || 0)
+  if (total <= 0) return 0
+  const ratio = busy / total
+  return Math.max(0, Math.min(1, ratio))
+}
+
+// interpolateHexColor 线性插值两个十六进制颜色。
+function interpolateHexColor(startHex, endHex, ratio) {
+  const start = parseHexColor(startHex)
+  const end = parseHexColor(endHex)
+  const r = Math.round(start.r + (end.r - start.r) * ratio)
+  const g = Math.round(start.g + (end.g - start.g) * ratio)
+  const b = Math.round(start.b + (end.b - start.b) * ratio)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+// parseHexColor 解析 #RRGGBB 颜色字符串。
+function parseHexColor(hex) {
+  const raw = String(hex || '').replace('#', '')
+  if (raw.length !== 6) {
+    return { r: 120, g: 218, b: 245 }
+  }
+  return {
+    r: parseInt(raw.slice(0, 2), 16),
+    g: parseInt(raw.slice(2, 4), 16),
+    b: parseInt(raw.slice(4, 6), 16)
+  }
+}
 
 /** 工具 */
 function toFixed2(v) {
@@ -508,8 +568,22 @@ async function fetchMonthlyBusy() {
       label,
       isCurrent,
       busy_days: Number(r.busy_days || 0),
-      total_days: Number(r.total_days || 30)
+      total_days: Number(r.total_days || 30),
+      scheduled_heads: Number(r.scheduled_heads || 0),
+      in_progress_heads: Number(r.in_progress_heads || 0)
     }
+  })
+  selectedBusyMonthKey.value = monthBusyList.value[0]?.key || ''
+}
+
+// selectBusyMonth 选择档期月份并提示当月在制头数。
+function selectBusyMonth(monthKey) {
+  selectedBusyMonthKey.value = String(monthKey || '')
+  const row = selectedBusyMonthInfo.value
+  if (!row) return
+  uni.showToast({
+    title: `${row.label}有${row.in_progress_heads}顶手改毛在进行`,
+    icon: 'none'
   })
 }
 
@@ -900,6 +974,17 @@ onReachBottom(() => {
   font-size: 20rpx;
   color: #666;
   margin-top: 6rpx;
+}
+
+.cal-summary {
+  margin-top: 14rpx;
+  padding-right: 24rpx;
+}
+
+.cal-summary-text {
+  font-size: 22rpx;
+  color: #6a7382;
+  line-height: 1.5;
 }
 
 /* Tab */

@@ -39,10 +39,12 @@
       >
         <swiper-item v-for="(img, index) in imageList" :key="index">
           <view class="image-container">
-            <image
+            <common-image
               :src="img"
-              mode="widthFix"
-              class="header-image"
+              mode="aspectFit"
+              width="100%"
+              height="100%"
+              customClass="header-image"
               @load="handleImageLoad($event, index)"
             />
           </view>
@@ -455,9 +457,9 @@ const payClass = computed(() => {
   min-height: 46rpx;
   padding: 8rpx 24rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #d6e3f1;
-  background: @mist-blue-soft;
-  color: @mist-blue-strong;
+  border: none;
+  background: #c2deff;
+  color: #645b5b;
   font-size: 22rpx;
   letter-spacing: 0.5rpx;
 }
@@ -476,9 +478,9 @@ const payClass = computed(() => {
 }
 
 .pay-badge.is-full {
-  background: #eef5f1;
-  color: #5d7c67;
-  border: 1rpx solid #d6e4dc;
+  background: #81c09d;
+  color: #ffffff;
+  border: none;
 }
 
 .pay-badge.is-deposit {
@@ -488,9 +490,9 @@ const payClass = computed(() => {
 }
 
 .pay-badge.is-unbought {
-  background: #f6eef1;
+  background: #fcbdd5;
   color: #8e6772;
-  border: 1rpx solid #ead8de;
+  border: none;
 }
 
 /* 分区 */
@@ -674,6 +676,11 @@ const payClass = computed(() => {
   width: 100%;
   max-height: 100%;
   display: block;
+}
+
+:deep(.header-image) {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 :deep(.uni-swiper-dots-horizontal) {

@@ -601,9 +601,6 @@
         <view class="price-supplement-header">
           <view class="price-supplement-header-main">
             <text class="price-supplement-title">补充信息</text>
-            <text class="price-supplement-desc">
-              只补充需要更新的内容，审核通过后会同步到商品信息。
-            </text>
           </view>
           <view class="price-supplement-step">
             <text class="price-supplement-step-num">第{{ priceSupplementStep }}步</text>
@@ -612,77 +609,23 @@
         </view>
 
         <view v-if="priceSupplementStep === 1" class="supplement-step">
-          <view class="supplement-step-intro">
-            <view class="supplement-step-intro-copy">
-              <text class="supplement-step-title">先勾选这次要补的内容</text>
-              <text class="supplement-step-sub">只选需要更新的项目，下一步会只显示你刚选的表单。</text>
-            </view>
-            <view class="supplement-step-intro-count">
-              <text class="supplement-step-intro-count-num">{{ priceSupplementSelectedCount }}</text>
-              <text class="supplement-step-intro-count-label">已选</text>
-            </view>
+          <view class="supplement-step-head">
+            <text class="supplement-step-title">选择要补充的内容</text>
+            <text class="supplement-step-sub">可多选</text>
           </view>
 
-          <view class="supplement-step-guide">
-            <view class="supplement-guide-chip">
-              <text class="supplement-guide-chip-title">常用</text>
-              <text class="supplement-guide-chip-desc">价格、尺寸、材质</text>
-            </view>
-            <view class="supplement-guide-chip">
-              <text class="supplement-guide-chip-title">头部词条</text>
-              <text class="supplement-guide-chip-desc">头围、脖围、插口、眼珠</text>
-            </view>
-            <view class="supplement-guide-chip">
-              <text class="supplement-guide-chip-title">说明材料</text>
-              <text class="supplement-guide-chip-desc">图片、截图、补充说明</text>
-            </view>
-          </view>
-
-          <view class="supplement-selected-panel">
-            <view class="supplement-selected-panel-head">
-              <text class="supplement-selected-panel-title">这次准备补充</text>
-              <text class="supplement-selected-panel-tip">{{ priceSupplementSelectedCount > 0 ? `共 ${priceSupplementSelectedCount} 项` : '可多选' }}</text>
-            </view>
-            <view v-if="priceSupplementSelectedOptions.length" class="supplement-selected-list">
-              <view
-                v-for="item in priceSupplementSelectedOptions"
-                :key="`selected-${item.key}`"
-                class="supplement-selected-chip"
-              >
-                {{ item.label }}
+          <view class="supplement-select-grid">
+            <view
+              v-for="item in priceSupplementFieldOptions"
+              :key="item.key"
+              :class="['supplement-select-card', { active: isSupplementFieldSelected(item.key) }]"
+              @tap="toggleSupplementField(item.key)"
+            >
+              <view class="supplement-select-info">
+                <text class="supplement-select-title">{{ item.label }}</text>
               </view>
-            </view>
-            <text v-else class="supplement-selected-empty">还没选内容，先点下面的卡片。</text>
-          </view>
-
-          <view
-            v-for="group in priceSupplementFieldGroups"
-            :key="group.key"
-            class="supplement-select-section"
-          >
-            <view class="supplement-select-section-head">
-              <view class="supplement-select-section-copy">
-                <text class="supplement-select-section-title">{{ group.title }}</text>
-                <text class="supplement-select-section-sub">{{ group.desc }}</text>
-              </view>
-            </view>
-            <view class="supplement-select-grid">
-              <view
-                v-for="item in group.items"
-                :key="item.key"
-                :class="['supplement-select-card', { active: isSupplementFieldSelected(item.key) }]"
-                @tap="toggleSupplementField(item.key)"
-              >
-                <view class="supplement-select-info">
-                  <view class="supplement-select-title-row">
-                    <text class="supplement-select-title">{{ item.label }}</text>
-                    <text v-if="item.optional" class="supplement-select-tag">可选</text>
-                  </view>
-                  <text class="supplement-select-desc">{{ item.desc }}</text>
-                </view>
-                <view :class="['supplement-select-check', { active: isSupplementFieldSelected(item.key) }]">
-                  {{ isSupplementFieldSelected(item.key) ? '已选' : '+' }}
-                </view>
+              <view :class="['supplement-select-check', { active: isSupplementFieldSelected(item.key) }]">
+                {{ isSupplementFieldSelected(item.key) ? '已选' : '+' }}
               </view>
             </view>
           </view>
@@ -693,7 +636,6 @@
             <text class="supplement-step-title">填写补充内容</text>
             <text class="supplement-step-sub">已选：{{ priceSupplementSelectedOptionsText || '未选择' }}</text>
           </view>
-          <text class="supplement-step-tip">佐证截图和补充原因只用于说明，建议配合主要信息一起提交。</text>
 
           <view v-if="isSupplementFieldSelected('price')" class="supplement-section">
             <view class="supplement-section-head">
@@ -713,14 +655,15 @@
               </view>
               <view class="supplement-field">
                 <text class="supplement-field-label font-title">币种</text>
-                <input
-                  v-model="priceSupplementCurrencyInput"
-                  class="price-supplement-input"
-                  type="text"
-                  maxlength="12"
-                  placeholder="如 CNY / USD"
-                  placeholder-class="price-placeholder"
-                />
+                <view
+                  :class="['supplement-picker-trigger', { placeholder: !priceSupplementCurrencyInput }]"
+                  @tap="openSupplementCurrencyPopup"
+                >
+                  <text class="supplement-picker-trigger-text">
+                    {{ priceSupplementCurrencyInput || (supplementCurrencyLoading ? '加载币种中...' : '请选择币种') }}
+                  </text>
+                  <uni-icons type="right" size="14" color="#8fa1b7" />
+                </view>
               </view>
             </view>
           </view>
@@ -821,27 +764,34 @@
               <text class="supplement-section-tip">当前：{{ formatCurrentSizeText() }}</text>
             </view>
             <view class="supplement-field">
-              <text class="supplement-field-label font-title">尺寸分类</text>
-              <picker :range="supplementSizeCategoryOptions" :value="Math.max(0, supplementSizeCategoryOptions.indexOf(priceSupplementSizeCategoryInput))" @change="onSupplementSizeCategoryChange">
-                <view :class="['supplement-picker-trigger', { placeholder: !priceSupplementSizeCategoryInput }]">
-                  {{ priceSupplementSizeCategoryInput || (supplementMetaLoading ? '加载尺寸中...' : '请选择尺寸分类') }}
+              <text class="supplement-field-label font-title">尺寸选择</text>
+              <view
+                :class="['supplement-picker-trigger', { placeholder: !supplementSizeDisplayList.length }]"
+                @tap="openSupplementSizeSelector"
+              >
+                <view v-if="supplementSizeDisplayList.length" class="supplement-size-tags">
+                  <view
+                    v-for="(tag, idx) in supplementSizeDisplayList"
+                    :key="`supplement-size-tag-${idx}-${tag}`"
+                    class="supplement-size-tag"
+                  >
+                    {{ tag }}
+                  </view>
                 </view>
-              </picker>
-            </view>
-            <view class="supplement-field">
-              <text class="supplement-field-label font-title">尺寸详情</text>
-              <view v-if="priceSupplementSizeCategoryInput" class="supplement-chip-group">
-                <view
-                  v-for="item in supplementSizeDetailOptions"
-                  :key="`size-detail-${item}`"
-                  :class="['supplement-chip', { active: priceSupplementSizeDetailSelections.includes(item) }]"
-                  @tap="toggleSupplementSizeDetail(item)"
-                >
-                  {{ item }}
-                </view>
+                <text v-else class="supplement-picker-trigger-text">
+                  {{ supplementMetaLoading ? '加载尺寸中...' : '选择尺寸' }}
+                </text>
+                <uni-icons type="right" size="14" color="#8fa1b7" />
               </view>
-              <text v-else class="supplement-field-tip">先选尺寸分类，再选对应详情。</text>
             </view>
+
+            <cascade-multi-select
+              :show="showSupplementSizeSelector"
+              :sizeData="supplementSizeMap"
+              :initialSelection="supplementSizeInitialSelection"
+              @close="showSupplementSizeSelector = false"
+              @confirm="handleSupplementSizeSelection"
+            />
           </view>
 
           <view v-if="isSupplementFieldSelected('images')" class="supplement-section">
@@ -926,6 +876,38 @@
         </view>
       </view>
     </common-modal>
+
+    <uni-popup
+      ref="supplementCurrencyPopupRef"
+      type="bottom"
+      :mask-click="true"
+      @change="onSupplementCurrencyPopupChange"
+    >
+      <view class="supplement-currency-sheet">
+        <view class="supplement-currency-header">
+          <text class="supplement-currency-action" @tap="closeSupplementCurrencyPopup">取消</text>
+          <text class="supplement-currency-title font-alimamashuhei">选择币种</text>
+          <text class="supplement-currency-action" @tap="confirmSupplementCurrencySelection">确定</text>
+        </view>
+        <picker-view
+          v-if="supplementCurrencyPopupMounted"
+          class="supplement-currency-picker"
+          :indicator-style="supplementCurrencyIndicatorStyle"
+          :value="[supplementCurrencyPickerIndex]"
+          @change="onSupplementCurrencyPickerChange"
+        >
+          <picker-view-column>
+            <view
+              v-for="item in supplementCurrencyOptions"
+              :key="`supplement-currency-${item}`"
+              class="supplement-currency-item"
+            >
+              {{ item }}
+            </view>
+          </picker-view-column>
+        </picker-view>
+      </view>
+    </uni-popup>
 
     <common-modal :visible="wantPanelVisible" @update:visible="v => (wantPanelVisible = v)" top="20vh" width="720rpx">
       <view class="want-modal">
@@ -1065,6 +1047,13 @@ const supplementSocketOptions = ref([])
 const supplementEyeOptions = ref([])
 const supplementSizeCategoryOptions = ref([])
 const supplementMetaKey = ref('')
+const showSupplementSizeSelector = ref(false)
+const supplementSizeInitialSelection = ref([])
+const supplementCurrencyOptions = ref([])
+const supplementCurrencyLoading = ref(false)
+const supplementCurrencyPickerIndex = ref(0)
+const supplementCurrencyPopupRef = ref(null)
+const supplementCurrencyPopupMounted = ref(false)
 
 const swiperHeight = ref(400)
 const imageHeights = ref([])
@@ -1074,17 +1063,6 @@ const faceupList = ref([])
 const faceupLoading = ref(false)
 const BODY_SIZE_VISIBLE_TYPES = Object.freeze(['单体', '单头', '整体'])
 const HEAD_OR_WHOLE_TYPES = Object.freeze(['单头', '整体'])
-const SUPPLEMENT_PRIMARY_FIELD_KEYS = Object.freeze([
-  'price',
-  'head_circumference',
-  'neck_circumference',
-  'socket_sizes',
-  'eye_recommendations',
-  'doll_material',
-  'skin',
-  'size',
-  'images'
-])
 const normalizedGoodsType = computed(() => String(goods.value?.type || '').trim())
 const showBodySizeInfo = computed(() => BODY_SIZE_VISIBLE_TYPES.includes(normalizedGoodsType.value))
 const isHeadOrWholeGoods = computed(() => HEAD_OR_WHOLE_TYPES.includes(normalizedGoodsType.value))
@@ -1105,40 +1083,24 @@ const priceSupplementFieldOptions = computed(() => {
   ]
   return list.filter(item => !item.headOnly || isHeadOrWholeGoods.value)
 })
-const priceSupplementFieldGroups = computed(() => {
-  const primary = []
-  const support = []
-  priceSupplementFieldOptions.value.forEach(item => {
-    if (SUPPLEMENT_PRIMARY_FIELD_KEYS.includes(item.key)) {
-      primary.push(item)
-      return
-    }
-    support.push(item)
-  })
-  return [
-    {
-      key: 'primary',
-      title: '主要信息',
-      desc: '建议优先补充会直接影响词条展示和筛选的信息。',
-      items: primary
-    },
-    {
-      key: 'support',
-      title: '说明材料',
-      desc: '用于补充来源和说明，方便审核时判断。',
-      items: support
-    }
-  ].filter(group => group.items.length > 0)
-})
 const priceSupplementSelectedOptions = computed(() => {
   const selected = new Set(priceSupplementFieldSelections.value)
   return priceSupplementFieldOptions.value.filter(item => selected.has(item.key))
 })
-const priceSupplementSelectedCount = computed(() => priceSupplementSelectedOptions.value.length)
 const priceSupplementSelectedOptionsText = computed(() => {
   return priceSupplementSelectedOptions.value.map(item => item.label).join('、')
 })
 const canGoPriceSupplementNext = computed(() => priceSupplementFieldSelections.value.length > 0)
+const supplementCurrencyIndicatorStyle = computed(() => {
+  const h = Math.max(40, uni.upx2px(88))
+  return `height: ${h}px;`
+})
+const supplementSizeDisplayList = computed(() => {
+  const category = String(priceSupplementSizeCategoryInput.value || '').trim()
+  const details = uniqTrimmed(priceSupplementSizeDetailSelections.value)
+  if (!category || !details.length) return []
+  return details.map(item => `${category}/${item}`)
+})
 const pendingPriceSubmission = computed(() => goods.value?.pending_price_submission || null)
 const approvedPriceSubmission = computed(() => goods.value?.approved_price_submission || null)
 const contributionList = ref([])
@@ -1239,6 +1201,15 @@ watch(
       priceSupplementSizeDetailSelections.value,
       supplementSizeDetailOptions.value
     )
+  }
+)
+
+watch(
+  () => priceSupplementVisible.value,
+  (visible) => {
+    if (visible) return
+    showSupplementSizeSelector.value = false
+    closeSupplementCurrencyPopup()
   }
 )
 
@@ -1428,6 +1399,134 @@ function resetPriceSupplementForm() {
   priceSupplementSocketSelections.value = []
   priceSupplementEyeSelections.value = []
   priceSupplementSizeDetailSelections.value = []
+  syncSupplementCurrencyPickerIndex()
+}
+
+function syncSupplementCurrencyPickerIndex() {
+  const options = supplementCurrencyOptions.value || []
+  if (!options.length) {
+    supplementCurrencyPickerIndex.value = 0
+    return
+  }
+  const current = String(priceSupplementCurrencyInput.value || '').trim()
+  const idx = options.indexOf(current)
+  supplementCurrencyPickerIndex.value = idx >= 0 ? idx : 0
+}
+
+async function ensureSupplementCurrencyOptionsLoaded(force = false) {
+  if (!force && supplementCurrencyOptions.value.length > 0) {
+    syncSupplementCurrencyPickerIndex()
+    return
+  }
+  supplementCurrencyLoading.value = true
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/currency`,
+      method: 'GET'
+    })
+    const rawMap = res?.data?.status === 'success' ? res?.data?.data : null
+    const next = uniqTrimmed(Object.keys(rawMap || {}))
+    if (next.length) {
+      supplementCurrencyOptions.value = next
+    } else {
+      const fallback = uniqTrimmed([
+        priceSupplementCurrencyInput.value,
+        resolvedMainCurrency.value,
+        goods.value?.currency,
+        'CNY',
+        'USD'
+      ])
+      supplementCurrencyOptions.value = fallback.length ? fallback : ['CNY']
+    }
+    if (!String(priceSupplementCurrencyInput.value || '').trim()) {
+      priceSupplementCurrencyInput.value = supplementCurrencyOptions.value[0] || 'CNY'
+    }
+    syncSupplementCurrencyPickerIndex()
+  } catch (err) {
+    const fallback = uniqTrimmed([
+      priceSupplementCurrencyInput.value,
+      resolvedMainCurrency.value,
+      goods.value?.currency,
+      'CNY',
+      'USD'
+    ])
+    supplementCurrencyOptions.value = fallback.length ? fallback : ['CNY']
+    if (!String(priceSupplementCurrencyInput.value || '').trim()) {
+      priceSupplementCurrencyInput.value = supplementCurrencyOptions.value[0] || 'CNY'
+    }
+    syncSupplementCurrencyPickerIndex()
+  } finally {
+    supplementCurrencyLoading.value = false
+  }
+}
+
+async function openSupplementCurrencyPopup() {
+  await ensureSupplementCurrencyOptionsLoaded()
+  syncSupplementCurrencyPickerIndex()
+  supplementCurrencyPopupRef.value?.open?.()
+}
+
+function closeSupplementCurrencyPopup() {
+  supplementCurrencyPopupRef.value?.close?.()
+}
+
+function onSupplementCurrencyPopupChange(e) {
+  supplementCurrencyPopupMounted.value = !!e?.show
+}
+
+function onSupplementCurrencyPickerChange(e) {
+  const value = e?.detail?.value
+  const idx = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0)
+  supplementCurrencyPickerIndex.value = Number.isFinite(idx) && idx >= 0 ? idx : 0
+}
+
+function confirmSupplementCurrencySelection() {
+  const currency = supplementCurrencyOptions.value[supplementCurrencyPickerIndex.value] || ''
+  if (currency) {
+    priceSupplementCurrencyInput.value = currency
+  }
+  closeSupplementCurrencyPopup()
+}
+
+async function openSupplementSizeSelector() {
+  await ensureSupplementMetaLoaded()
+  const category = String(priceSupplementSizeCategoryInput.value || '').trim()
+  const details = uniqTrimmed(priceSupplementSizeDetailSelections.value)
+  supplementSizeInitialSelection.value = category && details.length
+    ? details.map(item => ({ category, size: item }))
+    : []
+  showSupplementSizeSelector.value = true
+}
+
+function handleSupplementSizeSelection(selected = []) {
+  const list = Array.isArray(selected)
+    ? selected
+      .map(item => ({
+        category: String(item?.category || '').trim(),
+        size: String(item?.size || '').trim()
+      }))
+      .filter(item => item.category && item.size)
+    : []
+
+  if (!list.length) {
+    priceSupplementSizeCategoryInput.value = ''
+    priceSupplementSizeDetailSelections.value = []
+    showSupplementSizeSelector.value = false
+    return
+  }
+
+  const firstCategory = list[0].category
+  const hasMultiCategory = list.some(item => item.category !== firstCategory)
+  if (hasMultiCategory) {
+    uni.showToast({ title: '当前仅支持单个尺寸分类，已保留首个分类', icon: 'none' })
+  }
+  const details = uniqTrimmed(list.filter(item => item.category === firstCategory).map(item => item.size))
+  priceSupplementSizeCategoryInput.value = firstCategory
+  priceSupplementSizeDetailSelections.value = normalizeSelectableList(
+    details,
+    buildSizeDetailOptions(supplementSizeMap.value, firstCategory)
+  )
+  showSupplementSizeSelector.value = false
 }
 
 async function ensureSupplementMetaLoaded(force = false) {
@@ -1469,13 +1568,6 @@ function onSupplementMaterialChange(e) {
   priceSupplementDollMaterialInput.value = supplementMaterialOptions.value[idx] || ''
 }
 
-function onSupplementSizeCategoryChange(e) {
-  const idx = Number(e?.detail?.value ?? -1)
-  if (idx < 0) return
-  priceSupplementSizeCategoryInput.value = supplementSizeCategoryOptions.value[idx] || ''
-  priceSupplementSizeDetailSelections.value = normalizeSelectableList(priceSupplementSizeDetailSelections.value, supplementSizeDetailOptions.value)
-}
-
 function toggleSupplementSocket(size) {
   toggleSelection(priceSupplementSocketSelections, size, supplementSocketOptions.value)
 }
@@ -1484,9 +1576,6 @@ function toggleSupplementEye(size) {
   toggleSelection(priceSupplementEyeSelections, size, supplementEyeOptions.value)
 }
 
-function toggleSupplementSizeDetail(size) {
-  toggleSelection(priceSupplementSizeDetailSelections, size, supplementSizeDetailOptions.value)
-}
 
 function loadGoodsContributionPage(page = 1) {
   const goodsId = parseInt(currentId.value || 0)
@@ -2067,7 +2156,10 @@ async function openPriceSupplementModal () {
     return
   }
   resetPriceSupplementForm()
-  await ensureSupplementMetaLoaded()
+  await Promise.all([
+    ensureSupplementMetaLoaded(),
+    ensureSupplementCurrencyOptionsLoaded()
+  ])
   priceSupplementVisible.value = true
 }
 
@@ -2959,11 +3051,66 @@ function selectSize (sizeText) {
   box-sizing: border-box;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
   font-size: 28rpx;
   color: #2b3650;
 }
+.supplement-picker-trigger-text{
+  flex: 1;
+  min-width: 0;
+}
 .supplement-picker-trigger.placeholder{
   color: #a3adba;
+}
+.supplement-size-tags{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  padding: 14rpx 0;
+  flex: 1;
+  min-width: 0;
+}
+.supplement-size-tag{
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(120, 218, 245, 0.16);
+  color: #1f7590;
+  font-size: 22rpx;
+  line-height: 1.25;
+}
+.supplement-currency-sheet{
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -8rpx 26rpx rgba(36, 48, 71, 0.12);
+}
+.supplement-currency-header{
+  height: 92rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.supplement-currency-title{
+  font-size: 30rpx;
+  color: #243047;
+}
+.supplement-currency-action{
+  font-size: 26rpx;
+  color: #5e6f85;
+  min-width: 72rpx;
+}
+.supplement-currency-picker{
+  width: 100%;
+  height: 420rpx;
+}
+.supplement-currency-item{
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 30rpx;
+  color: #253246;
 }
 .supplement-chip-group{
   display: flex;
