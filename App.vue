@@ -160,6 +160,8 @@ function loadFonts() {
 	.font-number {
 		font-family: "univers-number" !important;
 		font-variant-numeric: tabular-nums;
+		letter-spacing: 1rpx;
+		padding: 0 5rpx;
 	}
 	
 	.font-doll {

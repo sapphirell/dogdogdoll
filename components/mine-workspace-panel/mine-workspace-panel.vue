@@ -18,18 +18,25 @@
 
     <!-- 已入驻：展示工作台 -->
     <view v-else class="ws-content">
-      <!-- 顶部：我收到的投递（主按钮） -->
-      <view
-        v-if="showOrderHome"
-        class="card received-card"
-        @tap="goReceivedSubmissions"
-      >
-        <view class="received-row">
-          <view class="received-main">
-            <text class="received-label">我收到的投递</text>
-            <text class="received-count">（{{ receivedCount }}）</text>
+      <!-- 顶部：我收到的投递（快捷卡片） -->
+      <view v-if="showOrderHome" class="received-quick-wrap">
+        <view class="received-quick-head">
+          <text class="received-quick-title">我收到的投递</text>
+          <text class="received-quick-count">共 {{ receivedCount }} 笔</text>
+        </view>
+        <view class="received-quick-grid">
+          <view class="received-quick-item" @tap="goReceivedNeedConfirm">
+            <image class="received-quick-icon" src="/static/new-icon/notification.png" mode="aspectFit" />
+            <text class="received-quick-label">待您处理</text>
           </view>
-          <uni-icons type="arrow-right" size="18" color="#e84a52" />
+          <view class="received-quick-item" @tap="goReceivedAll">
+            <image class="received-quick-icon" src="/static/new-icon/order.png" mode="aspectFit" />
+            <text class="received-quick-label">全部订单</text>
+          </view>
+          <view class="received-quick-item" @tap="goScheduleBoard593">
+            <image class="received-quick-icon" src="/static/new-icon/log.png" mode="aspectFit" />
+            <text class="received-quick-label">我的日程</text>
+          </view>
         </view>
       </view>
 
@@ -96,29 +103,50 @@
 
       <!-- 功能按钮区域 -->
       <view class="card function-card">
-        <view
-          v-for="item in visibleFunctions"
-          :key="item.key"
-          class="function-item"
-          @tap="handleFunctionClick(item.key)"
-        >
+        <view class="role-tab-row">
           <view
-            class="function-icon"
-            :class="getFunctionThemeClass(item.key)"
+            v-for="role in workspaceRoleTabs"
+            :key="role.key"
+            class="role-tab-item"
+            :class="{
+              'role-tab-item-active': activeRoleTab === role.key,
+              'role-tab-item-muted': !role.enabled
+            }"
+            @tap="activeRoleTab = role.key"
           >
-            <!-- 这里用属性设置颜色 -->
-            <uni-icons
-              :type="item.icon"
-              size="22"
-              :color="getFunctionIconColor(item.key)"
-            />
+            <text class="role-tab-text">{{ role.label }}</text>
           </view>
-          <view class="function-info">
-            <text class="function-title">{{ item.label }}</text>
-            <text v-if="item.desc" class="function-desc">{{ item.desc }}</text>
-          </view>
-          <view class="function-arrow">
-            <uni-icons type="arrow-right" size="18" color="#999" />
+        </view>
+
+        <text v-if="!activeRoleEnabled" class="role-disabled-tip">
+          该身份尚未开启，先在上方打开开关后即可使用
+        </text>
+
+        <view class="function-list">
+          <view
+            v-for="item in currentRoleFunctions"
+            :key="item.key"
+            class="function-item"
+            :class="{ 'is-disabled': !activeRoleEnabled }"
+            @tap="handleFunctionClick(item.key)"
+          >
+            <view
+              class="function-icon"
+              :class="[getFunctionThemeClass(item.key), { 'is-disabled': !activeRoleEnabled }]"
+            >
+              <uni-icons
+                :type="item.icon"
+                size="22"
+                :color="!activeRoleEnabled ? '#aeb6c2' : getFunctionIconColor(item.key)"
+              />
+            </view>
+            <view class="function-info">
+              <text class="function-title">{{ item.label }}</text>
+              <text v-if="item.desc" class="function-desc">{{ item.desc }}</text>
+            </view>
+            <view class="function-arrow">
+              <uni-icons type="arrow-right" size="18" :color="!activeRoleEnabled ? '#bfc6d1' : '#999'" />
+            </view>
           </view>
         </view>
       </view>
@@ -161,63 +189,70 @@ const allFunctions = [
     label: '店铺设置',
     desc: '设置店铺基础信息与对外展示',
     icon: 'shop',
-    needShop: true
+    role: 'shop'
   },
   {
     key: 'goods-manage',
     label: '商品管理',
     desc: '上新、编辑你的贩售商品',
     icon: 'gift', // gift
-    needShop: true
+    role: 'shop'
   },
   {
     key: 'makeup-gallery',
     label: '妆图展示',
     desc: '管理妆面作品展示页',
     icon: 'heart', // 妆师设计
-    needArtist: true
+    role: 'artist'
   },
   {
     key: 'hair-gallery',
     label: '手改毛展示',
     desc: '管理手改毛作品展示页',
     icon: 'staff', // 手改毛图
-    needHairstylist: true
+    role: 'hairstylist'
   },
   {
-    key: 'publish-plan',
-    label: '发布开单',
-    desc: '发布妆面 / 手改毛开单计划',
+    key: 'publish-plan-artist',
+    label: '发布妆师开单',
+    desc: '发布妆面接单计划',
     icon: 'calendar',
-    needArtistOrHairstylist: true
+    role: 'artist'
+  },
+  {
+    key: 'publish-plan-hairstylist',
+    label: '发布毛娘开单',
+    desc: '发布手改毛接单计划',
+    icon: 'calendar',
+    role: 'hairstylist'
   },
   {
     key: 'artist-settings',
     label: '妆师设置',
     desc: '设置妆师接单信息与规则',
     icon: 'person',
-    needArtist: true
+    role: 'artist'
   },
   {
     key: 'hairstylist-settings',
     label: '毛娘设置',
     desc: '设置毛娘接单信息与规则',
     icon: 'heart-filled', // 毛娘设置
-    needHairstylist: true
+    role: 'hairstylist'
   },
   {
     key: 'blank-stock-settings',
     label: '毛坯设置',
     desc: '管理已有毛坯库存、价格与头围信息',
     icon: 'list',
-    needHairstylist: true
+    role: 'hairstylist'
   },
   {
     key: 'article-publish',
     label: '发布文章',
     desc: '发布图透、成品展示和公告',
     icon: 'compose',
-    always: true
+    role: 'shop'
   }
 ]
 
@@ -229,7 +264,8 @@ const functionThemeMap = {
   'artist-settings': 'fc-theme-4',       // 原配色4
   'makeup-gallery': 'fc-theme-5',        // 新配色1：#e5e3ed + #e19cbb
   'hair-gallery': 'fc-theme-6',          // 新配色2：#003153 + #e5e3ed
-  'publish-plan': 'fc-theme-7',          // 新配色3：#ecf2ec + #008c8d
+  'publish-plan-artist': 'fc-theme-7',   // 新配色3：#ecf2ec + #008c8d
+  'publish-plan-hairstylist': 'fc-theme-7',
   'hairstylist-settings': 'fc-theme-8',  // 新配色4：#efdfce + #7e041d
   'blank-stock-settings': 'fc-theme-7'
 }
@@ -255,31 +291,34 @@ function getFunctionIconColor (key) {
   return themeIconColorMap[theme] || '#3c3b48'
 }
 
-// 根据当前身份计算可见功能
-const visibleFunctions = computed(() => {
-  const list = []
-  const added = new Set()
-
-  allFunctions.forEach(item => {
-    let ok = false
-
-    if (item.always) {
-      ok = true
-    } else {
-      if (item.needShop && isShop.value) ok = true
-      if (item.needArtist && isArtist.value) ok = true
-      if (item.needHairstylist && isHairstylist.value) ok = true
-      if (item.needArtistOrHairstylist && (isArtist.value || isHairstylist.value)) ok = true
-    }
-
-    if (ok && !added.has(item.key)) {
-      added.add(item.key)
-      list.push(item)
-    }
-  })
-
-  return list
+const workspaceRoleTabs = computed(() => ([
+  { key: 'shop', label: '店铺', enabled: isShop.value },
+  { key: 'artist', label: '妆师', enabled: isArtist.value },
+  { key: 'hairstylist', label: '毛娘', enabled: isHairstylist.value }
+]))
+const activeRoleTab = ref('shop')
+const activeRoleEnabled = computed(() => {
+  if (activeRoleTab.value === 'shop') return isShop.value
+  if (activeRoleTab.value === 'artist') return isArtist.value
+  if (activeRoleTab.value === 'hairstylist') return isHairstylist.value
+  return false
 })
+const currentRoleFunctions = computed(() => {
+  return allFunctions.filter(item => item.role === activeRoleTab.value)
+})
+
+function syncActiveRoleTab () {
+  const tabs = workspaceRoleTabs.value
+  const current = tabs.find(item => item.key === activeRoleTab.value)
+  if (current && current.enabled) return
+  const firstEnabled = tabs.find(item => item.enabled)
+  if (firstEnabled) {
+    activeRoleTab.value = firstEnabled.key
+    return
+  }
+  if (current) return
+  activeRoleTab.value = 'shop'
+}
 
 // 初始化：获取用户信息 + 品牌身份
 onMounted(async () => {
@@ -317,6 +356,7 @@ function fetchBrandIdentity () {
       isShop.value = d.is_brand === 1
       isArtist.value = d.is_bjd_artist === 1
       isHairstylist.value = d.is_bjd_hairstylist === 1
+      syncActiveRoleTab()
 
       // 身份信息加载完再去拉“我收到的投递”数量
       fetchReceivedCount()
@@ -503,15 +543,37 @@ function goBrandHome () {
   })
 }
 
-// 跳转到“我收到的投递”列表（作者视角页面）
-function goReceivedSubmissions () {
+// 跳转到“我收到的投递”列表（全部）
+function goReceivedAll () {
   uni.navigateTo({
-    url: '/pkg-creator/creator_order/received-list/received-list'
+    url: '/pkg-creator/creator_order/received-list/received-list?order_filter=all'
+  })
+}
+
+// 跳转到“待您处理”聚合页
+function goReceivedNeedConfirm () {
+  uni.navigateTo({
+    url: '/pkg-creator/creator_order/creator_todo_list/creator_todo_list'
+  })
+}
+
+// 跳转到“我的日程”
+function goScheduleBoard593 () {
+  uni.navigateTo({
+    url: '/pkg-creator/creator_order/schedule_board/schedule_board?plan_id=593'
   })
 }
 
 // 功能按钮点击
 function handleFunctionClick (key) {
+  if (!activeRoleEnabled.value) {
+    uni.showToast({
+      title: '请先开启该身份',
+      icon: 'none'
+    })
+    return
+  }
+
   let url = ''
 
   switch (key) {
@@ -527,8 +589,11 @@ function handleFunctionClick (key) {
     case 'hair-gallery':
       url = '/pkg-creator/creator_base/set_hair_showcase/set_hair_showcase'
       break
-    case 'publish-plan':
-      url = '/pkg-creator/creator_base/order_plan/order_plan'
+    case 'publish-plan-artist':
+      url = '/pkg-creator/creator_base/order_plan/form-artist'
+      break
+    case 'publish-plan-hairstylist':
+      url = '/pkg-creator/creator_base/order_plan/form-wig'
       break
     case 'artist-settings':
       url = '/pkg-creator/creator_base/artist_setting/artist_setting'
@@ -642,32 +707,58 @@ function handleFunctionClick (key) {
   font-weight: 700;
 }
 
-/* 顶部：我收到的投递卡片 */
-.received-card {
+/* 顶部：我收到的投递快捷卡片 */
+.received-quick-wrap {
   margin-bottom: 26rpx;
 }
 
-.received-row {
+.received-quick-head {
+  padding: 0 4rpx;
+  margin-bottom: 16rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.received-main {
-  display: flex;
-  align-items: center;
-}
-
-.received-label {
+.received-quick-title {
   font-size: 30rpx;
-  color: #e84a52;
+  color: #253246;
   font-weight: 700;
 }
 
-.received-count {
-  margin-left: 8rpx;
-  font-size: 26rpx;
-  color: #e84a52;
+.received-quick-count {
+  font-size: 24rpx;
+  color: #7a8699;
+}
+
+.received-quick-grid {
+  display: flex;
+  gap: 14rpx;
+}
+
+.received-quick-item {
+  flex: 1;
+  min-height: 144rpx;
+  border-radius: 22rpx;
+  background: #ffffff;
+  box-shadow: 0 12rpx 28rpx rgba(37, 50, 70, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18rpx 8rpx;
+  box-sizing: border-box;
+}
+
+.received-quick-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.received-quick-label {
+  margin-top: 12rpx;
+  font-size: 25rpx;
+  color: #253246;
 }
 
 /* 身份设置 */
@@ -724,23 +815,66 @@ function handleFunctionClick (key) {
 
 /* 功能按钮区域 */
 .function-card {
-  padding: 0;
-  overflow: hidden;
+  padding: 20rpx;
+}
+
+.role-tab-row {
+  display: flex;
+  gap: 14rpx;
+  margin-bottom: 18rpx;
+}
+
+.role-tab-item {
+  flex: 1;
+  height: 64rpx;
+  border-radius: 999rpx;
+  background: #f4f7fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-tab-item-active {
+  background: #dff7ff;
+}
+
+.role-tab-item-muted {
+  background: #f1f2f5;
+}
+
+.role-tab-text {
+  font-size: 26rpx;
+  color: #627089;
+}
+
+.role-tab-item-active .role-tab-text {
+  color: #3a516e;
+  font-weight: 700;
+}
+
+.role-disabled-tip {
+  display: block;
+  margin-bottom: 14rpx;
+  font-size: 22rpx;
+  color: #9aa3af;
+}
+
+.function-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
 
 .function-item {
   display: flex;
   align-items: center;
-  padding: 26rpx 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 22rpx 20rpx;
+  border-radius: 18rpx;
+  background: #f8fbff;
   transition: background 0.58s ease;
 
   &:active {
-    background-color: #f9f9f9;
-  }
-
-  &:last-child {
-    border-bottom: none;
+    background-color: #edf4fb;
   }
 }
 
@@ -753,6 +887,9 @@ function handleFunctionClick (key) {
   align-items: center;
   justify-content: center;
   opacity: 0.75;
+}
+.function-icon.is-disabled {
+  background: #e8ebf0 !important;
 }
 
 /* 撞色主题：背景用 class 控制（以后你可以只改这里） */
@@ -809,5 +946,21 @@ function handleFunctionClick (key) {
 
 .function-arrow {
   margin-left: 12rpx;
+}
+
+.function-item.is-disabled {
+  background: #f5f6f8;
+}
+
+.function-item.is-disabled:active {
+  background: #f5f6f8;
+}
+
+.function-item.is-disabled .function-title {
+  color: #9ea6b2;
+}
+
+.function-item.is-disabled .function-desc {
+  color: #b5bcc7;
 }
 </style>

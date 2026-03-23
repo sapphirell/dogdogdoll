@@ -189,15 +189,15 @@
         </view>
 
         <view v-if="filterPopupStage === 'entry'" class="filter-entry-body">
-          <view class="filter-entry-row" @tap="openFilterPicker('size')">
+          <view class="filter-entry-row" @tap="openFilterSizeSelector">
             <view class="entry-main">
               <text class="entry-label font-alimamashuhei">尺寸</text>
-              <text class="entry-value">{{ filterDraftSize || '不限' }}</text>
+              <text class="entry-value">{{ filterDraftSizeText }}</text>
             </view>
             <uni-icons type="right" size="15" color="#8697a8" />
           </view>
 
-          <view class="filter-entry-row" @tap="openFilterPicker('category')">
+          <view class="filter-entry-row" @tap="openFilterPicker">
             <view class="entry-main">
               <text class="entry-label font-alimamashuhei">分类</text>
               <text class="entry-value">{{ filterDraftCategory || '不限' }}</text>
@@ -214,33 +214,15 @@
         <view v-else class="filter-picker-body">
           <picker-view
             v-if="filterPopupMounted"
-            :class="['filter-picker', { 'filter-picker--size': filterPickerType === 'size' }]"
+            class="filter-picker"
             :indicator-style="filterPickerIndicatorStyle"
-            :value="filterPickerType === 'size' ? [filterSizeCategoryPickerIndex, filterSizeDetailPickerIndex] : [filterPickerIndex]"
+            :value="[filterPickerIndex]"
             @change="onFilterPickerChange"
           >
-            <picker-view-column v-if="filterPickerType === 'size'">
-              <view
-                v-for="option in filterSizeCategoryPickerOptions"
-                :key="`size-category-${option}`"
-                class="filter-picker-item"
-              >
-                {{ option }}
-              </view>
-            </picker-view-column>
-            <picker-view-column v-if="filterPickerType === 'size'">
-              <view
-                v-for="option in filterSizeDetailPickerOptions"
-                :key="`size-detail-${option}`"
-                class="filter-picker-item filter-picker-item--sub"
-              >
-                {{ option }}
-              </view>
-            </picker-view-column>
-            <picker-view-column v-else>
+            <picker-view-column>
               <view
                 v-for="option in currentFilterPickerOptions"
-                :key="`${filterPickerType}-${option}`"
+                :key="`category-${option}`"
                 class="filter-picker-item"
               >
                 {{ option }}
@@ -254,6 +236,14 @@
         </view>
       </view>
     </uni-popup>
+
+    <cascade-multi-select
+      :show="showFilterSizeSelector"
+      :sizeData="filterSizeMap"
+      :initialSelection="filterSizeInitialSelection"
+      @close="onFilterSizeSelectorClose"
+      @confirm="onFilterSizeSelectorConfirm"
+    />
   </view>
 </template>
 
@@ -287,14 +277,14 @@ const filterPopupRef = ref(null)
 const filterPopupMounted = ref(false)
 const filterPopupSafeBottom = ref(0)
 const filterPopupStage = ref('entry')
-const filterPickerType = ref('size')
 const filterPickerIndex = ref(0)
-const filterSizeCategoryPickerIndex = ref(0)
-const filterSizeDetailPickerIndex = ref(0)
 const filterDraftCategory = ref('')
-const filterDraftSize = ref('')
+const filterDraftSizes = ref([])
 const filterSizeMap = ref({})
 const filterSizeCategoryOptions = ref([...DEFAULT_SALE_SIZE_CATEGORIES])
+const showFilterSizeSelector = ref(false)
+const filterSizeInitialSelection = ref([])
+const reopenFilterPopupAfterSize = ref(false)
 const manualBrandId = ref(0)
 const manualBrandName = ref('')
 const token = ref('')
@@ -336,17 +326,17 @@ const effectiveSizes = computed(() => {
 const GOODS_CATEGORY_DEFS = ref(buildGoodsCategoryDefsFromTypes(DEFAULT_GOODS_TYPE_OPTIONS))
 const GOODS_CATEGORY_ALIAS_MAP = computed(() => buildGoodsCategoryAliasMap(GOODS_CATEGORY_DEFS.value))
 const filterPickerIndicatorStyle = 'height:64px;'
-const filterPickerTitle = computed(() => (filterPickerType.value === 'size' ? '选择尺寸' : '选择分类'))
+const filterPickerTitle = computed(() => '选择分类')
 const filterCategoryPickerOptions = computed(() => ['不限', ...GOODS_CATEGORY_DEFS.value.map(item => item.value)])
-const filterSizeCategoryPickerOptions = computed(() => ['不限', ...(filterSizeCategoryOptions.value || [])])
-const filterSizeCurrentCategory = computed(() => String(filterSizeCategoryPickerOptions.value[filterSizeCategoryPickerIndex.value] || '不限'))
-const filterSizeDetailPickerOptions = computed(() => {
-  if (filterSizeCurrentCategory.value === '不限') return ['不限']
-  const details = buildSizeDetailOptions(filterSizeMap.value || {}, filterSizeCurrentCategory.value)
-  return ['全部', ...details]
-})
 const currentFilterPickerOptions = computed(() => {
   return filterCategoryPickerOptions.value
+})
+const filterDraftSizeText = computed(() => {
+  const selections = Array.isArray(filterDraftSizes.value) ? filterDraftSizes.value : []
+  if (!selections.length) return '不限'
+  const first = String(selections[0] || '').trim()
+  if (selections.length === 1) return first || '不限'
+  return `${first} +${selections.length - 1}`
 })
 
 async function initGoodsCategoryDefs() {
@@ -705,7 +695,7 @@ function normalizeGoods(item) {
 
 function syncFilterDraftFromCurrent() {
   filterDraftCategory.value = String((filterCategories.value || [])[0] || '').trim()
-  filterDraftSize.value = String((filterSizes.value || [])[0] || '').trim()
+  filterDraftSizes.value = uniqTrimmed(filterSizes.value || [])
 }
 
 async function openFilterModal() {
@@ -734,54 +724,60 @@ function onFilterPopupChange(e) {
   filterPopupStage.value = 'entry'
 }
 
-function openFilterPicker(type) {
-  filterPickerType.value = type === 'category' ? 'category' : 'size'
-  if (filterPickerType.value === 'size') {
-    syncSizePickerFromDraft()
-  } else {
-    const current = filterDraftCategory.value
-    const options = currentFilterPickerOptions.value
-    const target = current || '不限'
-    const found = options.indexOf(target)
-    filterPickerIndex.value = found >= 0 ? found : 0
-  }
+async function openFilterSizeSelector() {
+  await initSizeOptions(filterDraftSizes.value)
+  filterSizeInitialSelection.value = buildSizeSelectorInitialSelection(filterDraftSizes.value)
+  reopenFilterPopupAfterSize.value = true
+  closeFilterPopup()
+  nextTick(() => { showFilterSizeSelector.value = true })
+}
+
+function onFilterSizeSelectorClose() {
+  showFilterSizeSelector.value = false
+  reopenFilterPopupAfterSizeSelection()
+}
+
+function onFilterSizeSelectorConfirm(selected = []) {
+  const list = Array.isArray(selected)
+    ? selected
+      .map((item) => ({
+        category: String(item?.category || '').trim(),
+        size: String(item?.size || '').trim(),
+      }))
+      .filter((item) => item.category && item.size)
+    : []
+  filterDraftSizes.value = uniqTrimmed(list.map(item => item.size))
+  showFilterSizeSelector.value = false
+  reopenFilterPopupAfterSizeSelection()
+}
+
+function reopenFilterPopupAfterSizeSelection() {
+  if (!reopenFilterPopupAfterSize.value) return
+  reopenFilterPopupAfterSize.value = false
+  nextTick(() => {
+    filterPopupStage.value = 'entry'
+    filterPopupRef.value?.open?.()
+  })
+}
+
+function openFilterPicker() {
+  const current = filterDraftCategory.value
+  const options = currentFilterPickerOptions.value
+  const target = current || '不限'
+  const found = options.indexOf(target)
+  filterPickerIndex.value = found >= 0 ? found : 0
   filterPopupStage.value = 'picker'
 }
 
 function onFilterPickerChange(e) {
-  if (filterPickerType.value === 'size') {
-    const values = Array.isArray(e?.detail?.value) ? e.detail.value : []
-    const nextCategoryIndex = safePickerIndex(values[0], filterSizeCategoryPickerOptions.value.length)
-    const categoryChanged = nextCategoryIndex !== filterSizeCategoryPickerIndex.value
-    filterSizeCategoryPickerIndex.value = nextCategoryIndex
-
-    const detailOptions = filterSizeDetailPickerOptions.value
-    const rawDetailIndex = values.length > 1 ? values[1] : 0
-    let nextDetailIndex = safePickerIndex(rawDetailIndex, detailOptions.length)
-    if (categoryChanged) nextDetailIndex = 0
-    filterSizeDetailPickerIndex.value = nextDetailIndex
-    return
-  }
   const val = Array.isArray(e?.detail?.value) ? Number(e.detail.value[0]) : 0
   filterPickerIndex.value = Number.isFinite(val) && val >= 0 ? val : 0
 }
 
 function confirmFilterPicker() {
-  if (filterPickerType.value === 'size') {
-    const category = String(filterSizeCategoryPickerOptions.value[filterSizeCategoryPickerIndex.value] || '不限')
-    const detail = String(filterSizeDetailPickerOptions.value[filterSizeDetailPickerIndex.value] || '不限')
-    if (category === '不限') {
-      filterDraftSize.value = ''
-    } else if (detail === '全部' || detail === '不限') {
-      filterDraftSize.value = category
-    } else {
-      filterDraftSize.value = detail
-    }
-  } else {
-    const options = currentFilterPickerOptions.value || []
-    const picked = String(options[filterPickerIndex.value] || '不限')
-    filterDraftCategory.value = picked === '不限' ? '' : picked
-  }
+  const options = currentFilterPickerOptions.value || []
+  const picked = String(options[filterPickerIndex.value] || '不限')
+  filterDraftCategory.value = picked === '不限' ? '' : picked
   filterPopupStage.value = 'entry'
 }
 
@@ -791,12 +787,12 @@ function backToFilterEntry() {
 
 function resetFilterDraft() {
   filterDraftCategory.value = ''
-  filterDraftSize.value = ''
+  filterDraftSizes.value = []
 }
 
 function applyFilterAndClose() {
   filterCategories.value = filterDraftCategory.value ? [filterDraftCategory.value] : []
-  filterSizes.value = filterDraftSize.value ? [filterDraftSize.value] : []
+  filterSizes.value = uniqTrimmed(filterDraftSizes.value || [])
   closeFilterPopup()
   reloadList()
 }
@@ -888,13 +884,6 @@ function goGoods(goodsId) {
   uni.navigateTo({ url: `/pages/goods/goods?goods_id=${goodsId}` })
 }
 
-function safePickerIndex(rawIndex, length) {
-  const idx = Number(rawIndex)
-  if (!Number.isFinite(idx) || idx < 0) return 0
-  if (length <= 0) return 0
-  return Math.max(0, Math.min(length - 1, Math.floor(idx)))
-}
-
 function collectSizeCategoryCandidates() {
   return uniqTrimmed([
     ...buildSizeCategoryOptions(filterSizeMap.value || {}),
@@ -929,32 +918,24 @@ function inferSizeCategories(values = []) {
   return out
 }
 
-function resolveDraftSizeSelection(value) {
-  const text = String(value || '').trim()
-  if (!text) return { category: '不限', detail: '不限' }
-  if (filterSizeCategoryOptions.value.includes(text)) {
-    return { category: text, detail: '全部' }
-  }
-  const matchedCategory = inferCategoryBySize(text)
-  if (!matchedCategory) {
-    return { category: '不限', detail: '不限' }
-  }
-  const details = buildSizeDetailOptions(filterSizeMap.value || {}, matchedCategory)
-  if (details.includes(text)) {
-    return { category: matchedCategory, detail: text }
-  }
-  return { category: matchedCategory, detail: '全部' }
-}
+function buildSizeSelectorInitialSelection(values = []) {
+  const tokens = uniqTrimmed(values)
+  const result = []
+  const map = filterSizeMap.value && typeof filterSizeMap.value === 'object' ? filterSizeMap.value : {}
+  const categories = Object.keys(map)
+  const seen = new Set()
 
-function syncSizePickerFromDraft() {
-  const { category, detail } = resolveDraftSizeSelection(filterDraftSize.value)
-  const categoryOptions = filterSizeCategoryPickerOptions.value
-  const nextCategoryIndex = safePickerIndex(categoryOptions.indexOf(category), categoryOptions.length)
-  filterSizeCategoryPickerIndex.value = nextCategoryIndex
-
-  const detailOptions = filterSizeDetailPickerOptions.value
-  const nextDetailIndex = safePickerIndex(detailOptions.indexOf(detail), detailOptions.length)
-  filterSizeDetailPickerIndex.value = nextDetailIndex
+  tokens.forEach((token) => {
+    categories.forEach((category) => {
+      const details = Array.isArray(map[category]) ? map[category] : []
+      if (!details.includes(token)) return
+      const key = `${category}::${token}`
+      if (seen.has(key)) return
+      seen.add(key)
+      result.push({ category, size: token })
+    })
+  })
+  return result
 }
 
 onLoad(async (options) => {
@@ -1344,10 +1325,6 @@ onLoad(async (options) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.filter-picker-item--sub {
-  color: #445a72;
 }
 
 .filter-picker-footer {

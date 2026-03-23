@@ -874,6 +874,15 @@ onLoad((options) => {
     }
   }
 
+  if (options && options.order_filter) {
+    const orderFilter = String(options.order_filter).trim().toLowerCase()
+    const valid = orderOps.some((op) => op.key === orderFilter)
+    if (valid) {
+      activeMainTab.value = 'orders'
+      currentOrderFilter.value = orderFilter
+    }
+  }
+
   triggerContentEnter()
 })
 </script>

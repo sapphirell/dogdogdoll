@@ -608,6 +608,11 @@
           </view>
         </view>
 
+        <scroll-view
+          class="price-supplement-scroll"
+          scroll-y
+          :show-scrollbar="false"
+        >
         <view v-if="priceSupplementStep === 1" class="supplement-step">
           <view class="supplement-step-head">
             <text class="supplement-step-title">选择要补充的内容</text>
@@ -649,6 +654,7 @@
                   v-model="priceSupplementPriceInput"
                   class="price-supplement-input"
                   type="number"
+                  :maxlength="PRICE_SUPPLEMENT_MAX_LENGTH.price"
                   placeholder="输入价格"
                   placeholder-class="price-placeholder"
                 />
@@ -680,6 +686,7 @@
                   v-model="priceSupplementHeadCircumferenceInput"
                   class="price-supplement-input"
                   type="text"
+                  :maxlength="PRICE_SUPPLEMENT_MAX_LENGTH.headCircumference"
                   :placeholder="`当前：${goods.head_circumference || '未填写'}`"
                   placeholder-class="price-placeholder"
                 />
@@ -690,6 +697,7 @@
                   v-model="priceSupplementNeckCircumferenceInput"
                   class="price-supplement-input"
                   type="text"
+                  :maxlength="PRICE_SUPPLEMENT_MAX_LENGTH.neckCircumference"
                   :placeholder="`当前：${goods.neck_circumference || '未填写'}`"
                   placeholder-class="price-placeholder"
                 />
@@ -751,6 +759,7 @@
                   v-model="priceSupplementSkinInput"
                   class="price-supplement-input"
                   type="text"
+                  :maxlength="PRICE_SUPPLEMENT_MAX_LENGTH.skin"
                   :placeholder="`当前：${goods.skin || '未填写'}`"
                   placeholder-class="price-placeholder"
                 />
@@ -846,12 +855,16 @@
             <textarea
               v-model="priceSupplementReasonInput"
               class="price-supplement-textarea"
-              maxlength="120"
+              :maxlength="PRICE_SUPPLEMENT_MAX_LENGTH.reason"
               placeholder="例如：官方直播提到、本人实测、商品页截图等"
               placeholder-class="price-placeholder"
             />
+            <text class="supplement-input-count font-title">
+              {{ priceSupplementReasonLength }}/{{ PRICE_SUPPLEMENT_MAX_LENGTH.reason }}
+            </text>
           </view>
         </view>
+        </scroll-view>
 
         <view class="price-supplement-actions">
           <button v-if="priceSupplementStep === 1" class="price-supplement-cancel" @click="priceSupplementVisible = false">取消</button>
@@ -1054,6 +1067,13 @@ const supplementCurrencyLoading = ref(false)
 const supplementCurrencyPickerIndex = ref(0)
 const supplementCurrencyPopupRef = ref(null)
 const supplementCurrencyPopupMounted = ref(false)
+const PRICE_SUPPLEMENT_MAX_LENGTH = Object.freeze({
+  price: 10,
+  headCircumference: 20,
+  neckCircumference: 20,
+  skin: 20,
+  reason: 120
+})
 
 const swiperHeight = ref(400)
 const imageHeights = ref([])
@@ -1091,6 +1111,7 @@ const priceSupplementSelectedOptionsText = computed(() => {
   return priceSupplementSelectedOptions.value.map(item => item.label).join('、')
 })
 const canGoPriceSupplementNext = computed(() => priceSupplementFieldSelections.value.length > 0)
+const priceSupplementReasonLength = computed(() => String(priceSupplementReasonInput.value || '').length)
 const supplementCurrencyIndicatorStyle = computed(() => {
   const h = Math.max(40, uni.upx2px(88))
   return `height: ${h}px;`
@@ -1244,6 +1265,14 @@ function splitSupplementTextInput(raw) {
     .split(/[,\s，、;；|]+/g)
     .map(v => v.trim())
     .filter(Boolean)
+}
+
+function trimAndLimitText(raw, max = 0) {
+  const txt = String(raw || '').trim()
+  if (max > 0 && txt.length > max) {
+    return txt.slice(0, max)
+  }
+  return txt
 }
 
 function uniqTrimmed(values = []) {
@@ -2177,7 +2206,7 @@ function submitPriceSupplement () {
   }
 
   const selected = new Set(priceSupplementFieldSelections.value)
-  const priceText = String(priceSupplementPriceInput.value || '').trim()
+  const priceText = trimAndLimitText(priceSupplementPriceInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.price)
   let price = 0
   if (selected.has('price') && priceText) {
     price = parseInt(priceText, 10)
@@ -2190,17 +2219,17 @@ function submitPriceSupplement () {
   const payload = {
     goods_id: parseInt(currentId.value),
     price: selected.has('price') ? price : 0,
-    currency: selected.has('price') ? (priceSupplementCurrencyInput.value || '').trim() : '',
-    head_circumference: selected.has('head_circumference') ? (priceSupplementHeadCircumferenceInput.value || '').trim() : '',
-    neck_circumference: selected.has('neck_circumference') ? (priceSupplementNeckCircumferenceInput.value || '').trim() : '',
+    currency: selected.has('price') ? trimAndLimitText(priceSupplementCurrencyInput.value, 16) : '',
+    head_circumference: selected.has('head_circumference') ? trimAndLimitText(priceSupplementHeadCircumferenceInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.headCircumference) : '',
+    neck_circumference: selected.has('neck_circumference') ? trimAndLimitText(priceSupplementNeckCircumferenceInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.neckCircumference) : '',
     socket_sizes: selected.has('socket_sizes') ? [...priceSupplementSocketSelections.value] : [],
     eye_recommendations: selected.has('eye_recommendations') ? [...priceSupplementEyeSelections.value] : [],
-    doll_material: selected.has('doll_material') ? (priceSupplementDollMaterialInput.value || '').trim() : '',
-    skin: selected.has('skin') ? (priceSupplementSkinInput.value || '').trim() : '',
-    size_category: selected.has('size') ? (priceSupplementSizeCategoryInput.value || '').trim() : '',
+    doll_material: selected.has('doll_material') ? trimAndLimitText(priceSupplementDollMaterialInput.value, 32) : '',
+    skin: selected.has('skin') ? trimAndLimitText(priceSupplementSkinInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.skin) : '',
+    size_category: selected.has('size') ? trimAndLimitText(priceSupplementSizeCategoryInput.value, 32) : '',
     size_details: selected.has('size') ? [...priceSupplementSizeDetailSelections.value] : [],
     image_urls: selected.has('images') ? [...priceSupplementImageList.value] : [],
-    reason: selected.has('reason') ? (priceSupplementReasonInput.value || '').trim() : '',
+    reason: selected.has('reason') ? trimAndLimitText(priceSupplementReasonInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.reason) : '',
     screenshot_urls: selected.has('screenshots') ? [...priceSupplementScreenshotList.value] : []
   }
   const hasAnyField = Boolean(
@@ -2713,6 +2742,10 @@ function selectSize (sizeText) {
   padding-bottom: calc(42rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(42rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .price-supplement-header{
   display: flex;
@@ -2752,8 +2785,15 @@ function selectSize (sizeText) {
 .price-supplement-step-total{
   font-size: 20rpx;
 }
-.supplement-step{
+.price-supplement-scroll{
   margin-top: 26rpx;
+  height: 0;
+  flex: 1;
+  min-height: 0;
+}
+.supplement-step{
+  margin-top: 0;
+  padding-right: 4rpx;
 }
 .supplement-step-intro{
   display: flex;
@@ -3208,11 +3248,20 @@ function selectSize (sizeText) {
 .price-placeholder{
   color: #a3adba;
 }
+.supplement-input-count{
+  display: block;
+  margin-top: 10rpx;
+  text-align: right;
+  font-size: 20rpx;
+  color: #8b98a9;
+}
 .price-supplement-actions{
-  margin-top: 30rpx;
+  margin-top: 24rpx;
   display: flex;
   justify-content: space-between;
   gap: 16rpx;
+  flex-shrink: 0;
+  background: #fff;
 }
 .price-supplement-cancel,
 .price-supplement-confirm{
