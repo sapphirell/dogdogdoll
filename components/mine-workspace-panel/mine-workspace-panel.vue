@@ -25,8 +25,13 @@
           <text class="received-quick-count">共 {{ receivedCount }} 笔</text>
         </view>
         <view class="received-quick-grid">
-          <view class="received-quick-item" @tap="goReceivedNeedConfirm">
-            <image class="received-quick-icon" src="/static/new-icon/notification.png" mode="aspectFit" />
+          <view class="received-quick-item received-todo-item" @tap="goReceivedNeedConfirm">
+            <view v-if="todoBadgeText" class="todo-badge">
+              <text class="todo-badge-text font-title">{{ todoBadgeText }}</text>
+            </view>
+            <view class="received-bell-wrap" :class="{ 'is-shaking': shouldShakeTodoBell }">
+              <image class="received-quick-icon received-bell-icon" src="/static/new-icon/notification.png" mode="aspectFit" />
+            </view>
             <text class="received-quick-label">待您处理</text>
           </view>
           <view class="received-quick-item" @tap="goReceivedAll">
@@ -181,6 +186,14 @@ const showBrandHome = computed(() => isShop.value)
 
 // 「我收到的投递」数量
 const receivedCount = ref(0)
+// 「待您处理」待办数量（用于铃铛角标与动画）
+const pendingTodoCount = ref(0)
+const shouldShakeTodoBell = computed(() => Number(pendingTodoCount.value || 0) > 0)
+const todoBadgeText = computed(() => {
+  const n = Number(pendingTodoCount.value || 0)
+  if (n <= 0) return ''
+  return n > 99 ? '99+' : String(n)
+})
 
 // 所有功能按钮配置
 const allFunctions = [
@@ -358,8 +371,9 @@ function fetchBrandIdentity () {
       isHairstylist.value = d.is_bjd_hairstylist === 1
       syncActiveRoleTab()
 
-      // 身份信息加载完再去拉“我收到的投递”数量
+      // 身份信息加载完再拉顶部工作台数字
       fetchReceivedCount()
+      fetchTodoPendingCount()
     },
     fail: () => {
       uni.showToast({
@@ -404,6 +418,48 @@ function fetchReceivedCount () {
     },
     fail: () => {
       receivedCount.value = 0
+    }
+  })
+}
+
+// 获取「待您处理」待办数量（用于铃铛动画 + 角标）
+function fetchTodoPendingCount () {
+  if (!showOrderHome.value) {
+    pendingTodoCount.value = 0
+    return
+  }
+
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    pendingTodoCount.value = 0
+    return
+  }
+
+  uni.request({
+    url: `${websiteUrl.value}/with-state/artist-order/creator-todos`,
+    method: 'GET',
+    header: {
+      Authorization: token
+    },
+    data: {
+      page: 1,
+      page_size: 1
+    },
+    success: res => {
+      const resp = res.data || {}
+      const payload = resp.data || {}
+      if (resp.status !== 'success') {
+        pendingTodoCount.value = 0
+        return
+      }
+
+      // 以“待处理事项数”为主；若接口未返回该字段则回退到“待处理订单数”
+      const pendingItemCount = Number(payload?.pending_item_count || payload?.pendingItemCount || 0)
+      const pendingSubmissionCount = Number(payload?.pending_submission_count || payload?.pendingSubmissionCount || 0)
+      pendingTodoCount.value = pendingItemCount > 0 ? pendingItemCount : Math.max(0, pendingSubmissionCount)
+    },
+    fail: () => {
+      pendingTodoCount.value = 0
     }
   })
 }
@@ -481,8 +537,9 @@ function updateBrandIdentity (field, value, onSuccess, onRollback) {
       if (resp.status === 'success') {
         onSuccess && onSuccess()
         uni.showToast({ title: '已更新', icon: 'success' })
-        // 身份变更后重新拉一次“我收到的投递”数量
+        // 身份变更后重新拉一次顶部工作台数字
         fetchReceivedCount()
+        fetchTodoPendingCount()
       } else {
         onRollback && onRollback()
         uni.showToast({
@@ -750,9 +807,78 @@ function handleFunctionClick (key) {
   box-sizing: border-box;
 }
 
+.received-todo-item {
+  position: relative;
+  overflow: visible;
+}
+
 .received-quick-icon {
   width: 44rpx;
   height: 44rpx;
+}
+
+.received-bell-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 10%;
+}
+
+.received-bell-wrap.is-shaking {
+  animation: todo-bell-shake 1.2s ease-in-out infinite;
+}
+
+.received-bell-icon {
+  width: 46rpx;
+  height: 46rpx;
+}
+
+.todo-badge {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 10rpx;
+  box-sizing: border-box;
+  border-radius: 999rpx;
+  background: #ff6fae;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 18rpx rgba(255, 111, 174, 0.35);
+}
+
+.todo-badge-text {
+  font-size: 20rpx;
+  line-height: 1;
+  color: #ffffff;
+}
+
+@keyframes todo-bell-shake {
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(13deg);
+  }
+  20% {
+    transform: rotate(-11deg);
+  }
+  30% {
+    transform: rotate(8deg);
+  }
+  40% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 .received-quick-label {

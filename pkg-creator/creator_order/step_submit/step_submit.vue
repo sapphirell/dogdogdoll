@@ -16,8 +16,8 @@
       <view v-else class="content">
         <view class="card">
           <view class="row">
-            <text class="label">投递编号</text>
-            <text class="value">#{{ submissionId }}</text>
+            <text class="label">订单号</text>
+            <text class="value">{{ submissionOrderNoText }}</text>
           </view>
           <view class="row">
             <text class="label">子项名称</text>
@@ -139,6 +139,13 @@ const itemId = ref(0)
 const queueInfo = ref(null)
 const currentItem = ref(null)
 const uploadImages = ref([])
+
+const submissionOrderNoText = computed(() => {
+  const orderID = String(queueInfo.value?.order_id || '').trim()
+  if (orderID) return orderID
+  const fallbackID = Number(queueInfo.value?.submission_id || submissionId.value || 0)
+  return fallbackID > 0 ? `#${fallbackID}` : '--'
+})
 
 const safeBottomPadding = computed(() => toPx(getSafeBottom() + 14))
 const footerSpace = computed(() => toPx(getSafeBottom() + 120))

@@ -77,8 +77,8 @@
 
 	        <view class="section-info-list">
           <view class="info-row-item">
-            <text class="info-label font-alimamashuhei">投递编号</text>
-            <text class="info-val font-title">#{{ submission.submission_id }}</text>
+            <text class="info-label font-alimamashuhei">订单号</text>
+            <text class="info-val font-title">{{ submissionOrderNoText }}</text>
           </view>
           
           <view class="info-row-item">
@@ -1020,6 +1020,7 @@ const currentTabIndex = ref(0) // 控制 Tab
 
 const submission = reactive({
   submission_id: 0,
+  order_id: '',
   plan_id: 0,
   status: 0,
   status_text: '',
@@ -1168,6 +1169,13 @@ const planBasicText = computed(() => {
 const queuePositionText = computed(() => {
   const count = (submission.ahead_count || 0) + 1
   return `No.${String(count).padStart(3, '0')}`
+})
+
+const submissionOrderNoText = computed(() => {
+  const orderID = String(submission.order_id || '').trim()
+  if (orderID) return orderID
+  const fallbackID = Number(submission.submission_id || submissionId.value || 0)
+  return fallbackID > 0 ? `#${fallbackID}` : '--'
 })
 
 const pendingCountdownRaw = computed(() => {
@@ -2614,6 +2622,7 @@ function getCurrentPageSnapshot() {
 function resetSubmissionRuntimeState() {
   Object.assign(submission, {
     submission_id: 0,
+    order_id: '',
     plan_id: 0,
     status: 0,
     status_text: '',
@@ -3502,6 +3511,7 @@ async function fetchDetail(force = false) {
       const d = body.data
       Object.assign(submission, {
         submission_id: d.submission_id,
+        order_id: String(d.order_id || '').trim(),
         plan_id: d.plan_id,
         status: d.status,
         status_text: d.status_text,

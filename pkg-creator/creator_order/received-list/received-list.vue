@@ -196,8 +196,8 @@
                   </view>
 
                   <view class="item-row compact">
-                    <text class="item-label">投递编号</text>
-                    <text class="item-value font-title">#{{ creation.submission_id }}</text>
+                    <text class="item-label">订单号</text>
+                    <text class="item-value font-title">{{ creation.order_id_display }}</text>
                   </view>
 
                   <view class="item-row compact">
@@ -364,6 +364,7 @@ const allCreations = computed(() => {
     if (!creationSubmissionStatuses.includes(getSubmissionStatus(row))) return
 
     const buyerUID = Number(submission.user_id || submission.userId || 0)
+    const submissionOrderID = String(submission.order_id || submission.orderId || '').trim()
     const submissionCreatedAt = Number(submission.created_at || submission.createdAt || 0)
     const planID = Number(submission.plan_id || submission.planId || 0)
 
@@ -383,6 +384,8 @@ const allCreations = computed(() => {
         submission,
         item,
         submission_id: submissionID,
+        order_id: submissionOrderID,
+        order_id_display: submissionOrderID || `#${submissionID}`,
         item_id: itemID,
         plan_id: planID,
         buyer_uid: buyerUID,
@@ -483,9 +486,8 @@ function isOpActive(op) {
 }
 
 function toolbarIconColor(op) {
-  if (!op) return '#8a97ab'
-  if (op.key === 'schedule') return '#5b6d86'
-  return isOpActive(op) ? '#2f5d8f' : '#8a97ab'
+  if (!op) return '#5f6673'
+  return '#5f6673'
 }
 
 function resolvePlanIDForSchedule() {

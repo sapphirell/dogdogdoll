@@ -95,7 +95,7 @@
                     <view class="goods-media">
                       <image
                         class="brand_goods_image"
-                        :src="item.goods_images[0]"
+                        :src="getGoodsCover(item)"
                         mode="aspectFill"
                       ></image>
                       <view v-if="Number(item.waiting_sale) === 1" class="goods-badge alimama-shuhei">
@@ -739,6 +739,34 @@ function formatTimestamp(ts) {
   const h = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   return `${y}-${m}-${day} ${h}:${mm}`
+}
+
+function getGoodsCover(item) {
+  if (!item) return ''
+  const images = item.goods_images
+  if (Array.isArray(images)) {
+    return String(images[0] || '').trim()
+  }
+  if (typeof images === 'string') {
+    const raw = images.trim()
+    if (!raw) return ''
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const arr = JSON.parse(raw)
+        if (Array.isArray(arr)) {
+          return String(arr[0] || '').trim()
+        }
+      } catch {}
+    }
+    if (raw.includes(',')) {
+      return raw
+        .split(',')
+        .map(v => String(v || '').trim())
+        .filter(Boolean)[0] || ''
+    }
+    return raw
+  }
+  return String(item.cover_image || item.cover || item.image || '').trim()
 }
 
 function jumpGoods(id) {

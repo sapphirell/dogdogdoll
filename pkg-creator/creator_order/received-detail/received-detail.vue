@@ -41,8 +41,8 @@
           </view>
 
           <view class="status-row">
-            <text class="status-label">ID</text>
-            <text class="font-title">#{{ queueInfo.submission_id }}</text>
+            <text class="status-label">订单号</text>
+            <text class="font-title">{{ submissionOrderNoText }}</text>
           </view>
 
           <view
@@ -548,7 +548,7 @@
 
     <loading-toast :show="loading" text="正在获取投递详情..." />
 
-    <view v-if="showBottomBar" class="bottom-bar" :style="{ paddingBottom: bottomBarPadding }">
+    <view v-if="showBottomBar" class="bottom-bar" :style="{ bottom: bottomBarBottom }">
       <view
         class="bottom-actions-row"
         :class="{
@@ -991,6 +991,13 @@ const errorMsg = ref('')
 const submissionId = ref(0)
 const queueInfo = ref(null) 
 const targetUserInfo = ref(null) // 新增：投递者用户信息
+
+const submissionOrderNoText = computed(() => {
+  const orderID = String(queueInfo.value?.order_id || '').trim()
+  if (orderID) return orderID
+  const fallbackID = Number(queueInfo.value?.submission_id || submissionId.value || 0)
+  return fallbackID > 0 ? `#${fallbackID}` : '--'
+})
 
 const items = computed(() => (queueInfo.value?.items || []))
 const draftItems = computed(() => (queueInfo.value?.draft_items || []))
@@ -1505,13 +1512,15 @@ const footerPlaceholderHeight = computed(() => {
   if (!showBottomBar.value) return toPx(0)
   // 给 fixed 底栏留足空间，避免遮挡最后一段信息区。
   const barReservePx = uni?.upx2px ? uni.upx2px(144) : 80
-  return toPx(getFooterPlaceholderHeight() + barReservePx)
+  const floatGapPx = uni?.upx2px ? uni.upx2px(50) : 28
+  return toPx(getFooterPlaceholderHeight() + barReservePx + floatGapPx)
 })
 const footerPadding = computed(() => {
   return toPx(getSafeBottom() + 40)
 })
-const bottomBarPadding = computed(() => {
-  return toPx(getSafeBottom() + 14)
+const bottomBarBottom = computed(() => {
+  const floatGapPx = uni?.upx2px ? uni.upx2px(50) : 28
+  return toPx(getSafeBottom() + floatGapPx)
 })
 
 const pricePopupRef = ref(null)
@@ -4909,14 +4918,14 @@ onShow(() => {
 /* 底部操作条 */
 .bottom-bar {
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 20rpx;
+  right: 20rpx;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.93);
-  backdrop-filter: blur(12rpx);
-  border-top: 1rpx solid #e9edf4;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
   z-index: 100;
-  padding: 14rpx 20rpx 0;
+  padding: 0;
 }
 .bottom-actions-row {
   display: flex;

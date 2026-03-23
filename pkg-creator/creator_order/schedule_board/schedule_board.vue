@@ -37,40 +37,65 @@
         <view class="hero-card" :class="{ collapsed: heroCollapsed, animating: heroAnimating }">
           <transition name="hero-fold-morph" mode="out-in">
             <view v-if="heroCollapsed" key="collapsed" class="hero-fold-row">
-            <view class="hero-fold-cover-wrap">
-              <image
-                v-if="selectedOrderCover"
-                class="hero-fold-cover"
-                :class="{ 'is-drag-pressing': selectedDragPressing }"
-                :src="selectedOrderCover"
-                mode="aspectFill"
-                @touchstart.stop.prevent="startSelectedDrag"
-              />
-              <view
-                v-else
-                class="hero-fold-cover hero-fold-cover-placeholder"
-                :class="{ 'is-drag-pressing': selectedDragPressing }"
-                @touchstart.stop.prevent="startSelectedDrag"
-              ></view>
-            </view>
-            <view class="hero-fold-actions">
-              <view class="hero-fold-btn period font-title" @tap="openPeriodPopup">{{ foldPeriodButtonLabel }}</view>
-              <view class="hero-fold-btn menu font-title" @tap="openActionPopup">功能菜单</view>
-              <view
-                class="hero-fold-save"
-                :class="{
-                  disabled: saving,
-                  pending: !saving && hasPendingChanges,
-                  idle: !saving && !hasPendingChanges,
-                }"
-                @tap="saveBoard"
-              >
-                <text class="hero-fold-save-text font-title">{{ saving ? '保存中...' : (hasPendingChanges ? '保存' : '已保存') }}</text>
-                <text v-if="!saving && hasPendingChanges" class="save-btn-attention-mark">!</text>
+              <view class="hero-fold-cover-wrap">
+                <image
+                  v-if="selectedOrderCover"
+                  class="hero-fold-cover"
+                  :class="{ 'is-drag-pressing': selectedDragPressing }"
+                  :src="selectedOrderCover"
+                  mode="aspectFill"
+                  @touchstart.stop.prevent="startSelectedDrag"
+                />
+                <view
+                  v-else
+                  class="hero-fold-cover hero-fold-cover-placeholder"
+                  :class="{ 'is-drag-pressing': selectedDragPressing }"
+                  @touchstart.stop.prevent="startSelectedDrag"
+                ></view>
               </view>
-              <view class="hero-fold-btn nav font-title" @tap="selectPrevHeroOrder">上个</view>
-              <view class="hero-fold-btn nav font-title" @tap="selectNextHeroOrder">下个</view>
-            </view>
+              <view class="hero-fold-actions">
+                <view class="hero-fold-actions-row hero-fold-actions-row-main">
+                  <view class="hero-fold-btn period font-title" @tap="openPeriodPopup">{{ foldPeriodButtonLabel }}</view>
+                  <view class="hero-fold-btn menu font-title" @tap="openActionPopup">功能菜单</view>
+                  <view
+                    class="hero-fold-save"
+                    :class="{
+                      disabled: saving,
+                      pending: !saving && hasPendingChanges,
+                      idle: !saving && !hasPendingChanges,
+                    }"
+                    @tap="saveBoard"
+                  >
+                    <text class="hero-fold-save-text font-title">{{ saving ? '保存中...' : (hasPendingChanges ? '保存' : '已保存') }}</text>
+                    <text v-if="!saving && hasPendingChanges" class="save-btn-attention-mark">!</text>
+                  </view>
+                  <view
+                    class="hero-fold-btn lock font-title"
+                    :class="{ active: heroCollapseLocked }"
+                    @tap="toggleHeroCollapseLock"
+                  >
+                    {{ heroCollapseLockLabel }}
+                  </view>
+                </view>
+                <view class="hero-fold-actions-row hero-fold-actions-row-nav">
+                  <view
+                    class="hero-fold-btn nav hero-fold-btn-nav-two font-title"
+                    :class="{ disabled: prevHeroOrderCount <= 0 }"
+                    @tap="onFoldPrevTap"
+                  >
+                    <text class="hero-fold-nav-main">上个</text>
+                    <text class="hero-fold-nav-count">{{ prevHeroOrderCount }}</text>
+                  </view>
+                  <view
+                    class="hero-fold-btn nav hero-fold-btn-nav-two font-title"
+                    :class="{ disabled: nextHeroOrderCount <= 0 }"
+                    @tap="onFoldNextTap"
+                  >
+                    <text class="hero-fold-nav-main">下个</text>
+                    <text class="hero-fold-nav-count">{{ nextHeroOrderCount }}</text>
+                  </view>
+                </view>
+              </view>
             </view>
             <view v-else key="expanded" class="hero-focus-row">
             <view class="hero-focus-cover-wrap">
@@ -101,6 +126,13 @@
                     @tap="openActionPopup"
                   >
                     功能菜单
+                  </button>
+                  <button
+                    class="ghost-btn lock-toggle-btn"
+                    :class="{ active: heroCollapseLocked }"
+                    @tap="toggleHeroCollapseLock"
+                  >
+                    {{ heroCollapseLockLabel }}
                   </button>
                   <button
                     class="save-btn"
@@ -356,6 +388,7 @@ const heroOrderItemGap = ref(0)
 const scrollTop = ref(0)
 const savedBoardSignature = ref('[]')
 const heroCollapsed = ref(false)
+const heroCollapseLocked = ref(false)
 const heroAnimating = ref(false)
 const selectedDragPressing = ref(false)
 const selectedDragGhostVisible = ref(false)
@@ -473,6 +506,32 @@ const autoArrangeButtonDesc = computed(() => {
 const selectedOrder = computed(() =>
   visibleOrders.value.find((row) => Number(row.submission_item_id || 0) === Number(selectedOrderId.value || 0)) || null
 )
+
+const selectedHeroOrderIndex = computed(() => {
+  const orders = heroOrderStripOrders.value || []
+  if (!orders.length) return -1
+  const current = Number(selectedOrderId.value || 0)
+  const idx = orders.findIndex((row) => Number(row?.submission_item_id || 0) === current)
+  return idx >= 0 ? idx : 0
+})
+
+const prevHeroOrderCount = computed(() => {
+  const idx = Number(selectedHeroOrderIndex.value || 0)
+  return idx > 0 ? idx : 0
+})
+
+const nextHeroOrderCount = computed(() => {
+  const orders = heroOrderStripOrders.value || []
+  const idx = Number(selectedHeroOrderIndex.value || 0)
+  if (!orders.length || idx < 0) return 0
+  const remain = orders.length - idx - 1
+  return remain > 0 ? remain : 0
+})
+
+const heroCollapseLockLabel = computed(() => {
+  if (heroCollapseLocked.value) return '解锁滑动'
+  return heroCollapsed.value ? '锁定展开' : '锁定缩起'
+})
 
 const heroOrderStripOrders = computed(() => {
   return [...visibleOrders.value].sort((left, right) => {
@@ -754,6 +813,28 @@ function selectNextHeroOrder() {
   shiftSelectedHeroOrder(1)
 }
 
+function onFoldPrevTap() {
+  if (prevHeroOrderCount.value <= 0) return
+  selectPrevHeroOrder()
+}
+
+function onFoldNextTap() {
+  if (nextHeroOrderCount.value <= 0) return
+  selectNextHeroOrder()
+}
+
+function toggleHeroCollapseLock() {
+  if (heroCollapseLocked.value) {
+    heroCollapseLocked.value = false
+    resetFoldScrollTrack()
+    return
+  }
+  const nextCollapsed = !heroCollapsed.value
+  if (!setHeroCollapsed(nextCollapsed)) return
+  heroCollapseLocked.value = true
+  resetFoldScrollTrack()
+}
+
 function resetFoldScrollTrack() {
   foldTrackDirection = ''
   foldTrackStartAt = 0
@@ -780,6 +861,7 @@ function setHeroCollapsed(nextValue) {
 }
 
 function updateHeroCollapseByScroll(nextTop, source = 'page') {
+  if (heroCollapseLocked.value) return
   if (heroAnimating.value) return
   const top = Number(nextTop || 0)
   const isCalendar = source === 'calendar'
@@ -799,7 +881,7 @@ function updateHeroCollapseByScroll(nextTop, source = 'page') {
     return
   }
   const holdMs = now - Number(foldTrackStartAt || 0)
-  if (direction === 'up' && !heroCollapsed.value && holdMs >= 800) {
+  if (direction === 'up' && !heroCollapsed.value && holdMs >= 1500) {
     if (setHeroCollapsed(true)) resetFoldScrollTrack()
     return
   }
@@ -1615,6 +1697,7 @@ onLoad((options) => {
 })
 
 onShow(() => {
+  heroCollapseLocked.value = false
   resetFoldScrollTrack()
   lastPageScrollTop = 0
   lastCalendarScrollTop = 0
@@ -1780,14 +1863,29 @@ onBeforeUnmount(() => {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.hero-fold-actions-row {
+  display: flex;
   align-items: center;
   gap: 8rpx;
+  width: 100%;
+  min-width: 0;
+}
+
+.hero-fold-actions-row-main {
   overflow-x: auto;
   overflow-y: visible;
   white-space: nowrap;
-  padding-top: 16rpx;
-  margin-top: -16rpx;
-  padding-bottom: 4rpx;
+  padding-top: 8rpx;
+  margin-top: -8rpx;
+  padding-bottom: 2rpx;
+}
+
+.hero-fold-actions-row-nav {
+  white-space: normal;
 }
 
 .hero-fold-btn,
@@ -1818,6 +1916,39 @@ onBeforeUnmount(() => {
 
 .hero-fold-btn.nav {
   background: #ebeff5;
+}
+
+.hero-fold-btn.lock {
+  min-width: 126rpx;
+  background: #ecf1f7;
+  color: #70819b;
+}
+
+.hero-fold-btn.lock.active {
+  background: #78daf5;
+  color: #ffffff;
+}
+
+.hero-fold-btn-nav-two {
+  flex: 1;
+  min-width: 0;
+  height: 54rpx;
+}
+
+.hero-fold-nav-main {
+  font-size: 22rpx;
+  line-height: 1;
+}
+
+.hero-fold-nav-count {
+  margin-left: 8rpx;
+  font-size: 22rpx;
+  line-height: 1;
+}
+
+.hero-fold-btn.nav.disabled {
+  color: #b3bece;
+  background: #f1f4f8;
 }
 
 .hero-fold-save {
@@ -2281,6 +2412,16 @@ onBeforeUnmount(() => {
 .ghost-btn.disabled {
   background: #f1f4f7;
   color: #9eabbc;
+}
+
+.hero-action-btns .lock-toggle-btn {
+  background: #edf2f7;
+  color: #5f6d84;
+}
+
+.hero-action-btns .lock-toggle-btn.active {
+  background: #78daf5;
+  color: #ffffff;
 }
 
 .metric-label {

@@ -9,6 +9,7 @@
       :inside-more="true"
       :to-bottom-loading-more-enabled="true"
       :loading-more-enabled="true"
+      :style="{ top: pagingTopPx }"
       class="todo-paging"
     >
       <view class="summary-card" v-if="summary.pendingSubmissionCount > 0 || summary.pendingItemCount > 0">
@@ -112,14 +113,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { websiteUrl } from '@/common/config.js'
+import { computed, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { getWindowTop, toPx, websiteUrl } from '@/common/config.js'
 
 const paging = ref(null)
 const list = ref([])
 const pageSize = 20
 const planId = ref(0)
+const pagingTopPxRaw = ref(0)
+
+const pagingTopPx = computed(() => toPx(pagingTopPxRaw.value))
 
 const summary = ref({
   pendingSubmissionCount: 0,
@@ -294,7 +298,23 @@ onLoad((options) => {
   uni.setNavigationBarTitle({ title: '待您处理' })
   const pid = Number(options?.plan_id || 0)
   if (pid > 0) planId.value = pid
+  refreshPagingTop()
 })
+
+onShow(() => {
+  refreshPagingTop()
+})
+
+function refreshPagingTop() {
+  try {
+    const wi = (uni.getWindowInfo && uni.getWindowInfo()) || uni.getSystemInfoSync() || {}
+    const windowTop = Number(wi?.windowTop || 0)
+    const safeTop = Number(wi?.safeAreaInsets?.top ?? wi?.statusBarHeight ?? 0)
+    pagingTopPxRaw.value = Math.max(windowTop, safeTop, Number(getWindowTop() || 0), 0)
+  } catch (e) {
+    pagingTopPxRaw.value = Math.max(0, Number(getWindowTop() || 0))
+  }
+}
 </script>
 
 <style scoped lang="scss">

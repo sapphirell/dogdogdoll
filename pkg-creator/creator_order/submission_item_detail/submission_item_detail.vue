@@ -15,19 +15,19 @@
       <view v-else-if="!loading" class="content" :class="{ 'with-bottom-actions': hasBottomActions }">
         <view class="card status-card">
           <view class="status-row status-row-link" @tap="goToSubmissionDetailPage">
-            <text class="status-label">投递编号</text>
+            <text class="status-label">订单号</text>
             <view class="status-link-value">
-              <text class="status-value font-title">#{{ queueInfo?.submission_id || submissionId }}</text>
+              <text class="status-value font-title">{{ submissionOrderNoText }}</text>
               <uni-icons type="arrow-right" size="14" color="#8fa0b5" />
             </view>
           </view>
           <view class="status-row">
             <text class="status-label">订单状态</text>
-            <view class="status-value status-pair">
-              <text class="status-main">{{ queueInfo?.status_text || '--' }}</text>
-              <text class="status-sep">-</text>
-              <text class="status-item">{{ currentItemStatusText }}</text>
-            </view>
+            <text class="status-value">{{ queueInfo?.status_text || '--' }}</text>
+          </view>
+          <view class="status-row">
+            <text class="status-label">子单状态</text>
+            <text class="status-value">{{ currentItemStatusDisplayText }}</text>
           </view>
           <view class="status-row">
             <text class="status-label">付款状态</text>
@@ -236,10 +236,19 @@
       <view
         v-else-if="showArtistActionBar"
         class="bottom-action-row"
-        :class="showArtistSubmitStep && showArtistMarkFinished ? 'dual' : 'single'"
+        :class="showArtistPrimaryAction && showArtistMarkFinished ? 'dual' : 'single'"
       >
         <button
-          v-if="showArtistSubmitStep"
+          v-if="showArtistConfirmMaterialReceived"
+          class="bottom-action-btn accent"
+          :class="{ disabled: confirmMaterialSubmitting }"
+          :disabled="confirmMaterialSubmitting"
+          @tap="handleArtistConfirmMaterialReceived"
+        >
+          {{ confirmMaterialSubmitting ? '处理中...' : '确认签收' }}
+        </button>
+        <button
+          v-else-if="showArtistSubmitStep"
           class="bottom-action-btn accent"
           :class="{ disabled: stepActioning }"
           :disabled="stepActioning"
@@ -456,6 +465,7 @@ const paymentStatusInfo = ref(null)
 const stepActioning = ref(false)
 const finalConfirmSubmitting = ref(false)
 const markFinishedSubmitting = ref(false)
+const confirmMaterialSubmitting = ref(false)
 const cancelSubmitting = ref(false)
 const buyerActionModalVisible = ref(false)
 const buyerActionType = ref('')
@@ -472,6 +482,13 @@ const finalPayUploading = ref(false)
 const finalPayUploadText = ref('')
 const finalPaySubmitting = ref(false)
 const finalPayPendingConfirm = ref(false)
+
+const submissionOrderNoText = computed(() => {
+  const orderID = String(queueInfo.value?.order_id || '').trim()
+  if (orderID) return orderID
+  const fallbackID = Number(queueInfo.value?.submission_id || submissionId.value || 0)
+  return fallbackID > 0 ? `#${fallbackID}` : '--'
+})
 
 const items = computed(() => {
   const list = queueInfo.value?.items
@@ -502,6 +519,15 @@ const currentItemStatusText = computed(() => {
     case ItemStatusBuyerShipped: return '待创作者签收'
     default: return '未知状态'
   }
+})
+
+const currentItemStatusDisplayText = computed(() => {
+  const submissionStatus = Number(queueInfo.value?.status || 0)
+  // 父单未进入“待付款及之后”阶段时，不展示子单状态，避免造成状态认知冲突。
+  if (![SubmissionStatusSelectedPay, SubmissionStatusPaid, SubmissionStatusReturned, SubmissionStatusFinished].includes(submissionStatus)) {
+    return '-'
+  }
+  return currentItemStatusText.value
 })
 
 const addonsText = computed(() => {
@@ -814,13 +840,21 @@ const showArtistNegotiationActions = computed(() => {
   return viewerIsArtist.value && submissionStatus.value === SubmissionStatusPaid && !!artistPendingNegotiationLog.value
 })
 const showArtistActionBar = computed(() => viewerIsArtist.value && submissionStatus.value === SubmissionStatusPaid)
-const showArtistSubmitStep = computed(() => showArtistActionBar.value && currentItemId.value > 0)
-const showArtistMarkFinished = computed(() => showArtistActionBar.value && !!currentItemFinalState.value?.can_mark_finished)
+const showArtistConfirmMaterialReceived = computed(() => {
+  if (!showArtistActionBar.value) return false
+  const status = Number(currentItem.value?.status || 0)
+  return status === ItemStatusBuyerShipped
+})
+const showArtistSubmitStep = computed(() => showArtistActionBar.value && currentItemId.value > 0 && !showArtistConfirmMaterialReceived.value)
+const showArtistPrimaryAction = computed(() => showArtistConfirmMaterialReceived.value || showArtistSubmitStep.value)
+const showArtistMarkFinished = computed(() => {
+  return showArtistActionBar.value && !!currentItemFinalState.value?.can_mark_finished && !showArtistConfirmMaterialReceived.value
+})
 const hasBottomActions = computed(() => {
   return (
     showBuyerDecisionActions.value ||
     showArtistNegotiationActions.value ||
-    showArtistSubmitStep.value ||
+    showArtistPrimaryAction.value ||
     showArtistMarkFinished.value
   )
 })
@@ -1326,6 +1360,58 @@ function goStepSubmit() {
   })
 }
 
+function handleArtistConfirmMaterialReceived() {
+  if (confirmMaterialSubmitting.value) return
+  const id = currentItemId.value
+  if (!id) {
+    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    return
+  }
+  if (!showArtistConfirmMaterialReceived.value) {
+    uni.showToast({ title: '当前状态不可签收', icon: 'none' })
+    return
+  }
+
+  uni.showModal({
+    title: '确认签收',
+    content: '确认已收到买家寄送的素材吗？',
+    confirmText: '确认签收',
+    success: async ({ confirm }) => {
+      if (!confirm || confirmMaterialSubmitting.value) return
+      const token = uni.getStorageSync('token') || ''
+      if (!token) {
+        uni.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+      confirmMaterialSubmitting.value = true
+      uni.showLoading({ title: '提交中' })
+      try {
+        const res = await uni.request({
+          url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
+          method: 'POST',
+          header: {
+            Authorization: token,
+            'Content-Type': 'application/json'
+          },
+          data: { item_id: id }
+        })
+        const body = res?.data || {}
+        if (String(body.status).toLowerCase() !== 'success') {
+          uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
+          return
+        }
+        uni.showToast({ title: '已确认收到素材', icon: 'success' })
+        await fetchAll()
+      } catch (_) {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+      } finally {
+        confirmMaterialSubmitting.value = false
+        uni.hideLoading()
+      }
+    }
+  })
+}
+
 async function submitStepDecision(action) {
   const row = pendingStepLog.value || pendingFinalRequestLog.value
   const logID = Number(row?.id || 0)
@@ -1806,7 +1892,8 @@ onShow(() => {
 .status-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 14rpx;
   padding: 8rpx 0;
 }
 
@@ -1817,35 +1904,20 @@ onShow(() => {
 }
 
 .status-label {
+  flex-shrink: 0;
   font-size: 24rpx;
   color: #8692a6;
+  line-height: 1.45;
 }
 
 .status-value {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
   font-size: 26rpx;
   color: #3a4659;
-}
-
-.status-value.status-pair {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8rpx;
-  min-width: 0;
-}
-
-.status-main,
-.status-item {
-  max-width: 220rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.status-sep {
-  color: #9aa6b8;
-  font-size: 24rpx;
-  flex-shrink: 0;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 .item-main {
