@@ -200,6 +200,7 @@ function mapTodoCodeText(code) {
   const k = String(code || '').trim()
   if (!k) return ''
   if (k === 'confirm_submission') return '等待确认订单'
+  if (k === 'close_submission') return '等待发起结单'
   if (k === 'resolve_negotiation') return '等待处理协商'
   if (k === 'confirm_material_received') return '等待确认收件'
   if (k === 'ship_back') return '等待寄回'

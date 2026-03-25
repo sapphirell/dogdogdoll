@@ -8,7 +8,10 @@
         :class="{ 'summary-item-active': activeOrderTypeTab === 'bjd' }"
         @click="changeOrderTypeTab('bjd')"
       >
-        <text class="summary-number font-title">{{ totalBjd }}</text>
+        <view class="summary-number-wrap">
+          <text class="summary-number font-title">{{ totalBjd }}</text>
+          <text v-if="typeHasBuyerTodo('bjd')" class="summary-attention-count font-title">{{ typeBuyerTodoCount('bjd') }}</text>
+        </view>
         <text class="summary-label font-alimamashuhei">BJD约妆</text>
       </view>
 
@@ -19,7 +22,10 @@
         :class="{ 'summary-item-active': activeOrderTypeTab === 'hair' }"
         @click="changeOrderTypeTab('hair')"
       >
-        <text class="summary-number font-title">{{ totalHair }}</text>
+        <view class="summary-number-wrap">
+          <text class="summary-number font-title">{{ totalHair }}</text>
+          <text v-if="typeHasBuyerTodo('hair')" class="summary-attention-count font-title">{{ typeBuyerTodoCount('hair') }}</text>
+        </view>
         <text class="summary-label font-alimamashuhei">手改毛投递</text>
       </view>
     </view>
@@ -70,6 +76,7 @@
           :style="subCardStyle(index)"
           @click="goSubmissionDetail(row)"
         >
+          <view v-if="hasBuyerTodoSubmission(row)" class="sub-card-todo-dot"></view>
           <!-- 左侧缩略图 -->
           <view class="sub-card-left">
             <image class="sub-thumb" :src="cardCover(row)" mode="aspectFill" />
@@ -157,6 +164,10 @@ const finished = computed(() => total.value > 0 && submissionList.value.length >
 const typeTotals = ref({ bjd: 0, hair: 0 })
 const typeTotalsLoaded = ref({ bjd: false, hair: false })
 const typeTotalsLoading = ref({ bjd: false, hair: false })
+const typeTodoMap = ref({ bjd: false, hair: false })
+const typeTodoCount = ref({ bjd: 0, hair: 0 })
+const typeTodoLoaded = ref({ bjd: false, hair: false })
+const typeTodoLoading = ref({ bjd: false, hair: false })
 
 const totalBjd = computed(() => Number(typeTotals.value.bjd || 0))
 const totalHair = computed(() => Number(typeTotals.value.hair || 0))
@@ -196,6 +207,31 @@ function normalizeRow(raw) {
 function rowKey(row, index) {
   const sub = row?.submission || {}
   return sub.id || sub.ID || `${sub.plan_id || sub.PlanID || 'p'}-${sub.created_at || sub.CreatedAt || index}`
+}
+
+function hasBuyerTodoSubmission(row) {
+  if (!row) return false
+  const sub = row.submission || {}
+  if (sub.buyer_todo_pending === true || sub.buyerTodoPending === true) return true
+  const subCodes = sub.buyer_todo_codes || sub.buyerTodoCodes || []
+  if (Array.isArray(subCodes) && subCodes.length > 0) return true
+  const items = Array.isArray(row.items) ? row.items : []
+  return items.some((it) => {
+    if (!it) return false
+    if (it.buyer_todo_pending === true || it.buyerTodoPending === true) return true
+    const codes = it.buyer_todo_codes || it.buyerTodoCodes || []
+    return Array.isArray(codes) && codes.length > 0
+  })
+}
+
+function typeHasBuyerTodo(type) {
+  return !!typeTodoMap.value[type]
+}
+
+function typeBuyerTodoCount(type) {
+  const n = Number(typeTodoCount.value[type] || 0)
+  if (n <= 0) return ''
+  return n > 99 ? '99+' : String(n)
 }
 
 /** 确保登录状态 */
@@ -297,6 +333,56 @@ async function fetchTotalForType(tab) {
   }
 }
 
+/**
+ * 拉取某类型是否存在“待买家处理”事项（用于 summary-card 感叹号）。
+ * 说明：
+ * - 仅做存在性判断，命中后立即停止翻页；
+ * - 为避免过高请求量，最多扫描前 8 页（每页 50 条）。
+ */
+async function fetchBuyerTodoForType(tab) {
+  if (typeTodoLoaded.value[tab] || typeTodoLoading.value[tab]) return
+
+  const ok = await ensureLogin()
+  if (!ok) return
+
+  typeTodoLoading.value = { ...typeTodoLoading.value, [tab]: true }
+  const artistType = tabToArtistType(tab)
+  let pending = false
+  let pendingCount = 0
+  try {
+    const size = 50
+    const maxPages = 8
+    let p = 1
+    while (p <= maxPages) {
+      const res = await requestMySubmissions({
+        page: p,
+        pageIndex: p,
+        page_size: size,
+        pageSize: size,
+        size,
+        artist_type: artistType
+      })
+      if (String(res.data?.status).toLowerCase() !== 'success') break
+      const data = res.data?.data || {}
+      const rawRows = Array.isArray(data.list) ? data.list : []
+      const rows = rawRows.map(normalizeRow)
+      const rowTodoCount = rows.filter((row) => hasBuyerTodoSubmission(row)).length
+      pendingCount += rowTodoCount
+      pending = pending || rowTodoCount > 0
+      const totalRows = parseTotal(data.page || {}, rows.length)
+      if (p*size >= totalRows) break
+      p += 1
+    }
+  } catch (e) {
+    console.warn('[orders-panel] fetchBuyerTodoForType failed:', e)
+  } finally {
+    typeTodoMap.value = { ...typeTodoMap.value, [tab]: pending }
+    typeTodoCount.value = { ...typeTodoCount.value, [tab]: pendingCount }
+    typeTodoLoaded.value = { ...typeTodoLoaded.value, [tab]: true }
+    typeTodoLoading.value = { ...typeTodoLoading.value, [tab]: false }
+  }
+}
+
 /** 拉取列表（只负责当前 tab 列表 + 当前 tab total 回填） */
 async function fetchList(reset = false) {
   if (loading.value) return
@@ -309,6 +395,10 @@ async function fetchList(reset = false) {
       total.value = 0
       typeTotals.value = { bjd: 0, hair: 0 }
       typeTotalsLoaded.value = { bjd: false, hair: false }
+      typeTodoMap.value = { bjd: false, hair: false }
+      typeTodoCount.value = { bjd: 0, hair: 0 }
+      typeTodoLoaded.value = { bjd: false, hair: false }
+      typeTodoLoading.value = { bjd: false, hair: false }
     }
     uni.stopPullDownRefresh()
     return
@@ -350,6 +440,14 @@ async function fetchList(reset = false) {
     } else {
       submissionList.value = submissionList.value.concat(rows)
     }
+    typeTodoMap.value = {
+      ...typeTodoMap.value,
+      [currentTab]: submissionList.value.some((row) => hasBuyerTodoSubmission(row)),
+    }
+    typeTodoCount.value = {
+      ...typeTodoCount.value,
+      [currentTab]: submissionList.value.filter((row) => hasBuyerTodoSubmission(row)).length,
+    }
 
     const newTotal = parseTotal(p, rows.length)
     total.value = newTotal
@@ -385,6 +483,11 @@ async function refresh(reset = true, reason = '') {
   if (!props.active) return
   if (refreshPromise) return refreshPromise
 
+  if (reset) {
+    // 每次刷新都重算待买家事项，避免 summary-card 感叹号滞后。
+    typeTodoLoaded.value = { bjd: false, hair: false }
+  }
+
   const key = buildRefreshKey(reset)
   const now = Date.now()
 
@@ -401,6 +504,8 @@ async function refresh(reset = true, reason = '') {
     // 确保另一种类型的 total 也拿到（只拉一次，避免 total=0 时不断拉）
     const ot = otherTab(activeOrderTypeTab.value)
     await fetchTotalForType(ot)
+    await fetchBuyerTodoForType(activeOrderTypeTab.value)
+    await fetchBuyerTodoForType(ot)
   })().finally(() => {
     refreshPromise = null
   })
@@ -547,7 +652,8 @@ onReachBottom(() => {
   margin-bottom: 32rpx;
 }
 
-.summary-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.summary-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+.summary-number-wrap { position: relative; display: inline-flex; align-items: flex-start; justify-content: center; }
 .summary-number { font-size: 40rpx; font-weight: 700; color: #d0d0d0; }
 .summary-label { margin-top: 10rpx; font-size: 24rpx; color: #d0d0d0; }
 
@@ -555,6 +661,32 @@ onReachBottom(() => {
 .summary-item-active .summary-label { color: #222222; }
 
 .summary-divider { width: 2rpx; height: 60rpx; background: #f2f2f2; }
+
+.summary-attention-count {
+  position: absolute;
+  right: -14rpx;
+  top: -8rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: #ffa4ce;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  line-height: 1;
+  box-shadow: 0 6rpx 14rpx rgba(255, 164, 206, 0.28);
+  animation: summary-attention-wobble 1s ease-in-out infinite;
+}
+
+@keyframes summary-attention-wobble {
+  0%, 60%, 100% { transform: rotate(0deg) scale(1); }
+  15% { transform: rotate(-14deg) scale(1.05); }
+  30% { transform: rotate(12deg) scale(1.08); }
+  45% { transform: rotate(-9deg) scale(1.03); }
+}
 
 /* 二级 Tab */
 .second-tabs { margin: 12rpx 0 20rpx; display: flex; align-items: center; }
@@ -592,6 +724,7 @@ onReachBottom(() => {
   border-radius: 20rpx;
   background: #ffffff;
   box-shadow: 0 8rpx 26rpx rgba(21, 37, 78, 0.06);
+  position: relative;
 
   opacity: 0;
   transform: translateY(16rpx);
@@ -599,6 +732,17 @@ onReachBottom(() => {
   animation-duration: 0.32s;
   animation-timing-function: ease;
   animation-fill-mode: forwards;
+}
+
+.sub-card-todo-dot {
+  position: absolute;
+  right: 18rpx;
+  top: 14rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 999rpx;
+  background: #ff6a8f;
+  box-shadow: 0 0 0 6rpx rgba(255, 106, 143, 0.14);
 }
 
 .sub-card-left {

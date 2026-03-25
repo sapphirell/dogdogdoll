@@ -42,7 +42,7 @@
 
           <view class="status-row">
             <text class="status-label">订单号</text>
-            <text class="font-title">{{ submissionOrderNoText }}</text>
+            <text class="font-number">{{ submissionOrderNoText }}</text>
           </view>
 
           <view
@@ -1447,7 +1447,7 @@ function getStepLogItemID(row) {
 }
 
 function isSubmissionScopeLog(row, submissionItemId) {
-  // 明确有子单ID的，永远视为子单事件
+  // 明确有创作ID的，永远视为创作事件
   if (submissionItemId > 0) return false
 
   const logType = Number(row?.log_type || 0)
@@ -1467,7 +1467,7 @@ function isSubmissionScopeLog(row, submissionItemId) {
     return true
   }
 
-  // 其余 item_id=0 的事件默认不展示，防止把其他子单动态误判为父订单事件
+  // 其余 item_id=0 的事件默认不展示，防止把其他创作动态误判为订单事件
   return false
 }
 
@@ -2680,7 +2680,7 @@ function submitBlankReview() {
   if (blankReviewSubmitting.value) return
   const itemID = Number(activeItem.value?.id || activeItem.value?.ID || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    uni.showToast({ title: '缺少创作信息', icon: 'none' })
     return
   }
   ensureLogin().then((ok) => {
@@ -2728,7 +2728,7 @@ function handleConfirmMaterialReceived(item) {
   }
   const itemID = Number(item?.id || item?.ID || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    uni.showToast({ title: '缺少创作信息', icon: 'none' })
     return
   }
   materialConfirmItemID.value = itemID
@@ -2739,7 +2739,7 @@ function confirmMaterialReceivedByModal() {
   if (confirmMaterialSubmitting.value) return
   const itemID = Number(materialConfirmItemID.value || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    uni.showToast({ title: '缺少创作信息', icon: 'none' })
     return
   }
   ensureLogin().then((ok) => {
@@ -2792,7 +2792,7 @@ function getStepDisabledReason(item) {
   }
 
   const itemId = Number(item?.id || item?.ID || 0)
-  if (!itemId) return '缺少子项ID'
+  if (!itemId) return '缺少创作ID'
   const itemStatus = Number(item?.status || 0)
   if (itemStatus === 7) return '买家寄送素材后才能提交节点状态'
   if (itemStatus === 8) return '请先确认收到素材再提交节点状态'
@@ -2812,7 +2812,7 @@ function handleSubmitStep(item) {
 
   const itemId = Number(item?.id || item?.ID || 0)
   if (!itemId) {
-    uni.showToast({ title: '缺少子项ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return
   }
 
@@ -2825,7 +2825,7 @@ function handleMarkItemFinished(item) {
   const state = getItemFinalState(item)
   if (!canMarkFinished(item)) {
     if (state?.final_confirmed) {
-      uni.showToast({ title: '该子单已完成最终确认', icon: 'none' })
+      uni.showToast({ title: '该创作已完成最终确认', icon: 'none' })
       return
     }
     if (state?.final_request_pending) {
@@ -2837,7 +2837,7 @@ function handleMarkItemFinished(item) {
   }
   const itemID = Number(item?.id || item?.ID || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子项ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return
   }
   markFinishTargetItemID.value = itemID
@@ -2848,7 +2848,7 @@ function confirmMarkItemFinished() {
   if (markFinishSubmitting.value) return
   const itemID = Number(markFinishTargetItemID.value || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子项ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return
   }
   markFinishSubmitting.value = true

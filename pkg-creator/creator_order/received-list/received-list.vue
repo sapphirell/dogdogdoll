@@ -80,7 +80,7 @@
               {{ currentFilterLabel }} · 共 <text class="font-title">{{ currentSubmissionCount }}</text> 笔投递
             </text>
             <text class="summary-value" v-else>
-              {{ currentFilterLabel }} · 共 <text class="font-title">{{ filteredCreations.length }}</text> 个子单（<text class="font-title">{{ filteredSubmissionCount }}</text> 笔投递）
+              {{ currentFilterLabel }} · 共 <text class="font-title">{{ filteredCreations.length }}</text> 个创作（<text class="font-title">{{ filteredSubmissionCount }}</text> 笔投递）
             </text>
           </view>
           <view class="summary-row">
@@ -267,7 +267,7 @@ const rawList = ref([])
 const totalCount = ref(0)
 const confirmCreationLoadingMap = ref({})
 
-// “我的创作”只统计已经进入创作流程的父单。
+// “我的创作”只统计已经进入创作流程的订单。
 // 待确认、待付款、排队中的投递不应出现在创作阶段筛选里。
 const creationSubmissionStatuses = Object.freeze([4, 8, 9])
 const creationItemStatusBuyerShipped = 8
@@ -312,7 +312,7 @@ const currentToolbarSub = computed(() => {
   if (activeMainTab.value === 'orders') {
     return `共 ${totalCount.value} 笔投递`
   }
-  return `共 ${totalCreationCount.value} 个子单`
+  return `共 ${totalCreationCount.value} 个创作`
 })
 
 const allSubmissions = computed(() => rawList.value || [])
@@ -443,7 +443,7 @@ const showSummaryCard = computed(() => {
   return filteredCreations.value.length > 0
 })
 
-const emptyText = computed(() => (activeMainTab.value === 'orders' ? '还没有收到相关投递' : '还没有创作子单'))
+const emptyText = computed(() => (activeMainTab.value === 'orders' ? '还没有收到相关投递' : '还没有创作内容'))
 
 function switchMainTab(tab) {
   if (tab !== 'orders' && tab !== 'creations') return
@@ -759,7 +759,7 @@ async function handleConfirmCreationReceived(row) {
   if (!canConfirmCreationReceived(row) || isConfirmingCreation(row)) return
   const itemID = Number(row?.item_id || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子单参数', icon: 'none' })
+    uni.showToast({ title: '缺少创作参数', icon: 'none' })
     return
   }
   const token = uni.getStorageSync('token') || ''

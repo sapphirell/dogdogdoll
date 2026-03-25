@@ -20,7 +20,7 @@
             <text class="value">{{ submissionOrderNoText }}</text>
           </view>
           <view class="row">
-            <text class="label">子项名称</text>
+            <text class="label">创作名称</text>
             <text class="value text-truncate">{{ currentItem?.work_subject || '未命名作品' }}</text>
           </view>
           <view class="row">
@@ -233,7 +233,7 @@ function ensureItemExists() {
   const list = Array.isArray(queueInfo.value?.items) ? queueInfo.value.items : []
   const target = list.find((row) => Number(row?.id || row?.ID || 0) === Number(itemId.value))
   if (!target) {
-    errorMsg.value = '未找到对应子项，请返回重试'
+    errorMsg.value = '未找到对应创作，请返回重试'
     return false
   }
   currentItem.value = target

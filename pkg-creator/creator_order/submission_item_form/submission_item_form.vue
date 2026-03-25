@@ -2038,7 +2038,7 @@ async function handleSave () {
 
       const newItemId = Number(createBody.data && createBody.data.item_id || 0)
       if (!newItemId) {
-        uni.showToast({ title: '返回的子项 ID 异常', icon: 'none' })
+        uni.showToast({ title: '返回的创作ID异常', icon: 'none' })
         return
       }
 

@@ -26,7 +26,7 @@
             <text class="status-value">{{ queueInfo?.status_text || '--' }}</text>
           </view>
           <view class="status-row">
-            <text class="status-label">子单状态</text>
+            <text class="status-label">创作状态</text>
             <text class="status-value">{{ currentItemStatusDisplayText }}</text>
           </view>
           <view class="status-row">
@@ -327,6 +327,64 @@
     </common-modal>
 
     <common-modal
+      v-model:visible="materialConfirmModalVisible"
+      width="620rpx"
+      :closeable="!confirmMaterialSubmitting"
+      :center="true"
+    >
+      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+        <text class="custom-modal-title">确认签收</text>
+        <text class="custom-modal-desc">确认你已收到买家寄送的素材吗？</text>
+        <view class="custom-modal-actions">
+          <button
+            class="custom-modal-btn cancel"
+            :disabled="confirmMaterialSubmitting"
+            @tap="materialConfirmModalVisible = false"
+          >
+            取消
+          </button>
+          <button
+            class="custom-modal-btn confirm"
+            :class="{ disabled: confirmMaterialSubmitting }"
+            :disabled="confirmMaterialSubmitting"
+            @tap="confirmMaterialReceivedByModal"
+          >
+            {{ confirmMaterialSubmitting ? '提交中...' : '确认签收' }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
+
+    <common-modal
+      v-model:visible="markFinishedModalVisible"
+      width="620rpx"
+      :closeable="!markFinishedSubmitting"
+      :center="true"
+    >
+      <view class="custom-modal-content" style="padding-bottom: 40rpx;">
+        <text class="custom-modal-title">我已画完</text>
+        <text class="custom-modal-desc">提交后将向买家发起最终状态确认，是否继续？</text>
+        <view class="custom-modal-actions">
+          <button
+            class="custom-modal-btn cancel"
+            :disabled="markFinishedSubmitting"
+            @tap="markFinishedModalVisible = false"
+          >
+            取消
+          </button>
+          <button
+            class="custom-modal-btn confirm"
+            :class="{ disabled: markFinishedSubmitting }"
+            :disabled="markFinishedSubmitting"
+            @tap="confirmMarkFinishedByModal"
+          >
+            {{ markFinishedSubmitting ? '提交中...' : '确认提交' }}
+          </button>
+        </view>
+      </view>
+    </common-modal>
+
+    <common-modal
       v-model:visible="finalPayModalVisible"
       width="660rpx"
       :closeable="!finalPaySubmitting && !finalPayUploading"
@@ -482,6 +540,9 @@ const finalPayUploading = ref(false)
 const finalPayUploadText = ref('')
 const finalPaySubmitting = ref(false)
 const finalPayPendingConfirm = ref(false)
+const materialConfirmModalVisible = ref(false)
+const materialConfirmItemID = ref(0)
+const markFinishedModalVisible = ref(false)
 
 const submissionOrderNoText = computed(() => {
   const orderID = String(queueInfo.value?.order_id || '').trim()
@@ -523,7 +584,7 @@ const currentItemStatusText = computed(() => {
 
 const currentItemStatusDisplayText = computed(() => {
   const submissionStatus = Number(queueInfo.value?.status || 0)
-  // 父单未进入“待付款及之后”阶段时，不展示子单状态，避免造成状态认知冲突。
+  // 订单未进入“待付款及之后”阶段时，不展示创作状态，避免造成状态认知冲突。
   if (![SubmissionStatusSelectedPay, SubmissionStatusPaid, SubmissionStatusReturned, SubmissionStatusFinished].includes(submissionStatus)) {
     return '-'
   }
@@ -606,6 +667,7 @@ const logisticsDeadlineText = computed(() => {
 })
 
 const logisticsOverdueResult = computed(() => {
+  const overdueText = '单主寄送已超期，本单不计入准时订单检查'
   const deadline = shippingDeadlineInfo.value
   if (!deadline || !deadline.deadlineAt) {
     return { overdue: false, text: '未设置时限' }
@@ -617,18 +679,18 @@ const logisticsOverdueResult = computed(() => {
 
   if (deadline.deadlineType === 'ship') {
     if (shippedAt > 0) {
-      if (shippedAt > deadlineAt) return { overdue: true, text: '已超期寄送' }
+      if (shippedAt > deadlineAt) return { overdue: true, text: overdueText }
       return { overdue: false, text: '已按时寄送' }
     }
-    if (now > deadlineAt) return { overdue: true, text: '已超期，尚未寄送' }
+    if (now > deadlineAt) return { overdue: true, text: overdueText }
     return { overdue: false, text: '未超期' }
   }
 
   if (receivedAt > 0) {
-    if (receivedAt > deadlineAt) return { overdue: true, text: '已超期寄到' }
+    if (receivedAt > deadlineAt) return { overdue: true, text: overdueText }
     return { overdue: false, text: '已按时寄到' }
   }
-  if (now > deadlineAt) return { overdue: true, text: '已超期，待创作者签收' }
+  if (now > deadlineAt) return { overdue: true, text: overdueText }
   return { overdue: false, text: '待签收，未超期' }
 })
 
@@ -1352,7 +1414,7 @@ function goToSubmissionDetailPage() {
 function goStepSubmit() {
   const id = currentItemId.value
   if (!id) {
-    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return
   }
   uni.navigateTo({
@@ -1364,52 +1426,55 @@ function handleArtistConfirmMaterialReceived() {
   if (confirmMaterialSubmitting.value) return
   const id = currentItemId.value
   if (!id) {
-    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return
   }
   if (!showArtistConfirmMaterialReceived.value) {
     uni.showToast({ title: '当前状态不可签收', icon: 'none' })
     return
   }
+  materialConfirmItemID.value = id
+  materialConfirmModalVisible.value = true
+}
 
-  uni.showModal({
-    title: '确认签收',
-    content: '确认已收到买家寄送的素材吗？',
-    confirmText: '确认签收',
-    success: async ({ confirm }) => {
-      if (!confirm || confirmMaterialSubmitting.value) return
-      const token = uni.getStorageSync('token') || ''
-      if (!token) {
-        uni.showToast({ title: '请先登录', icon: 'none' })
-        return
-      }
-      confirmMaterialSubmitting.value = true
-      uni.showLoading({ title: '提交中' })
-      try {
-        const res = await uni.request({
-          url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
-          method: 'POST',
-          header: {
-            Authorization: token,
-            'Content-Type': 'application/json'
-          },
-          data: { item_id: id }
-        })
-        const body = res?.data || {}
-        if (String(body.status).toLowerCase() !== 'success') {
-          uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
-          return
-        }
-        uni.showToast({ title: '已确认收到素材', icon: 'success' })
-        await fetchAll()
-      } catch (_) {
-        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
-      } finally {
-        confirmMaterialSubmitting.value = false
-        uni.hideLoading()
-      }
+async function confirmMaterialReceivedByModal() {
+  if (confirmMaterialSubmitting.value) return
+  const id = Number(materialConfirmItemID.value || currentItemId.value || 0)
+  if (!id) {
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
+    return
+  }
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  confirmMaterialSubmitting.value = true
+  uni.showLoading({ title: '提交中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/confirm-material-received`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: { item_id: id }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '确认失败', icon: 'none' })
+      return
     }
-  })
+    materialConfirmModalVisible.value = false
+    uni.showToast({ title: '已确认收到素材', icon: 'success' })
+    await fetchAll()
+  } catch (_) {
+    uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+  } finally {
+    confirmMaterialSubmitting.value = false
+    uni.hideLoading()
+  }
 }
 
 async function submitStepDecision(action) {
@@ -1592,7 +1657,7 @@ async function doConfirmItemFinalRequest() {
   }
   const id = currentItemId.value
   if (!id) {
-    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return false
   }
   if (finalConfirmSubmitting.value) return false
@@ -1736,47 +1801,50 @@ function handleArtistMarkFinished() {
   }
   const id = currentItemId.value
   if (!id) {
-    uni.showToast({ title: '缺少子单ID', icon: 'none' })
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
     return
   }
-  uni.showModal({
-    title: '我已画完',
-    content: '提交后将向买家发起最终状态确认，是否继续？',
-    confirmText: '确认提交',
-    success: async ({ confirm }) => {
-      if (!confirm || markFinishedSubmitting.value) return
-      const token = uni.getStorageSync('token') || ''
-      if (!token) {
-        uni.showToast({ title: '请先登录', icon: 'none' })
-        return
-      }
-      markFinishedSubmitting.value = true
-      uni.showLoading({ title: '提交中' })
-      try {
-        const res = await uni.request({
-          url: `${websiteUrl.value}/with-state/artist-order/item/mark-finished`,
-          method: 'POST',
-          header: {
-            Authorization: token,
-            'Content-Type': 'application/json'
-          },
-          data: { item_id: id }
-        })
-        const body = res?.data || {}
-        if (String(body.status).toLowerCase() !== 'success') {
-          uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
-          return
-        }
-        uni.showToast({ title: '已发送确认请求', icon: 'success' })
-        await fetchAll()
-      } catch (_) {
-        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
-      } finally {
-        markFinishedSubmitting.value = false
-        uni.hideLoading()
-      }
+  markFinishedModalVisible.value = true
+}
+
+async function confirmMarkFinishedByModal() {
+  if (markFinishedSubmitting.value) return
+  const id = currentItemId.value
+  if (!id) {
+    uni.showToast({ title: '缺少创作ID', icon: 'none' })
+    return
+  }
+  const token = uni.getStorageSync('token') || ''
+  if (!token) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  markFinishedSubmitting.value = true
+  uni.showLoading({ title: '提交中' })
+  try {
+    const res = await uni.request({
+      url: `${websiteUrl.value}/with-state/artist-order/item/mark-finished`,
+      method: 'POST',
+      header: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      },
+      data: { item_id: id }
+    })
+    const body = res?.data || {}
+    if (String(body.status).toLowerCase() !== 'success') {
+      uni.showToast({ title: body.msg || '提交失败', icon: 'none' })
+      return
     }
-  })
+    markFinishedModalVisible.value = false
+    uni.showToast({ title: '已发送确认请求', icon: 'success' })
+    await fetchAll()
+  } catch (_) {
+    uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+  } finally {
+    markFinishedSubmitting.value = false
+    uni.hideLoading()
+  }
 }
 
 async function ensureLogin() {

@@ -593,7 +593,7 @@ const selectedStatusText = computed(() => {
 
 const dragHintText = computed(() => {
   if (!dragState.active) return ''
-  const name = selectedOrder.value?.work_subject || `子单#${dragState.orderId}`
+  const name = selectedOrder.value?.work_subject || `创作#${dragState.orderId}`
   if (dragState.mode === 'place') return `放置 ${name}`
   if (dragState.mode === 'resize') return `调整区间 ${name}`
   return '拖拽中'
@@ -1239,7 +1239,7 @@ function handleDayTap(day) {
 function startDrag(mode, orderID, event) {
   const id = Number(orderID || 0)
   if (!id) {
-    emitInvalid('缺少子单ID')
+    emitInvalid('缺少创作ID')
     return
   }
   quickPlaceOrderId.value = 0

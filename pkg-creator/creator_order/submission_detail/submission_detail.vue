@@ -1036,6 +1036,9 @@ const submission = reactive({
   item_final_states: [],
   status_flow_map: [],
   item_progress_guides: [],
+  buyer_todo_pending: false,
+  buyer_todo_count: 0,
+  buyer_todo_codes: [],
   can_fill_return_address: false,
   return_address_requested: false,
   return_address_ready: false,
@@ -1732,20 +1735,29 @@ function isItemNeedArtistAction(item) {
   return Number(item.status || 0) === ItemStatusBuyerShipped
 }
 
+function getItemBuyerTodoCodes(item) {
+  const list = item?.buyer_todo_codes || item?.buyerTodoCodes || []
+  return Array.isArray(list) ? list : []
+}
+
+function hasItemBuyerTodo(item) {
+  if (!item) return false
+  if (item?.buyer_todo_pending === true || item?.buyerTodoPending === true) return true
+  return getItemBuyerTodoCodes(item).length > 0
+}
+
 function tabNeedAttention(index) {
   const tab = tabList.value[index]
   if (!tab || tab.type !== 'item') return false
   const item = submission.items[tab.index] || null
   if (!item) return false
 
+  if (submission.viewer_is_buyer) {
+    return hasItemBuyerTodo(item)
+  }
+
   const alert = buildItemAlertTag(item)
-  if (submission.viewer_is_buyer && alert && /^待你确认/.test(String(alert.text || ''))) {
-    return true
-  }
   if (submission.viewer_is_artist && alert && String(alert.text || '').includes('协商中')) {
-    return true
-  }
-  if (submission.viewer_is_buyer && isItemNeedBuyerShipAction(item)) {
     return true
   }
   if (submission.viewer_is_artist && isItemNeedArtistAction(item)) {
@@ -1774,7 +1786,7 @@ function isFinalStepLog(row) {
 }
 
 const timelineEvents = computed(() => {
-  // 时间线只显示当前子项相关动态（全局事件 + 当前 item 事件）。
+  // 时间线只显示当前创作相关动态（全局事件 + 当前 item 事件）。
   const logs = Array.isArray(submission.progress_logs) ? submission.progress_logs : []
   const currentItemID = Number(currentItem.value?.id || 0)
   const filtered = logs.filter((row) => {
@@ -2058,7 +2070,7 @@ function submitMaterialShip() {
   if (!showSubmitMaterialShipBtn.value) return
   const itemID = Number(currentItem.value?.id || currentItem.value?.ID || 0)
   if (!itemID) {
-    uni.showToast({ title: '缺少子单信息', icon: 'none' })
+    uni.showToast({ title: '缺少创作信息', icon: 'none' })
     return
   }
   const expressNo = String(materialShipExpressNo.value || '').trim()
@@ -3527,6 +3539,9 @@ async function fetchDetail(force = false) {
         item_final_states: Array.isArray(d.item_final_states) ? d.item_final_states : [],
         status_flow_map: Array.isArray(d.status_flow_map) ? d.status_flow_map : [],
         item_progress_guides: Array.isArray(d.item_progress_guides) ? d.item_progress_guides : [],
+        buyer_todo_pending: !!d.buyer_todo_pending,
+        buyer_todo_count: Number(d.buyer_todo_count || 0),
+        buyer_todo_codes: Array.isArray(d.buyer_todo_codes) ? d.buyer_todo_codes : [],
         can_fill_return_address: !!d.can_fill_return_address,
         return_address_requested: !!d.return_address_requested,
         return_address_ready: !!d.return_address_ready,
