@@ -183,7 +183,7 @@
             "enable" : false
         },
         "distribute" : {
-            "bundleName" : "app.dogdogdoll.huawei",
+            "bundleName" : "com.dogdogdoll.app",
             "signingConfigs" : {
                 "default" : {
                     "certpath" : "c:\\Users\\Administrator\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1773708818582.cer",
@@ -211,7 +211,8 @@
             "modules" : {},
             "splashScreens" : {
                 "startWindowIcon" : "C:/Users/Administrator/Desktop/320x320.png"
-            }
+            },
+            "deviceTypes" : [ "phone", "tablet" ]
         }
     },
     "h5" : {
