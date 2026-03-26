@@ -458,6 +458,9 @@
         <view class="row">
           <input class="input" v-model="tier.description" placeholder="描述" />
         </view>
+        <view v-if="isFreedomTierTitle(tier.title)" class="tier-free-tip">
+          提示：单主选择「自由」档位后，仅可填写备注，不支持提出修改要求。
+        </view>
         <view class="row row-right">
           <view class="disabled-touch-wrap disabled-touch-wrap--inline">
             <button
@@ -1198,6 +1201,7 @@ const stepOptions = ref([
     value: 'blank'
   }
 ])
+const freedomTierTitle = '自由'
 
 /* ====== 上传状态 ====== */
 const uploading = ref(false)
@@ -1209,6 +1213,22 @@ function showDisabledReason(reasonText) {
   if (!isEditMode.value) return
   disableReasonText.value = reasonText || '当前状态下暂时不能修改该项。'
   disableReasonModalVisible.value = true
+}
+
+function normalizeTierTitle(title) {
+  return String(title || '').trim()
+}
+
+function isFreedomTierTitle(title) {
+  return normalizeTierTitle(title) === freedomTierTitle
+}
+
+function maybeNotifyFreedomTier(title) {
+  if (!isFreedomTierTitle(title)) return
+  uni.showToast({
+    title: '自由档位仅支持备注',
+    icon: 'none'
+  })
 }
 
 /* ====== premium queue 开关 ====== */
@@ -1529,19 +1549,22 @@ function onTierPickerChange(e) {
   const idx = Number(e.detail.value || 0)
   const opt = tierOptions.value[idx]
   if (!opt) return
+  let nextTier = null
   if (opt.value === 'blank') {
-    form.value.order_config.tiers.push({
+    nextTier = {
       title: '',
       price: 0,
       description: ''
-    })
+    }
   } else {
-    form.value.order_config.tiers.push({
+    nextTier = {
       title: opt.value.title || '',
       price: toFixed2(opt.value.price || 0),
       description: opt.value.description || ''
-    })
+    }
   }
+  form.value.order_config.tiers.push(nextTier)
+  maybeNotifyFreedomTier(nextTier.title)
 }
 
 function removeTier(i) {
@@ -2436,6 +2459,13 @@ onMounted(() => {
   color: #999;
   font-size: 24rpx;
   line-height: 1.6;
+}
+
+.tier-free-tip {
+  margin: 4rpx 0 10rpx;
+  color: #5f6f82;
+  font-size: 22rpx;
+  line-height: 1.5;
 }
 
 /* 日期+时间并排 */

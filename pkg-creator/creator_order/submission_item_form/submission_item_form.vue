@@ -401,18 +401,30 @@
         <view class="card">
           <view class="card-header">
             <text class="card-title">补充说明</text>
-            <text class="card-sub">如果您选择的档位可以指定要求，请在这里填写（选填）</text>
+            <text class="card-sub">
+              {{ isFreedomMakeupTierSelected ? '当前为自由妆：不能填写补充说明。' : '如果您选择的档位可以指定要求，请在这里填写（选填）' }}
+            </text>
           </view>
 
           <view class="field-row field-textarea-row">
             <view class="field-label">
               <text class="label-text">备注</text>
             </view>
-            <view class="field-control">
+            <view
+              class="field-control remark-field-control"
+              :class="{ 'field-control-disabled': isFreedomMakeupTierSelected }"
+            >
               <textarea
                 v-model.trim="form.remark"
                 class="field-textarea"
                 maxlength="500"
+                :disabled="isFreedomMakeupTierSelected"
+                :placeholder="isFreedomMakeupTierSelected ? '自由妆不能填写补充说明' : ''"
+              />
+              <view
+                v-if="isFreedomMakeupTierSelected"
+                class="field-control-mask"
+                @tap.stop="openFreedomRemarkDisabledModal"
               />
               <view class="textarea-count">
                 <text>{{ form.remark.length }}/500</text>
@@ -446,6 +458,16 @@
         </text>
       </button>
     </view>
+
+    <common-modal v-model:visible="freedomRemarkModalVisible" width="620rpx" :center="true">
+      <view class="freedom-remark-modal">
+        <text class="freedom-remark-title">当前不可填写</text>
+        <text class="freedom-remark-desc">自由妆不能填要求。</text>
+        <view class="freedom-remark-actions">
+          <button class="freedom-remark-btn" @tap="freedomRemarkModalVisible = false">我知道了</button>
+        </view>
+      </view>
+    </common-modal>
   </view>
 </template>
 
@@ -575,6 +597,7 @@ const sizeOptions = ref([])
 const tierOptions = ref([])
 const addonOptions = ref([])
 const planArtistType = ref(0)
+const freedomTierTitle = '自由'
 const planBlankSupport = reactive({
   self: false,
   third: false,
@@ -646,6 +669,29 @@ const hasPlanConfig = computed(() => {
   return sizeOptions.value.length || tierOptions.value.length || addonOptions.value.length
 })
 
+function normalizeTierTitle(title) {
+  return String(title || '').trim()
+}
+
+function isFreedomTierTitle(title) {
+  return normalizeTierTitle(title) === freedomTierTitle
+}
+
+const isFreedomTierSelected = computed(() => {
+  if (selectedTierIndex.value >= 0 && tierOptions.value[selectedTierIndex.value]) {
+    return isFreedomTierTitle(tierOptions.value[selectedTierIndex.value].title)
+  }
+  return isFreedomTierTitle(form.tier_title)
+})
+const isFreedomMakeupTierSelected = computed(() => (
+  isFreedomTierSelected.value && !isHairPlan.value
+))
+
+function openFreedomRemarkDisabledModal () {
+  if (!isFreedomMakeupTierSelected.value) return
+  freedomRemarkModalVisible.value = true
+}
+
 /** 是否处于编辑模式 */
 const isEdit = computed(() => itemId.value > 0)
 
@@ -659,6 +705,7 @@ const isLogin = computed(() => {
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const uploadStatusText = ref('')
+const freedomRemarkModalVisible = ref(false)
 
 /** ====== Watch：标记用户本地改动（用于刷新时不覆盖） ====== */
 watch(() => form.work_subject, () => {
@@ -676,6 +723,13 @@ watch(() => form.tier_title, () => {
 watch(() => form.remark, () => {
   if (isApplyingServerData.value) return
   markDirty('remark')
+})
+watch(() => isFreedomMakeupTierSelected.value, (isDisabled) => {
+  if (!isDisabled) return
+  if (!String(form.remark || '').trim()) return
+  withApplyingLock(function () {
+    form.remark = ''
+  })
 })
 watch(() => form.subject_goods_id, () => {
   if (isApplyingServerData.value) return
@@ -1711,6 +1765,12 @@ function handleSelectTier (idx) {
     form.tier_title = (tier && tier.title) || ''
   }
   console.log('[item-form] handleSelectTier idx=', idx, 'tier_title=', form.tier_title)
+  if (isFreedomMakeupTierSelected.value) {
+    withApplyingLock(function () {
+      form.remark = ''
+    })
+    uni.showToast({ title: '自由妆不能填要求', icon: 'none' })
+  }
   recalcPriceFromPlan()
 }
 
@@ -1953,6 +2013,7 @@ async function handleSave () {
     : (blankSupplyModeForSave === 'stock' && stockSnapshotForSave)
         ? JSON.stringify(stockSnapshotForSave)
     : ''
+  const remarkForSave = isFreedomMakeupTierSelected.value ? '' : (form.remark || '').trim()
 
   saving.value = true
   try {
@@ -1969,7 +2030,7 @@ async function handleSave () {
         ref_images: Array.isArray(form.ref_images) ? form.ref_images : [],
         tier_title: (form.tier_title || '').trim(),
         addons: addonTitles,
-        remark: (form.remark || '').trim(),
+        remark: remarkForSave,
         blank_supply_mode: blankSupplyModeForSave,
         blank_stock_id: blankStockIdForSave,
         blank_image_urls: blankImageUrlsForSave,
@@ -2010,7 +2071,7 @@ async function handleSave () {
         ref_images: Array.isArray(form.ref_images) ? form.ref_images : [],
         tier_title: (form.tier_title || '').trim(),
         addons: addonTitles,
-        remark: (form.remark || '').trim(),
+        remark: remarkForSave,
         blank_supply_mode: blankSupplyModeForSave,
         blank_stock_id: blankStockIdForSave,
         blank_image_urls: blankImageUrlsForSave,
@@ -2231,6 +2292,17 @@ onShow(function () {
   border-radius: 14rpx;
   padding: 16rpx 18rpx;
   border: 1rpx solid transparent;
+}
+.remark-field-control {
+  position: relative;
+}
+.field-control-disabled {
+  background: #edf1f7;
+}
+.field-control-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
 }
 .field-input {
   width: 100%;
@@ -2570,6 +2642,41 @@ onShow(function () {
   font-size: 24rpx;
   color: #888;
   line-height: 1.7;
+}
+
+.freedom-remark-modal {
+  padding: 18rpx 6rpx 6rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.freedom-remark-title {
+  font-size: 30rpx;
+  color: #283548;
+  font-weight: 600;
+}
+.freedom-remark-desc {
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  color: #6a7890;
+  line-height: 1.65;
+  text-align: center;
+}
+.freedom-remark-actions {
+  margin-top: 24rpx;
+  width: 100%;
+}
+.freedom-remark-btn {
+  width: 100%;
+  height: 78rpx;
+  border-radius: 999rpx;
+  background: #e6f7ff;
+  color: #2f4c66;
+  font-size: 27rpx;
+  font-weight: 600;
+}
+.freedom-remark-btn::after {
+  border: none;
 }
 
 /* ====== 底部操作栏 ====== */

@@ -66,7 +66,7 @@
                     }"
                     @tap="saveBoard"
                   >
-                    <text class="hero-fold-save-text font-title">{{ saving ? '保存中...' : (hasPendingChanges ? '保存' : '已保存') }}</text>
+                    <text class="hero-fold-save-text font-title">保存</text>
                     <text v-if="!saving && hasPendingChanges" class="save-btn-attention-mark">!</text>
                   </view>
                   <view
@@ -144,7 +144,7 @@
                     :disabled="saving"
                     @tap="saveBoard"
                   >
-                    <text class="save-btn-text">{{ saving ? '保存中...' : (hasPendingChanges ? '保存' : '已保存') }}</text>
+                    <text class="save-btn-text">保存</text>
                     <text v-if="!saving && hasPendingChanges" class="save-btn-attention-mark">!</text>
                   </button>
                 </view>
@@ -551,7 +551,7 @@ const selectedOrderRangeLabel = computed(() => {
   const end = normalizeDateText(row?.end_date || '')
   const duration = Number(row?.duration_days || defaultDurationDays.value || 7)
   if (!start || !end) return `工期：待排期（预计${duration}天）`
-  return `工期：${formatHumanRange(start, end, duration)}`
+  return formatHumanRange(start, end, duration)
 })
 
 const heroOrderVisibleCount = computed(() => {
@@ -1955,7 +1955,7 @@ onBeforeUnmount(() => {
   min-width: 96rpx;
   position: relative;
   overflow: visible;
-  padding-right: 20rpx;
+  padding: 0 14rpx;
 }
 
 .hero-fold-save.pending {
@@ -1974,9 +1974,15 @@ onBeforeUnmount(() => {
 }
 
 .hero-fold-save-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   font-size: 22rpx;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: -2rpx;
 }
 
 .hero-actions {
@@ -2299,6 +2305,9 @@ onBeforeUnmount(() => {
 }
 
 .save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   width: 164rpx;
   height: 70rpx;
@@ -2319,9 +2328,15 @@ onBeforeUnmount(() => {
 }
 
 .save-btn-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   font-size: 24rpx;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: -2rpx;
 }
 
 .save-btn.pending {

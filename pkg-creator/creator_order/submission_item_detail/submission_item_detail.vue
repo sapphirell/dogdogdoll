@@ -92,7 +92,7 @@
         </view>
 
         <view class="card requirement-card">
-          <view class="card-title">投递要求</view>
+          <view class="card-title">{{ itemRequirementTitle }}</view>
           <text class="requirement-text">{{ itemRequirementText }}</text>
         </view>
 
@@ -187,7 +187,11 @@
     <loading-toast :show="loading" text="正在加载作品详情..." />
 
     <view v-if="hasBottomActions" class="bottom-action-bar">
-      <view v-if="showBuyerDecisionActions" class="bottom-action-row buyer-triple">
+      <view
+        v-if="showBuyerDecisionActions"
+        class="bottom-action-row"
+        :class="showBuyerRejectButton ? 'buyer-triple' : 'dual'"
+      >
         <button
           class="bottom-action-btn secondary ghost"
           :class="{ disabled: buyerActionBusy }"
@@ -197,6 +201,7 @@
           取消订单
         </button>
         <button
+          v-if="showBuyerRejectButton"
           class="bottom-action-btn secondary"
           :class="{ disabled: buyerActionBusy }"
           :disabled="buyerActionBusy"
@@ -513,6 +518,7 @@ const StepLogEventStepRejectNegotiating = 'step_reject_negotiating'
 const StepLogEventFinalRejectNegotiating = 'final_confirm_reject_negotiating'
 const NegotiationStatePendingArtist = 'pending_artist_decision'
 const FinalConfirmResumeStorageKey = 'artist_order:final_confirm_resume'
+const freedomTierTitle = '自由'
 
 const submissionId = ref(0)
 const itemId = ref(0)
@@ -609,8 +615,24 @@ const addonsText = computed(() => {
 const itemRequirementText = computed(() => {
   const remark = String(currentItem.value?.remark || '').trim()
   if (remark) return remark
-  return '未填写投递要求'
+  return currentItemIsFreedomTier.value ? '未填写备注' : '未填写投递要求'
 })
+
+function normalizeTierTitle(title) {
+  return String(title || '').trim()
+}
+
+function isFreedomTierTitle(title) {
+  return normalizeTierTitle(title) === freedomTierTitle
+}
+
+const currentItemIsFreedomTier = computed(() => {
+  return isFreedomTierTitle(currentItem.value?.tier_title)
+})
+
+const itemRequirementTitle = computed(() => (
+  currentItemIsFreedomTier.value ? '备注' : '投递要求'
+))
 
 const paymentMethod = computed(() => {
   return Number(queueInfo.value?.payment_method || 0)
@@ -898,6 +920,9 @@ const showBuyerFinalConfirm = computed(() => {
 })
 const returnAddressReady = computed(() => !!queueInfo.value?.return_address_ready)
 const showBuyerDecisionActions = computed(() => showBuyerStepActions.value || showBuyerFinalConfirm.value)
+const showBuyerRejectButton = computed(() => (
+  showBuyerDecisionActions.value && !currentItemIsFreedomTier.value
+))
 const showArtistNegotiationActions = computed(() => {
   return viewerIsArtist.value && submissionStatus.value === SubmissionStatusPaid && !!artistPendingNegotiationLog.value
 })
@@ -1481,6 +1506,10 @@ async function submitStepDecision(action) {
   const row = pendingStepLog.value || pendingFinalRequestLog.value
   const logID = Number(row?.id || 0)
   if (!logID || stepActioning.value) return
+  if (action === 'reject' && currentItemIsFreedomTier.value) {
+    uni.showToast({ title: '自由档位仅支持备注，不能提出修改', icon: 'none' })
+    return
+  }
   const token = uni.getStorageSync('token') || ''
   if (!token) {
     uni.showToast({ title: '请先登录', icon: 'none' })
@@ -1754,6 +1783,10 @@ async function submitCancelOrder() {
 function openBuyerActionModal(action) {
   if (!showBuyerDecisionActions.value) return
   if (buyerActionBusy.value) return
+  if (action === 'reject' && currentItemIsFreedomTier.value) {
+    uni.showToast({ title: '自由档位仅支持备注，不能提出修改', icon: 'none' })
+    return
+  }
   if (action === 'reject' && !pendingStepLog.value && !pendingFinalRequestLog.value) {
     uni.showToast({ title: '当前不可拒绝', icon: 'none' })
     return

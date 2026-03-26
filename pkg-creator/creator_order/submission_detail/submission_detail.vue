@@ -398,8 +398,9 @@
                         +{{ event.images.length - 3 }}
                       </view>
                     </view>
-                    <view v-if="event.canOperate" class="timeline-action-row">
+                    <view v-if="event.canApprove || event.canReject" class="timeline-action-row">
                       <view
+                        v-if="event.canReject"
                         class="timeline-action-btn reject"
                         :class="{ disabled: stepActioningLogID === event.logId }"
                         @tap="handleStepReject(event)"
@@ -407,6 +408,7 @@
                         驳回
                       </view>
                       <view
+                        v-if="event.canApprove"
                         class="timeline-action-btn approve"
                         :class="{ disabled: stepActioningLogID === event.logId }"
                         @tap="handleStepApprove(event)"
@@ -1464,6 +1466,18 @@ const currentItem = computed(() => {
   return null
 })
 
+const freedomTierTitle = '自由'
+
+function normalizeTierTitle(title) {
+  return String(title || '').trim()
+}
+
+function isFreedomTierTitle(title) {
+  return normalizeTierTitle(title) === freedomTierTitle
+}
+
+const currentItemIsFreedomTier = computed(() => isFreedomTierTitle(currentItem.value?.tier_title))
+
 const currentItemNeedCompleteSelection = computed(() => {
   const row = currentItem.value || null
   if (!row) return false
@@ -1820,13 +1834,16 @@ const timelineEvents = computed(() => {
         currentItemID > 0 &&
         itemID === currentItemID &&
         !isRejectNegotiationPending(row)
+      const canReject = canOperate && !currentItemIsFreedomTier.value
+      const canApprove = canOperate
       return {
         key: `${row?.id || idx}-${row?.event_code || ''}`,
         logId: logID,
         logType,
         status,
         itemID,
-        canOperate,
+        canApprove,
+        canReject,
         confirmLabel: isFinalStep ? '确认成品' : '通过',
         finalStep: isFinalStep,
         title: timelineTitle(row),
@@ -3165,6 +3182,10 @@ async function submitStepDecision(logID, action, reason = '') {
   // 买家节点动作统一提交入口：confirm/reject 两条接口共用同一套请求与防重逻辑。
   const id = Number(logID || 0)
   if (!id) return
+  if (action === 'reject' && currentItemIsFreedomTier.value) {
+    uni.showToast({ title: '自由档位仅支持备注，不能提出修改', icon: 'none' })
+    return
+  }
   if (stepActioningLogID.value === id) return
   if (!isLogin.value) {
     uni.showToast({ title: '请先登录', icon: 'none' })
@@ -3206,7 +3227,7 @@ async function submitStepDecision(logID, action, reason = '') {
 
 function handleStepApprove(event) {
   // 最终节点展示“确认成品”，其余节点展示“通过”。
-  if (!event?.canOperate || !event?.logId) return
+  if (!event?.canApprove || !event?.logId) return
   const title = event.finalStep ? '确认成品' : '确认节点'
   const content = event.finalStep ? '确认该最终成品已通过吗？' : '确认该创作节点通过吗？'
   uni.showModal({
@@ -3223,7 +3244,11 @@ function handleStepApprove(event) {
 
 function handleStepReject(event) {
   // 驳回后卖家可重新上传同节点，后端会将旧待确认记录标记为覆盖/驳回。
-  if (!event?.canOperate || !event?.logId) return
+  if (!event?.canReject || !event?.logId) return
+  if (currentItemIsFreedomTier.value) {
+    uni.showToast({ title: '自由档位仅支持备注，不能提出修改', icon: 'none' })
+    return
+  }
   uni.showModal({
     title: '驳回节点',
     content: '确认驳回该节点吗？妆师可修改后再次上传。',
