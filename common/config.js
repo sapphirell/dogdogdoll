@@ -6,7 +6,7 @@ import { getBuildEnvValue } from './build-env.js'
 
 const DEFAULT_DOMAIN_CONFIG = {
   api: {
-    cn: 'https://api.dogdogdoll.com',
+    cn: 'https://api.fantuanpu.com',
     us: 'https://us-api.dogdogdoll.com',
     dev: 'http://localhost:8080',
     // 预留其他区域
