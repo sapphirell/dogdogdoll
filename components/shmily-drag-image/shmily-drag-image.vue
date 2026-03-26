@@ -368,11 +368,18 @@
 		// 设置长按计时器（500ms）
 		longPressTimer.value = setTimeout(() => {
 			console.log("长按成功！")
-			uni.vibrateShort({
-				success: () => {
-					console.log('触感反馈');
-				}
-			});
+			// H5 浏览器会限制非直接手势链路的振动调用，避免控制台警告。
+			// #ifndef H5
+			try {
+				uni.vibrateShort({
+					success: () => {
+						console.log('触感反馈');
+					}
+				});
+			} catch (e) {
+				// ignore vibrate errors
+			}
+			// #endif
 			item.ready = true
 			item.disable = false
 			isDragging.value = true

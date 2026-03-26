@@ -222,7 +222,8 @@
         { "path": "account_book_preview/account_book_preview", "style": { "navigationStyle": "custom" } },
         { "path": "stock-myitems-search/stock-myitems-search", "style": { "navigationStyle": "custom" } },
         { "path": "stock-type-manager/stock-type-manager", "style": { "navigationStyle": "custom" } },
-        { "path": "stock-myitems-setting/stock-myitems-setting", "style": { "navigationStyle": "custom" } }
+        { "path": "stock-myitems-setting/stock-myitems-setting", "style": { "navigationStyle": "custom" } },
+        { "path": "stock-cabinet-list/stock-cabinet-list", "style": { "navigationStyle": "custom" } }
       ]
     },
     {

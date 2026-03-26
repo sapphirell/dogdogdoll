@@ -92,17 +92,20 @@
         v-for="group in cabinetTypeCards"
         :key="`cabinet-${group.type}`"
         class="cabinet-card"
+        @tap="goCabinetTypeList(group.type)"
       >
         <view class="cabinet-card-head">
           <text class="cabinet-card-title font-alimamashuhei">{{ group.type }}</text>
-          <text class="cabinet-card-count">已收录 {{ group.total }}</text>
+          <view class="cabinet-card-right">
+            <text class="cabinet-card-count">已收录 {{ group.total }}</text>
+            <uni-icons type="arrow-right" size="14" color="#8fa2b6" />
+          </view>
         </view>
         <view class="cabinet-item-row">
           <view
             v-for="item in group.previewItems"
             :key="`cabinet-item-${group.type}-${item.id}`"
             class="cabinet-item"
-            @tap="emit('go2editor', item.id)"
           >
             <image
               v-if="item.cabinetImage"
@@ -527,6 +530,17 @@ function openSearch(){
   })
 }
 
+function goCabinetTypeList(typeName) {
+  const safeType = String(typeName || '').trim()
+  if (!safeType) {
+    uni.showToast({ title: '分类信息缺失', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pkg-stock/stock-cabinet-list/stock-cabinet-list?type=${encodeURIComponent(safeType)}`
+  })
+}
+
 /* 顶部安全距离 */
 const safeTop = ref(0)
 
@@ -604,6 +618,12 @@ function getCabinetItemImage(item) {
   align-items: baseline;
   justify-content: space-between;
   gap: 12rpx;
+}
+
+.cabinet-card-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
 }
 
 .cabinet-card-title {
