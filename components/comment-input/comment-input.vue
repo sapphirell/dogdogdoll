@@ -1,8 +1,7 @@
 <template>
-	<view class="mask" v-show="displayMask" @tap="handleMaskTap" @touchmove.stop.prevent="() => {}"></view>
+	<view class="mask" v-show="displayMask" @tap="handleMaskTap" @touchmove.stop.prevent="noop"></view>
 
-	<view class="bottom_tab" @touchmove.stop.prevent="() => {}" :adjust-position="false"
-		:style="{ paddingBottom: footerBottomHeight }">
+	<view class="bottom_tab" @touchmove.stop.prevent="noop" :style="bottomTabStyle">
 		<view class="about_info">
 			<view v-if="selectedAssociation" class="association-container">
 				<view class="association-item">
@@ -22,9 +21,9 @@
 			</view>
 		</view>
 		<view class="bottom_input">
-			<textarea :disable-default-padding="true" :focus="isFocused" class="comment_input unified-textarea"
+			<textarea :disable-default-padding="true" :focus="isFocused" :fixed="true" :cursor-spacing="0" class="comment_input unified-textarea"
 				:class="{ expanded: isFocused }" ref="inputRef" v-model="commentText" @focus="handleFocus"
-				@blur="handleBlur" :adjust-position="false"
+				@blur="handleBlur" :adjust-position="false" @keyboardheightchange="handleTextareaKeyboardHeightChange"
 				:placeholder="replyInfo.username ? '回复@' + replyInfo.username + ' ' : '写评论...'"></textarea>
 
 			<button @click="handleSubmit">写评论</button>
@@ -60,16 +59,11 @@
 
 <script setup>
 	import {
-		ref,
-		computed,
-		getCurrentInstance,
-		onMounted,
-	} from 'vue'
-	import {
-		onLoad,
-		onShow,
-
-	} from "@dcloudio/uni-app";
+	ref,
+	computed,
+	onMounted,
+	onBeforeUnmount,
+} from 'vue'
 
 	import {
 		getScene,
@@ -106,7 +100,6 @@
 	const isFocused = ref(false)
 
 	const emit = defineEmits(['submit', 'update:replyInfo'])
-	const instance = getCurrentInstance()
 	const commentText = ref('')
 	const displayMask = ref(false)
 	const clickedInside = ref(false)
@@ -122,27 +115,58 @@
 
 
 	const keyboardHeight = ref(0)
+	const h5ViewportBaseHeight = ref(0)
+	const h5ViewportListener = ref(null)
 	const systemInfo = uni.getSystemInfoSync()
+	const safeBottomInset = Number(systemInfo.safeAreaInsets?.bottom || props.safeBottom || 0)
+	const noop = () => {}
 
-	// [修改] 优化高度计算逻辑，解决抬起过高问题
-	const footerBottomHeight = computed(() => {
-		// 获取底部安全距离，默认为10
-		let safeBottomVar = systemInfo.safeAreaInsets?.bottom || 10
-		
-		// 如果键盘高度大于0（键盘弹起）
-		if (keyboardHeight.value > 0) {
-			// 直接使用键盘高度支撑，不再叠加安全距离
-			// 因为键盘高度通常是从屏幕底部计算的，已经包含了安全区域
-			return `${keyboardHeight.value}px`
+	const bottomTabStyle = computed(() => {
+		const kb = keyboardHeight.value > 0 ? keyboardHeight.value : 0
+		return {
+			bottom: `${kb}px`,
+			paddingBottom: `${safeBottomInset}px`
 		}
-		
-		// 键盘未弹起时，仅使用安全距离
-		return `${safeBottomVar}px`
 	})
 
 	const keyboardHeightChangeHandler = (res) => {
-		console.log("键盘高度变化", res)
-		keyboardHeight.value = res.height
+		const nextHeight = Number(res?.height || 0)
+		keyboardHeight.value = nextHeight > 0 ? nextHeight : 0
+	}
+
+	const handleTextareaKeyboardHeightChange = (event) => {
+		keyboardHeightChangeHandler(event?.detail || event || {})
+	}
+
+	const bindH5VisualViewport = () => {
+		if (typeof window === 'undefined') return
+		const vv = window.visualViewport
+		if (!vv) return
+
+		h5ViewportBaseHeight.value = Math.max(window.innerHeight || 0, vv.height + vv.offsetTop)
+		const updateKeyboardHeight = () => {
+			const visibleHeight = vv.height + vv.offsetTop
+			const diff = Math.round(h5ViewportBaseHeight.value - visibleHeight)
+			if (diff > 0) {
+				keyboardHeight.value = diff
+			} else {
+				keyboardHeight.value = 0
+				h5ViewportBaseHeight.value = Math.max(h5ViewportBaseHeight.value, visibleHeight)
+			}
+		}
+		h5ViewportListener.value = updateKeyboardHeight
+		vv.addEventListener('resize', updateKeyboardHeight)
+		vv.addEventListener('scroll', updateKeyboardHeight)
+	}
+
+	const unbindH5VisualViewport = () => {
+		if (typeof window === 'undefined') return
+		const vv = window.visualViewport
+		const handler = h5ViewportListener.value
+		if (!vv || !handler) return
+		vv.removeEventListener('resize', handler)
+		vv.removeEventListener('scroll', handler)
+		h5ViewportListener.value = null
 	}
 
 	const toggleAnonymous = (event) => {
@@ -220,6 +244,7 @@
 		displayMask.value = false
 		isFocused.value = false
 		showActionBar.value = false
+		keyboardHeight.value = 0
 		uni.hideKeyboard()
 	}
 
@@ -303,12 +328,19 @@
 
 	onMounted(() => {
 		if (process.env.VUE_APP_PLATFORM == "h5") {
-			console.log("不注册键盘弹出事件")
-			//h5不会弹出软键盘
+			bindH5VisualViewport()
 			return
 		}
-		console.log("注册键盘弹出事件")
 		uni.onKeyboardHeightChange(keyboardHeightChangeHandler)
+	})
+
+	onBeforeUnmount(() => {
+		keyboardHeight.value = 0
+		if (process.env.VUE_APP_PLATFORM == "h5") {
+			unbindH5VisualViewport()
+			return
+		}
+		uni.offKeyboardHeightChange(keyboardHeightChangeHandler)
 	})
 </script>
 

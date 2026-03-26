@@ -664,8 +664,8 @@ onReachBottom(() => {
 
 .summary-attention-count {
   position: absolute;
-  right: -14rpx;
-  top: -8rpx;
+  right: -22rpx;
+  top: -13rpx;
   min-width: 30rpx;
   height: 30rpx;
   padding: 0 8rpx;
