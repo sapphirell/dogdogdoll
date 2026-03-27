@@ -25,7 +25,6 @@
           <view v-if="Number(peerId || 0) > 0" class="nav-more-wrap">
             <view class="nav-more-pill" @click="openActionPopup">
               <uni-icons type="more-filled" size="16" color="#666" />
-              <text class="nav-more-text">更多</text>
             </view>
           </view>
         </template>
@@ -35,14 +34,16 @@
     <uni-popup ref="chatActionPopupRef" type="top" :mask-click="true">
       <view class="chat-action-popup" @click.stop>
         <view class="chat-action-card">
-          <view class="chat-action-item" @click.stop>
+          <view class="chat-action-item chat-action-item--report" @click.stop>
             <report-button
               :report-type="4"
               :relation-id="Number(peerId || 0)"
               button-text="举报"
               theme-color="#64c6dc"
               class="chat-action-report-btn"
-              @open="closeActionPopup"
+              @success="handleReportSuccess"
+              @cancel="closeActionPopup"
+              @error="closeActionPopup"
             >
               <view class="chat-action-report-row">
                 <uni-icons type="flag" size="16" color="#666" />
@@ -51,6 +52,7 @@
             </report-button>
           </view>
           <view class="chat-action-item chat-action-cancel" @click="closeActionPopup">
+            <uni-icons type="closeempty" size="16" color="#666" />
             <text>取消</text>
           </view>
         </view>
@@ -873,6 +875,9 @@ function openActionPopup () {
 function closeActionPopup () {
   chatActionPopupRef.value?.close?.()
 }
+function handleReportSuccess () {
+  closeActionPopup()
+}
 function authHeader () {
   const token = uni.getStorageSync('token') || ''
   return token ? { Authorization: token } : {}
@@ -1074,17 +1079,14 @@ function handleCardClick (m) {
   align-items: center;
 }
 .nav-more-pill {
-  padding: 8rpx 14rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 999rpx;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.92);
   display: flex;
   align-items: center;
-  gap: 6rpx;
-}
-.nav-more-text {
-  font-size: 22rpx;
-  color: #666;
+  justify-content: center;
 }
 .chat-action-popup {
   padding-top: 132rpx;
@@ -1093,27 +1095,39 @@ function handleCardClick (m) {
   padding-right: 18rpx;
 }
 .chat-action-card {
-  width: 240rpx;
+  width: 260rpx;
   background: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.14);
+  border-radius: 18rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.14);
   overflow: hidden;
 }
 .chat-action-item {
-  min-height: 84rpx;
+  min-height: 88rpx;
   padding: 0 18rpx;
   display: flex;
   align-items: center;
-  border-bottom: 1rpx solid #f1f1f1;
+  justify-content: center;
+  gap: 10rpx;
 }
-.chat-action-item:last-child {
-  border-bottom: none;
+.chat-action-item + .chat-action-item {
+  border-top: 1rpx solid #f1f1f1;
+}
+.chat-action-item:active {
+  background: #f7f8fa;
+}
+.chat-action-item text {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+}
+.chat-action-item--report :deep(.chat-action-report-text) {
+  color: #ff5a5f;
 }
 .chat-action-cancel {
-  justify-content: center;
-  text-align: center;
   color: #666;
-  font-size: 28rpx;
+}
+.chat-action-cancel text {
+  color: #666;
 }
 .chat-action-report-btn {
   width: 100%;
@@ -1128,11 +1142,11 @@ function handleCardClick (m) {
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  height: 84rpx;
+  height: 88rpx;
 }
 .chat-action-report-text {
   font-size: 28rpx;
-  color: #444;
+  color: #ff5a5f;
   font-weight: 500;
 }
 .nav-title-ellipsis {

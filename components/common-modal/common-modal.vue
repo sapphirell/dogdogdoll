@@ -2,6 +2,7 @@
   <view
     class="modal-mask"
     :class="{ 'is-center': props.center }"
+    :style="{ zIndex: String(props.zIndex) }"
     v-if="visible"
     @tap.stop="closeModal"
     @touchmove.stop="onMaskTouchMove"
@@ -56,6 +57,10 @@ const props = defineProps({
   closeable: {
     type: Boolean,
     default: true
+  },
+  zIndex: {
+    type: [String, Number],
+    default: 999
   }
 })
 
