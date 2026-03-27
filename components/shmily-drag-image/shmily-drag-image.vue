@@ -87,6 +87,7 @@
 		computed,
 		watch,
 		onMounted,
+		onBeforeUnmount,
 		nextTick,
 		getCurrentInstance
 	} from 'vue'
@@ -194,10 +195,32 @@
 	const touchStartY = ref(0); // 触摸起始Y坐标
 	const longPressTimer = ref(null);
 	const isDragging = ref(false); // 全局拖拽状态
+	let dropAudio = null
 
 	const isMounted = ref(false); // 是否已挂载
 
 	const instanceRef = ref(null); // 保存组件实例引用
+
+	// 播放拖拽落位音效（替代震动反馈）
+	const playDropSound = () => {
+			try {
+				if (!dropAudio) {
+					dropAudio = uni.createInnerAudioContext()
+					dropAudio.src = "/static/bubble-pop.mp3"
+					dropAudio.loop = false
+					dropAudio.autoplay = false
+					dropAudio.obeyMuteSwitch = true
+				} else {
+					try { dropAudio.stop() } catch (e) {}
+					try {
+						if (typeof dropAudio.seek === "function") dropAudio.seek(0)
+					} catch (e) {}
+				}
+				dropAudio.play()
+			} catch (e) {
+				console.warn("[drag] playDropSound failed", e)
+			}
+		}
 
 	// 计算属性
 	const areaHeight = computed(() => {
@@ -368,18 +391,6 @@
 		// 设置长按计时器（500ms）
 		longPressTimer.value = setTimeout(() => {
 			console.log("长按成功！")
-			// H5 浏览器会限制非直接手势链路的振动调用，避免控制台警告。
-			// #ifndef H5
-			try {
-				uni.vibrateShort({
-					success: () => {
-						console.log('触感反馈');
-					}
-				});
-			} catch (e) {
-				// ignore vibrate errors
-			}
-			// #endif
 			item.ready = true
 			item.disable = false
 			isDragging.value = true
@@ -420,6 +431,7 @@
 		})
 		if (isDragging.value == true) {
 			console.log("来自于拖拽的结束,上报排序事件")
+			playDropSound()
 
 			// 直接使用当前顺序的ID
 			const sortedIds = imageList.value.map(item => item.id);
@@ -895,6 +907,16 @@
 		if (!props.showItemInfo) return '100%'
 		return props.showPriceTag ? '85%' : '90%'
 	}
+
+
+	onBeforeUnmount(() => {
+		try {
+			if (dropAudio) {
+				dropAudio.destroy()
+				dropAudio = null
+			}
+		} catch (e) {}
+	})
 
 	/* 付款状态文本 */
 	function getPaymentText(item) {
