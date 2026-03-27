@@ -7,6 +7,53 @@ import { initIMGlobalLifecycle, ensureIMConnected } from '@/common/im.js'
 const PRIVACY_KEY = 'privacyAgreementStatus'
 let imLifecycleInited = false
 let privacyEventBound = false
+let fontsLoaded = false
+let fontLoadTimer = null
+let fontLoadRetryCount = 0
+const MAX_FONT_LOAD_RETRY = 8
+const FONT_RETRY_DELAY = 1500
+const FONT_SKIP_ROUTES = new Set(['pages/private/private', 'pages/permission/permission'])
+
+function getCurrentRoutePath() {
+  try {
+    const pages = getCurrentPages()
+    if (!Array.isArray(pages) || pages.length === 0) return ''
+    const cur = pages[pages.length - 1] || {}
+    const raw = String(cur?.route || cur?.$page?.route || cur?.$page?.fullPath || '')
+    return raw.split('?')[0].replace(/^\/+/, '').replace(/^#\/?/, '')
+  } catch (e) {
+    return ''
+  }
+}
+
+function shouldSkipFontLoading() {
+  return FONT_SKIP_ROUTES.has(getCurrentRoutePath())
+}
+
+function scheduleFontLoad() {
+  if (fontsLoaded || fontLoadTimer) return
+  fontLoadTimer = setTimeout(() => {
+    fontLoadTimer = null
+    tryLoadFonts()
+  }, FONT_RETRY_DELAY)
+}
+
+function tryLoadFonts() {
+  if (fontsLoaded) return
+  if (shouldSkipFontLoading()) {
+    fontLoadRetryCount += 1
+    if (fontLoadRetryCount <= MAX_FONT_LOAD_RETRY) {
+      scheduleFontLoad()
+    }
+    return
+  }
+
+  fontLoadRetryCount = 0
+  fontsLoaded = true
+  console.log('开始加载字体...')
+  loadFonts()
+  console.log('结束加载字体')
+}
 
 function shouldRequireNativePrivacyAgreement() {
   const scene = getScene()
@@ -62,15 +109,15 @@ onLaunch(() => {
 onShow(() => {
   console.log('App Show')
   startSdkAfterPrivacyAgreed()
-  setTimeout(() => {
-  	  console.log("开始加载字体...")
-  	  loadFonts()
-  	  console.log("结束加载字体")
-  },2000)
+  scheduleFontLoad()
 })
 
 onHide(() => {
   console.log('App Hide')
+  if (fontLoadTimer) {
+    clearTimeout(fontLoadTimer)
+    fontLoadTimer = null
+  }
 })
 
 function loadFonts() {
