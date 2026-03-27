@@ -21,8 +21,41 @@
             <text class="nav-sub">{{ onlineText }}</text>
           </view>
         </template>
+        <template #right>
+          <view v-if="Number(peerId || 0) > 0" class="nav-more-wrap">
+            <view class="nav-more-pill" @click="openActionPopup">
+              <uni-icons type="more-filled" size="16" color="#666" />
+              <text class="nav-more-text">更多</text>
+            </view>
+          </view>
+        </template>
       </zhouWei-navBar>
     </view>
+    
+    <uni-popup ref="chatActionPopupRef" type="top" :mask-click="true">
+      <view class="chat-action-popup" @click.stop>
+        <view class="chat-action-card">
+          <view class="chat-action-item" @click.stop>
+            <report-button
+              :report-type="4"
+              :relation-id="Number(peerId || 0)"
+              button-text="举报"
+              theme-color="#64c6dc"
+              class="chat-action-report-btn"
+              @open="closeActionPopup"
+            >
+              <view class="chat-action-report-row">
+                <uni-icons type="flag" size="16" color="#666" />
+                <text class="chat-action-report-text">举报</text>
+              </view>
+            </report-button>
+          </view>
+          <view class="chat-action-item chat-action-cancel" @click="closeActionPopup">
+            <text>取消</text>
+          </view>
+        </view>
+      </view>
+    </uni-popup>
 
     <z-paging
       ref="pagingRef"
@@ -195,6 +228,7 @@ import {
 
 const _ins = getCurrentInstance()
 const pagingRef = ref(null)
+const chatActionPopupRef = ref(null)
 
 const peerId = ref(0)
 const sessionKey = ref('')
@@ -833,6 +867,12 @@ function scrollToBottomSoon () {
   nextTick(() => { if (pagingRef.value) pagingRef.value.scrollToBottom() })
 }
 function goBack () { uni.navigateBack() }
+function openActionPopup () {
+  chatActionPopupRef.value?.open?.()
+}
+function closeActionPopup () {
+  chatActionPopupRef.value?.close?.()
+}
 function authHeader () {
   const token = uni.getStorageSync('token') || ''
   return token ? { Authorization: token } : {}
@@ -1027,6 +1067,73 @@ function handleCardClick (m) {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.nav-more-wrap {
+  margin-right: 18rpx;
+  display: flex;
+  align-items: center;
+}
+.nav-more-pill {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+.nav-more-text {
+  font-size: 22rpx;
+  color: #666;
+}
+.chat-action-popup {
+  padding-top: 132rpx;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 18rpx;
+}
+.chat-action-card {
+  width: 240rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+.chat-action-item {
+  min-height: 84rpx;
+  padding: 0 18rpx;
+  display: flex;
+  align-items: center;
+  border-bottom: 1rpx solid #f1f1f1;
+}
+.chat-action-item:last-child {
+  border-bottom: none;
+}
+.chat-action-cancel {
+  justify-content: center;
+  text-align: center;
+  color: #666;
+  font-size: 28rpx;
+}
+.chat-action-report-btn {
+  width: 100%;
+}
+.chat-action-report-btn :deep(.report-button) {
+  width: 100%;
+  display: flex;
+}
+.chat-action-report-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  height: 84rpx;
+}
+.chat-action-report-text {
+  font-size: 28rpx;
+  color: #444;
+  font-weight: 500;
 }
 .nav-title-ellipsis {
   max-width: 60vw;

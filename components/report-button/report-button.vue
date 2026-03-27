@@ -109,7 +109,7 @@
 		}
 	})
 
-	const emit = defineEmits(['success', 'error', 'cancel', 'before-submit'])
+	const emit = defineEmits(['success', 'error', 'cancel', 'before-submit', 'open'])
 
 	const reportVisible = ref(false)
 	const reportReasons = ref([])
@@ -172,6 +172,7 @@
 
 		// 显示弹窗
 		reportVisible.value = true
+		emit('open')
 	}
 
 	// 提交举报
@@ -278,7 +279,8 @@
       color: #999; /* 深一点的颜色 */
       margin-left: 8rpx; /* 图标和文字间距 */
       font-weight: 500;
-	  width: 50rpx;
+      width: auto;
+      white-space: nowrap;
     }
   }
   
