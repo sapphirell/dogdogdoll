@@ -597,56 +597,55 @@
       top="10vh"
       width="700rpx"
     >
-      <view class="price-supplement-modal">
-        <view class="price-supplement-header">
-          <view class="price-supplement-header-main">
-            <text class="price-supplement-title">补充信息</text>
-          </view>
-          <view class="price-supplement-step">
-            <text class="price-supplement-step-num">第{{ priceSupplementStep }}步</text>
-            <text class="price-supplement-step-total">/ 2</text>
-          </view>
-        </view>
-
-        <scroll-view
-          class="price-supplement-scroll"
-          scroll-y
-          :show-scrollbar="false"
-        >
-        <view v-if="priceSupplementStep === 1" class="supplement-step">
-          <view class="supplement-step-head">
-            <text class="supplement-step-title">选择要补充的内容</text>
-            <text class="supplement-step-sub">可多选</text>
+      <view class="price-supplement-shell">
+        <view class="price-supplement-modal">
+          <view class="price-supplement-header">
+            <view class="price-supplement-header-main">
+              <text class="price-supplement-title">补充信息</text>
+            </view>
+            <view class="price-supplement-step">
+              <text class="price-supplement-step-num">第{{ priceSupplementStep }}步</text>
+              <text class="price-supplement-step-total">/ 2</text>
+            </view>
           </view>
 
-          <view class="supplement-select-grid">
-            <view
-              v-for="item in priceSupplementFieldOptions"
-              :key="item.key"
-              :class="['supplement-select-card', { active: isSupplementFieldSelected(item.key) }]"
-              @tap="toggleSupplementField(item.key)"
-            >
-              <view class="supplement-select-info">
-                <text class="supplement-select-title">{{ item.label }}</text>
-              </view>
-              <view :class="['supplement-select-check', { active: isSupplementFieldSelected(item.key) }]">
-                {{ isSupplementFieldSelected(item.key) ? '已选' : '+' }}
+          <scroll-view
+            class="price-supplement-scroll"
+            scroll-y
+            :show-scrollbar="false"
+          >
+          <view v-if="priceSupplementStep === 1" class="supplement-step">
+            <view class="supplement-step-head">
+              <text class="supplement-step-title">选择内容</text>
+            </view>
+
+            <view class="supplement-select-grid">
+              <view
+                v-for="item in priceSupplementFieldOptions"
+                :key="item.key"
+                :class="['supplement-select-card', { active: isSupplementFieldSelected(item.key) }]"
+                @tap="toggleSupplementField(item.key)"
+              >
+                <view class="supplement-select-info">
+                  <text class="supplement-select-title">{{ item.label }}</text>
+                  <text v-if="item.key !== 'images'" class="supplement-select-current">
+                    {{ getSupplementCurrentValue(item.key) }}
+                  </text>
+                </view>
+                <view :class="['supplement-select-check', { active: isSupplementFieldSelected(item.key) }]">
+                  {{ isSupplementFieldSelected(item.key) ? '已选' : '+' }}
+                </view>
               </view>
             </view>
           </view>
-        </view>
 
-        <view v-else class="supplement-step">
-          <view class="supplement-step-head">
-            <text class="supplement-step-title">填写补充内容</text>
-            <text class="supplement-step-sub">已选：{{ priceSupplementSelectedOptionsText || '未选择' }}</text>
-          </view>
+          <view v-else class="supplement-step">
 
           <view v-if="isSupplementFieldSelected('price')" class="supplement-section">
             <view class="supplement-section-head">
               <text class="supplement-section-title">价格</text>
-              <text class="supplement-section-tip">整数价格即可</text>
             </view>
+            <text class="supplement-current-line">{{ getSupplementCurrentValue('price') }}</text>
             <view class="supplement-row">
               <view class="supplement-field">
                 <text class="supplement-field-label font-title">金额</text>
@@ -677,11 +676,11 @@
           <view v-if="isSupplementFieldSelected('head_circumference') || isSupplementFieldSelected('neck_circumference')" class="supplement-section">
             <view class="supplement-section-head">
               <text class="supplement-section-title">头围/脖围</text>
-              <text class="supplement-section-tip">可填 cm 或 mm</text>
             </view>
             <view class="supplement-row">
               <view v-if="isSupplementFieldSelected('head_circumference')" class="supplement-field">
                 <text class="supplement-field-label font-title">头围</text>
+                <text class="supplement-current-inline">{{ getSupplementCurrentValue('head_circumference') }}</text>
                 <input
                   v-model="priceSupplementHeadCircumferenceInput"
                   class="price-supplement-input"
@@ -693,6 +692,7 @@
               </view>
               <view v-if="isSupplementFieldSelected('neck_circumference')" class="supplement-field">
                 <text class="supplement-field-label font-title">脖围</text>
+                <text class="supplement-current-inline">{{ getSupplementCurrentValue('neck_circumference') }}</text>
                 <input
                   v-model="priceSupplementNeckCircumferenceInput"
                   class="price-supplement-input"
@@ -708,8 +708,8 @@
           <view v-if="isSupplementFieldSelected('socket_sizes')" class="supplement-section">
             <view class="supplement-section-head">
               <text class="supplement-section-title">插口</text>
-              <text class="supplement-section-tip">当前：{{ formatMultiSpecText(goods.socket_sizes) }}</text>
             </view>
+            <text class="supplement-current-line">{{ getSupplementCurrentValue('socket_sizes') }}</text>
             <view class="supplement-chip-group">
               <view
                 v-for="item in supplementSocketOptions"
@@ -725,8 +725,8 @@
           <view v-if="isSupplementFieldSelected('eye_recommendations')" class="supplement-section">
             <view class="supplement-section-head">
               <text class="supplement-section-title">眼珠建议</text>
-              <text class="supplement-section-tip">当前：{{ formatMultiSpecText(goods.eye_recommendations) }}</text>
             </view>
+            <text class="supplement-current-line">{{ getSupplementCurrentValue('eye_recommendations') }}</text>
             <view class="supplement-chip-group">
               <view
                 v-for="item in supplementEyeOptions"
@@ -742,11 +742,11 @@
           <view v-if="isSupplementFieldSelected('doll_material') || isSupplementFieldSelected('skin')" class="supplement-section">
             <view class="supplement-section-head">
               <text class="supplement-section-title">材质与颜色</text>
-              <text class="supplement-section-tip">可按官方描述填写</text>
             </view>
             <view class="supplement-row">
               <view v-if="isSupplementFieldSelected('doll_material')" class="supplement-field">
                 <text class="supplement-field-label font-title">材质</text>
+                <text class="supplement-current-inline">{{ getSupplementCurrentValue('doll_material') }}</text>
                 <picker :range="supplementMaterialOptions" :value="Math.max(0, supplementMaterialOptions.indexOf(priceSupplementDollMaterialInput))" @change="onSupplementMaterialChange">
                   <view :class="['supplement-picker-trigger', { placeholder: !priceSupplementDollMaterialInput }]">
                     {{ priceSupplementDollMaterialInput || (supplementMetaLoading ? '加载材质中...' : '请选择材质') }}
@@ -755,6 +755,7 @@
               </view>
               <view v-if="isSupplementFieldSelected('skin')" class="supplement-field">
                 <text class="supplement-field-label font-title">颜色</text>
+                <text class="supplement-current-inline">{{ getSupplementCurrentValue('skin') }}</text>
                 <input
                   v-model="priceSupplementSkinInput"
                   class="price-supplement-input"
@@ -770,8 +771,8 @@
           <view v-if="isSupplementFieldSelected('size')" class="supplement-section">
             <view class="supplement-section-head">
               <text class="supplement-section-title">尺寸</text>
-              <text class="supplement-section-tip">当前：{{ formatCurrentSizeText() }}</text>
             </view>
+            <text class="supplement-current-line">{{ getSupplementCurrentValue('size') }}</text>
             <view class="supplement-field">
               <text class="supplement-field-label font-title">尺寸选择</text>
               <view
@@ -806,7 +807,7 @@
           <view v-if="isSupplementFieldSelected('images')" class="supplement-section">
             <view class="supplement-uploader-head">
               <text class="supplement-field-label font-title">补充图片</text>
-              <button class="supplement-upload-btn" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets('image')">
+              <button class="supplement-upload-btn" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets">
                 {{ priceSupplementUploading ? '上传中...' : '上传图片' }}
               </button>
             </view>
@@ -819,29 +820,7 @@
                   class="supplement-preview-item"
                 >
                   <image class="supplement-preview-image" :src="url" mode="aspectFill" @tap="previewSupplementImages(priceSupplementImageList, url)" />
-                  <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset('image', index)">×</view>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
-
-          <view v-if="isSupplementFieldSelected('screenshots')" class="supplement-section">
-            <view class="supplement-uploader-head">
-              <text class="supplement-field-label font-title">佐证截图</text>
-              <button class="supplement-upload-btn is-light" :disabled="priceSupplementUploading" @click="uploadPriceSupplementAssets('screenshot')">
-                {{ priceSupplementUploading ? '上传中...' : '上传截图' }}
-              </button>
-            </view>
-            <text class="supplement-field-tip">用于说明来源或佐证。</text>
-            <scroll-view v-if="priceSupplementScreenshotList.length" scroll-x class="supplement-preview-scroll">
-              <view class="supplement-preview-row">
-                <view
-                  v-for="(url, index) in priceSupplementScreenshotList"
-                  :key="`supplement-proof-${url}`"
-                  class="supplement-preview-item"
-                >
-                  <image class="supplement-preview-image" :src="url" mode="aspectFill" @tap="previewSupplementImages(priceSupplementScreenshotList, url)" />
-                  <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset('screenshot', index)">×</view>
+                  <view class="supplement-preview-remove" @tap.stop="removePriceSupplementAsset(index)">×</view>
                 </view>
               </view>
             </scroll-view>
@@ -863,8 +842,9 @@
               {{ priceSupplementReasonLength }}/{{ PRICE_SUPPLEMENT_MAX_LENGTH.reason }}
             </text>
           </view>
+          </view>
+          </scroll-view>
         </view>
-        </scroll-view>
 
         <view class="price-supplement-actions">
           <button v-if="priceSupplementStep === 1" class="price-supplement-cancel" @click="priceSupplementVisible = false">取消</button>
@@ -1048,7 +1028,6 @@ const priceSupplementSkinInput = ref('')
 const priceSupplementSizeCategoryInput = ref('')
 const priceSupplementReasonInput = ref('')
 const priceSupplementImageList = ref([])
-const priceSupplementScreenshotList = ref([])
 const priceSupplementUploading = ref(false)
 const priceSupplementSocketSelections = ref([])
 const priceSupplementEyeSelections = ref([])
@@ -1098,17 +1077,9 @@ const priceSupplementFieldOptions = computed(() => {
     { key: 'skin', label: '颜色', desc: '例如粉色、咖色' },
     { key: 'size', label: '尺寸', desc: '尺寸分类与细项' },
     { key: 'images', label: '补充图片', desc: '追加到商品图集' },
-    { key: 'screenshots', label: '佐证截图', desc: '说明来源或佐证', optional: true },
     { key: 'reason', label: '补充原因', desc: '可选说明理由', optional: true }
   ]
   return list.filter(item => !item.headOnly || isHeadOrWholeGoods.value)
-})
-const priceSupplementSelectedOptions = computed(() => {
-  const selected = new Set(priceSupplementFieldSelections.value)
-  return priceSupplementFieldOptions.value.filter(item => selected.has(item.key))
-})
-const priceSupplementSelectedOptionsText = computed(() => {
-  return priceSupplementSelectedOptions.value.map(item => item.label).join('、')
 })
 const canGoPriceSupplementNext = computed(() => priceSupplementFieldSelections.value.length > 0)
 const priceSupplementReasonLength = computed(() => String(priceSupplementReasonInput.value || '').length)
@@ -1341,6 +1312,36 @@ function formatCurrentSizeText() {
   return category || detail || '未填写'
 }
 
+function getSupplementCurrentValue(key) {
+  const val = String(key || '').trim()
+  switch (val) {
+    case 'price': {
+      const amount = Number(resolvedMainPrice.value || 0)
+      const currency = String(resolvedMainCurrency.value || '').trim()
+      if (amount <= 0) return '当前：未填写'
+      return `当前：${amount}${currency ? ` ${currency}` : ''}`
+    }
+    case 'head_circumference':
+      return `当前：${trimAndLimitText(goods.value?.head_circumference, PRICE_SUPPLEMENT_MAX_LENGTH.headCircumference) || '未填写'}`
+    case 'neck_circumference':
+      return `当前：${trimAndLimitText(goods.value?.neck_circumference, PRICE_SUPPLEMENT_MAX_LENGTH.neckCircumference) || '未填写'}`
+    case 'socket_sizes':
+      return `当前：${formatMultiSpecText(goods.value?.socket_sizes)}`
+    case 'eye_recommendations':
+      return `当前：${formatMultiSpecText(goods.value?.eye_recommendations)}`
+    case 'doll_material':
+      return `当前：${trimAndLimitText(goods.value?.doll_material, 32) || '未填写'}`
+    case 'skin':
+      return `当前：${trimAndLimitText(goods.value?.skin, PRICE_SUPPLEMENT_MAX_LENGTH.skin) || '未填写'}`
+    case 'size':
+      return `当前：${formatCurrentSizeText()}`
+    case 'reason':
+      return '当前：可选填写'
+    default:
+      return '当前：未填写'
+  }
+}
+
 function isSupplementFieldSelected(key) {
   return priceSupplementFieldSelections.value.includes(key)
 }
@@ -1389,9 +1390,6 @@ function clearSupplementFieldValue(key) {
     case 'images':
       priceSupplementImageList.value = []
       break
-    case 'screenshots':
-      priceSupplementScreenshotList.value = []
-      break
     case 'reason':
       priceSupplementReasonInput.value = ''
       break
@@ -1424,7 +1422,6 @@ function resetPriceSupplementForm() {
   priceSupplementSizeCategoryInput.value = ''
   priceSupplementReasonInput.value = ''
   priceSupplementImageList.value = []
-  priceSupplementScreenshotList.value = []
   priceSupplementSocketSelections.value = []
   priceSupplementEyeSelections.value = []
   priceSupplementSizeDetailSelections.value = []
@@ -1652,13 +1649,13 @@ function changeContributionPage(direction) {
   }
 }
 
-async function uploadPriceSupplementAssets(kind = 'image') {
+async function uploadPriceSupplementAssets() {
   if (priceSupplementUploading.value) return
-  const targetList = kind === 'screenshot' ? priceSupplementScreenshotList : priceSupplementImageList
-  const maxCount = kind === 'screenshot' ? 6 : 9
+  const targetList = priceSupplementImageList
+  const maxCount = 9
   const remain = maxCount - targetList.value.length
   if (remain <= 0) {
-    uni.showToast({ title: kind === 'screenshot' ? '最多上传6张截图' : '最多上传9张图片', icon: 'none' })
+    uni.showToast({ title: '最多上传9张图片', icon: 'none' })
     return
   }
   try {
@@ -1683,9 +1680,8 @@ async function uploadPriceSupplementAssets(kind = 'image') {
   }
 }
 
-function removePriceSupplementAsset(kind, index) {
-  const targetList = kind === 'screenshot' ? priceSupplementScreenshotList : priceSupplementImageList
-  targetList.value.splice(index, 1)
+function removePriceSupplementAsset(index) {
+  priceSupplementImageList.value.splice(index, 1)
 }
 
 async function fetchMyVoteScoreByType (goodsId, voteType) {
@@ -2229,8 +2225,7 @@ function submitPriceSupplement () {
     size_category: selected.has('size') ? trimAndLimitText(priceSupplementSizeCategoryInput.value, 32) : '',
     size_details: selected.has('size') ? [...priceSupplementSizeDetailSelections.value] : [],
     image_urls: selected.has('images') ? [...priceSupplementImageList.value] : [],
-    reason: selected.has('reason') ? trimAndLimitText(priceSupplementReasonInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.reason) : '',
-    screenshot_urls: selected.has('screenshots') ? [...priceSupplementScreenshotList.value] : []
+    reason: selected.has('reason') ? trimAndLimitText(priceSupplementReasonInput.value, PRICE_SUPPLEMENT_MAX_LENGTH.reason) : ''
   }
   const hasAnyField = Boolean(
     (selected.has('price') && payload.price > 0) ||
@@ -2734,17 +2729,22 @@ function selectSize (sizeText) {
   flex-shrink: 0;
 }
 
+.price-supplement-shell{
+  width: 100%;
+  max-height: 82vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .price-supplement-modal{
   width: 100%;
   background: #fff;
   border-radius: 26rpx;
-  padding: 34rpx 30rpx 42rpx;
-  padding-bottom: calc(42rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(42rpx + env(safe-area-inset-bottom));
+  padding: 34rpx 30rpx 28rpx;
   box-sizing: border-box;
-  max-height: 78vh;
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-height: 0;
 }
 .price-supplement-header{
@@ -2930,7 +2930,6 @@ function selectSize (sizeText) {
   padding: 20rpx;
   border-radius: 24rpx;
   background: #f6f8fb;
-  box-shadow: 0 12rpx 24rpx rgba(36, 48, 71, 0.06);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2939,7 +2938,6 @@ function selectSize (sizeText) {
 }
 .supplement-select-card.active{
   background: rgba(73, 202, 238, 0.16);
-  box-shadow: 0 14rpx 28rpx rgba(73, 202, 238, 0.18);
 }
 .supplement-select-info{
   flex: 1;
@@ -2955,6 +2953,19 @@ function selectSize (sizeText) {
   font-size: 26rpx;
   font-weight: 600;
   color: #243047;
+}
+.supplement-select-current{
+  display: block;
+  margin-top: 10rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 12rpx;
+  background: #edf2f7;
+  font-size: 20rpx;
+  line-height: 1.3;
+  color: #71839a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .supplement-select-tag{
   padding: 4rpx 12rpx;
@@ -3069,6 +3080,32 @@ function selectSize (sizeText) {
   margin-bottom: 10rpx;
   font-size: 22rpx;
   color: #73829a;
+}
+.supplement-current-line{
+  display: block;
+  margin-top: 12rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 12rpx;
+  background: #edf2f7;
+  font-size: 22rpx;
+  line-height: 1.35;
+  color: #71839a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.supplement-current-inline{
+  display: block;
+  margin-bottom: 10rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 12rpx;
+  background: #edf2f7;
+  font-size: 22rpx;
+  line-height: 1.35;
+  color: #71839a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .supplement-current-text{
   flex-shrink: 0;
@@ -3256,12 +3293,13 @@ function selectSize (sizeText) {
   color: #8b98a9;
 }
 .price-supplement-actions{
-  margin-top: 24rpx;
+  margin-top: 18rpx;
   display: flex;
   justify-content: space-between;
   gap: 16rpx;
   flex-shrink: 0;
-  background: #fff;
+  padding: 4rpx 6rpx calc(10rpx + env(safe-area-inset-bottom));
+  background: transparent;
 }
 .price-supplement-cancel,
 .price-supplement-confirm{
