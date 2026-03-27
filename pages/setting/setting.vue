@@ -54,6 +54,7 @@ import {
 } from "../../common/config.js";
 
 uni.setNavigationBarTitle({ title: '设置' });
+const startupPrivacyPolicyUrl = 'https://m.dogdogdoll.com/#/pages/private/private'
 
 // ===== 本页新增：用于调用版本组件的方法 =====
 const versionCheckRef = ref(null) // <version-check> 组件实例
@@ -84,6 +85,12 @@ const menuItems = computed(() => [
     action: jump2wechat,
     status: !!global.userInfo.wechat_open_id,
     displayValue: global.userInfo.wechat_open_id ? '已绑定' : '去绑定'
+  },
+  {
+    label: '隐私政策',
+    action: jump2privacyPolicy,
+    status: false,
+    displayValue: '查看'
   },
   {
     label: '检查更新',
@@ -117,6 +124,29 @@ function jump2telphone() {
 // 跳转：修改用户名
 function jump2username() {
   uni.navigateTo({ url: '/pages/setting/username/username' })
+}
+
+// 跳转：隐私政策
+function jump2privacyPolicy() {
+  // 与 androidPrivacy.json 首启弹窗保持同一地址来源
+  // #ifdef APP-PLUS
+  const webview = plus.webview.create(
+    startupPrivacyPolicyUrl,
+    'privacy-policy-webview',
+    {
+      titleNView: {
+        titleText: '隐私政策',
+        autoBackButton: true
+      }
+    }
+  )
+  webview.show('slide-in-right')
+  return
+  // #endif
+
+  // #ifndef APP-PLUS
+  uni.navigateTo({ url: '/pages/private/private' })
+  // #endif
 }
 
 // 绑定微信
