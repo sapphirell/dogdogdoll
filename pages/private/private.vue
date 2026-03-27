@@ -77,6 +77,23 @@
 		                <text class="policy-text">(a)如果决定更改隐私政策，我们会在本政策中、本公司网站中以及我们认为适当的位置发布这些更改，以便您了解我们如何收集、使用您的个人信息，哪些人可以访问这些信息，以及在什么情况下我们会透露这些信息。</text>
 		                <text class="policy-text">(b)本公司保留随时修改本政策的权利，因此请经常查看。如对本政策作出重大更改，本公司会通过网站通知的形式告知。</text>
 		            </view>
+
+		            <view class="section">
+		                <h2 class="section-title"><i class="fas fa-cubes"></i> 8. 第三方SDK信息公示</h2>
+		                <text class="policy-text">为保障应用稳定运行、实现消息推送与设备标识能力，本应用接入以下第三方 SDK。我们会在获取你授权后，并在实现功能所需的最小范围内使用相关信息。</text>
+
+		                <text class="policy-text"><strong>SDK名称：</strong>消息推送 SDK Android（com.igexin.sdk）</text>
+		                <text class="policy-text"><strong>开发者：</strong>每日互动股份有限公司</text>
+		                <text class="policy-text"><strong>使用目的：</strong>用于消息推送、消息到达与离线通知能力。</text>
+		                <text class="policy-text"><strong>可能收集的信息范围：</strong>设备标识信息（如 OAID、Android ID、设备型号、系统版本、应用信息、网络信息）及推送日志信息，用于推送服务实现与安全风控。</text>
+		                <text class="policy-text"><strong>SDK隐私政策链接：</strong>https://docs.getui.com/privacy/</text>
+
+		                <text class="policy-text"><strong>SDK名称：</strong>移动智能终端补齐设备标识体系—调用SDK（com.bun.miitmdid）</text>
+		                <text class="policy-text"><strong>开发者：</strong>中国信息通信研究院</text>
+		                <text class="policy-text"><strong>使用目的：</strong>用于获取 OAID 等设备标识，支撑设备识别、统计分析与风控能力。</text>
+		                <text class="policy-text"><strong>可能收集的信息范围：</strong>设备标识信息（如 OAID）及必要的设备/应用环境参数。</text>
+		                <text class="policy-text"><strong>SDK隐私政策链接：</strong>https://www.msa-alliance.cn/col.jsp?id=122</text>
+		            </view>
 		            
 		            <view class="last-update">
 						<text class="policy-text"><strong>政策发布日期：</strong>2026年03月09日</text>
