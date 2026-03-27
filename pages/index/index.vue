@@ -342,13 +342,14 @@
 </template>
 
 <script setup>
-import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onLoad, onReady, onShareAppMessage, onShareTimeline, onTabItemTap } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
 import {
   websiteUrl,
   getUserInfo,
   global,
 } from '../../common/config.js'
+import { playTabBubbleSound } from '@/common/tab-sound.js'
 
 const buildIndexSharePath = () => {
   const tab = encodeURIComponent(activeTab.value || 'news')
@@ -368,6 +369,10 @@ onShareTimeline(() => {
     title: 'DogDogDoll｜娃圈信息与开单',
     query: `tab=${tab}`,
   }
+})
+
+onTabItemTap(() => {
+  playTabBubbleSound()
 })
 
 // 品牌卡片组件 & 妆师毛娘组件

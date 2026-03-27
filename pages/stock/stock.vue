@@ -112,10 +112,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onTabItemTap } from '@dcloudio/uni-app'
 import {
   websiteUrl, global, asyncGetUserInfo
 } from "../../common/config.js"
+import { playTabBubbleSound } from '@/common/tab-sound.js'
 
 // ===== 原有状态 =====
 const activeTab = ref(1)
@@ -246,6 +247,10 @@ onShow(() => {
       case 3: getBillData(); break
     }
   })
+})
+
+onTabItemTap(() => {
+  playTabBubbleSound()
 })
 </script>
 

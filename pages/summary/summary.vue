@@ -7,10 +7,16 @@
 
 
 <script setup>
+import { onTabItemTap } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import { playTabBubbleSound } from '@/common/tab-sound.js'
 
 
 const active = ref('summary')
+
+onTabItemTap(() => {
+  playTabBubbleSound()
+})
 </script>
 
 <style lang="less" scoped>

@@ -266,8 +266,9 @@
 
 <script setup>
 import { ref, reactive, onMounted, nextTick, getCurrentInstance, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onTabItemTap } from '@dcloudio/uni-app'
 import { websiteUrl, global } from '../../common/config.js'
+import { playTabBubbleSound } from '@/common/tab-sound.js'
 
 /* ======== 无图兜底 & 安全取图 ======== */
 const NO_IMG =
@@ -425,6 +426,10 @@ const handleTabSwitch = (tab) => {
   }
   switchTab(tab)
 }
+
+onTabItemTap(() => {
+  playTabBubbleSound()
+})
 const switchTab = (tab) => {
   currentTab.value = tab
   if (tab === 'find') {
