@@ -74,13 +74,14 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onTabItemTap } from '@dcloudio/uni-app'
 import {
   websiteUrl,
   global,
   asyncGetUserInfo,
   getUserInfo
 } from '@/common/config.js'
+import { playTabBubbleSound } from '@/common/tab-sound.js'
 
 const defaultAvatar = 'https://images1.fantuanpu.com/home/jpt.gif'
 
@@ -250,7 +251,10 @@ watch(() => global.isLogin, newVal => {
   }
 })
 
-function changeMainTab (key) { activeMainTab.value = key }
+function changeMainTab (key) {
+  playTabBubbleSound()
+  activeMainTab.value = key
+}
 
 // 图片选择与上传逻辑
 function chooseImage () {
@@ -361,6 +365,10 @@ onShow(async () => {
     selectAvatar(currentPage.returnParam)
     currentPage.returnParam = ''
   }
+})
+
+onTabItemTap(() => {
+  playTabBubbleSound()
 })
 </script>
 
