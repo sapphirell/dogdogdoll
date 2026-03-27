@@ -15,6 +15,7 @@
 		                <h2 class="section-title"><i class="fas fa-info-circle"></i> 引言</h2>
 		                <text class="policy-text"><strong>APP名称：</strong>娃圈狗狗助手</text>
 		                <text class="policy-text"><strong>开发者名称：</strong>杭州眠猫网络科技有限公司</text>
+						<text class="policy-text"><strong>开发者联系方式：</strong>fuantuanpu@163.com</text>
 		                <text class="policy-text">本应用尊重并保护所有使用服务用户的个人隐私权。</text>
 		                <text class="policy-text">为了给您提供更准确、更有个性化的服务，本应用会按照本隐私权政策的规定使用和披露您的个人信息。</text>
 		                <text class="policy-text">但本应用将以高度的勤勉、审慎义务对待这些信息。</text>
