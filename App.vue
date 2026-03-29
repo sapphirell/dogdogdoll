@@ -3,6 +3,7 @@ import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
 import { initLoginState, getScene } from '@/common/config.js'
 import { initIMGlobalLifecycle, ensureIMConnected } from '@/common/im.js'
+import { initUniPush2 } from '@/common/unipush.js'
 
 const PRIVACY_KEY = 'privacyAgreementStatus'
 let imLifecycleInited = false
@@ -10,6 +11,7 @@ let privacyEventBound = false
 let fontsLoaded = false
 let fontLoadTimer = null
 let fontLoadRetryCount = 0
+let uniPushInited = false
 const MAX_FONT_LOAD_RETRY = 8
 const FONT_RETRY_DELAY = 1500
 const FONT_SKIP_ROUTES = new Set(['pages/private/private', 'pages/permission/permission'])
@@ -89,6 +91,13 @@ function startSdkAfterPrivacyAgreed() {
     imLifecycleInited = true
   }
   ensureIMConnected()
+
+  if (!uniPushInited) {
+    uniPushInited = true
+    initUniPush2().catch((err) => {
+      console.warn('initUniPush2 fail:', err)
+    })
+  }
 }
 
 onLaunch(() => {

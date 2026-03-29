@@ -72,7 +72,7 @@
                 "share" : {},
                 "push" : {
                     "unipush" : {
-                        "offline" : false,
+                        "offline" : true,
                         "icons" : {
                             "small" : {
                                 "ldpi" : "unpackage/res/icons/18x18.png",
@@ -81,7 +81,15 @@
                                 "xhdpi" : "unpackage/res/icons/48x48.png",
                                 "xxhdpi" : "unpackage/res/icons/72x72.png"
                             }
-                        }
+                        },
+                        "version" : "2",
+                        "hms" : {},
+                        "oppo" : {},
+                        "vivo" : {},
+                        "mi" : {},
+                        "meizu" : {},
+                        "honor" : {},
+                        "fcm" : {}
                     }
                 },
                 "oauth" : {},

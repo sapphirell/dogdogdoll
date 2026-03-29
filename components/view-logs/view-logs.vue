@@ -1,6 +1,7 @@
 <script setup>
 	import { onMounted } from 'vue';
 	import ImGlobalNotice from '@/components/im-global-notice/im-global-notice.vue'
+	import { getPushClientIdSafe } from '@/common/unipush.js'
 	import {
 		getScene,
 		dogdogdollVersion,
@@ -24,67 +25,6 @@
 		const pages = getCurrentPages();
 		if (pages.length === 0) return '';
 		return pages[pages.length - 1].route || '';
-	};
-
-	// 获取 / 缓存 UniPush2 的设备ID（cid）
-	// 返回 Promise<string>，获取失败则返回空字符串
-	const getPushClientId = () => {
-		return new Promise((resolve) => {
-			// 先看本地缓存，避免每次都调接口
-			const cached = uni.getStorageSync('unipush_cid');
-			if (cached) {
-				resolve(cached);
-				return;
-			}
-
-			// #ifdef APP-PLUS
-			// APP 端：优先走官方 uni.getPushClientId
-			if (uni.getPushClientId) {
-				uni.getPushClientId({
-					success: (res) => {
-						const cid = (res && res.cid) ? res.cid : '';
-						if (cid) {
-							uni.setStorageSync('unipush_cid', cid);
-						}
-						resolve(cid);
-					},
-					fail: (err) => {
-						console.warn('getPushClientId fail:', err);
-						// 兜底：尝试旧版 plus.push.getClientInfo
-						try {
-							const info = plus.push.getClientInfo && plus.push.getClientInfo();
-							const cid = info && info.clientid ? info.clientid : '';
-							if (cid) {
-								uni.setStorageSync('unipush_cid', cid);
-							}
-							resolve(cid);
-						} catch (e) {
-							console.warn('plus.push.getClientInfo fail:', e);
-							resolve('');
-						}
-					}
-				});
-			} else {
-				// 再次兜底：直接 plus.push.getClientInfo（某些老环境）
-				try {
-					const info = plus.push.getClientInfo && plus.push.getClientInfo();
-					const cid = info && info.clientid ? info.clientid : '';
-					if (cid) {
-						uni.setStorageSync('unipush_cid', cid);
-					}
-					resolve(cid);
-				} catch (e) {
-					console.warn('getPushClientId not available:', e);
-					resolve('');
-				}
-			}
-			// #endif
-
-			// #ifndef APP-PLUS
-			// H5 / 小程序 等：默认没有 cid，直接返回空字符串
-			resolve('');
-			// #endif
-		});
 	};
 
 	// 发送日志数据到后端（可选带上 pushClientId）
@@ -125,7 +65,7 @@
 
 	// 先获取 cid，再带着 cid 发送日志（获取失败也会照常发日志）
 	const sendViewLogWithPushInfo = async () => {
-		const cid = await getPushClientId();
+		const cid = await getPushClientIdSafe();
 		await sendViewLog(cid);
 	};
 

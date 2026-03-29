@@ -1,0 +1,9 @@
+{
+  "name": "push-dispatch",
+  "version": "1.0.0",
+  "description": "uni-push 2.0 dispatch cloud function",
+  "main": "index.js",
+  "extensions": {
+    "uni-cloud-push": {}
+  }
+}
